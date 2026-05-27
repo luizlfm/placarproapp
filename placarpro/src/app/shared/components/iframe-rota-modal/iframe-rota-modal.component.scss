@@ -1,0 +1,21 @@
+.iframe-rota-content {
+  --background: #f3f4f6;
+
+  iframe {
+    width: 100%;
+    height: 100%;
+    min-height: calc(100vh - 56px);
+    border: 0;
+    background: #fff;
+    display: block;
+  }
+}
+
+/* Aplicado via cssClass do ModalController — desktop fica mais compacto */
+::ng-deep ion-modal.modal-inscricao-iframe {
+  --width: 95vw;
+  --height: 92vh;
+  --max-width: 900px;
+  --max-height: 850px;
+  --border-radius: 12px;
+}

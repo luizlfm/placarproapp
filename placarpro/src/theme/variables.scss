@@ -1,0 +1,141 @@
+// PlacarPro — paleta e tokens da marca + dark mode
+// A identidade visual (navy + verde) é mantida nos dois modos.
+// O dark mode altera APENAS background, surface, texto e bordas.
+
+/* ============ MODO CLARO (default) ============ */
+:root,
+body.light {
+  /* Primary — Navy PlacarPro (constante nos dois modos) */
+  --ion-color-primary: #1C2E3D;
+  --ion-color-primary-rgb: 28, 46, 61;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #192836;
+  --ion-color-primary-tint: #334350;
+
+  /* Secondary — Verde PlacarPro */
+  --ion-color-secondary: #7CC61D;
+  --ion-color-secondary-rgb: 124, 198, 29;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #6dae1a;
+  --ion-color-secondary-tint: #8ccf33;
+
+  /* Tertiary — Azul links */
+  --ion-color-tertiary: #4DABF7;
+  --ion-color-tertiary-rgb: 77, 171, 247;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #4496d9;
+  --ion-color-tertiary-tint: #5fb3f8;
+
+  --ion-color-success: #7CC61D;
+  --ion-color-success-rgb: 124, 198, 29;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #6dae1a;
+  --ion-color-success-tint: #8ccf33;
+
+  --ion-color-warning: #ffc409;
+  --ion-color-warning-rgb: 255, 196, 9;
+  --ion-color-warning-contrast: #000000;
+  --ion-color-warning-contrast-rgb: 0, 0, 0;
+  --ion-color-warning-shade: #e0ac08;
+  --ion-color-warning-tint: #ffca22;
+
+  --ion-color-danger: #eb4747;
+  --ion-color-danger-rgb: 235, 71, 71;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #cf3e3e;
+  --ion-color-danger-tint: #ed5959;
+
+  --ion-color-dark: #1C2E3D;
+  --ion-color-dark-rgb: 28, 46, 61;
+  --ion-color-dark-contrast: #ffffff;
+  --ion-color-dark-contrast-rgb: 255, 255, 255;
+  --ion-color-dark-shade: #192836;
+  --ion-color-dark-tint: #334350;
+
+  --ion-color-medium: #8a8d99;
+  --ion-color-medium-rgb: 138, 141, 153;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: #797c87;
+  --ion-color-medium-tint: #96989f;
+
+  --ion-color-light: #ffffff;
+  --ion-color-light-rgb: 246, 247, 249;
+  --ion-color-light-contrast: #000000;
+  --ion-color-light-contrast-rgb: 0, 0, 0;
+  --ion-color-light-shade: #d8d9da;
+  --ion-color-light-tint: #f7f8fa;
+
+  /* App tokens claros */
+  --ion-background-color: #ffffff;
+  --ion-background-color-rgb: 246, 247, 249;
+  --ion-text-color: #1F2937;
+  --ion-text-color-rgb: 31, 41, 55;
+
+  /* Tokens próprios — clean tones */
+  --placar-bg: #ffffff;
+  --placar-surface: #ffffff;
+  --placar-surface-2: #FAFBFC;
+  --placar-border: #E5E7EB;
+  --placar-border-strong: #D1D5DB;
+  --placar-text: #1F2937;
+  --placar-text-muted: #6B7280;
+  --placar-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --placar-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --placar-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+
+  /* Sidebar — sempre escura (identidade) */
+  --placar-sidebar-bg: #1C2E3D;
+  --placar-sidebar-text: #ffffff;
+  --placar-sidebar-text-muted: rgba(255, 255, 255, 0.65);
+  --placar-sidebar-active-bg: rgba(124, 198, 29, 0.18);
+  --placar-sidebar-active-border: #7CC61D;
+  --placar-header-bg: #1C2E3D;
+  --placar-accent: #7CC61D;
+  --placar-card-bg: #ffffff;
+  --placar-card-radius: 12px;
+  --placar-divider: #E5E7EB;
+
+  /* Cor do campeonato — sobrescrita pelo CampeonatoThemeService quando dentro de campeonato */
+  --campeonato-cor: var(--ion-color-primary);
+  --campeonato-cor-rgb: var(--ion-color-primary-rgb);
+
+  /* ============ Botões — tokens compartilhados ============ */
+  /* Altura padrão dos botões em cada tamanho.
+     - sm : usado em botões inline em listas e toolbar (size="small" do ion-button)
+     - md : padrão / size="default" — botões de form e ações principais
+     - lg : ações primárias com `expand="block"` (login, salvar grande)
+  */
+  --btn-h-sm: 32px;
+  --btn-h-md: 40px;
+  --btn-h-lg: 48px;
+
+  /* Padding lateral por tamanho. */
+  --btn-px-sm: 14px;
+  --btn-px-md: 18px;
+  --btn-px-lg: 24px;
+
+  /* Border-radius por tamanho. */
+  --btn-radius-sm: 8px;
+  --btn-radius-md: 10px;
+  --btn-radius-lg: 12px;
+
+  /* Botão circular (ícone solto) por tamanho. */
+  --btn-circle-sm: 32px;
+  --btn-circle-md: 40px;
+  --btn-circle-lg: 48px;
+
+  /* Tipografia. */
+  --btn-font-sm: 12.5px;
+  --btn-font-md: 14px;
+  --btn-font-lg: 15px;
+}
+
+/* Dark mode foi desabilitado por escolha de design:
+   o app é sempre claro, com sidebar/header navy (--ion-color-primary).
+   A regra `body.dark` foi removida; o ThemeService força modo claro. */

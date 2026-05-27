@@ -1,0 +1,27 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="fechar()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Adicionar mídia</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="acoes-content">
+  <div class="acoes-lista">
+    <button
+      *ngFor="let o of opcoes; trackBy: trackByAcao"
+      type="button"
+      class="acao-row"
+      (click)="selecionar(o.acao)"
+    >
+      <span class="acao-icone">
+        <ion-icon [name]="o.icon"></ion-icon>
+      </span>
+      <span class="acao-label">{{ o.label }}</span>
+      <ion-icon class="acao-chev" name="chevron-forward-outline"></ion-icon>
+    </button>
+  </div>
+</ion-content>

@@ -1,0 +1,140 @@
+.pp-content { --background: #f3f4f6; }
+
+.pp-wrap {
+  padding: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.pp-intro {
+  margin: 0 0 16px;
+  font-size: 13.5px;
+  color: var(--placar-text-muted);
+  line-height: 1.5;
+}
+
+.pp-opcao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover { border-color: #cbd5e0; }
+
+  &.ativa {
+    border-color: #7CC61D;
+    background: rgba(124, 198, 29, 0.04);
+    box-shadow: 0 2px 8px rgba(124, 198, 29, 0.15);
+
+    .pp-radio ion-icon { color: #7CC61D; }
+    .pp-valor { color: #4a7e0e; }
+  }
+}
+
+.pp-radio {
+  flex: 0 0 auto;
+  ion-icon { font-size: 22px; color: #cbd5e0; }
+}
+
+.pp-info {
+  flex: 1;
+  min-width: 0;
+
+  .pp-titulo {
+    font-size: 14.5px;
+    font-weight: 800;
+    color: var(--placar-text);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    .pp-badge {
+      display: inline-block;
+      background: #7CC61D;
+      color: #fff;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 999px;
+      letter-spacing: 0.3px;
+    }
+  }
+  .pp-sub {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--placar-text-muted);
+  }
+  .pp-equiv {
+    margin-top: 2px;
+    font-size: 11.5px;
+    color: #4a7e0e;
+    font-style: italic;
+  }
+}
+
+.pp-valor {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ion-color-primary, #1C2E3D);
+  font-variant-numeric: tabular-nums;
+  flex: 0 0 auto;
+}
+
+.pp-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fff5e6;
+  border-left: 3px solid #f59e0b;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin: 14px 0;
+  font-size: 12.5px;
+  color: #9a3412;
+  line-height: 1.4;
+
+  ion-icon { font-size: 18px; flex-shrink: 0; color: #b88a00; margin-top: 1px; }
+  strong { color: #5a4500; font-weight: 800; }
+}
+
+.pp-acoes {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.pp-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 0;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  ion-icon { font-size: 18px; }
+
+  &.ghost {
+    background: transparent;
+    border: 1px solid #cbd5e0;
+    color: #4b5563;
+    &:hover { background: #f3f4f6; }
+  }
+  &.primary {
+    background: #1C2E3D;
+    color: #fff;
+    &:hover { background: #102433; }
+  }
+}

@@ -1,0 +1,38 @@
+<div class="am-backdrop" (click)="fechar()" aria-hidden="true"></div>
+
+<div class="am-card" role="dialog" [attr.aria-label]="header">
+  <header class="am-head" *ngIf="header || subHeader">
+    <strong *ngIf="header">{{ header }}</strong>
+    <span *ngIf="subHeader" class="am-sub">{{ subHeader }}</span>
+  </header>
+
+  <div class="am-body">
+    <button
+      *ngFor="let b of botoesAcao"
+      type="button"
+      class="am-btn"
+      [class.destructive]="b.role === 'destructive'"
+      [disabled]="b.disabled"
+      (click)="onClick(b)"
+    >
+      <ion-icon *ngIf="b.icon" [name]="b.icon" aria-hidden="true"></ion-icon>
+      <span class="am-btn-text">{{ b.text }}</span>
+    </button>
+  </div>
+
+  <footer class="am-foot" *ngIf="botaoCancelar">
+    <button
+      type="button"
+      class="am-btn cancel"
+      [disabled]="botaoCancelar.disabled"
+      (click)="onClick(botaoCancelar)"
+    >
+      <ion-icon
+        *ngIf="botaoCancelar.icon"
+        [name]="botaoCancelar.icon"
+        aria-hidden="true"
+      ></ion-icon>
+      <span class="am-btn-text">{{ botaoCancelar.text }}</span>
+    </button>
+  </footer>
+</div>

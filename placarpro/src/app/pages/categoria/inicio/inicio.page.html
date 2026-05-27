@@ -1,0 +1,113 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <!-- Botão "Voltar" — principal valor em mobile, onde a sidebar
+         contextual da categoria é off-canvas. Volta pra Início do
+         campeonato pai (fallback explícito quando histórico vazio). -->
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/app/campeonato/{{ campeonatoId }}/inicio"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ (categoria$ | async)?.titulo || 'Categoria' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Pull-to-refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="onRefresh($event)">
+    <ion-refresher-content
+      pullingIcon="chevron-down-circle-outline"
+      refreshingSpinner="circles"
+      refreshingText="Atualizando...">
+    </ion-refresher-content>
+  </ion-refresher>
+
+  <ng-container *ngIf="categoria$ | async as cat">
+    <h1 class="page-title">{{ cat.titulo }}</h1>
+
+    <!-- HERO CARD: imagem real + overlay compacto (mesmo padrão das telas
+         públicas e do admin do campeonato). Estrutura idêntica à
+         publico-categoria.page pra ficar consistente entre admin e
+         visualização pública. -->
+    <article class="hero-card">
+      <!-- `capaCategoria()` escolhe a variante conforme viewport:
+           mobile → capaMobileUrl ?? capaUrl ?? bannerUrl
+           web    → capaUrl ?? bannerUrl
+           Mesma lógica de `capaCamp()` do publico-categoria. -->
+      <img
+        *ngIf="capaCategoria(cat) as capa"
+        class="hero-img"
+        [src]="capa"
+        [alt]="cat.titulo"
+      />
+      <div class="hero-info">
+        <div class="hero-meta">
+          <span class="hero-meta-label">{{ modalidadeOf(cat)?.label || 'Esporte' }}</span>
+          <span class="hero-meta-value">{{ cat.titulo }}</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- Apoios e Patrocinadores — espelha o que o usuário vê na tela
+         pública. Antes era `<app-banner-site-faixa>` (banner 970×90 que só
+         aparece em Jogos público); agora é a faixa horizontal de
+         patrocinadores ("APOIOS E PATROCINADORES") pra dar o mesmo
+         feedback visual que o organizador vê na sua área pública. -->
+    <app-patrocinadores-faixa
+      *ngIf="(campeonato$ | async) as camp"
+      [ownerId]="camp.ownerId || ''"
+      [campeonatoId]="campeonatoId"
+      [categoriaId]="categoriaId"
+    ></app-patrocinadores-faixa>
+
+    <!-- Equipes — cards horizontais (logo esq + nome dir), 1 coluna mobile,
+         múltiplas em desktop (auto-fill 280px). Mesma estrutura
+         .eq-grid > .eq-card-row da publico-categoria pra ficar idêntico
+         visualmente. -->
+    <section class="section">
+      <div class="section-header">
+        <h2>Equipes</h2>
+        <ion-button
+          fill="clear"
+          size="small"
+          color="secondary"
+          [routerLink]="['/app/campeonato', campeonatoId, 'categoria', categoriaId, 'equipes']"
+        >
+          Gerenciar
+          <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <ng-container *ngIf="equipes$ | async as eqs">
+        <div class="eq-grid" *ngIf="eqs.length > 0; else emptyEq">
+          <div
+            class="eq-card-row"
+            *ngFor="let e of eqs; trackBy: trackById"
+            
+          >
+            <div class="eq-logo-mini">
+              <img *ngIf="e.logoUrl; else iconF" [src]="e.logoUrl" [alt]="e.nome" loading="lazy" />
+              <ng-template #iconF><ion-icon name="shield-outline"></ion-icon></ng-template>
+            </div>
+            <div class="eq-info">
+              <div class="eq-nome">{{ e.nome }}</div>
+              <div class="eq-meta" *ngIf="e.cidade">{{ e.cidade }}</div>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #emptyEq>
+          <div class="empty">
+            <ion-icon name="shield-outline"></ion-icon>
+            <p>Cadastre as equipes que vão disputar esta categoria.</p>
+            <ion-button
+              color="primary"
+              [routerLink]="['/app/campeonato', campeonatoId, 'categoria', categoriaId, 'equipes']"
+            >
+              <ion-icon slot="start" name="add-outline"></ion-icon>
+              Cadastrar equipes
+            </ion-button>
+          </div>
+        </ng-template>
+      </ng-container>
+    </section>
+  </ng-container>
+</ion-content>

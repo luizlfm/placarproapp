@@ -1,0 +1,39 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>Exibição</ion-title>
+    <ion-buttons slot="end">
+      <ion-button strong="true" [disabled]="salvando" (click)="salvar()">Salvar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="exib-content">
+  <p class="exib-intro">Controle o que aparece na página pública do campeonato para os visitantes.</p>
+
+  <div class="exib-card">
+    <div class="exib-row">
+      <div class="row-info">
+        <ion-icon name="person-outline"></ion-icon>
+        <div>
+          <h4>Exibir nomes dos jogadores</h4>
+          <p>Mostra os nomes nas escalações, rankings e estatísticas.</p>
+        </div>
+      </div>
+      <ion-toggle [(ngModel)]="exibirNomes"></ion-toggle>
+    </div>
+
+    <div class="exib-row">
+      <div class="row-info">
+        <ion-icon name="calendar-outline"></ion-icon>
+        <div>
+          <h4>Exibir datas dos jogos</h4>
+          <p>Mostra dia/horário das partidas (mantém só o placar caso desligue).</p>
+        </div>
+      </div>
+      <ion-toggle [(ngModel)]="exibirDatas"></ion-toggle>
+    </div>
+  </div>
+</ion-content>

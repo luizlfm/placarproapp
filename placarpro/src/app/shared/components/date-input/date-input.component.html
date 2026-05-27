@@ -1,0 +1,55 @@
+<!-- Input "fake": readonly, mostra valor formatado em BR e abre o picker.
+     Em mobile o `[trigger]` do ion-popover não dispara via click no
+     ion-input readonly (Ionic 8 não propaga click do shadow DOM). Então
+     chamamos `present()` explicitamente no (click). -->
+<ion-input
+  [id]="uid + '-trigger'"
+  fill="outline"
+  labelPlacement="stacked"
+  [label]="label"
+  [placeholder]="placeholder || (mode === 'time' ? 'Selecionar horário' : 'Selecionar data')"
+  [value]="displayValue"
+  [disabled]="disabled"
+  readonly="true"
+  class="dt-input"
+  (click)="!disabled && popover?.present()"
+>
+  <ion-icon
+    *ngIf="!value"
+    slot="end"
+    [name]="mode === 'time' ? 'time-outline' : 'calendar-outline'"
+    aria-hidden="true"
+  ></ion-icon>
+  <ion-icon
+    *ngIf="value && !disabled"
+    slot="end"
+    name="close-circle"
+    class="dt-clear"
+    role="button"
+    tabindex="0"
+    aria-label="Limpar"
+    (click)="limpar($event)"
+  ></ion-icon>
+</ion-input>
+
+<!-- Popover mínimo — sem keepContentsMounted (que estava deixando o
+     ion-datetime sempre montado no DOM e interferindo no layout dos
+     ion-input irmãos do form pai). -->
+<ion-popover [trigger]="uid + '-trigger'" class="dt-popover">
+  <ng-template>
+    <ion-datetime
+      color="primary"
+      [presentation]="presentation"
+      [locale]="locale"
+      [value]="value || null"
+      [min]="min || null"
+      [max]="max || null"
+      [showDefaultButtons]="true"
+      doneText="OK"
+      cancelText="Cancelar"
+      firstDayOfWeek="0"
+      class="dt-picker"
+      (ionChange)="onIonChange($event); fechar()"
+    ></ion-datetime>
+  </ng-template>
+</ion-popover>

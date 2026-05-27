@@ -1,0 +1,181 @@
+.bg {
+  --background: var(--placar-bg);
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 22px;
+  --padding-bottom: 24px;
+}
+
+/* ────────────────────────────────────────────────────
+   Equipes + placar (mandante em cima, visitante embaixo)
+   ──────────────────────────────────────────────────── */
+.placar-edit {
+  background: var(--placar-card-bg);
+  border-radius: 12px;
+  padding: 18px 18px 14px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.button {
+
+  --border-radius: 12px;
+  --padding-start: 18px;
+  --padding-end: 18px;
+  height: 56px;
+  align-self: flex-start;
+  font-weight: 600;
+  margin-top: 6px;
+  width: 100% !important;
+}
+.equipe-row {
+  display: grid;
+  grid-template-columns: 90px 48px minmax(0, 1fr) 80px;
+  align-items: end;
+  gap: 10px;
+
+  @media (max-width: 540px) {
+    grid-template-columns: 48px minmax(0, 1fr) 70px;
+    /* Badge esconde no mobile (o escudo + nome já indicam o lado) */
+    .badge-lado { display: none; }
+  }
+}
+
+.badge-lado {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--ion-color-primary);
+  background: rgba(28, 46, 61, 0.08);
+  border-radius: 6px;
+  padding: 6px 8px;
+  text-align: center;
+  line-height: 1;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Escudo circular ao lado do select */
+.escudo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(28, 46, 61, 0.06);
+  border: 1px solid var(--placar-divider);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--ion-color-primary);
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  ion-icon {
+    font-size: 22px;
+  }
+}
+
+.select-equipe { min-width: 0; }
+
+.gols-input {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  text-align: center;
+  font-weight: 700;
+}
+
+/* Separador entre mandante e visitante */
+.separador {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+
+  .linha {
+    flex: 1;
+    height: 1px;
+    background: var(--placar-divider);
+  }
+
+  .vs {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--placar-text-muted);
+    line-height: 1;
+  }
+}
+
+/* ────────────────────────────────────────────────────
+   Demais campos
+   ──────────────────────────────────────────────────── */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.row-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px;
+  gap: 10px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rodada-input {
+  --padding-start: 12px;
+  --padding-end: 12px;
+}
+
+.data-hora-row {
+  position: relative;
+
+  ion-input { width: 100%; }
+
+  .ic-cal {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: var(--placar-text-muted);
+    pointer-events: none;
+  }
+}
+
+/* ────────────────────────────────────────────────────
+   Footer
+   ──────────────────────────────────────────────────── */
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  .spacer { flex: 1; }
+
+  ion-button {
+    --border-radius: 10px;
+    font-weight: 600;
+    text-transform: none;
+    margin: 0;
+  }
+
+  ion-button[color="primary"] {
+    --padding-start: 28px;
+    --padding-end: 28px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+}

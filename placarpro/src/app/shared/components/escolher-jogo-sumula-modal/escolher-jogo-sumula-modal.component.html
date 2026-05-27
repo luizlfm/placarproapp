@@ -1,0 +1,120 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>Imprimir súmula</ion-title>
+    <ion-buttons slot="end">
+      <ion-button
+        strong="true"
+        [disabled]="qtdSelecionadas === 0"
+        (click)="confirmar()"
+      >
+        Imprimir
+        <span *ngIf="qtdSelecionadas > 0" class="qt-badge">{{ qtdSelecionadas }}</span>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar color="primary">
+    <ion-searchbar
+      [(ngModel)]="busca"
+      placeholder="Buscar por equipe ou fase..."
+      [debounce]="200"
+      mode="ios"
+    ></ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ej-content">
+  <p class="ej-hint">
+    <ion-icon name="information-circle-outline"></ion-icon>
+    Toque nas partidas pra selecionar (várias) e depois clique em <strong>Imprimir</strong>
+  </p>
+
+  <ng-container *ngIf="grupos$ | async as grupos">
+    <ng-container *ngIf="filtrar(grupos) as gruposFiltrados">
+
+      <!-- Barra de ações: selecionar todos / limpar -->
+      <div class="ej-acoes" *ngIf="gruposFiltrados.length > 0">
+        <button type="button" class="ej-acao-btn" (click)="selecionarTodas(gruposFiltrados)">
+          <ion-icon name="checkmark-done-outline"></ion-icon>
+          Selecionar todas
+        </button>
+        <button
+          type="button"
+          class="ej-acao-btn limpar"
+          [disabled]="qtdSelecionadas === 0"
+          (click)="limparSelecao()"
+        >
+          <ion-icon name="close-outline"></ion-icon>
+          Limpar ({{ qtdSelecionadas }})
+        </button>
+      </div>
+
+      <div class="ej-vazio" *ngIf="gruposFiltrados.length === 0">
+        <ion-icon name="calendar-outline"></ion-icon>
+        <p *ngIf="!busca">Nenhum jogo cadastrado nesta categoria.</p>
+        <p *ngIf="busca">Nenhum jogo encontrado pra "{{ busca }}".</p>
+      </div>
+
+      <div class="ej-grupo" *ngFor="let g of gruposFiltrados; trackBy: trackByGrupo">
+        <h3 class="ej-fase">{{ g.fase }}</h3>
+        <div class="ej-lista">
+          <button
+            *ngFor="let l of g.linhas; trackBy: trackByLinha"
+            type="button"
+            class="ej-card"
+            [class.selecionada]="isSelecionada(l.jogo.id)"
+            (click)="toggle(l.jogo.id)"
+          >
+            <!-- Checkbox visual à esquerda -->
+            <span class="ej-check" [class.on]="isSelecionada(l.jogo.id)">
+              <ion-icon [name]="isSelecionada(l.jogo.id) ? 'checkbox' : 'square-outline'"></ion-icon>
+            </span>
+
+            <div class="ej-time mandante">
+              <div class="ej-logo">
+                <img *ngIf="l.mandante?.logoUrl; else iconM" [src]="l.mandante!.logoUrl" [alt]="l.mandante?.nome" />
+                <ng-template #iconM><ion-icon name="shield-outline"></ion-icon></ng-template>
+              </div>
+              <div class="ej-nome">{{ l.mandante?.nome || '?' }}</div>
+            </div>
+
+            <div class="ej-placar">
+              <div class="ej-vs">×</div>
+              <div class="ej-info" *ngIf="l.dataBr || l.jogo.local">
+                <span *ngIf="l.dataBr" class="ej-data">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  {{ l.dataBr }}
+                </span>
+                <span *ngIf="l.jogo.local" class="ej-local">
+                  <ion-icon name="location-outline"></ion-icon>
+                  {{ l.jogo.local }}
+                </span>
+              </div>
+            </div>
+
+            <div class="ej-time visitante">
+              <div class="ej-logo">
+                <img *ngIf="l.visitante?.logoUrl; else iconV" [src]="l.visitante!.logoUrl" [alt]="l.visitante?.nome" />
+                <ng-template #iconV><ion-icon name="shield-outline"></ion-icon></ng-template>
+              </div>
+              <div class="ej-nome">{{ l.visitante?.nome || '?' }}</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+    </ng-container>
+  </ng-container>
+</ion-content>
+
+<!-- Footer com botão de imprimir grande (mais visível em mobile) -->
+<ion-footer *ngIf="qtdSelecionadas > 0">
+  <ion-toolbar>
+    <ion-button expand="block" color="primary" (click)="confirmar()">
+      <ion-icon slot="start" name="print-outline"></ion-icon>
+      Imprimir {{ qtdSelecionadas }} {{ qtdSelecionadas === 1 ? 'súmula' : 'súmulas' }}
+    </ion-button>
+  </ion-toolbar>
+</ion-footer>

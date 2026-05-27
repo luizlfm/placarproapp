@@ -1,0 +1,86 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Arbitragem</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="novo()" aria-label="Novo árbitro">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <section class="card form-card" *ngIf="abrirForm" [formGroup]="form">
+      <div class="form-head">
+        <h3>{{ editandoId ? 'Editar árbitro' : 'Novo árbitro' }}</h3>
+        <ion-button fill="clear" color="medium" (click)="fechar()" aria-label="Fechar">
+          <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="field-group">
+        <ion-input fill="outline" label="Nome do árbitro" labelPlacement="stacked" placeholder="Ex: Carlos Eugênio Simon" formControlName="nome" required></ion-input>
+        <div class="row-2">
+          <ion-input
+            fill="outline"
+            label="Documento (CPF)"
+            labelPlacement="stacked"
+            inputmode="numeric"
+            placeholder="000.000.000-00"
+            mask="cpf"
+            formControlName="documento"
+          ></ion-input>
+          <ion-input
+            fill="outline"
+            label="Telefone"
+            labelPlacement="stacked"
+            type="tel"
+            inputmode="numeric"
+            placeholder="(11) 99999-9999"
+            mask="telefone"
+            formControlName="telefone"
+          ></ion-input>
+        </div>
+        <ion-input fill="outline" label="Federação/Associação" labelPlacement="stacked" placeholder="Ex: CBF / FPF" formControlName="federacao"></ion-input>
+      </div>
+
+      <ion-button expand="block" color="primary" (click)="salvar()" [disabled]="salvando" class="btn-save">
+        Salvar
+      </ion-button>
+    </section>
+
+    <ng-container *ngIf="arbitros$ | async as lista">
+      <div class="counter" *ngIf="lista.length > 0">{{ lista.length }} árbitro(s)</div>
+
+      <div class="lista-card" *ngIf="lista.length > 0; else empty">
+        <div *ngFor="let a of lista; trackBy: trackById" class="arbitro-row" (click)="editar(a)">
+          <div class="ic"><ion-icon name="person-outline"></ion-icon></div>
+          <div class="info">
+            <div class="nome">{{ a.nome }}</div>
+            <div class="meta">
+              <span *ngIf="a.federacao">{{ a.federacao }}</span>
+              <span *ngIf="a.federacao && a.telefone"> · </span>
+              <span *ngIf="a.telefone">{{ a.telefone }}</span>
+            </div>
+          </div>
+          <ion-button fill="clear" color="medium" (click)="remover(a, $event)" aria-label="Remover">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
+
+      <ng-template #empty>
+        <div *ngIf="!abrirForm" class="empty">
+          <ion-icon name="person-outline"></ion-icon>
+          <h2>Nenhum árbitro cadastrado</h2>
+          <p>Cadastre os árbitros e auxiliares para escalar nas partidas.</p>
+          <button class="empty-cta" type="button" (click)="novo()" aria-label="Novo árbitro">
+            <ion-icon name="add"></ion-icon>
+            <span>Novo árbitro</span>
+          </button>
+        </div>
+      </ng-template>
+    </ng-container>
+  </div>
+</ion-content>

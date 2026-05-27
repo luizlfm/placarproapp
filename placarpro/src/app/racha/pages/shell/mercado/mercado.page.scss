@@ -1,0 +1,224 @@
+@import '../../../styles/racha-shared';
+
+.mc-page { padding-bottom: 40px; }
+
+.mc-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 30vh;
+}
+
+/* ============ Market cap row ============ */
+.mc-cap {
+  background: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 100%);
+  color: #fff;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 14px rgba(28, 46, 61, 0.18);
+}
+
+.mc-cap-row {
+  display: grid;
+  grid-template-columns: 32px 1fr 1fr;
+  gap: 16px;
+  align-items: center;
+
+  > ion-icon {
+    font-size: 28px;
+    color: #95d63f;
+  }
+
+  .mc-cap-info {
+    .mc-cap-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 2px;
+    }
+    .mc-cap-valor {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+}
+
+/* ============ Tabela ============ */
+.mc-tabela {
+  background: #fff;
+  border: 1px solid var(--rp-border, #e5e7eb);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.mc-thead {
+  display: grid;
+  grid-template-columns: 30px 1fr 90px 80px;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border-bottom: 1px solid var(--rp-border, #e5e7eb);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: var(--rp-text-muted, #6b7280);
+  text-transform: uppercase;
+
+  .mc-th.valor, .mc-th.var { text-align: right; }
+}
+
+.mc-row {
+  display: grid;
+  grid-template-columns: 30px 1fr 90px 80px;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #f3f4f6;
+  align-items: center;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: #fafbfc; }
+}
+
+.mc-pos {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--rp-text-muted, #6b7280);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.mc-nome-col {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+
+  .mc-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(124, 198, 29, 0.16), rgba(124, 198, 29, 0.06));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+    ion-icon { font-size: 18px; color: var(--rp-lime-shade, #5fa118); }
+  }
+
+  .mc-nome-info {
+    min-width: 0;
+    strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1C2E3D;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
+
+.mc-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 3px;
+  font-size: 10.5px;
+  color: var(--rp-text-muted, #6b7280);
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    ion-icon { font-size: 11px; }
+  }
+  .mc-stat-warn { color: #ef4444; }
+}
+
+.mc-valor {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--rp-navy, #1C2E3D);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.mc-var {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  font-size: 11.5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  padding: 3px 6px;
+  border-radius: 6px;
+  justify-self: end;
+  width: fit-content;
+
+  ion-icon { font-size: 12px; }
+
+  &.alta {
+    color: #16a34a;
+    background: rgba(34, 197, 94, 0.10);
+  }
+  &.baixa {
+    color: #dc2626;
+    background: rgba(239, 68, 68, 0.10);
+  }
+  &.neutra {
+    color: var(--rp-text-muted, #6b7280);
+    background: rgba(148, 163, 184, 0.10);
+  }
+}
+
+/* ============ Fórmula (footer expansível) ============ */
+.mc-formula {
+  margin-top: 16px;
+  background: #f9fafb;
+  border: 1px dashed rgba(28, 46, 61, 0.12);
+  border-radius: 10px;
+  padding: 12px 14px;
+
+  summary {
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--rp-text-muted, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+    list-style: none;
+
+    ion-icon { font-size: 14px; }
+    &::-webkit-details-marker { display: none; }
+  }
+
+  p {
+    margin: 10px 0 0;
+    font-size: 12.5px;
+    color: var(--rp-text-muted, #4b5563);
+    line-height: 1.5;
+
+    strong { color: #1C2E3D; font-weight: 800; }
+  }
+
+  .mc-formula-nota {
+    font-size: 11px;
+    font-style: italic;
+    color: #9ca3af;
+  }
+}

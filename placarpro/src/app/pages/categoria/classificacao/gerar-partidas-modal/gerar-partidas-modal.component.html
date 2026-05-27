@@ -1,0 +1,83 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Gerar partidas</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <div class="wrap">
+    <p class="hint">
+      Cria automaticamente o calendário de jogos em <strong>{{ fase.nome }}</strong>
+      no formato round-robin (todos contra todos).
+    </p>
+
+    <div class="info-card" *ngIf="!carregando">
+      <div class="info-row">
+        <span class="lbl">Equipes na categoria</span>
+        <strong>{{ equipes.length }}</strong>
+      </div>
+      <div class="info-row" *ngIf="grupos.length > 0">
+        <span class="lbl">Grupos</span>
+        <strong>{{ grupos.length }}</strong>
+      </div>
+      <div class="info-row destaque">
+        <span class="lbl">Partidas que serão criadas</span>
+        <strong>{{ totalPartidas }}</strong>
+      </div>
+    </div>
+
+    <section class="card" *ngIf="!carregando">
+      <h3>Configuração</h3>
+      <div class="opt">
+        <span>Turnos</span>
+        <div class="seg">
+          <button type="button" [class.ativo]="turnos === 1" (click)="turnos = 1">
+            Apenas ida
+          </button>
+          <button type="button" [class.ativo]="turnos === 2" (click)="turnos = 2">
+            Ida e volta
+          </button>
+        </div>
+      </div>
+
+      <label class="check" *ngIf="grupos.length > 0">
+        <input type="checkbox" [(ngModel)]="porGrupos" />
+        <span>Gerar separadamente por grupo</span>
+      </label>
+
+      <label class="check">
+        <input type="checkbox" [(ngModel)]="apagarExistentes" />
+        <span>Apagar partidas existentes desta fase antes de gerar</span>
+      </label>
+    </section>
+
+    <div *ngIf="carregando" class="loading">
+      <ion-spinner></ion-spinner>
+    </div>
+  </div>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <div class="footer-actions">
+      <ion-button fill="clear" color="medium" (click)="dismiss()" [disabled]="loading">
+        Cancelar
+      </ion-button>
+      <div class="spacer"></div>
+      <ion-button
+        color="primary"
+        (click)="confirmar()"
+        [disabled]="loading || carregando || totalPartidas === 0"
+      >
+        <ion-spinner *ngIf="loading" name="dots" slot="start"></ion-spinner>
+        <ion-icon *ngIf="!loading" slot="start" name="flash-outline"></ion-icon>
+        Gerar {{ totalPartidas }} partida{{ totalPartidas === 1 ? '' : 's' }}
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

@@ -1,0 +1,273 @@
+<ion-header class="no-print">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Carteirinhas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button class="btn-painel" (click)="togglePainel()" aria-label="Opções">
+        <ion-icon slot="icon-only" name="options-outline"></ion-icon>
+      </ion-button>
+      <ion-button (click)="imprimir()" [disabled]="cartoes.length === 0" aria-label="Imprimir">
+        <ion-icon slot="start" name="print-outline"></ion-icon>
+        Imprimir
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="cp-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <div class="cp-layout" *ngIf="!loading" [class.painel-fechado]="!painelAberto">
+    <!-- ============ Painel lateral de configurações (no-print) ============ -->
+    <aside class="cp-painel no-print">
+      <div class="cp-painel-head">
+        <h2>Configurações</h2>
+        <button type="button" class="cp-painel-toggle" (click)="togglePainel()" aria-label="Recolher">
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="cp-painel-body">
+        <!-- Tamanho -->
+        <label class="campo">
+          <span class="campo-label">Tamanho</span>
+          <select class="campo-select" [(ngModel)]="tamanhoId">
+            <option *ngFor="let t of tamanhos" [value]="t.id">
+              {{ t.label }} — {{ t.descricao }}
+            </option>
+          </select>
+        </label>
+
+        <!-- Nome do campeonato -->
+        <label class="campo">
+          <span class="campo-label">Nome do campeonato</span>
+          <input class="campo-input" type="text" [(ngModel)]="nomeCampeonato" />
+        </label>
+
+        <!-- Subtítulo / Categoria -->
+        <label class="campo">
+          <span class="campo-label">Subtítulo / Categoria</span>
+          <input class="campo-input" type="text" [(ngModel)]="subtitulo" />
+        </label>
+
+        <!-- Organização -->
+        <label class="campo">
+          <span class="campo-label">Organização (rodapé)</span>
+          <input
+            class="campo-input"
+            type="text"
+            placeholder="Ex: JOGA10SPORTS"
+            [(ngModel)]="organizacao"
+          />
+        </label>
+
+        <!-- Toggles -->
+        <div class="campo-check">
+          <span>Incluir escudo da equipe</span>
+          <ion-checkbox [(ngModel)]="incluirEscudo"></ion-checkbox>
+        </div>
+        <div class="campo-check">
+          <span>Imprimir verso (clube/endereço/contato)</span>
+          <ion-checkbox [(ngModel)]="incluirVerso"></ion-checkbox>
+        </div>
+
+        <!-- Dados do verso (só quando ativado) -->
+        <ng-container *ngIf="incluirVerso">
+          <label class="campo">
+            <span class="campo-label">Endereço do clube</span>
+            <input class="campo-input" type="text" [(ngModel)]="endereco" />
+          </label>
+          <label class="campo">
+            <span class="campo-label">Cidade</span>
+            <input class="campo-input" type="text" [(ngModel)]="cidade" />
+          </label>
+          <label class="campo">
+            <span class="campo-label">Telefone</span>
+            <input class="campo-input" type="tel" inputmode="numeric" mask="telefone" placeholder="(11) 99999-9999" [(ngModel)]="telefone" />
+          </label>
+        </ng-container>
+
+        <!-- Lista de equipes -->
+        <div class="equipes-bloco">
+          <div class="equipes-head">
+            <span class="campo-label">Equipes ({{ qtdMarcadas() }}/{{ equipes.length }})</span>
+            <button type="button" class="link" (click)="marcarTodas()">
+              {{ qtdMarcadas() === equipes.length ? 'Desmarcar todas' : 'Marcar todas' }}
+            </button>
+          </div>
+          <div class="equipes-lista">
+            <button
+              *ngFor="let eq of equipes; trackBy: trackByEquipe"
+              type="button"
+              class="equipe-item"
+              [class.marcada]="isMarcada(eq)"
+              (click)="toggleEquipe(eq)"
+            >
+              <span class="eq-nome">{{ labelEquipe(eq) }}</span>
+              <ion-icon
+                [name]="isMarcada(eq) ? 'checkbox' : 'square-outline'"
+              ></ion-icon>
+            </button>
+            <div class="equipes-vazio" *ngIf="equipes.length === 0">
+              Nenhuma equipe cadastrada nesta categoria.
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============ Área de preview (imprime) ============ -->
+    <main class="cp-main">
+      <div class="cp-aviso no-print" *ngIf="cartoes.length === 0">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        Selecione pelo menos uma equipe no painel ao lado para gerar carteirinhas.
+      </div>
+
+      <ng-container *ngIf="cartoes.length > 0">
+        <!-- ============ Sheet FRENTES ============ -->
+        <div class="cp-sheet">
+          <div class="cp-sheet-title no-print">
+            <ion-icon name="document-outline"></ion-icon>
+            Frente das carteirinhas ({{ cartoes.length }})
+          </div>
+          <div class="cp-grid">
+            <div
+              *ngFor="let card of cartoes; trackBy: trackByCartao"
+              class="cart"
+              [style.width.mm]="larguraMm()"
+              [style.height.mm]="alturaMm()"
+            >
+              <!-- HEADER -->
+              <div class="cart-header">
+                <div class="cart-logo">
+                  <img *ngIf="campeonato?.logoUrl" [src]="campeonato!.logoUrl" alt="" />
+                </div>
+                <div class="cart-titulo">
+                  <div class="cart-camp">{{ nomeCampeonato | uppercase }}</div>
+                  <div class="cart-sub" *ngIf="subtitulo">{{ subtitulo | uppercase }}</div>
+                </div>
+                <div class="cart-logo">
+                  <img *ngIf="incluirEscudo && card.equipe?.logoUrl" [src]="card.equipe!.logoUrl" alt="" />
+                </div>
+              </div>
+
+              <!-- FAIXA PRETA -->
+              <div class="cart-faixa">CREDENCIAL DO ATLETA</div>
+
+              <!-- CORPO -->
+              <div class="cart-corpo">
+                <div class="cart-foto">
+                  <img *ngIf="card.jogador.fotoUrl; else fotoPh" [src]="card.jogador.fotoUrl" alt="" />
+                  <ng-template #fotoPh>
+                    <span class="cart-foto-ph">COLOQUE A FOTO AQUI</span>
+                  </ng-template>
+                </div>
+                <div class="cart-tabela">
+                  <div class="cart-linha">
+                    <span class="cart-lab">NOME:</span>
+                    <span class="cart-val">{{ card.jogador.nome | uppercase }}</span>
+                  </div>
+                  <div class="cart-linha">
+                    <span class="cart-lab">CLUBE:</span>
+                    <span class="cart-val">{{ (card.equipe?.nome ?? '') | uppercase }}</span>
+                  </div>
+                  <div class="cart-linha">
+                    <span class="cart-lab">CATEGORIA:</span>
+                    <span class="cart-val">{{ subtitulo | uppercase }}</span>
+                  </div>
+                  <div class="cart-linha">
+                    <span class="cart-lab">MATRICULA:</span>
+                    <span class="cart-val">{{ card.jogador.numeroCamisa ?? '' }}</span>
+                  </div>
+                  <div class="cart-linha">
+                    <span class="cart-lab">NASCIMENTO:</span>
+                    <span class="cart-val">{{ formatarData(card.jogador.dataNascimento) }}</span>
+                  </div>
+                  <div class="cart-linha">
+                    <span class="cart-lab">RG:</span>
+                    <span class="cart-val">{{ card.jogador.documento ?? '' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- RODAPÉ -->
+              <div class="cart-rodape">
+                ORGANIZAÇÃO {{ (organizacao || 'PLACARPRO') | uppercase }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ Sheet VERSOS (se ativo) ============ -->
+        <div class="cp-sheet" *ngIf="incluirVerso">
+          <div class="cp-sheet-title no-print">
+            <ion-icon name="copy-outline"></ion-icon>
+            Verso das carteirinhas
+          </div>
+          <div class="cp-grid mirror">
+            <div
+              *ngFor="let card of cartoes; trackBy: trackByCartao"
+              class="cart"
+              [style.width.mm]="larguraMm()"
+              [style.height.mm]="alturaMm()"
+            >
+              <div class="cart-header">
+                <div class="cart-logo">
+                  <img *ngIf="campeonato?.logoUrl" [src]="campeonato!.logoUrl" alt="" />
+                </div>
+                <div class="cart-titulo">
+                  <div class="cart-camp">{{ nomeCampeonato | uppercase }}</div>
+                  <div class="cart-sub" *ngIf="subtitulo">{{ subtitulo | uppercase }}</div>
+                </div>
+                <div class="cart-logo">
+                  <img *ngIf="incluirEscudo && card.equipe?.logoUrl" [src]="card.equipe!.logoUrl" alt="" />
+                </div>
+              </div>
+
+              <div class="cart-verso-corpo">
+                <div class="cart-verso-bloco">
+                  <div class="vb-row">
+                    <div class="vb-label">NOME DO CLUBE</div>
+                    <div class="vb-val">{{ (card.equipe?.nome ?? '') | uppercase }}</div>
+                  </div>
+                  <div class="vb-row">
+                    <div class="vb-label">ENDEREÇO</div>
+                    <div class="vb-val">{{ endereco | uppercase }}</div>
+                  </div>
+                  <div class="vb-row">
+                    <div class="vb-label">CIDADE</div>
+                    <div class="vb-val">{{ (cidade || card.equipe?.cidade || '') | uppercase }}</div>
+                  </div>
+                  <div class="vb-row">
+                    <div class="vb-label">TELEFONE</div>
+                    <div class="vb-val">{{ telefone }}</div>
+                  </div>
+                </div>
+                <div class="cart-assinaturas">
+                  <div class="ass-col">
+                    <div class="ass-linha"></div>
+                    <div class="ass-label">ASS. PRESIDENTE</div>
+                  </div>
+                  <div class="ass-col">
+                    <div class="ass-linha"></div>
+                    <div class="ass-label">ASS. ORGANIZAÇÃO</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="cart-rodape">
+                ORGANIZAÇÃO {{ (organizacao || 'PLACARPRO') | uppercase }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </main>
+  </div>
+</ion-content>

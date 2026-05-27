@@ -1,0 +1,13 @@
+<ion-content class="ct-content">
+  <div class="ct-list">
+    <button
+      *ngFor="let t of tamanhos"
+      class="ct-opt"
+      type="button"
+      (click)="escolher(t)"
+    >
+      <div class="ct-label">{{ t.label }}</div>
+      <div class="ct-desc">{{ t.descricao }}</div>
+    </button>
+  </div>
+</ion-content>

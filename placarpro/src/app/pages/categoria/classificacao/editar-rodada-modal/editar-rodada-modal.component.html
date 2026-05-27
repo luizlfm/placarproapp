@@ -1,0 +1,118 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button
+        (click)="rodadaSelecionada ? voltarParaLista() : dismiss()"
+        [attr.aria-label]="rodadaSelecionada ? 'Voltar' : 'Fechar'"
+      >
+        <ion-icon
+          slot="icon-only"
+          [name]="rodadaSelecionada ? 'arrow-back-outline' : 'close-outline'"
+        ></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ rodadaSelecionada ? 'Rodada ' + rodadaSelecionada.numero : 'Editar Rodada' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <div class="wrap" *ngIf="!carregando">
+    <!-- Lista de rodadas -->
+    <ng-container *ngIf="!rodadaSelecionada">
+      <p class="hint">
+        Escolha uma rodada para aplicar mudanças (data/hora ou local) em lote em
+        todos os jogos dela.
+      </p>
+
+      <div class="empty" *ngIf="rodadas.length === 0">
+        <p>Esta fase ainda não tem rodadas com partidas.</p>
+      </div>
+
+      <div class="rodadas-card" *ngIf="rodadas.length > 0">
+        <div
+          class="rod-row"
+          *ngFor="let r of rodadas; trackBy: trackByNumero"
+        >
+          <button type="button" class="rod-main" (click)="selecionar(r)">
+            <div class="rod-num">{{ r.numero }}</div>
+            <div class="rod-info">
+              <strong>Rodada {{ r.numero }}</strong>
+              <span>
+                {{ r.qtdJogos }} jogo{{ r.qtdJogos === 1 ? '' : 's' }}
+                <span *ngIf="r.dataHoraComum"> · {{ r.dataHoraComum }}</span>
+                <span *ngIf="r.localComum"> · {{ r.localComum }}</span>
+              </span>
+            </div>
+            <ion-icon class="chev" name="chevron-forward-outline"></ion-icon>
+          </button>
+          <ion-button
+            fill="clear"
+            color="danger"
+            size="small"
+            (click)="removerRodada(r)"
+            aria-label="Remover rodada inteira"
+            [disabled]="loading"
+          >
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Detalhe da rodada selecionada -->
+    <ng-container *ngIf="rodadaSelecionada">
+      <div class="info-card">
+        <strong>{{ rodadaSelecionada.qtdJogos }} jogo(s)</strong>
+        <span>em {{ fase.nome }}</span>
+      </div>
+
+      <section class="card">
+        <h3>Data e hora</h3>
+        <label class="check-row">
+          <input type="checkbox" [(ngModel)]="aplicarData" />
+          <span>Aplicar mesma data/hora em todos os jogos</span>
+        </label>
+        <app-date-input
+          label=""
+          mode="date-time"
+          [(ngModel)]="novaDataHora"
+          [disabled]="!aplicarData"
+        ></app-date-input>
+      </section>
+
+      <section class="card">
+        <h3>Local</h3>
+        <label class="check-row">
+          <input type="checkbox" [(ngModel)]="aplicarLocal" />
+          <span>Aplicar mesmo local em todos os jogos</span>
+        </label>
+        <input
+          type="text"
+          class="ipt"
+          [(ngModel)]="novoLocal"
+          placeholder="Ex: Ginásio Municipal"
+          [disabled]="!aplicarLocal"
+        />
+      </section>
+    </ng-container>
+  </div>
+
+  <div *ngIf="carregando" class="loading">
+    <ion-spinner></ion-spinner>
+  </div>
+</ion-content>
+
+<ion-footer *ngIf="rodadaSelecionada">
+  <ion-toolbar>
+    <div class="footer-actions">
+      <ion-button fill="clear" color="medium" (click)="voltarParaLista()" [disabled]="loading">
+        Cancelar
+      </ion-button>
+      <div class="spacer"></div>
+      <ion-button color="primary" (click)="salvar()" [disabled]="loading">
+        <ion-spinner *ngIf="loading" name="dots" slot="start"></ion-spinner>
+        Aplicar
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

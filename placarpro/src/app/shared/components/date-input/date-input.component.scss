@@ -1,0 +1,29 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.dt-input {
+  width: 100%;
+  cursor: pointer;
+  --background: #fff;
+
+  ion-icon[slot='end'] {
+    color: var(--ion-color-medium, #6b6b70);
+    font-size: 20px;
+    margin-inline-start: 6px;
+  }
+
+  .dt-clear {
+    cursor: pointer;
+    color: var(--ion-color-medium, #6b6b70);
+
+    &:hover {
+      color: var(--ion-color-danger, #eb445a);
+    }
+  }
+}
+
+/* Estilo do ion-modal/ion-datetime renderizado em overlay vive em
+   `src/global.scss` (busque `dt-modal`) — overlays são montados fora
+   do shadow DOM deste componente. */

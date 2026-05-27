@@ -1,0 +1,190 @@
+<ion-content class="es-content">
+  <header class="es-header">
+    <a class="es-brand" routerLink="/">
+      <img src="assets/images/logo3.png" alt="PlacarPro" class="es-brand-img" />
+    </a>
+    <button class="es-sair" type="button" (click)="sair()">
+      <ion-icon name="log-out-outline"></ion-icon>
+      Sair
+    </button>
+  </header>
+
+  <div class="es-page">
+    <!-- ═════════════ Seção 1: Minhas equipes (convites) ═════════════ -->
+    <section class="es-secao" *ngIf="cards.length > 0 || loadingConvites">
+      <div class="es-secao-head">
+        <h1>Minhas equipes</h1>
+        <p>
+          Campeonatos onde você recebeu um link de inscrição. Abra o campeonato
+          e clique em <strong>"Editar minha equipe"</strong> no menu lateral
+          para preencher ou alterar os atletas.
+        </p>
+      </div>
+
+      <div class="es-loading" *ngIf="loadingConvites">
+        <ion-spinner name="dots"></ion-spinner>
+      </div>
+
+      <div class="es-grid" *ngIf="!loadingConvites && cards.length > 0">
+        <div
+          *ngFor="let c of cards; trackBy: trackByConvite"
+          class="es-card"
+        >
+          <div
+            class="es-card-cover"
+            [style.backgroundImage]="(c.campeonato?.capaUrl || c.campeonato?.bannerUrl)
+              ? 'url(' + (c.campeonato?.capaUrl || c.campeonato?.bannerUrl) + ')'
+              : null"
+          >
+            <div class="es-card-logo">
+              <img
+                *ngIf="c.campeonato?.logoUrl; else iconCamp"
+                [src]="c.campeonato!.logoUrl"
+                [alt]="c.convite.tituloCampeonato || ''"
+              />
+              <ng-template #iconCamp>
+                <ion-icon name="trophy-outline"></ion-icon>
+              </ng-template>
+            </div>
+          </div>
+
+          <div class="es-card-body">
+            <div class="es-card-camp">
+              {{ c.convite.tituloCampeonato || c.campeonato?.titulo || 'Campeonato' }}
+            </div>
+            <div class="es-card-equipe">
+              <ion-icon name="shield-outline"></ion-icon>
+              {{ c.convite.nomeEquipe || 'Equipe' }}
+            </div>
+            <div class="es-card-cat" *ngIf="c.convite.subtituloCampeonato">
+              {{ c.convite.subtituloCampeonato }}
+            </div>
+          </div>
+
+          <div class="es-card-acoes single">
+            <button class="es-btn primary full" type="button" (click)="abrirCampeonatoConvite(c)">
+              <ion-icon name="eye-outline"></ion-icon>
+              Ver campeonato
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════ Seção 2: Todos os campeonatos do sistema ═════════════ -->
+    <section class="es-secao">
+      <div class="es-secao-head">
+        <h1>Campeonatos disponíveis</h1>
+        <p>
+          Explore os campeonatos públicos. Clique no coração para seguir e
+          acompanhar atualizações.
+        </p>
+      </div>
+
+      <!-- Barra de busca -->
+      <div class="es-busca">
+        <ion-icon name="search-outline"></ion-icon>
+        <input
+          type="text"
+          [(ngModel)]="busca"
+          placeholder="Buscar por nome, categoria ou cidade..."
+        />
+        <button *ngIf="busca" type="button" class="es-busca-limpar" (click)="busca = ''">
+          <ion-icon name="close-circle"></ion-icon>
+        </button>
+      </div>
+
+      <!-- Chips de filtro Todos / Que sigo — só aparecem se há pelo menos 1
+           campeonato seguido (do contrário, "Que sigo" sempre seria vazio). -->
+      <div class="es-filtros" *ngIf="podeFiltrarSeguindo">
+        <button
+          type="button"
+          class="es-filtro-chip"
+          [class.active]="!apenasSeguindo"
+          (click)="apenasSeguindo = false"
+        >
+          <ion-icon name="apps-outline"></ion-icon>
+          <span>Todos</span>
+        </button>
+        <button
+          type="button"
+          class="es-filtro-chip"
+          [class.active]="apenasSeguindo"
+          (click)="apenasSeguindo = true"
+        >
+          <ion-icon name="heart"></ion-icon>
+          <span>Que sigo</span>
+          <span class="es-chip-badge">{{ qtdSeguindo }}</span>
+        </button>
+      </div>
+
+      <div class="es-loading" *ngIf="loadingCampeonatos">
+        <ion-spinner name="dots"></ion-spinner>
+      </div>
+
+      <div class="es-vazio" *ngIf="!loadingCampeonatos && campeonatosFiltrados.length === 0">
+        <ion-icon [name]="apenasSeguindo ? 'heart-outline' : 'trophy-outline'"></ion-icon>
+        <h2 *ngIf="apenasSeguindo && !busca">Você ainda não segue nenhum campeonato</h2>
+        <h2 *ngIf="apenasSeguindo && busca">Nada em "Que sigo" para "{{ busca }}"</h2>
+        <h2 *ngIf="!apenasSeguindo && busca">Nenhum campeonato encontrado</h2>
+        <h2 *ngIf="!apenasSeguindo && !busca">Nenhum campeonato disponível</h2>
+        <p *ngIf="apenasSeguindo">Veja todos abaixo e clique no coração pra seguir.</p>
+        <p *ngIf="!apenasSeguindo && busca">Tente buscar por outro termo.</p>
+        <p *ngIf="!apenasSeguindo && !busca">Volte mais tarde — novos campeonatos aparecem assim que forem publicados.</p>
+        <ion-button
+          *ngIf="apenasSeguindo"
+          fill="outline"
+          size="small"
+          (click)="apenasSeguindo = false"
+        >Ver todos</ion-button>
+      </div>
+
+      <div class="es-grid" *ngIf="!loadingCampeonatos && campeonatosFiltrados.length > 0">
+        <div
+          *ngFor="let camp of campeonatosFiltrados; trackBy: trackByCampeonato"
+          class="es-card camp"
+          (click)="abrirCampeonato(camp)"
+        >
+          <div
+            class="es-card-cover"
+            [style.backgroundImage]="(camp.capaUrl || camp.bannerUrl)
+              ? 'url(' + (camp.capaUrl || camp.bannerUrl) + ')'
+              : null"
+          >
+            <button
+              type="button"
+              class="es-seguir-btn"
+              [class.ativo]="segueCampeonato(camp)"
+              (click)="toggleSeguir(camp, $event)"
+              [attr.aria-label]="segueCampeonato(camp) ? 'Deixar de seguir' : 'Seguir'"
+            >
+              <ion-icon [name]="segueCampeonato(camp) ? 'heart' : 'heart-outline'"></ion-icon>
+            </button>
+            <div class="es-card-logo">
+              <img *ngIf="camp.logoUrl; else iconCp" [src]="camp.logoUrl" [alt]="camp.titulo" loading="lazy" />
+              <ng-template #iconCp>
+                <ion-icon name="trophy-outline"></ion-icon>
+              </ng-template>
+            </div>
+          </div>
+
+          <div class="es-card-body">
+            <div class="es-card-camp">{{ camp.titulo }}</div>
+            <div class="es-card-cat" *ngIf="camp.subtitulo">{{ camp.subtitulo }}</div>
+            <div class="es-card-meta" *ngIf="camp.localizacao">
+              <ion-icon name="location-outline"></ion-icon>
+              {{ camp.localizacao }}
+            </div>
+          </div>
+
+          <div class="es-card-acoes single">
+            <button class="es-btn ghost full" type="button">
+              <ion-icon name="eye-outline"></ion-icon>
+              Ver campeonato
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</ion-content>

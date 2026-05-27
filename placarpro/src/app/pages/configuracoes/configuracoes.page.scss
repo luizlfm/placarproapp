@@ -1,0 +1,287 @@
+/* Configurações Gerais — form de edição inline (não popups).
+   Mesmo padrão visual de campeonato/config: cards empilhados com inputs
+   outlined, foto avatar à esquerda + campos à direita, botão Salvar
+   no rodapé. */
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 18px 16px 40px;
+}
+
+.card {
+  background: var(--placar-surface, #fff);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.card-title {
+  margin: 0 0 14px;
+  color: var(--ion-color-primary, #1C2E3D);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+/* Cabeçalho do card com hint à direita ("Campos com * são obrigatórios"). */
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+
+  .card-title { margin: 0; }
+}
+
+.card-hint {
+  font-size: 11px;
+  color: var(--placar-text-muted, #6b6b70);
+  font-weight: 500;
+
+  .req {
+    color: var(--ion-color-danger, #eb4747);
+    font-weight: 700;
+  }
+}
+
+/* ============ Wrapper de cada campo (input + mensagem de erro) ============
+   Cada `field-wrap` agrupa o `ion-input/textarea` e o `.field-error`
+   correspondente. Aplicamos `.has-error` no wrapper quando o controle
+   está invalid+touched — isso permite estilizar o conjunto (borda,
+   espaçamento, animação) sem brigar com a CSS interna do Ionic. */
+.field-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+
+  /* Quando o controle está em erro, a borda outline do ion-input já
+     vira vermelha automaticamente via .ion-invalid.ion-touched (regra
+     em global.scss). Aqui adicionamos um leve shake/destaque pra dar
+     contexto visual extra. */
+  &.has-error {
+    animation: shake 320ms cubic-bezier(.36, .07, .19, .97);
+  }
+}
+
+.field-error {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 12px;
+  padding: 2px 0;
+  font-size: 12px;
+  color: var(--ion-color-danger, #eb4747);
+  font-weight: 500;
+  line-height: 1.3;
+
+  ion-icon {
+    flex-shrink: 0;
+    font-size: 14px;
+  }
+}
+
+/* Animação suave de "shake" pra chamar atenção do user no campo. */
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-3px); }
+  40%, 60% { transform: translateX(3px); }
+}
+
+/* ============ Dados pessoais — avatar + campos lado a lado ============ */
+.dados-row {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+  margin-bottom: 12px;
+
+  @media (max-width: 600px) {
+    gap: 10px;
+  }
+}
+
+.avatar-box {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  background: var(--placar-accent, #7CC61D);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  flex: 0 0 auto;
+  color: #fff;
+  font-family: inherit;
+  transition: transform 100ms ease;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .avatar-inicial {
+    font-size: 40px;
+    font-weight: 800;
+  }
+
+  .avatar-edit {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--ion-color-primary, #1C2E3D);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+    color: #fff;
+
+    ion-icon { font-size: 14px; }
+  }
+
+  &:hover:not(:disabled) { transform: scale(1.02); }
+  &:active:not(:disabled) { transform: scale(0.98); }
+
+  @media (max-width: 600px) {
+    width: 84px;
+    height: 84px;
+    .avatar-inicial { font-size: 32px; }
+    .avatar-edit { width: 26px; height: 26px; ion-icon { font-size: 12px; } }
+  }
+}
+
+.dados-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* ============ Linhas com 2 colunas ============ */
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+
+  /* Em mobile, regra global do `global.scss` já transforma `.row-2` em
+     1 coluna (`grid-template-columns: 1fr !important`). Aqui mantemos só
+     o gap pra não brigar com a regra global. */
+}
+
+/* Hint informativo embaixo do email */
+.email-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 12px;
+  font-size: 12px;
+  color: var(--placar-text-muted, #6b6b70);
+
+  ion-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+}
+
+/* ============ Link rows (Segurança, Suporte) ============ */
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  border-bottom: 1px solid var(--placar-divider, #ececef);
+  width: 100%;
+
+  &:last-child { border-bottom: none; }
+
+  > ion-icon:first-child {
+    flex: 0 0 auto;
+    font-size: 20px;
+    color: var(--placar-text-muted, #6b6b70);
+  }
+
+  .link-text {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    color: var(--placar-text, #2d2d2d);
+    font-weight: 500;
+  }
+
+  .link-action {
+    flex: 0 0 auto;
+    font-size: 13px;
+    color: var(--ion-color-secondary, #7CC61D);
+    font-weight: 600;
+  }
+
+  .link-chev {
+    flex: 0 0 auto;
+    color: var(--ion-color-medium, #b0b3b8);
+    font-size: 18px;
+  }
+}
+
+.ico-danger {
+  color: var(--ion-color-danger, #eb4747) !important;
+}
+
+/* ============ Info readonly (Sobre → Versão) ============ */
+.info-readonly {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.info-label {
+  font-size: 12px;
+  color: var(--placar-text-muted, #6b6b70);
+  font-weight: 500;
+  flex: 0 0 80px;
+}
+
+.info-value {
+  flex: 1;
+  font-size: 14px;
+  color: var(--placar-text, #2d2d2d);
+  font-weight: 500;
+}
+
+/* ============ Botões de ação ============ */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 0 4px;
+}
+
+/* Esconde o "Salvar" do header em telas muito pequenas (≤380px) onde
+   já é apertado de mais entre o título e o atalho. O botão do rodapé
+   continua acessível. */
+@media (max-width: 380px) {
+  .hdr-salvar-txt {
+    display: none;
+  }
+}

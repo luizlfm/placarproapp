@@ -1,0 +1,64 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>{{ midia ? 'Editar notícia' : 'Criar notícia' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button strong="true" [disabled]="form.invalid" (click)="salvar()">Salvar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="modal-shared">
+  <form [formGroup]="form" class="form-grid" (ngSubmit)="salvar()">
+    <h4 class="section-title">Capa</h4>
+    <div class="capa-picker" (click)="escolherCapa()">
+      <img *ngIf="capaUrl" [src]="capaUrl" alt="Capa" />
+      <div class="placeholder" *ngIf="!capaUrl">
+        <ion-icon name="image-outline"></ion-icon>
+        <span>Clique para escolher uma imagem</span>
+      </div>
+      <button class="remover-capa" type="button" *ngIf="capaUrl" (click)="removerCapa($event)" aria-label="Remover capa">
+        <ion-icon name="close"></ion-icon>
+      </button>
+    </div>
+    <input
+      #capaPicker
+      type="file"
+      accept="image/*"
+      style="display:none"
+      (change)="onCapaEscolhida($event)"
+    />
+
+    <h4 class="section-title">Conteúdo</h4>
+
+    <ion-input
+      fill="outline"
+      label="Título *"
+      labelPlacement="stacked"
+      placeholder="Ex: Time da casa vence clássico nos pênaltis"
+      formControlName="titulo"
+      autocapitalize="sentences"
+    ></ion-input>
+
+    <ion-input
+      fill="outline"
+      label="Subtítulo"
+      labelPlacement="stacked"
+      placeholder="Ex: Decisão emocionante no estádio lotado"
+      formControlName="subtitulo"
+      autocapitalize="sentences"
+    ></ion-input>
+
+    <ion-textarea
+      fill="outline"
+      label="Texto *"
+      labelPlacement="stacked"
+      placeholder="Escreva aqui o corpo da notícia..."
+      formControlName="corpo"
+      [autoGrow]="true"
+      rows="10"
+    ></ion-textarea>
+  </form>
+</ion-content>

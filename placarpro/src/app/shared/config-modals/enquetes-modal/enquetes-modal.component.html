@@ -1,0 +1,166 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Enquetes</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="enq-content">
+  <p class="enq-intro">Crie perguntas e alternativas para os seguidores votarem. Cada categoria tem suas próprias enquetes. Os votos atualizam em tempo real.</p>
+
+  <ng-container *ngIf="grupos$ | async as grupos; else loadingTpl">
+    <div class="enq-empty" *ngIf="grupos.length === 0">
+      <ion-icon name="bar-chart-outline"></ion-icon>
+      <p>Nenhuma categoria cadastrada.</p>
+      <span>Crie categorias antes de adicionar enquetes.</span>
+    </div>
+
+    <div class="enq-grupos" *ngIf="grupos.length > 0">
+      <div
+        class="enq-grupo"
+        *ngFor="let g of grupos; trackBy: trackByCat"
+        [class.aberto]="catExpandida === g.categoria.id"
+      >
+        <!-- Header da categoria -->
+        <button type="button" class="grupo-header" (click)="toggleCategoria(g.categoria.id || '')">
+          <ion-icon class="grupo-icon" name="grid-outline"></ion-icon>
+          <span class="grupo-titulo">{{ g.categoria.titulo }}</span>
+          <span class="grupo-count">{{ g.enquetes.length }}</span>
+          <ion-icon [name]="catExpandida === g.categoria.id ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+        </button>
+
+        <!-- Conteúdo: lista de enquetes + form de nova -->
+        <div class="grupo-body" *ngIf="catExpandida === g.categoria.id">
+          <!-- Lista existente -->
+          <div class="enq-card" *ngFor="let e of g.enquetes; trackBy: trackByEnq">
+            <!-- Modo leitura -->
+            <ng-container *ngIf="editando !== e.id">
+              <div class="enq-head">
+                <h4 class="enq-pergunta">{{ e.pergunta }}</h4>
+                <div class="enq-acoes">
+                  <button type="button" class="ico-btn" (click)="iniciarEdicao(e)" aria-label="Editar">
+                    <ion-icon name="create-outline"></ion-icon>
+                  </button>
+                  <button type="button" class="ico-btn red" (click)="remover(g.categoria.id!, e)" aria-label="Remover">
+                    <ion-icon name="trash-outline"></ion-icon>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Resultado das alternativas com barra -->
+              <div class="enq-resultados">
+                <div class="alt-row" *ngFor="let a of e.alternativas; trackBy: trackByAlt">
+                  <div class="alt-texto">{{ a.texto }}</div>
+                  <div class="alt-bar">
+                    <div class="alt-bar-fill" [style.width.%]="percentual(e, a)"></div>
+                    <span class="alt-pct">{{ percentual(e, a) }}%</span>
+                  </div>
+                  <span class="alt-votos">{{ a.votos || 0 }} voto{{ (a.votos || 0) === 1 ? '' : 's' }}</span>
+                </div>
+              </div>
+
+              <!-- Toggles inline -->
+              <div class="enq-toggles">
+                <button type="button" class="tog" [class.on]="e.visivel"        (click)="toggleVisivel(g.categoria.id!, e)">
+                  <ion-icon [name]="e.visivel ? 'eye-outline' : 'eye-off-outline'"></ion-icon>
+                  {{ e.visivel ? 'Visível' : 'Oculta' }}
+                </button>
+                <button type="button" class="tog" [class.on]="e.votacaoAberta"  (click)="toggleAberta(g.categoria.id!, e)">
+                  <ion-icon [name]="e.votacaoAberta ? 'checkmark-circle-outline' : 'lock-closed-outline'"></ion-icon>
+                  {{ e.votacaoAberta ? 'Aberta' : 'Encerrada' }}
+                </button>
+                <button type="button" class="tog" [class.on]="e.mostrarResultado" (click)="toggleResultado(g.categoria.id!, e)">
+                  <ion-icon name="stats-chart-outline"></ion-icon>
+                  {{ e.mostrarResultado ? 'Mostrar resultado' : 'Esconder resultado' }}
+                </button>
+                <button type="button" class="tog" [class.on]="e.multiplaEscolha" (click)="toggleMultipla(g.categoria.id!, e)">
+                  <ion-icon [name]="e.multiplaEscolha ? 'checkbox-outline' : 'radio-button-on-outline'"></ion-icon>
+                  {{ e.multiplaEscolha ? 'Múltipla escolha' : 'Escolha única' }}
+                </button>
+              </div>
+
+              <div class="enq-foot">
+                <span>{{ e.totalVotos || 0 }} voto{{ (e.totalVotos || 0) === 1 ? '' : 's' }} no total</span>
+              </div>
+            </ng-container>
+
+            <!-- Modo edição (usa a cópia local `enqueteEditando` pra evitar conflito com updates do server) -->
+            <ng-container *ngIf="editando === e.id && enqueteEditando as ed">
+              <input
+                type="text"
+                class="big-input"
+                [(ngModel)]="ed.pergunta"
+                placeholder="Pergunta *"
+              />
+              <div class="alt-edit" *ngFor="let a of ed.alternativas; let ai = index; trackBy: trackByAlt">
+                <input
+                  type="text"
+                  class="alt-input"
+                  [(ngModel)]="a.texto"
+                  placeholder="Alternativa"
+                />
+                <button type="button" class="ico-btn red"
+                        (click)="removerAltEdicao(ai)"
+                        [disabled]="(ed.alternativas?.length ?? 0) <= 2"
+                        aria-label="Remover alternativa">
+                  <ion-icon name="close-outline"></ion-icon>
+                </button>
+              </div>
+              <button type="button" class="link-btn" (click)="adicionarAltEdicao()">
+                <ion-icon name="add-outline"></ion-icon>
+                Adicionar alternativa
+              </button>
+              <div class="enq-edit-acoes">
+                <ion-button fill="clear" color="medium" (click)="cancelarEdicao()">Cancelar</ion-button>
+                <ion-button color="primary" (click)="salvarEdicao(g.categoria.id!)">Salvar</ion-button>
+              </div>
+            </ng-container>
+          </div>
+
+          <!-- Form de NOVA enquete -->
+          <div class="enq-nova">
+            <h4>Nova enquete</h4>
+            <input
+              type="text"
+              class="big-input"
+              [(ngModel)]="novaPergunta"
+              placeholder="Pergunta *"
+            />
+            <div class="alt-edit" *ngFor="let a of novasAlternativas; let ai = index; trackBy: trackByIdx">
+              <input
+                type="text"
+                class="alt-input"
+                [(ngModel)]="a.texto"
+                [placeholder]="'Alternativa ' + (ai + 1)"
+              />
+              <button type="button" class="ico-btn red"
+                      (click)="removerAlternativa(ai)"
+                      [disabled]="novasAlternativas.length <= 2"
+                      aria-label="Remover alternativa">
+                <ion-icon name="close-outline"></ion-icon>
+              </button>
+            </div>
+            <button type="button" class="link-btn" (click)="adicionarAlternativa()">
+              <ion-icon name="add-outline"></ion-icon>
+              Adicionar alternativa
+            </button>
+            <ion-button expand="block" color="primary" (click)="salvarNova(g.categoria.id || '')">
+              <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+              Criar enquete
+            </ion-button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template #loadingTpl>
+    <div class="enq-loading">
+      <ion-spinner name="dots"></ion-spinner>
+    </div>
+  </ng-template>
+</ion-content>

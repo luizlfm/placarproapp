@@ -1,0 +1,663 @@
+<ion-content class="bg">
+  <!-- ─── HEADER ───────────────────────────────────────── -->
+  <header class="hp-header">
+    <div class="hp-header-inner">
+      <a class="hp-brand" routerLink="/">
+        <img
+          src="assets/images/logo1.png"
+          alt="PlacarPro"
+          class="hp-brand-img"
+        />
+      </a>
+
+      <nav class="hp-nav">
+        <a href="#hero">Início</a>
+        <a href="#beneficios">Características</a>
+        <a href="#campeonatos">Campeonatos</a>
+        <a href="#racha">Pelada</a>
+        <a href="#contato">Contato</a>
+      </nav>
+
+      <div class="hp-actions">
+        <ng-container *ngIf="!estaLogado; else logado">
+          <button
+            class="btn-primary"
+            (click)="irParaLogin()"
+            aria-label="Acessar conta"
+            title="Acessar conta"
+          >
+            <ion-icon name="shield-checkmark-outline"></ion-icon>
+            Acessar conta
+          </button>
+        </ng-container>
+        <ng-template #logado>
+          <!-- Espectador: só vê o botão "Sair" (não tem acesso admin) -->
+          <button
+            *ngIf="ehEspectador"
+            class="btn-secondary"
+            (click)="sair()"
+            title="Sair da conta"
+          >
+            <ion-icon name="log-out-outline"></ion-icon>
+            Sair
+          </button>
+          <!-- Organizador: botão padrão "Meu painel" -->
+          <button
+            *ngIf="!ehEspectador"
+            class="btn-primary"
+            (click)="irParaPainel()"
+          >
+            <ion-icon name="grid-outline"></ion-icon>
+            Meu painel
+          </button>
+        </ng-template>
+      </div>
+    </div>
+  </header>
+
+  <!-- ─── HERO ─────────────────────────────────────────── -->
+  <section class="hero" id="hero">
+    <div class="hero-blob-2"></div>
+    <div class="hero-inner">
+      <div class="hero-texto">
+        <span class="badge-hero">Para organizadores e torcedores</span>
+        <h1>
+          O jeito mais <span class="hl">fácil</span> de gerenciar
+          seu <span class="hl">campeonato</span>
+        </h1>
+        <p class="sub">
+          Acompanhe partidas em tempo real, classificações, escalações e rankings —
+          tudo num só lugar. Sem precisar fazer login pra ver.
+        </p>
+        <div class="hero-cta">
+          <a href="#campeonatos" class="btn-secondary big">
+            <ion-icon name="search-outline"></ion-icon>
+            Encontrar campeonato
+          </a>
+          <!-- CTA específico do módulo Pelada (Racha). Verde lime sólido pra
+               se diferenciar do Encontrar campeonato (gradient) e do botão
+               ghost "Sou organizador". -->
+          <button
+            type="button"
+            class="btn-pelada big"
+            (click)="entrarNoRacha()"
+            aria-label="Entrar no PlacarPro Pelada"
+          >
+            <ion-icon name="football"></ion-icon>
+            Entrar no PlacarPro Pelada
+          </button>
+          <button class="btn-ghost big" (click)="irParaLogin()">
+            Sou organizador
+          </button>
+        </div>
+        <div class="hero-trust">
+          <span class="trust-item">
+            <ion-icon name="checkmark-circle"></ion-icon> Grátis pra começar
+          </span>
+          <span class="trust-item">
+            <ion-icon name="checkmark-circle"></ion-icon> Sem cartão de crédito
+          </span>
+          <span class="trust-item">
+            <ion-icon name="flash"></ion-icon> Pronto em minutos
+          </span>
+        </div>
+      </div>
+
+      <div class="hero-mockup">
+        <div class="mockup-frame">
+          <div class="mockup-screen">
+            <!-- Header navy estilo app -->
+            <div class="mock-app-header">
+              <ion-icon name="menu-outline" class="mock-menu"></ion-icon>
+              <span class="mock-app-title">INTERCLUBLES</span>
+              <ion-icon name="ellipsis-vertical" class="mock-more"></ion-icon>
+            </div>
+
+            <!-- Conteúdo scrollável -->
+            <div class="mock-body">
+              <!-- Mini header da categoria -->
+              <div class="mock-cat-head">
+                <div class="mock-cat-titulo">INTERCLUBLES</div>
+                <div class="mock-cat-sub">SUB7</div>
+              </div>
+
+              <!-- Card de placar com escudos -->
+              <div class="mock-placar-card">
+                <div class="mock-eq">
+                  <div class="mock-shield azul">
+                    <ion-icon name="shield"></ion-icon>
+                  </div>
+                  <div class="mock-eq-nome">MANCHESTER<br/>CITY</div>
+                </div>
+                <div class="mock-placar-mid">
+                  <div class="mock-num">3 : 2</div>
+                  <div class="mock-status-min">Encerrado</div>
+                </div>
+                <div class="mock-eq">
+                  <div class="mock-shield verde">
+                    <ion-icon name="shield"></ion-icon>
+                  </div>
+                  <div class="mock-eq-nome">EXALTETAS</div>
+                </div>
+              </div>
+
+              <div class="mock-fase">
+                <span class="mock-fase-lbl">1ª FASE</span>
+                <span class="mock-fase-sep">·</span>
+                <span class="mock-fase-rod">1ª rodada</span>
+              </div>
+
+              <!-- Tabs -->
+              <div class="mock-tabs">
+                <div class="mock-tab">
+                  <ion-icon name="people-outline"></ion-icon>
+                  Escalação
+                </div>
+                <div class="mock-tab ativa">
+                  <ion-icon name="football-outline"></ion-icon>
+                  Lances
+                </div>
+              </div>
+
+              <!-- Lances — mandante à esquerda / visitante à direita -->
+              <div class="mock-lances">
+                <!-- Mandante (esquerda) -->
+                <div class="lance mandante">
+                  <div class="lance-av"><ion-icon name="person"></ion-icon></div>
+                  <div class="lance-info">
+                    <div class="lance-tit gol">GOOL!</div>
+                    <div class="lance-jog">PEDRO REZENDE</div>
+                  </div>
+                  <ion-icon class="lance-ico gol-ico" name="football"></ion-icon>
+                </div>
+
+                <div class="lance mandante">
+                  <div class="lance-av"><ion-icon name="person"></ion-icon></div>
+                  <div class="lance-info">
+                    <div class="lance-tit gol">GOOL!</div>
+                    <div class="lance-jog">PEDRO REZENDE</div>
+                  </div>
+                  <ion-icon class="lance-ico gol-ico" name="football"></ion-icon>
+                </div>
+
+                <!-- Visitante (direita, indentado, ordem invertida) -->
+                <div class="lance visitante">
+                  <ion-icon class="lance-ico gol-ico" name="football"></ion-icon>
+                  <div class="lance-info">
+                    <div class="lance-tit gol">GOOL!</div>
+                    <div class="lance-jog">KASSIO CIRILO</div>
+                  </div>
+                  <div class="lance-av"><ion-icon name="person"></ion-icon></div>
+                </div>
+
+                <!-- Amarelo (mandante) -->
+                <div class="lance mandante amarelo">
+                  <div class="lance-av"><ion-icon name="person"></ion-icon></div>
+                  <div class="lance-info">
+                    <div class="lance-tit am">CARTÃO AMARELO</div>
+                    <div class="lance-jog">L. ALEXANDRE</div>
+                  </div>
+                  <span class="lance-cartao am"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── BENEFÍCIOS (3 cards) ─────────────────────────── -->
+  <section class="beneficios" id="beneficios">
+    <div class="beneficios-inner">
+      <h2 class="section-title">Por que usar?</h2>
+
+      <div class="benef-grid">
+        <article class="benef-card">
+          <div class="benef-icon verde">
+            <ion-icon name="cash-outline"></ion-icon>
+          </div>
+          <h3>Use Gratuitamente</h3>
+          <p>
+            Crie e acompanhe campeonatos sem pagar nada. Funcionalidades essenciais
+            sempre liberadas pra todo mundo.
+          </p>
+        </article>
+
+        <article class="benef-card">
+          <div class="benef-icon azul">
+            <ion-icon name="podium-outline"></ion-icon>
+          </div>
+          <h3>Classificação e Ranking</h3>
+          <p>
+            Tabela calculada automaticamente, rankings de artilharia, assistências,
+            cartões — tudo atualizado em tempo real.
+          </p>
+        </article>
+
+        <article class="benef-card">
+          <div class="benef-icon roxo">
+            <ion-icon name="phone-portrait-outline"></ion-icon>
+          </div>
+          <h3>Aplicação Flexível</h3>
+          <p>
+            Funciona em qualquer dispositivo: celular, tablet ou computador.
+            Torcedor vê sem login. Organizador gerencia com 1 conta.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FEATURES (com checkmarks) ────────────────────── -->
+  <section class="features">
+    <div class="features-inner">
+      <div class="features-texto">
+        <h2 class="section-title">Tudo o que você precisa pra organizar</h2>
+        <p class="features-sub">
+          Da inscrição das equipes ao último cartão amarelo da final.
+        </p>
+        <ul class="check-list">
+          <li><ion-icon name="checkmark-circle"></ion-icon> Gerador automático de partidas</li>
+          <li><ion-icon name="checkmark-circle"></ion-icon> Ranking de jogadores personalizado</li>
+          <li><ion-icon name="checkmark-circle"></ion-icon> Classificação por grupos e fases</li>
+          <li><ion-icon name="checkmark-circle"></ion-icon> Escalações com gols e cartões</li>
+          <li><ion-icon name="checkmark-circle"></ion-icon> Fotos, vídeos e notícias</li>
+          <li><ion-icon name="checkmark-circle"></ion-icon> Exportação em PDF e imagem</li>
+          <li><ion-icon name="checkmark-circle"></ion-icon> Link público compartilhável</li>
+        </ul>
+      </div>
+
+      <div class="features-imagens">
+        <div class="img-card grande">
+          <ion-icon name="trophy"></ion-icon>
+          <span>Classificação Geral</span>
+        </div>
+        <div class="img-card">
+          <ion-icon name="football"></ion-icon>
+          <span>Artilharia</span>
+        </div>
+        <div class="img-card">
+          <ion-icon name="calendar"></ion-icon>
+          <span>Próximos Jogos</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── ENCONTRE SEU CAMPEONATO ──────────────────────── -->
+  <section class="campeonatos" id="campeonatos">
+    <div class="campeonatos-inner">
+
+      <!-- Banner exclusivo pra espectadores logados -->
+      <div class="hp-espectador-banner" *ngIf="estaLogado && ehEspectador">
+        <ion-icon name="eye-outline"></ion-icon>
+        <div class="hp-eb-txt">
+          <strong>Você está navegando como espectador.</strong>
+          Clique em qualquer campeonato abaixo para acompanhar jogos, classificação,
+          rankings e galerias. Sem precisar criar nada — só acompanhar.
+        </div>
+      </div>
+
+      <h2 class="section-title">Encontre seu campeonato</h2>
+      <p class="section-sub">
+        Aqui você encontra os mais variados tipos de campeonatos em andamento.
+      </p>
+
+      <div class="hp-search">
+        <ion-icon name="search-outline"></ion-icon>
+        <input
+          type="text"
+          placeholder="Buscar pelo nome..."
+          [(ngModel)]="busca"
+        />
+        <button *ngIf="busca" class="clear" (click)="limparBusca()" aria-label="Limpar">
+          <ion-icon name="close-circle"></ion-icon>
+        </button>
+      </div>
+
+      <!-- Filtros (chips) — aparecem sempre.
+           - Deslogado: clicar em "Que sigo" leva pro login (com returnUrl).
+           - Logado sem seguidos: filtra pra vazio + empty state explicativo.
+           - Logado com seguidos: badge mostra a quantidade. -->
+      <div class="hp-filtros">
+        <button
+          type="button"
+          class="filtro-chip"
+          [class.active]="!apenasSeguindo"
+          (click)="apenasSeguindo = false"
+        >
+          <ion-icon name="apps-outline"></ion-icon>
+          <span>Todos</span>
+        </button>
+        <button
+          type="button"
+          class="filtro-chip"
+          [class.active]="apenasSeguindo"
+          [class.disabled]="!estaLogado"
+          (click)="ativarSeguindo()"
+          [title]="!estaLogado ? 'Faça login para ver os campeonatos que você segue' : ''"
+        >
+          <ion-icon name="heart"></ion-icon>
+          <span>Que sigo</span>
+          <span class="chip-badge" *ngIf="estaLogado">{{ qtdSeguindo }}</span>
+          <ion-icon
+            *ngIf="!estaLogado"
+            name="lock-closed-outline"
+            class="chip-lock"
+          ></ion-icon>
+        </button>
+      </div>
+
+      <ng-container *ngIf="campeonatos$ | async as todos">
+        <ng-container *ngIf="filtrar(todos) as lista">
+          <div class="grid" *ngIf="lista.length > 0; else nada">
+            <button
+              type="button"
+              class="camp-card"
+              *ngFor="let c of lista; trackBy: trackById"
+              (click)="abrir(c)"
+            >
+              <!-- ═════════ HERO / CAPA ═════════
+                   Imagem em flow (controla altura sem letterbox).
+                   Overlay top→bottom escurece a base pra contraste do
+                   badge AO VIVO. Hover faz a imagem dar um zoom suave. -->
+              <div class="capa">
+                <picture *ngIf="c.capaUrl || c.capaMobileUrl || c.bannerUrl">
+                  <source
+                    *ngIf="c.capaMobileUrl"
+                    media="(max-width: 600px)"
+                    [srcset]="c.capaMobileUrl"
+                  />
+                  <img
+                    [src]="c.capaUrl || c.bannerUrl || c.capaMobileUrl"
+                    [alt]="c.titulo"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </picture>
+                <div class="capa-overlay"></div>
+
+                <!-- Badge AO VIVO — vermelho pulsante, canto superior direito. -->
+                <div class="capa-ao-vivo" *ngIf="c.transmissaoLiveAtiva">
+                  <span class="dot"></span>
+                  AO VIVO
+                </div>
+              </div>
+
+              <!-- ═════════ INFO ═════════
+                   Logo flutuante sobre a borda imagem/info (estilo
+                   álbum de banda) + título grande + chips de metadata
+                   + footer com seguidores e CTA. -->
+              <div class="info">
+                <div class="logo-float" *ngIf="c.logoUrl || true">
+                  <img *ngIf="c.logoUrl; else logoIc" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
+                  <ng-template #logoIc><ion-icon name="trophy-outline"></ion-icon></ng-template>
+                </div>
+
+                <div class="textos">
+                  <div class="titulo">{{ c.titulo }}</div>
+                  <div class="subtitulo" *ngIf="c.subtitulo">{{ c.subtitulo }}</div>
+                </div>
+
+                <!-- Chips de metadados — só os que existirem.
+                     Visual de "pill" claro/discreto, ícone + texto. -->
+                <div class="chips" *ngIf="c.esporte || c.localizacao">
+                  <span class="chip" *ngIf="c.esporte">
+                    <ion-icon name="football-outline"></ion-icon>
+                    <span>{{ c.esporte }}</span>
+                  </span>
+                  <span class="chip" *ngIf="c.localizacao">
+                    <ion-icon name="location-outline"></ion-icon>
+                    <span>{{ c.localizacao }}</span>
+                  </span>
+                </div>
+
+                <div class="rodape">
+                  <span class="rodape-stat">
+                    <ion-icon name="people-outline"></ion-icon>
+                    <span><strong>{{ c.seguidores ?? 0 }}</strong> {{ (c.seguidores ?? 0) === 1 ? 'seguidor' : 'seguidores' }}</span>
+                  </span>
+                  <span class="rodape-cta">
+                    Ver
+                    <ion-icon name="arrow-forward-outline"></ion-icon>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Botão ASSISTIR AO VIVO — só quando transmissão ativa.
+                   Stop propagation pra não abrir a home do campeonato. -->
+              <div
+                *ngIf="c.transmissaoLiveAtiva"
+                class="camp-card-assistir"
+                (click)="assistirAoVivo(c, $event)"
+                role="button"
+                [attr.aria-label]="'Assistir transmissão ao vivo de ' + c.titulo"
+              >
+                <ion-icon name="play-circle-outline"></ion-icon>
+                <span>ASSISTIR AO VIVO</span>
+              </div>
+            </button>
+          </div>
+
+          <ng-template #nada>
+            <div class="empty">
+              <ion-icon [name]="apenasSeguindo ? 'heart-outline' : 'trophy-outline'"></ion-icon>
+              <h3 *ngIf="apenasSeguindo && !busca">Você ainda não segue nenhum campeonato</h3>
+              <h3 *ngIf="apenasSeguindo && busca">Nada encontrado em "Que sigo" para "{{ busca }}"</h3>
+              <h3 *ngIf="!apenasSeguindo && busca">Nada encontrado para "{{ busca }}"</h3>
+              <h3 *ngIf="!apenasSeguindo && !busca">Nenhum campeonato disponível no momento</h3>
+              <p *ngIf="apenasSeguindo">
+                Veja todos os campeonatos e clique no coração para começar a seguir.
+              </p>
+              <p *ngIf="!apenasSeguindo && !busca">
+                Volte mais tarde — novos campeonatos aparecem assim que forem publicados.
+              </p>
+              <button *ngIf="busca" class="btn-ghost" (click)="limparBusca()">
+                Limpar busca
+              </button>
+              <button *ngIf="apenasSeguindo" class="btn-ghost" (click)="apenasSeguindo = false">
+                Ver todos
+              </button>
+            </div>
+          </ng-template>
+        </ng-container>
+      </ng-container>
+    </div>
+  </section>
+
+  <!-- ─── PELADA / RACHA ─────────────────────────────────── -->
+  <section class="racha-section" id="racha">
+    <div class="racha-inner">
+      <div class="racha-texto">
+        <span class="racha-badge">APP DE PELADA #1 DO BRASIL</span>
+        <h2>
+          Seu racha já está no <span class="hl">PlacarPro</span>?<br/>
+          Entre e siga o jogo.
+        </h2>
+        <p>
+          Confirma presença, acompanha ranking, entra na fila e abre o
+          racha direto do celular. Se você ainda está conhecendo,
+          também dá pra criar seu grupo em poucos minutos.
+        </p>
+
+        <div class="racha-cta-row">
+          <button class="btn-secondary big" type="button" (click)="entrarNoRacha()">
+            <ion-icon name="enter-outline"></ion-icon>
+            Entrar no PlacarPro
+          </button>
+          <button class="btn-ghost big" type="button" (click)="criarRacha()">
+            <ion-icon name="add-circle-outline"></ion-icon>
+            Criar racha grátis
+          </button>
+        </div>
+
+        <p class="racha-foot">
+          Funciona no navegador, no Android e no iPhone.
+        </p>
+      </div>
+
+      <!-- Mockup mobile — espelha a tela real do /racha/inicio do app:
+           welcome card, progresso de ativação, stats e bottom tabs. -->
+      <div class="racha-mockup">
+        <div class="rk-phone">
+          <span class="rk-notch" aria-hidden="true"></span>
+          <div class="rk-screen">
+
+            <!-- Status bar fake -->
+            <div class="rk-statusbar">
+              <span class="rk-hora">21:34</span>
+              <span class="rk-sb-icons">
+                <ion-icon name="cellular"></ion-icon>
+                <ion-icon name="wifi"></ion-icon>
+                <ion-icon name="battery-full"></ion-icon>
+              </span>
+            </div>
+
+            <!-- App header navy -->
+            <div class="rk-header">
+              <ion-icon class="rk-menu" name="menu-outline"></ion-icon>
+              <span class="rk-title">Racha dos Tesouras 2026</span>
+              <ion-icon class="rk-menu" name="notifications-outline"></ion-icon>
+            </div>
+
+            <!-- Welcome card (mirror do .ri-hero) -->
+            <div class="rk-card">
+              <div class="rk-bem-vindo">BEM-VINDO</div>
+              <h3>Seu futebol organizado</h3>
+              <p>Acompanhe rankings, convide amigos e gerencie o racha.</p>
+              <div class="rk-actions">
+                <button class="rk-chip">
+                  <ion-icon name="bar-chart-outline"></ion-icon>
+                  VER RANKINGS
+                </button>
+                <button class="rk-chip alt">
+                  <ion-icon name="person-add-outline"></ion-icon>
+                  CONVITE
+                </button>
+              </div>
+            </div>
+
+            <!-- Progresso de ativação (mirror do .ri-ativacao) -->
+            <div class="rk-progresso-card">
+              <div class="rk-pc-head">
+                <ion-icon name="hourglass-outline"></ion-icon>
+                <div class="rk-pc-txt">
+                  <strong>Ative seu racha</strong>
+                  <span>3 de 4 passos</span>
+                </div>
+                <span class="rk-pc-badge">75%</span>
+              </div>
+              <div class="rk-pc-bar">
+                <div class="rk-pc-fill"></div>
+              </div>
+              <ul class="rk-pc-passos">
+                <li class="done"><ion-icon name="checkmark-circle"></ion-icon> Cadastrar racha</li>
+                <li class="done"><ion-icon name="checkmark-circle"></ion-icon> Convidar amigos</li>
+                <li class="done"><ion-icon name="checkmark-circle"></ion-icon> Definir local</li>
+                <li><ion-icon name="ellipse-outline"></ion-icon> Primeira partida</li>
+              </ul>
+            </div>
+
+            <!-- Mini ranking de artilharia -->
+            <div class="rk-ranking">
+              <div class="rk-rk-head">
+                <ion-icon name="football"></ion-icon>
+                <span>ARTILHARIA</span>
+                <small>top 3</small>
+              </div>
+              <div class="rk-rk-row">
+                <span class="rk-pos um">1</span>
+                <span class="rk-jog">Pedro Rezende</span>
+                <span class="rk-gols">12</span>
+              </div>
+              <div class="rk-rk-row">
+                <span class="rk-pos dois">2</span>
+                <span class="rk-jog">Kassio Cirilo</span>
+                <span class="rk-gols">9</span>
+              </div>
+              <div class="rk-rk-row">
+                <span class="rk-pos tres">3</span>
+                <span class="rk-jog">L. Alexandre</span>
+                <span class="rk-gols">7</span>
+              </div>
+            </div>
+
+            <!-- Tab bar inferior (mirror do BottomTabs do shell) -->
+            <div class="rk-tabbar">
+              <div class="rk-tab ativa">
+                <ion-icon name="home"></ion-icon>
+                <span>Início</span>
+              </div>
+              <div class="rk-tab">
+                <ion-icon name="football"></ion-icon>
+                <span>Rachas</span>
+              </div>
+              <div class="rk-tab">
+                <ion-icon name="people"></ion-icon>
+                <span>Elenco</span>
+              </div>
+              <div class="rk-tab">
+                <ion-icon name="podium"></ion-icon>
+                <span>Ranking</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── CTA FINAL ────────────────────────────────────── -->
+  <section class="cta-final">
+    <div class="cta-inner">
+      <h2>É organizador?</h2>
+      <p>Crie sua conta gratuita e comece a gerenciar campeonatos em minutos.</p>
+      <button class="btn-secondary big" (click)="irParaLogin()">
+        <ion-icon name="shield-checkmark-outline"></ion-icon>
+        Acessar conta
+      </button>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ───────────────────────────────────────── -->
+  <footer class="hp-footer" id="contato">
+    <div class="footer-inner">
+      <div class="col">
+        <a class="hp-brand light" routerLink="/">
+          <img src="assets/images/logo3.png" alt="PlacarPro" class="hp-brand-img" />
+        </a>
+        <p class="texto-marca">
+          A plataforma para acompanhar e organizar campeonatos esportivos.
+        </p>
+      </div>
+
+      <div class="col">
+        <h4>Navegação</h4>
+        <a href="#hero">Início</a>
+        <a href="#beneficios">Características</a>
+        <a href="#campeonatos">Campeonatos</a>
+        <button type="button" (click)="irParaLogin()">Acessar conta</button>
+      </div>
+
+      <div class="col">
+        <h4>Contato</h4>
+        <p><ion-icon name="mail-outline"></ion-icon> contato&#64;placarproapp.com</p>
+        <p><ion-icon name="logo-whatsapp"></ion-icon> +55 82 99102-7052</p>
+      </div>
+
+      <div class="col">
+        <h4>Redes sociais</h4>
+        <div class="redes">
+          <a href="#" aria-label="Instagram"><ion-icon name="logo-instagram"></ion-icon></a>
+          <a href="#" aria-label="YouTube"><ion-icon name="logo-youtube"></ion-icon></a>
+          <a href="#" aria-label="WhatsApp"><ion-icon name="logo-whatsapp"></ion-icon></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2026 PlacarPro — Todos os direitos reservados.</p>
+    </div>
+  </footer>
+</ion-content>

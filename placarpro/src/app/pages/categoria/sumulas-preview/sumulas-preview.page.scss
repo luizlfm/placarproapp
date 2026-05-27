@@ -1,0 +1,1912 @@
+/* =========================================================
+   Página de impressão múltipla de súmulas (padrão carteirinhas)
+   ========================================================= */
+
+ion-content { --background: #f3f4f6; }
+
+.sp-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  padding: 16px;
+  min-height: calc(100vh - 56px);
+
+  /* Mobile/tablet: empilha painel em cima, preview embaixo */
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    padding: 12px;
+    gap: 12px;
+  }
+}
+
+/* ───── Painel lateral ───── */
+.sp-painel {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 12px;
+  max-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  /* Mobile: não fica sticky, ocupa largura toda */
+  @media (max-width: 900px) {
+    position: relative;
+    top: 0;
+    max-height: 50vh; /* limita altura pra não empurrar o preview */
+  }
+
+  .sp-painel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid #eaeaea;
+    background: #fafafb;
+    h3 {
+      margin: 0; font-size: 13px; font-weight: 700;
+      color: var(--placar-text, #2d2d2d);
+      text-transform: uppercase; letter-spacing: 0.3px;
+      .sp-cnt {
+        color: var(--ion-color-secondary, #7CC61D);
+        margin-left: 6px;
+      }
+    }
+  }
+
+  .sp-busca {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eaeaea;
+    background: #fafafb;
+
+    ion-icon { color: var(--ion-color-medium); font-size: 16px; flex: 0 0 auto; }
+    input {
+      flex: 1; border: none; outline: none; background: transparent;
+      font-size: 13px; padding: 4px 0;
+      color: var(--placar-text, #2d2d2d);
+    }
+  }
+
+  .sp-acoes {
+    display: flex; gap: 6px; padding: 8px 12px;
+    border-bottom: 1px solid #eaeaea;
+    background: #fff;
+  }
+  .sp-acao {
+    flex: 1;
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+    padding: 6px; border: 1px solid #e5e7eb; border-radius: 8px;
+    background: #fff; font-size: 12px; font-weight: 600;
+    color: var(--ion-color-primary); cursor: pointer; font-family: inherit;
+    ion-icon { font-size: 13px; }
+    &:hover:not(:disabled) { background: var(--ion-color-primary); color: #fff; border-color: var(--ion-color-primary); }
+    &.limpar { color: var(--ion-color-medium); }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+  }
+
+  .sp-lista {
+    flex: 1; overflow-y: auto; padding: 8px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .sp-loading, .sp-vazio {
+    text-align: center; color: var(--ion-color-medium);
+    font-size: 13px; padding: 24px 12px;
+  }
+}
+
+.sp-card {
+  display: grid;
+  grid-template-columns: 1fr 36px;
+  gap: 4px;
+  align-items: stretch;
+  background: #fff;
+  border: 1px solid #eaeaef;
+  border-radius: 8px;
+  text-align: left;
+  transition: border-color 120ms ease, background 120ms ease;
+  font-family: inherit;
+  overflow: hidden;
+
+  &:hover { border-color: var(--ion-color-primary); }
+  &.selecionada {
+    border-color: var(--ion-color-secondary, #7CC61D);
+    background: rgba(124, 198, 29, 0.08);
+  }
+
+  /* Área clicável principal (toggle de seleção) */
+  .sp-card-main {
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    min-width: 0;
+  }
+
+  /* Botão "olho" pra abrir visualização individual */
+  .sp-ver-btn {
+    background: transparent;
+    border: none;
+    border-left: 1px solid #eaeaef;
+    color: var(--ion-color-tertiary, #4DABF7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 120ms ease;
+    ion-icon { font-size: 18px; }
+    &:hover {
+      background: rgba(77, 171, 247, 0.1);
+    }
+  }
+
+  .sp-check {
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--ion-color-medium);
+    ion-icon { font-size: 18px; }
+    &.on { color: var(--ion-color-secondary, #7CC61D); }
+  }
+  .sp-card-body { min-width: 0; }
+  .sp-times {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 12px; font-weight: 700;
+    color: var(--placar-text, #2d2d2d);
+    text-transform: uppercase;
+    .sp-time-nome { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sp-vs { color: var(--ion-color-medium); }
+  }
+  .sp-meta {
+    display: flex; gap: 6px; align-items: center;
+    font-size: 10.5px; color: var(--ion-color-medium); margin-top: 2px;
+    span { display: inline-flex; align-items: center; gap: 2px; }
+    .sp-fase {
+      background: rgba(28, 46, 61, 0.08);
+      padding: 1px 6px; border-radius: 4px;
+      font-weight: 600; color: var(--ion-color-primary);
+    }
+    ion-icon { font-size: 11px; }
+  }
+}
+
+/* ───── Área de preview ───── */
+.sp-preview {
+  padding: 0;
+  overflow-x: auto;
+  background: transparent;
+}
+
+/* No mobile, ESCONDE a lista de súmulas (preview) — pra ver, usa o
+   botão "olho" em cada card que abre o overlay em tela cheia. */
+@media (max-width: 900px) {
+  .sp-preview {
+    display: none !important;
+  }
+  /* Painel ocupa o espaço todo */
+  .sp-painel {
+    max-height: calc(100vh - 80px) !important;
+  }
+}
+
+.sp-empty-preview {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 60vh; text-align: center; color: var(--ion-color-medium);
+  padding: 32px;
+
+  > ion-icon { font-size: 64px; opacity: 0.35; margin-bottom: 12px; }
+  h2 { margin: 0 0 8px; font-size: 18px; font-weight: 700; color: var(--placar-text, #2d2d2d); }
+  p { margin: 0; font-size: 14px; max-width: 420px; line-height: 1.5; }
+}
+
+/* ───── Estilo da súmula — IDÊNTICO à sumula.page.scss ─────
+   Mantemos o page-break-after pra impressão de múltiplas súmulas. */
+.sumula-folha {
+  background: #fff;
+  margin: 12px auto;
+  padding: 6mm;
+  width: 290mm;
+  max-width: 100%;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  color: #000;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  font-size: 10px;
+  line-height: 1.15;
+  page-break-after: always;
+
+  &:last-child { page-break-after: auto; }
+}
+
+/* Mobile: preview vira scroll horizontal — a súmula mantém 290mm
+   (pra impressão sair correta) mas a tela permite swipe lateral. */
+@media (max-width: 1100px) {
+  .sp-preview {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 16px;
+  }
+  .sp-preview .sumula-folha {
+    margin: 0 0 16px 0;
+  }
+}
+
+/* ================ Faixa do título com logos ================ */
+.sm-titulo-faixa {
+  display: grid;
+  grid-template-columns: 56px 1fr 96px;
+  align-items: stretch;
+  border: 1px solid #000;
+  border-bottom: 0;
+  margin-bottom: 0;
+
+  .sm-logo-camp {
+    border-right: 1px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px;
+
+    img {
+      max-width: 100%;
+      max-height: 44px;
+      object-fit: contain;
+    }
+  }
+
+  .sm-titulo-bloco {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .sm-titulo {
+    font-size: 16px;
+    font-weight: 800;
+    text-align: center;
+    padding: 3px 6px;
+    text-transform: uppercase;
+    border-bottom: 1px solid #000;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+  }
+
+  .sm-confronto {
+    display: grid;
+    grid-template-columns: 1fr 72px 22px 72px 1fr;
+    align-items: stretch;
+    min-height: 22px;
+
+    .sm-time-nome {
+      font-weight: 800;
+      padding: 3px 8px;
+      font-size: 11px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sm-placar-boxes {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      align-items: stretch;
+      border-left: 1px solid #000;
+      border-right: 0;
+
+      &.lado-v {
+        border-left: 0;
+        border-right: 1px solid #000;
+      }
+
+      .cx-pl {
+        border-right: 1px solid #000;
+        background: #fff;
+        min-height: 22px;
+
+        &:last-child {
+          border-right: none;
+        }
+      }
+    }
+
+    .sm-vs {
+      text-align: center;
+      font-weight: 800;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  .sm-logos-times {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-left: 1px solid #000;
+
+    .sm-logo-time {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px;
+
+      &+.sm-logo-time {
+        border-left: 1px solid #000;
+      }
+
+      img {
+        max-width: 100%;
+        max-height: 44px;
+        object-fit: contain;
+      }
+    }
+  }
+}
+
+/* ================ Grid de meta-dados ================ */
+.sm-meta-grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin-bottom: 0;
+  border: 1px solid #000;
+  border-top: 0;
+
+  td {
+    border: 1px solid #000;
+    padding: 2px 6px;
+    font-size: 9.5px;
+    height: 19px;
+    overflow: hidden;
+    line-height: 1.1;
+    background: #fff;
+  }
+
+  td.lbl {
+    font-weight: 700;
+    text-align: left;
+    font-size: 9px;
+    letter-spacing: 0.2px;
+  }
+
+  td.val {
+    font-weight: 700;
+  }
+
+  td.val.center {
+    text-align: center;
+  }
+
+  td.lbl.serie {
+    text-align: center;
+  }
+
+  td.lbl.arbitro {
+    text-align: center;
+    vertical-align: middle;
+    font-weight: 700;
+  }
+
+  td.val.arb-nome {
+    font-weight: 600;
+    vertical-align: middle;
+  }
+
+  td.check-box {
+    text-align: center;
+    font-weight: 700;
+    font-size: 11px;
+  }
+}
+
+/* ================ Corpo: 2 blocos lado a lado ================ */
+.sm-corpo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 0;
+  align-items: stretch;
+}
+
+.sm-equipe-bloco {
+  border-top: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Cabeçalho do bloco (EQUIPE A | nome | INICIANTES | caixas) */
+.sm-equipe-cabecalho {
+  margin-top: 5px;
+  display: grid;
+  grid-template-columns: 56px 1fr 60px 110px;
+  border: 1px solid #000;
+  margin-bottom: 5px;
+
+  .celula {
+    padding: 3px 4px;
+    font-weight: 700;
+    font-size: 9.5px;
+    text-align: center;
+    border-right: 1px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+
+  .nome-equipe {
+    font-size: 11.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .iniciantes-boxes {
+    gap: 0;
+    padding: 0;
+
+    .box-mini {
+      display: inline-block;
+      flex: 1;
+      height: 100%;
+      border-right: 1px solid #000;
+      min-height: 16px;
+
+      &:last-child {
+        border-right: none;
+      }
+    }
+  }
+}
+
+/* ================ Tabela de jogadores ================ */
+.sm-jogadores {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-weight: 100;
+}
+
+.sm-jogadores th,
+.sm-jogadores td {
+  border: 1px solid #000;
+  padding: 0;
+  text-align: center;
+  vertical-align: middle;
+  font-weight: 100;
+}
+
+.sm-jogadores th {
+  font-size: 8.5px;
+  height: 14px;
+  background: #fff;
+  letter-spacing: 0.2px;
+}
+
+.sm-jogadores td {
+  height: 15px;
+  font-size: 8.5px;
+}
+
+.th-registro,
+.td-registro {
+  width: 7%;
+}
+
+.th-jogador,
+.td-jogador {
+  width: 38%;
+}
+
+.td-jogador {
+  text-align: center;
+  padding: 0 2px;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.th-num,
+.td-num {
+  width: 4%;
+}
+
+.th-faltas,
+.th-acum {
+  font-size: 8.5px;
+}
+
+.td-falta,
+.td-acum {
+  width: 3%;
+}
+
+.th-am,
+.th-vm,
+.td-am,
+.td-vm {
+  width: 3.5%;
+  background: #fff;
+}
+
+.mini-head {
+  font-size: 8px;
+  color: #555;
+  font-weight: 600;
+}
+
+/* PEDIDO DE TEMPO embutido nas linhas 3-4 do body (sobre as ACUMULATIVAS) */
+.td-pedido-header {
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  background: #fff;
+  letter-spacing: 0.3px;
+}
+
+.td-pedido-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  background: #fff;
+}
+
+.td-pedido-box {
+  background: #fff;
+}
+
+/* Células vazias da área ACUMULATIVAS (linhas 5+) */
+.td-acum-vazio {
+  background: #fff;
+}
+
+/* Linhas da Comissão Técnica DENTRO da tabela de jogadores */
+.sm-jogadores tbody tr.comissao-row td {
+  height: 16px;
+  background: #fff;
+  font-weight: 100;
+}
+
+.td-comissao-lbl {
+  font-size: 9px;
+  text-align: left;
+  padding: 2px 6px;
+  background: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.td-comissao-area {
+  background: #fff;
+}
+
+/* Coluna TÉCNICO / CAPITÃO (rowspan, vertical) */
+.vertical-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  width: 3.5%;
+  min-width: 50px;
+  font-size: 10px;
+  font-weight: bold;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+/* Linha vazia (sem jogador) */
+.sm-jogadores tbody tr.vazia td {
+  color: #999;
+  font-weight: 100;
+}
+
+/* ================ Grade numerada 1-26 ================ */
+.sm-grade-numerada {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  width: 100%;
+  max-width: 523px;
+  background: #fff;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  border: 1px solid #000;
+}
+
+.sm-grade-numerada > :nth-child(13n) {
+  border-right: none;
+}
+
+.sm-grade-numerada > :nth-last-child(-n + 13) {
+  border-bottom: none;
+}
+
+.sm-grade-numerada {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  width: 100%;
+  max-width: 520px;
+  background: #fff;
+}
+
+.num-box,
+.empty-box {
+  height: 22px;
+  border-bottom: 1px solid #000;
+  border-right: 1px solid #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.empty-box {
+  background: #fff;
+}
+
+/* Quando o overlay está aberto, esconde o ion-header da página
+   pra dar tela 100% ao modal. */
+:host.visualizando ion-header {
+  display: none !important;
+}
+:host.visualizando ion-content {
+  --offset-top: 0 !important;
+}
+
+/* ───── Overlay de visualização individual (modal full-screen) ───── */
+.sp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000; /* acima de tudo do Ionic */
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+
+  @media (max-width: 767px) {
+    padding: 0;
+    align-items: stretch;
+    background: #000;
+  }
+}
+
+.sp-modal-inner {
+  background: #f5f5f7;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 320mm;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+
+  @media (max-width: 767px) {
+    border-radius: 0;
+    max-height: 100vh;
+    max-width: 100%;
+  }
+}
+
+.sp-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #1C2E3D;
+  color: #fff;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
+  h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .sp-modal-acoes {
+    display: flex;
+    gap: 6px;
+  }
+}
+
+.sp-modal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease;
+  ion-icon { font-size: 16px; }
+
+  &:hover { background: rgba(255, 255, 255, 0.25); }
+  &.fechar {
+    padding: 8px 12px;
+    background: rgba(231, 76, 60, 0.85);
+    ion-icon { font-size: 18px; }
+    &:hover { background: rgba(231, 76, 60, 1); }
+  }
+}
+
+/* Mobile: header do modal continua visível com botões maiores */
+@media (max-width: 767px) {
+  .sp-modal-head {
+    padding: 10px 12px;
+    z-index: 10;
+    background: #1C2E3D;
+    h3 { font-size: 12px; }
+  }
+  .sp-modal-btn {
+    padding: 10px 14px;
+    font-size: 12px;
+    ion-icon { font-size: 18px; }
+  }
+  /* Esconde os textos longos, mantém só o ícone no mobile */
+  .sp-modal-btn .btn-txt {
+    display: none;
+  }
+}
+
+.sp-modal-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  -webkit-overflow-scrolling: touch;
+  background: #d0d3d8;
+  position: relative;
+  min-height: 0; /* impede que conteúdo force flex item > 100% */
+
+  @media (max-width: 767px) {
+    padding: 0;
+    overflow: hidden; /* No mobile a súmula rotacionada não tem scroll */
+  }
+}
+
+.sp-modal-folha {
+  margin: 0 auto !important;
+  page-break-after: auto !important; /* Não tem sentido em modal */
+}
+
+/* ───── FABs flutuantes (Fechar / Imprimir) — SEMPRE visíveis ───── */
+.sp-fab-fechar,
+.sp-fab-imprimir {
+  position: fixed;
+  z-index: 9999;
+  border: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  color: #fff;
+  transition: transform 120ms ease, filter 120ms ease;
+  font-family: inherit;
+  ion-icon { font-size: 28px; }
+
+  &:hover { filter: brightness(1.1); }
+  &:active { transform: scale(0.95); }
+
+  /* Esconde os FABs no desktop (header já tem botões visíveis) */
+  @media (min-width: 768px) {
+    display: none;
+  }
+}
+
+.sp-fab-fechar {
+  top: 14px;
+  right: 14px;
+  background: #e74c3c;
+}
+
+.sp-fab-imprimir {
+  top: 14px;
+  right: 78px;
+  background: var(--ion-color-primary, #1C2E3D);
+}
+
+/* Wrapper só serve no mobile pra "absorver" o tamanho pós-rotação. */
+.sp-rot-wrap {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* No mobile: ROTACIONA 90° anti-horário pra súmula virar landscape em
+   tela retrato. A escala vem da CSS var `--sumula-escala` calculada
+   por JS (mede dimensões reais da folha pra encaixar no body). */
+@media (max-width: 767px) {
+  .sp-modal-body {
+    background: #000;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Preenche o body inteiro e centraliza a folha (que será rotacionada).
+     `transform` não impacta o layout, então o flex-centering continua
+     funcionando pós-rotação. */
+  .sp-rot-wrap {
+    position: absolute;
+    inset: 0;
+    width: auto;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 0;
+  }
+
+  .sp-modal-folha {
+    width: 1097px;
+    height: auto;
+    flex: 0 0 auto;
+    transform-origin: center center;
+    transform: rotate(-90deg) scale(var(--sumula-escala, 0.5));
+    box-shadow: none !important;
+    background: #fff;
+  }
+}
+
+/* ───── Print (paisagem A4) ───── */
+@media print {
+  @page { size: A4 landscape; margin: 5mm; }
+  .no-print { display: none !important; }
+  ion-content { --background: #fff; }
+  .sp-layout { display: block !important; }
+  .sp-painel { display: none !important; }
+  .sp-preview { padding: 0 !important; background: #fff !important; overflow: visible !important; }
+  .sumula-folha { margin: 0; padding: 0; box-shadow: none; width: 100%; }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+}
+
+/* Print modo "única" — só a súmula do overlay sai impressa */
+@media print {
+  body.printing-single {
+    .sp-painel,
+    .sp-preview,
+    .sp-layout > .sp-preview,
+    .sp-layout > .sp-painel,
+    ion-header,
+    .no-print { display: none !important; }
+
+    .sp-modal-overlay {
+      position: static !important;
+      background: #fff !important;
+      padding: 0 !important;
+    }
+    .sp-modal-inner {
+      max-width: 100% !important;
+      max-height: none !important;
+      box-shadow: none !important;
+      background: #fff !important;
+    }
+    .sp-modal-head { display: none !important; }
+    .sp-modal-body {
+      padding: 0 !important;
+      background: #fff !important;
+      overflow: visible !important;
+    }
+  }
+}
+
+/* =========================================================================
+   Toolbar fixa com seletor de modelo + ação imprimir.
+   Sticky no topo do ion-content pra funcionar em mobile (onde o ion-header
+   da página é escondido pelo shell). Não imprime (`.no-print`). Em desktop
+   fica logo abaixo do header navy; em mobile, abaixo do shell-mobile-header.
+   ========================================================================= */
+.sp-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--placar-surface, #fff);
+  border-bottom: 1px solid var(--placar-divider, #ececef);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  flex-wrap: wrap;
+}
+
+.sp-toolbar-lbl {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--placar-text, #2d2d2d);
+
+  ion-icon {
+    font-size: 18px;
+    color: var(--ion-color-primary, #1C2E3D);
+  }
+}
+
+.sp-modelo-select {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--placar-divider, #d4d8de);
+  background: #fff;
+  color: var(--placar-text, #2d2d2d);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 180px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--ion-color-primary, #1C2E3D);
+  }
+
+  option {
+    color: #1C2E3D;
+    background: #fff;
+  }
+}
+
+.sp-toolbar-imprimir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: var(--ion-color-primary, #1C2E3D);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.2px;
+  margin-left: auto;
+  transition: filter 120ms ease, transform 100ms ease;
+
+  ion-icon { font-size: 16px; }
+
+  &:hover:not(:disabled) { filter: brightness(1.1); }
+  &:active:not(:disabled) { transform: scale(0.97); }
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+/* Mobile: empilha label e botão se ficar apertado. */
+@media (max-width: 540px) {
+  .sp-toolbar {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .sp-toolbar-imprimir {
+    width: 100%;
+    margin-left: 0;
+    justify-content: center;
+  }
+  .sp-modelo-select {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* =========================================================================
+   MODELO FUTSAL (SICOOB-style)
+   -------------------------------------------------------------------------
+   Layout simplificado em relação ao "padrão": ACUMULATIVAS 1-5, TÉCNICO/
+   CAPITÃO em texto vertical no lado direito, logos do organizador nos
+   cantos do header. Mesma folha A4 paisagem com page-break-after.
+   ========================================================================= */
+.sumula-folha-futsal {
+  width: 297mm;
+  min-height: 210mm;
+  padding: 6mm 8mm;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 0 auto 14px;
+  font-family: 'Inter', Arial, sans-serif;
+  color: #000;
+  font-size: 9px;
+  page-break-after: always;
+  break-after: page;
+}
+
+.smf-titulo-faixa {
+  display: grid;
+  grid-template-columns: 50px 1fr 50px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+  border: 1.5px solid #000;
+  padding: 4px 8px;
+}
+
+.smf-logo-esq,
+.smf-logo-dir {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+}
+
+.smf-titulo-bloco {
+  text-align: center;
+}
+
+.smf-titulo {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.smf-confronto {
+  display: grid;
+  grid-template-columns: 1fr 30px 1fr;
+  align-items: center;
+  gap: 6px;
+}
+
+.smf-time-nome {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.smf-x {
+  font-size: 14px;
+  font-weight: 800;
+  border: 1px solid #000;
+  padding: 1px 4px;
+  display: inline-block;
+}
+
+/* ─── Meta-grid ─── */
+.smf-meta {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 4px;
+
+  td {
+    border: 1px solid #000;
+    padding: 2px 4px;
+    font-size: 8.5px;
+    text-align: center;
+    height: 16px;
+  }
+}
+
+.smf-lbl {
+  font-weight: 700;
+  background: #f3f3f3;
+  text-transform: uppercase;
+  font-size: 8px;
+  letter-spacing: 0.3px;
+}
+
+.smf-val {
+  font-weight: 600;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.smf-cell {
+  height: 16px;
+}
+
+.smf-check {
+  width: 14px;
+  text-align: center;
+  font-weight: 800;
+}
+
+.smf-arb-lbl {
+  width: 70px;
+  background: #f3f3f3;
+}
+
+.smf-arb-val {
+  width: 160px;
+  text-align: left;
+  padding-left: 6px;
+}
+
+/* ─── Corpo: 2 equipes lado a lado ─── */
+.smf-corpo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.smf-equipe-bloco {
+  border: 1.5px solid #000;
+}
+
+.smf-equipe-cab {
+  display: grid;
+  grid-template-columns: 55px 1fr 60px 70px;
+  align-items: stretch;
+  border-bottom: 1px solid #000;
+
+  > div {
+    padding: 3px 4px;
+    font-size: 8.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-right: 1px solid #000;
+    display: flex;
+    align-items: center;
+    background: #f3f3f3;
+
+    &:last-child { border-right: none; }
+  }
+}
+
+.smf-eq-nome {
+  background: #fff !important;
+  font-size: 10px !important;
+}
+
+.smf-eq-boxes {
+  background: #fff !important;
+  display: flex !important;
+  gap: 2px;
+  align-items: center;
+  justify-content: space-around;
+  padding: 2px !important;
+
+  .smf-box-mini {
+    width: 8px;
+    height: 8px;
+    border: 1px solid #000;
+    display: inline-block;
+  }
+}
+
+/* ─── Tabela de jogadores ─── */
+.smf-jogadores {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    border: 1px solid #000;
+    padding: 1px 2px;
+    text-align: center;
+    font-size: 8px;
+    height: 14px;
+  }
+
+  th {
+    background: #f3f3f3;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+  }
+
+  .smf-th-reg, .smf-td-reg { width: 50px; }
+  .smf-th-jog              { width: auto; }
+  .smf-th-n,  .smf-td-n    { width: 18px; }
+  .smf-th-cart, .smf-td-cart { width: 18px; }
+  .smf-th-acum             { width: 90px; }
+
+  .smf-td-jog {
+    text-align: left;
+    padding-left: 4px;
+    font-size: 9px;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+
+  .smf-td-acum {
+    background: #fafafa;
+    font-size: 8px;
+  }
+
+  .smf-pedido-header {
+    background: #e5e5e5;
+    font-weight: 700;
+    font-size: 8px;
+    text-transform: uppercase;
+  }
+
+  .smf-pedido-lbl {
+    font-weight: 700;
+    font-size: 8.5px;
+    background: #f3f3f3;
+  }
+
+  .smf-pedido-box {
+    height: 14px;
+  }
+
+  /* TÉCNICO e CAPITÃO em texto vertical — mesma estética da `.vertical-text`
+     do modelo padrão: célula estreita (~14px), fundo branco/cinza claro,
+     texto rotacionado pra ficar legível de baixo pra cima. */
+  .smf-vert {
+    width: 14px;
+    min-width: 14px;
+    background: #fff;
+    vertical-align: middle;
+    text-align: center;
+    span {
+      display: inline-block;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-weight: 700;
+      font-size: 9px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+  }
+
+  /* Área vazia ao lado do label vertical TÉCNICO/CAPITÃO — onde o árbitro
+     escreve o nome/nº à caneta. Mesma altura (rowspan da tabela) mas sem
+     conteúdo, sem fundo destacado. */
+  .smf-vert-area {
+    background: #fff;
+  }
+
+  /* Comissão técnica (3 linhas no rodapé da tabela). */
+  .smf-comissao {
+    background: #fafafa;
+
+    .smf-comissao-nome {
+      text-align: left;
+      padding-left: 4px;
+      font-size: 9px;
+      text-transform: uppercase;
+    }
+    .smf-comissao-lbl {
+      font-weight: 700;
+      font-size: 8.5px;
+      background: #f3f3f3;
+    }
+    .smf-comissao-extra {
+      background: #fff;
+    }
+  }
+}
+
+/* Grade 1-26 (mesma do modelo padrão, escala adaptada). */
+.smf-grade-numerada {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  border: 1px solid #000;
+  border-top: none;
+
+  .smf-num-box,
+  .smf-empty-box {
+    border-right: 1px solid #000;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 600;
+
+    &:nth-child(13n) { border-right: none; }
+  }
+
+  .smf-empty-box {
+    border-top: 1px solid #000;
+  }
+}
+
+/* =========================================================================
+   Estilos comuns reutilizados pelos 4 templates novos (handebol, basquete,
+   vôlei, raquete). Cada template usa o seu próprio prefixo (smh-, smb-,
+   smv-, smr-) mas a estrutura visual é parecida: header com X centralizado,
+   meta-grid de info, tabela de jogadores, comissão técnica no rodapé.
+
+   Pra evitar repetir as mesmas regras 4x, declaro uma "base" via
+   placeholder selector (Sass @extend) — ou aqui via lista de seletores
+   compartilhada. Optei pela lista (mais simples de manter).
+   ========================================================================= */
+.sumula-folha-handebol,
+.sumula-folha-basquete,
+.sumula-folha-volei,
+.sumula-folha-raquete {
+  width: 297mm;
+  min-height: 210mm;
+  padding: 6mm 8mm;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 0 auto 14px;
+  font-family: 'Inter', Arial, sans-serif;
+  color: #000;
+  font-size: 9px;
+  page-break-after: always;
+  break-after: page;
+}
+
+/* Faixa do título — mesmo padrão pros 4 templates novos. */
+.smh-titulo-faixa,
+.smb-titulo-faixa,
+.smv-titulo-faixa,
+.smr-titulo-faixa {
+  border: 1.5px solid #000;
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.smh-titulo,
+.smb-titulo,
+.smv-titulo,
+.smr-titulo {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.smh-confronto,
+.smb-confronto,
+.smv-confronto,
+.smr-confronto {
+  display: grid;
+  grid-template-columns: 1fr 30px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.smh-time-nome,
+.smb-time-nome,
+.smv-time-nome,
+.smr-time-nome {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.smh-x,
+.smb-x,
+.smv-x,
+.smr-x {
+  font-size: 14px;
+  font-weight: 800;
+  border: 1px solid #000;
+  padding: 1px 6px;
+  display: inline-block;
+  justify-self: center;
+}
+
+/* Meta-grid — labels + valores. */
+.smh-meta,
+.smb-meta,
+.smv-meta,
+.smr-meta,
+.smh-jogadores,
+.smb-jogadores,
+.smv-jogadores,
+.smr-jogadores,
+.smb-placar-quartos,
+.smv-sets,
+.smr-placar {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 4px;
+
+  td, th {
+    border: 1px solid #000;
+    padding: 2px 4px;
+    font-size: 8.5px;
+    text-align: center;
+    height: 16px;
+  }
+}
+
+.smh-lbl, .smb-lbl, .smv-lbl, .smr-lbl {
+  font-weight: 700;
+  background: #f3f3f3;
+  text-transform: uppercase;
+  font-size: 8px;
+  letter-spacing: 0.3px;
+}
+
+.smh-val, .smb-val, .smv-val, .smr-val {
+  font-weight: 600;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.smh-cell, .smb-cell, .smv-cell, .smr-cell {
+  height: 16px;
+}
+
+.smh-final, .smb-final, .smv-final, .smr-final {
+  font-weight: 800;
+  background: #e8e8e8;
+}
+
+/* Corpo: 2 equipes lado a lado. */
+.smh-corpo,
+.smb-corpo,
+.smv-corpo,
+.smr-corpo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.smh-equipe-bloco,
+.smb-equipe-bloco,
+.smv-equipe-bloco,
+.smr-equipe-bloco {
+  border: 1.5px solid #000;
+  padding: 4px;
+}
+
+.smh-equipe-cab,
+.smb-equipe-cab,
+.smv-equipe-cab,
+.smr-equipe-cab {
+  font-weight: 700;
+  font-size: 9px;
+  text-transform: uppercase;
+  padding: 3px 6px;
+  background: #f3f3f3;
+  margin-bottom: 4px;
+}
+
+/* Tabelas de jogadores. */
+.smh-jogadores th,
+.smb-jogadores th,
+.smv-jogadores th,
+.smr-jogadores th {
+  background: #f3f3f3;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 8px;
+  letter-spacing: 0.2px;
+}
+
+.smh-jog-nome,
+.smb-jog-nome,
+.smv-jog-nome,
+.smr-jog-nome {
+  text-align: left;
+  padding-left: 4px;
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.smh-th-n, .smb-th-n, .smv-th-n, .smr-th-n { width: 26px; }
+
+/* Cartão azul do handebol — destaca em azul. */
+.smh-az {
+  background: rgba(77, 171, 247, 0.18) !important;
+  color: #1d4ed8;
+}
+
+/* Linhas auxiliares pra preenchimento manual. */
+.smh-linha,
+.smb-linha,
+.smv-linha,
+.smr-linha {
+  display: inline-block;
+  border-bottom: 1px solid #000;
+  height: 12px;
+  flex: 1;
+  min-width: 80px;
+  margin-left: 6px;
+
+  &.curta { min-width: 30px; }
+  &.longa { min-width: 200px; }
+}
+
+/* Comissão técnica — rodapé do bloco da equipe. */
+.smh-comissao,
+.smb-comissao,
+.smv-comissao,
+.smr-rodape {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 9px;
+
+  > div {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+/* =========================================================================
+   BASQUETE — faltas de equipe por quarto (boxes vazias 1-5)
+   ========================================================================= */
+.smb-faltas-eq {
+  margin-top: 4px;
+  font-size: 8.5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 4px;
+  border: 1px solid #000;
+
+  .smb-falta-q {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-weight: 700;
+  }
+  .smb-faltas-boxes {
+    display: inline-flex;
+    gap: 2px;
+  }
+  .smb-fbox {
+    width: 9px;
+    height: 9px;
+    border: 1px solid #000;
+  }
+}
+
+.smb-pts {
+  background: #f3f3f3;
+  font-weight: 700;
+}
+
+.smb-falta {
+  font-size: 8px;
+  color: #999;
+  background: #fafafa;
+}
+
+/* =========================================================================
+   VÔLEI — pedidos de tempo / substituições por set
+   ========================================================================= */
+.smv-resumos {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 8.5px;
+
+  .smv-resumo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .smv-rset {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 4px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+}
+
+/* =========================================================================
+   RAQUETE — Placar com games + tiebreak
+   ========================================================================= */
+.smr-tb {
+  width: 28px;
+  background: #fafafa;
+  font-size: 7.5px;
+}
+
+.smr-sub th {
+  background: #fafafa !important;
+  font-size: 7px !important;
+}
+
+.smr-assinatura {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 8.5px;
+}
+
+/* =========================================================================
+   Refinements pros modelos NACIONAIS (CBHb / CBB / CBV / CBT)
+   -------------------------------------------------------------------------
+   Estilos extras adicionados nos novos templates oficiais. Mantém os
+   prefixos por modelo pra coexistir com o CSS base já declarado acima.
+   ========================================================================= */
+
+/* ─── Marcar (boxes pra marcar X/C/G/L) ─── */
+.smh-marcar,
+.smb-marcar,
+.smv-marcar {
+  background: #fff;
+  width: 18px;
+}
+
+/* ─── HANDEBOL — exclusões 2'/2'/2' + cartões + placar com boxes T1/T2/T3 ─── */
+.smh-placar {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 4px;
+  th, td {
+    border: 1px solid #000;
+    padding: 2px 4px;
+    font-size: 8.5px;
+    text-align: center;
+    height: 18px;
+  }
+  th {
+    background: #f3f3f3;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 8px;
+  }
+  .smh-eq-nome {
+    text-align: left;
+    padding-left: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: #fafafa;
+  }
+  .smh-pt-boxes {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    align-items: center;
+    padding: 2px;
+
+    .smh-tbox {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 14px;
+      border: 1px solid #000;
+      font-size: 7.5px;
+      font-weight: 700;
+    }
+  }
+}
+
+.smh-2min {
+  background: rgba(255, 200, 100, 0.18);
+  font-size: 7px;
+  color: #999;
+}
+
+.smh-cart-am {
+  background: rgba(255, 215, 0, 0.18);
+}
+.smh-cart-vm {
+  background: rgba(235, 71, 71, 0.18);
+}
+
+.smh-th-cg { width: 16px; }
+.smh-th-pun { width: 18px; }
+
+/* ─── BASQUETE — pedidos de tempo + faltas equipe + boxes faltas pessoais ─── */
+.smb-pedidos {
+  margin-top: 4px;
+  padding: 4px;
+  border: 1px solid #000;
+  font-size: 8.5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+
+  .smb-pt-set {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-weight: 600;
+
+    b {
+      font-weight: 800;
+      color: var(--ion-color-primary, #1C2E3D);
+    }
+  }
+}
+
+.smb-th-lic, .smb-th-c { width: 20px; }
+.smb-th-pts { width: 50px; }
+
+/* Faltas pessoais sem números pré-preenchidos — só boxes vazias pra marcar. */
+.smb-falta {
+  width: 18px;
+  background: #fafafa;
+}
+
+/* ─── VÔLEI — sets+subs+pedidos ─── */
+.smv-tempo { width: 60px; }
+.smv-pts-set { font-weight: 700; }
+.smv-th-lic { width: 50px; }
+.smv-th-cl { width: 16px; }
+.smv-th-set { width: 38px; font-size: 7.5px; }
+
+.smv-pedidos {
+  margin-top: 4px;
+  padding: 4px;
+  border: 1px solid #000;
+  font-size: 8.5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+
+  .smv-pt-set {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-weight: 600;
+  }
+}
+
+.smv-subs {
+  margin-top: 4px;
+  font-size: 8.5px;
+
+  .smv-subs-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2px;
+    th, td {
+      border: 1px solid #000;
+      padding: 1px 2px;
+      font-size: 7.5px;
+      text-align: center;
+      height: 12px;
+    }
+    th { background: #f3f3f3; font-weight: 700; }
+    .smv-subs-set {
+      background: #f3f3f3;
+      width: 30px;
+      font-weight: 700;
+    }
+  }
+}
+
+/* ─── RAQUETE — placar + tempo de jogo + vencedor + observações ─── */
+.smr-th-lic { width: 60px; }
+.smr-th-rank { width: 70px; }
+
+.smr-placar {
+  th, td {
+    border: 1px solid #000;
+    padding: 2px 4px;
+    font-size: 8.5px;
+    text-align: center;
+    height: 18px;
+  }
+  thead th {
+    background: #f3f3f3;
+    font-weight: 700;
+    font-size: 8px;
+  }
+  .smr-sub th {
+    background: #fafafa;
+    font-size: 7px;
+    font-weight: 600;
+  }
+  .smr-eq-nome {
+    text-align: left;
+    padding-left: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: #fafafa;
+  }
+}
+
+.smr-rodape-info {
+  margin-top: 6px;
+  font-size: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  > div {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+/* =========================================================================
+   ASSINATURAS — comum aos 4 templates novos (rodapé estilo oficial).
+   ========================================================================= */
+.smh-assinaturas,
+.smb-assinaturas,
+.smv-assinaturas,
+.smr-assinaturas {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #000;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+}
+
+.smr-assinaturas {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.smh-ass,
+.smb-ass,
+.smv-ass,
+.smr-ass {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 7.5px;
+}
+
+.smh-ass-linha,
+.smb-ass-linha,
+.smv-ass-linha,
+.smr-ass-linha {
+  display: block;
+  width: 100%;
+  border-bottom: 1px solid #000;
+  height: 22px;
+}
+
+.smh-ass-lbl,
+.smb-ass-lbl,
+.smv-ass-lbl,
+.smr-ass-lbl {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  text-align: center;
+  font-size: 7.5px;
+}

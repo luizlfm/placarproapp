@@ -1,0 +1,19 @@
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { IonicModule } from '@ionic/angular';
+import { SharedModule } from '../../../../shared/shared.module';
+import { EditarInformacoesModalComponent } from './editar-informacoes-modal.component';
+
+/**
+ * Wrapper module pra permitir que o EditarInformacoesModalComponent seja
+ * usado em features diferentes do JogoDetalhePageModule (ex.: Classificação).
+ * Em Angular legacy um componente só pode estar em um único NgModule;
+ * esse módulo isolado evita duplicação.
+ */
+@NgModule({
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, IonicModule, SharedModule],
+  declarations: [EditarInformacoesModalComponent],
+  exports: [EditarInformacoesModalComponent],
+})
+export class EditarInformacoesModalModule {}

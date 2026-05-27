@@ -1,0 +1,35 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Fases</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <div class="wrap">
+    <div class="lista">
+      <button
+        type="button"
+        class="fase-item"
+        *ngFor="let f of fases; trackBy: trackById"
+        (click)="editar(f)"
+      >
+        <div class="info">
+          <strong class="nome">{{ f.nome }}</strong>
+          <span class="tipo">{{ TIPO_LABEL[f.tipo] }}</span>
+        </div>
+        <ion-icon class="chev" name="chevron-forward-outline"></ion-icon>
+      </button>
+    </div>
+
+    <div class="cta">
+      <button type="button" class="btn-nova" (click)="novaFase()" [disabled]="loading">
+        Nova fase
+      </button>
+    </div>
+  </div>
+</ion-content>

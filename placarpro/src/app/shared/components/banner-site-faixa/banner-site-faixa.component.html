@@ -1,0 +1,33 @@
+<!-- Só renderiza quando há pelo menos 1 banner cadastrado.
+     Senão, ocupa zero espaço (evita "frame vazio" feio). -->
+<div
+  class="bsf-wrap"
+  *ngIf="banners.length > 0"
+  [class]="'var-' + variante"
+  [class.eh-mobile]="eMobile"
+>
+  <button
+    *ngFor="let p of banners; let i = index; trackBy: trackById"
+    type="button"
+    class="bsf-slide"
+    [class.ativo]="i === indiceAtual"
+    [class.clicavel]="p.link || p.site"
+    [attr.aria-hidden]="i !== indiceAtual"
+    [attr.tabindex]="i === indiceAtual ? 0 : -1"
+    [attr.aria-label]="p.nome + (p.link || p.site ? ' — abrir em nova aba' : '')"
+    (click)="abrirLink(p, $event)"
+  >
+    <!-- Mobile usa bannerSiteMobileUrl (640×200), web usa bannerSiteUrl (970×90).
+         Fallback automático se a versão preferida não existir. -->
+    <img [src]="bannerUrlParaViewport(p)" [alt]="p.nome" />
+  </button>
+
+  <!-- Indicadores (bolinhas) — só aparecem quando há 2+ banners pra rotacionar. -->
+  <div class="bsf-dots" *ngIf="banners.length > 1" aria-hidden="true">
+    <span
+      *ngFor="let p of banners; let i = index"
+      class="bsf-dot"
+      [class.ativo]="i === indiceAtual"
+    ></span>
+  </div>
+</div>

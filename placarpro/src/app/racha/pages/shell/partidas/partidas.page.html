@@ -1,0 +1,124 @@
+<div class="r-page rpa-page">
+  <header class="r-toolbar">
+    <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+    </button>
+    <span class="r-toolbar-title">Partidas</span>
+  </header>
+
+  <header class="r-page-head">
+    <span class="r-page-tag">⚽ HISTÓRICO</span>
+    <h1>Partidas do racha</h1>
+    <p>
+      Registre cada partida e seu placar. Os números alimentam Mercado,
+      Conquistas e Ranking automaticamente.
+    </p>
+  </header>
+
+  <!-- Faixa verde com CTAs -->
+  <div class="r-hero-strip">
+    <button type="button" class="r-hero-strip-btn" (click)="novaPartida()">
+      <ion-icon name="add-circle"></ion-icon>
+      NOVA PARTIDA
+    </button>
+    <button type="button" class="r-hero-strip-btn alt" (click)="irSorteio()">
+      <ion-icon name="shuffle"></ion-icon>
+      SORTEAR TIMES
+    </button>
+  </div>
+
+  <!-- Chips de filtro -->
+  <nav class="rpa-filtros" aria-label="Filtro de partidas">
+    <button
+      type="button"
+      class="rpa-filtro"
+      [class.ativo]="filtroAtivo === 'todas'"
+      (click)="selecionarFiltro('todas')"
+    >Todas <span class="rpa-count">{{ contagem.todas }}</span></button>
+    <button
+      type="button"
+      class="rpa-filtro"
+      [class.ativo]="filtroAtivo === 'rascunho'"
+      (click)="selecionarFiltro('rascunho')"
+    >Em andamento <span class="rpa-count">{{ contagem.rascunho }}</span></button>
+    <button
+      type="button"
+      class="rpa-filtro"
+      [class.ativo]="filtroAtivo === 'finalizadas'"
+      (click)="selecionarFiltro('finalizadas')"
+    >Finalizadas <span class="rpa-count">{{ contagem.finalizadas }}</span></button>
+  </nav>
+
+  <!-- Loading -->
+  <div class="rpa-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <!-- Empty state -->
+  <section class="r-empty" *ngIf="!loading && partidasFiltradas.length === 0">
+    <div class="r-empty-icone"><ion-icon name="football-outline"></ion-icon></div>
+    <h2 *ngIf="partidas.length === 0">Nenhuma partida registrada</h2>
+    <h2 *ngIf="partidas.length > 0">Nada neste filtro</h2>
+    <p *ngIf="partidas.length === 0">
+      Crie a primeira partida pra começar a alimentar os rankings.
+    </p>
+    <button
+      *ngIf="partidas.length === 0"
+      type="button"
+      class="r-btn r-btn-lime r-btn-big"
+      (click)="novaPartida()"
+    >
+      <ion-icon name="add-outline"></ion-icon>
+      CRIAR PRIMEIRA PARTIDA
+    </button>
+  </section>
+
+  <!-- Lista de partidas -->
+  <section class="rpa-lista" *ngIf="!loading && partidasFiltradas.length > 0">
+    <article
+      *ngFor="let p of partidasFiltradas; trackBy: trackByPartida"
+      class="r-card rpa-card"
+      [class.finalizada]="p.status === 'finalizada'"
+      (click)="editarPlacar(p)"
+      role="button"
+      tabindex="0"
+    >
+      <div class="rpa-card-head">
+        <span class="rpa-data">{{ formatarData(p.data) }}</span>
+        <span class="rpa-status" [attr.data-status]="p.status">
+          <span class="rpa-dot"></span>
+          {{ p.status === 'finalizada' ? 'FINAL' : 'EM ANDAMENTO' }}
+        </span>
+      </div>
+
+      <div class="rpa-placar">
+        <span class="rpa-time">{{ p.timeANome }}</span>
+        <div class="rpa-gols">
+          <strong>{{ p.golsA }}</strong>
+          <span class="rpa-vs">×</span>
+          <strong>{{ p.golsB }}</strong>
+        </div>
+        <span class="rpa-time">{{ p.timeBNome }}</span>
+      </div>
+
+      <div class="rpa-acoes">
+        <button
+          type="button"
+          class="rpa-btn primary"
+          (click)="editarPlacar(p); $event.stopPropagation()"
+        >
+          <ion-icon name="create-outline"></ion-icon>
+          {{ p.status === 'finalizada' ? 'Editar placar' : 'Registrar placar' }}
+        </button>
+        <button
+          type="button"
+          class="rpa-btn danger"
+          (click)="removerPartida(p, $event)"
+          aria-label="Remover partida"
+        >
+          <ion-icon name="trash-outline"></ion-icon>
+        </button>
+      </div>
+    </article>
+  </section>
+</div>

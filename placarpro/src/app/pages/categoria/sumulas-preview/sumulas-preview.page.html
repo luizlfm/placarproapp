@@ -1,0 +1,1302 @@
+<ion-header class="no-print">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Imprimir súmulas ({{ qtdSelecionadas }})</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="imprimir()" [disabled]="qtdSelecionadas === 0" aria-label="Imprimir">
+        <ion-icon slot="start" name="print-outline"></ion-icon>
+        Imprimir
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- ============ Barra fixa com seletor de modelo + botão imprimir ============
+       Sticky no topo do ion-content pra ser visível em qualquer viewport.
+       Antes o dropdown ficava no `<ion-header>`, mas no mobile o header é
+       escondido pela regra global do shell (`::ng-deep ion-header
+       { display: none }`) — quem está no mobile não via o seletor. -->
+  <div class="sp-toolbar no-print">
+    <label class="sp-toolbar-lbl">
+      <ion-icon name="document-text-outline"></ion-icon>
+      <span>Modelo:</span>
+      <select
+        class="sp-modelo-select"
+        [(ngModel)]="modeloSelecionado"
+        aria-label="Modelo de súmula"
+      >
+        <option *ngFor="let m of modelosSumula" [ngValue]="m.id">{{ m.label }}</option>
+      </select>
+    </label>
+    <button
+      type="button"
+      class="sp-toolbar-imprimir"
+      (click)="imprimir()"
+      [disabled]="qtdSelecionadas === 0"
+    >
+      <ion-icon name="print-outline"></ion-icon>
+      <span>Imprimir ({{ qtdSelecionadas }})</span>
+    </button>
+  </div>
+
+  <div class="sp-layout">
+
+    <!-- ============ Painel lateral de seleção ============ -->
+    <aside class="sp-painel no-print">
+      <div class="sp-painel-head">
+        <h3>Partidas <span class="sp-cnt" *ngIf="qtdSelecionadas > 0">({{ qtdSelecionadas }})</span></h3>
+      </div>
+
+      <div class="sp-busca">
+        <ion-icon name="search-outline"></ion-icon>
+        <input type="text" placeholder="Buscar por equipe ou fase..." [(ngModel)]="busca" />
+      </div>
+
+      <div class="sp-acoes">
+        <button type="button" class="sp-acao" (click)="selecionarTodas()">
+          <ion-icon name="checkmark-done-outline"></ion-icon>
+          Todas
+        </button>
+        <button type="button" class="sp-acao limpar" [disabled]="qtdSelecionadas === 0" (click)="limparSelecao()">
+          <ion-icon name="close-outline"></ion-icon>
+          Limpar
+        </button>
+      </div>
+
+      <div class="sp-lista">
+        <div *ngIf="loading" class="sp-loading">Carregando...</div>
+        <div *ngIf="!loading && linhasFiltradas.length === 0" class="sp-vazio">
+          {{ busca ? 'Nenhum jogo encontrado.' : 'Nenhum jogo cadastrado.' }}
+        </div>
+        <div
+          *ngFor="let l of linhasFiltradas; trackBy: trackByLinha"
+          class="sp-card"
+          [class.selecionada]="isSelecionada(l.jogo.id)"
+        >
+          <button type="button" class="sp-card-main" (click)="toggle(l.jogo.id)">
+            <span class="sp-check" [class.on]="isSelecionada(l.jogo.id)">
+              <ion-icon [name]="isSelecionada(l.jogo.id) ? 'checkbox' : 'square-outline'"></ion-icon>
+            </span>
+            <div class="sp-card-body">
+              <div class="sp-times">
+                <span class="sp-time-nome">{{ l.mandante?.nome || '?' }}</span>
+                <span class="sp-vs">×</span>
+                <span class="sp-time-nome">{{ l.visitante?.nome || '?' }}</span>
+              </div>
+              <div class="sp-meta">
+                <span *ngIf="l.dataBr"><ion-icon name="calendar-outline"></ion-icon> {{ l.dataBr }}</span>
+                <span class="sp-fase">{{ l.fase }}</span>
+              </div>
+            </div>
+          </button>
+          <button type="button" class="sp-ver-btn" (click)="abrirVisualizacao(l.jogo.id)" aria-label="Visualizar súmula em PDF">
+            <ion-icon name="eye-outline"></ion-icon>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============ Área de preview das súmulas ============ -->
+    <main class="sp-preview">
+      <div *ngIf="sumulas.length === 0" class="sp-empty-preview">
+        <ion-icon name="document-text-outline"></ion-icon>
+        <h2>Nenhuma súmula selecionada</h2>
+        <p>Use o painel à esquerda pra escolher uma ou mais partidas. As súmulas vão aparecer aqui pra você revisar e imprimir.</p>
+      </div>
+
+      <!-- ═══════════ MODELO PADRÃO (genérico) ═══════════ -->
+      <!-- Cada súmula vira uma folha A4 paisagem com page-break-after -->
+      <div
+        class="sumula-folha"
+        *ngFor="let s of sumulas; trackBy: trackBySumula"
+        [hidden]="modeloSelecionado !== 'padrao'"
+      >
+
+        <!-- Faixa do título -->
+        <div class="sm-titulo-faixa">
+          <div class="sm-logo-camp">
+            <img *ngIf="campeonato?.logoUrl" [src]="campeonato!.logoUrl" [alt]="campeonato?.titulo" />
+          </div>
+          <div class="sm-titulo-bloco">
+            <div class="sm-titulo">{{ campeonato?.titulo || 'Campeonato' }}</div>
+            <div class="sm-confronto">
+              <div class="sm-time-nome">{{ nomeCompleto(s.mandante) }}</div>
+              <div class="sm-placar-boxes lado-m">
+                <span class="cx-pl" *ngFor="let i of [1]"></span>
+              </div>
+              <div class="sm-vs">X</div>
+              <div class="sm-placar-boxes lado-v">
+                <span class="cx-pl" *ngFor="let i of [1]"></span>
+              </div>
+              <div class="sm-time-nome">{{ nomeCompleto(s.visitante) }}</div>
+            </div>
+          </div>
+          <div class="sm-logos-times">
+            <div class="sm-logo-time">
+              <img *ngIf="s.mandante?.logoUrl" [src]="s.mandante!.logoUrl" [alt]="s.mandante?.nome" />
+            </div>
+            <div class="sm-logo-time">
+              <img *ngIf="s.visitante?.logoUrl" [src]="s.visitante!.logoUrl" [alt]="s.visitante?.nome" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Meta grid -->
+        <table class="sm-meta-grid" style="text-align: center;">
+          <colgroup>
+            <col style="width: 9%" />
+            <col style="width: 7.5%" />
+            <col style="width: 7.5%" />
+            <col style="width: 7.5%" />
+            <col style="width: 7.5%" />
+            <col style="width: 7%" />
+            <col style="width: 7%" />
+            <col style="width: 7%" />
+            <col style="width: 7%" />
+            <col style="width: 8%" />
+            <col style="width: 25%" />
+          </colgroup>
+          <tr>
+            <td class="lbl" style="text-align: center;">DATA</td>
+            <td class="val" colspan="4">{{ formatarSomenteData(s.jogo.dataHora) }}</td>
+            <td class="lbl" style="text-align: center;">HORÁRIO</td>
+            <td class="lbl" style="text-align: center;">INÍCIO</td>
+            <td class="lbl" style="text-align: center;">TÉRMINO</td>
+            <td class="lbl" style="text-align: center;" colspan="1">CONTAGEM</td>
+            <td class="lbl arbitro" rowspan="2">ÁRBITRO 01</td>
+            <td class="val arb-nome" rowspan="2">{{ arbitroPor('principal', s.arbitros) }}</td>
+          </tr>
+          <tr>
+            <td class="lbl" style="text-align: center;">COMPETIÇÃO</td>
+            <td class="val" colspan="4">{{ campeonato?.titulo || '' }}</td>
+            <td class="lbl" colspan="1" style="text-align: center;">1º PERÍODO</td>
+            <td class="lbl" colspan="1"></td>
+            <td class="lbl" colspan="1"></td>
+            <td class="check-box">X</td>
+          </tr>
+          <tr>
+            <td class="lbl" style="text-align: center;">CATEGORIA</td>
+            <td class="val center" colspan="4">{{ (categoria?.titulo || '') | uppercase }}</td>
+            <td class="lbl" colspan="1" style="text-align: center;">2º PERÍODO</td>
+            <td class="lbl" colspan="1"></td>
+            <td class="lbl" colspan="1"></td>
+            <td class="check-box">X</td>
+            <td class="lbl arbitro" rowspan="2">ÁRBITRO 02</td>
+            <td class="val arb-nome" rowspan="2">{{ arbitroPor('auxiliar-1', s.arbitros) }}</td>
+          </tr>
+          <tr>
+            <td class="lbl" style="text-align: center;">FASE</td>
+            <td class="val center" colspan="2">{{ (s.jogo.fase || '') | uppercase }}</td>
+            <td class="lbl serie">SÉRIE</td>
+            <td class="val-cell"></td>
+            <td class="lbl" colspan="1" style="text-align: center;">EXTRA</td>
+            <td class="lbl" colspan="1"></td>
+            <td class="lbl" colspan="1"></td>
+            <td class="check-box">X</td>
+          </tr>
+          <tr>
+            <td class="lbl" style="text-align: center;">GINÁSIO</td>
+            <td class="val" colspan="4">{{ (s.jogo.local || '') | uppercase }}</td>
+            <td class="lbl" colspan="3" style="text-align: center;">PLACAR FINAL</td>
+            <td class="check-box">X</td>
+            <td class="lbl arbitro" rowspan="2">MESÁRIO</td>
+            <td class="val arb-nome" rowspan="2">{{ arbitroPor('mesario', s.arbitros) }}</td>
+          </tr>
+          <tr>
+            <td class="lbl" style="text-align: center;">CIDADE</td>
+            <td class="val" colspan="4">{{ cidadeEquipes(s) | uppercase }}</td>
+            <td class="lbl" colspan="3" style="text-align: center;">DESEMPATE - PENALIDADES</td>
+            <td class="check-box">X</td>
+          </tr>
+        </table>
+
+        <!-- Corpo: EQUIPE A | EQUIPE B -->
+        <div class="sm-corpo">
+          <ng-container *ngFor="let lado of ['A','B']">
+            <div class="sm-equipe-bloco">
+              <div class="sm-equipe-cabecalho">
+                <div class="celula equipe">EQUIPE {{ lado }}</div>
+                <div class="celula nome-equipe">{{ (lado === 'A' ? s.mandante : s.visitante)?.nome || '' }}</div>
+                <div class="celula iniciantes-lbl">INICIANTES</div>
+                <div class="celula iniciantes-boxes">
+                  <span class="box-mini" *ngFor="let i of [1,2,3,4,5,6,7]"></span>
+                </div>
+              </div>
+
+              <table class="sm-jogadores">
+                <thead>
+                  <tr>
+                    <th rowspan="2" class="th-registro">Reg.</th>
+                    <th rowspan="2" class="th-jogador">JOGADORES</th>
+                    <th rowspan="2" class="th-num">Nº</th>
+                    <th colspan="5" class="th-faltas" rowspan="2">FALTAS</th>
+                    <th rowspan="2" class="th-am">AM</th>
+                    <th rowspan="2" class="th-vm">VM</th>
+                    <th colspan="7" class="th-acum" rowspan="2">ACUMULATIVAS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let j of preencherLinhas(lado === 'A' ? s.escMandante : s.escVisitante, linhasParaAmbas(s)); let i = index"
+                      [class.vazia]="!j?.jogador">
+                    <td class="td-registro"></td>
+                    <td class="td-jogador">{{ j?.jogador?.nome || '' }}</td>
+                    <td class="td-num"></td>
+                    <td class="td-falta" *ngFor="let n of [1,2,3,4,5]">{{ n }}</td>
+                    <td class="td-am">{{ j?.amarelos ? 'X' : '' }}</td>
+                    <td class="td-vm">{{ j?.vermelhos ? 'X' : '' }}</td>
+
+                    <ng-container *ngIf="i < 2">
+                      <td class="td-acum" *ngFor="let n of [1,2,3,4,5,6,7]">{{ n }}</td>
+                    </ng-container>
+
+                    <ng-container *ngIf="i === 2">
+                      <td class="td-pedido-header" colspan="7">PEDIDO DE TEMPO</td>
+                    </ng-container>
+
+                    <ng-container *ngIf="i === 3">
+                      <td class="td-pedido-box"></td>
+                      <td class="td-pedido-lbl" colspan="2">1º P</td>
+                      <td class="td-pedido-lbl" colspan="2">2º P</td>
+                      <td class="td-pedido-lbl" colspan="2">EX</td>
+                    </ng-container>
+                    <ng-container *ngIf="i === 4">
+                      <td class="td-pedido-box"></td>
+                      <td class="td-pedido-box" colspan="2"></td>
+                      <td class="td-pedido-box" colspan="2"></td>
+                      <td class="td-pedido-box" colspan="2"></td>
+                    </ng-container>
+                    <ng-container *ngIf="i === 5">
+                      <td class="td-pedido-box" colspan="1"></td>
+                      <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5">TÉCNICO</td>
+                      <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5" colspan="2"></td>
+                      <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5">CAPITÃO</td>
+                      <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5" colspan="2"></td>
+                    </ng-container>
+                  </tr>
+
+                  <!-- Comissão técnica DENTRO da tabela -->
+                  <tr class="comissao-row">
+                    <td class="td-comissao-lbl" colspan="3"></td>
+                    <td class="td-comissao-area" colspan="5">TÉCNICO</td>
+                    <td class="td-am"></td>
+                    <td class="td-vm"></td>
+                    <td class="td-comissao-area" colspan="7"></td>
+                  </tr>
+                  <tr class="comissao-row">
+                    <td class="td-comissao-lbl" colspan="3"></td>
+                    <td class="td-comissao-area" colspan="5">AUXILIAR</td>
+                    <td class="td-am"></td>
+                    <td class="td-vm"></td>
+                    <td class="td-comissao-area" colspan="7"></td>
+                  </tr>
+                  <tr class="comissao-row">
+                    <td class="td-comissao-lbl" colspan="3"></td>
+                    <td class="td-comissao-area" colspan="5">ASSISTENTE</td>
+                    <td class="td-am"></td>
+                    <td class="td-vm"></td>
+                    <td class="td-comissao-area" colspan="7"></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="sm-grade-numerada">
+                <div class="num-box" *ngFor="let n of NUMEROS_13">{{ n }}</div>
+                <div class="empty-box" *ngFor="let _ of COLUNAS_VAZIAS"></div>
+                <div class="num-box" *ngFor="let n of NUMEROS_13_2">{{ n }}</div>
+                <div class="empty-box" *ngFor="let _ of COLUNAS_VAZIAS"></div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+      </div>
+
+      <!-- ═══════════ MODELO FUTSAL (SICOOB-style) ═══════════
+           Layout inspirado no anexo do usuário: ACUMULATIVAS 1-5 (em vez
+           de 1-7), header com sponsor logos nos cantos, X no centro,
+           TÉCNICO/CAPITÃO vertical no lado direito do quadro de jogadores.
+           Mantém: PEDIDO DE TEMPO, comissão TÉCNICO/AUXILIAR/ASSISTENTE,
+           grade numerada 1-26. -->
+      <div
+        class="sumula-folha sumula-folha-futsal"
+        *ngFor="let s of sumulas; trackBy: trackBySumula"
+        [hidden]="modeloSelecionado !== 'futsal'"
+      >
+        <!-- ─── Faixa do título (logos laterais + título + X entre times) ─── -->
+        <div class="smf-titulo-faixa">
+          <div class="smf-logo-esq">
+            <img *ngIf="campeonato?.logoUrl" [src]="campeonato!.logoUrl" [alt]="campeonato?.titulo" />
+          </div>
+          <div class="smf-titulo-bloco">
+            <div class="smf-titulo">{{ campeonato?.titulo || 'Campeonato' }}</div>
+            <div class="smf-confronto">
+              <div class="smf-time-nome">{{ nomeCompleto(s.mandante) }}</div>
+              <div class="smf-x">X</div>
+              <div class="smf-time-nome">{{ nomeCompleto(s.visitante) }}</div>
+            </div>
+          </div>
+          <div class="smf-logo-dir">
+            <!-- Espaço pra logo do organizador / federação (mesma do header
+                 padrão, mas posicionado no canto direito do título). -->
+            <img *ngIf="campeonato?.logoUrl" [src]="campeonato!.logoUrl" [alt]="campeonato?.titulo" />
+          </div>
+        </div>
+
+        <!-- ─── Meta-grid: DATA / HORÁRIO / INÍCIO / TÉRMINO / CONTAGEM / ÁRBITRO ─── -->
+        <table class="smf-meta">
+          <tr>
+            <td class="smf-lbl">DATA</td>
+            <td class="smf-val" colspan="3">{{ formatarSomenteData(s.jogo.dataHora) }}</td>
+            <td class="smf-lbl">HORÁRIO</td>
+            <td class="smf-lbl">INÍCIO</td>
+            <td class="smf-lbl">TÉRMINO</td>
+            <td class="smf-lbl">CONTAGEM</td>
+            <td class="smf-lbl smf-arb-lbl" rowspan="2">ÁRBITRO 01</td>
+            <td class="smf-val smf-arb-val" rowspan="2">{{ arbitroPor('principal', s.arbitros) }}</td>
+          </tr>
+          <tr>
+            <td class="smf-lbl">COMPETIÇÃO</td>
+            <td class="smf-val" colspan="3">{{ campeonato?.titulo || '' }}</td>
+            <td class="smf-lbl">1º PERÍODO</td>
+            <td class="smf-cell"></td>
+            <td class="smf-cell"></td>
+            <td class="smf-check">X</td>
+          </tr>
+          <tr>
+            <td class="smf-lbl">CATEGORIA</td>
+            <td class="smf-val" colspan="3">{{ (categoria?.titulo || '') | uppercase }}</td>
+            <td class="smf-lbl">2º PERÍODO</td>
+            <td class="smf-cell"></td>
+            <td class="smf-cell"></td>
+            <td class="smf-check">X</td>
+            <td class="smf-lbl smf-arb-lbl" rowspan="2">ÁRBITRO 02</td>
+            <td class="smf-val smf-arb-val" rowspan="2">{{ arbitroPor('auxiliar-1', s.arbitros) }}</td>
+          </tr>
+          <tr>
+            <td class="smf-lbl">FASE</td>
+            <td class="smf-val" colspan="2">{{ (s.jogo.fase || '') | uppercase }}</td>
+            <td class="smf-lbl">CHAVE</td>
+            <td class="smf-lbl">EXTRA</td>
+            <td class="smf-cell"></td>
+            <td class="smf-cell"></td>
+            <td class="smf-check">X</td>
+          </tr>
+          <tr>
+            <td class="smf-lbl">GINÁSIO</td>
+            <td class="smf-val" colspan="4">{{ (s.jogo.local || '') | uppercase }}</td>
+            <td class="smf-lbl" colspan="2">PLACAR FINAL</td>
+            <td class="smf-check">X</td>
+            <td class="smf-lbl smf-arb-lbl" rowspan="2">MESÁRIO</td>
+            <td class="smf-val smf-arb-val" rowspan="2">{{ arbitroPor('mesario', s.arbitros) }}</td>
+          </tr>
+          <tr>
+            <td class="smf-lbl">CIDADE</td>
+            <td class="smf-val" colspan="4">{{ cidadeEquipes(s) | uppercase }}</td>
+            <td class="smf-lbl" colspan="2">DESEMPATE - PENALIDADES</td>
+            <td class="smf-check">X</td>
+          </tr>
+        </table>
+
+        <!-- ─── Corpo: EQUIPE A | EQUIPE B lado a lado ─── -->
+        <div class="smf-corpo">
+          <ng-container *ngFor="let lado of ['A','B']">
+            <div class="smf-equipe-bloco">
+              <!-- Cabeçalho da equipe + iniciantes -->
+              <div class="smf-equipe-cab">
+                <div class="smf-eq-lbl">EQUIPE {{ lado }}</div>
+                <div class="smf-eq-nome">{{ (lado === 'A' ? s.mandante : s.visitante)?.nome || '' }}</div>
+                <div class="smf-eq-iniciantes">INICIANTES</div>
+                <div class="smf-eq-boxes">
+                  <span class="smf-box-mini" *ngFor="let _ of [1,2,3,4,5,6,7]"></span>
+                </div>
+              </div>
+
+              <!-- Tabela de jogadores. Diferenças vs padrão:
+                   - ACUMULATIVAS de 1 a 5 (em vez de 1-7)
+                   - Sem coluna FALTAS separada
+                   - TÉCNICO/CAPITÃO viram coluna VERTICAL nas últimas células -->
+              <table class="smf-jogadores">
+                <thead>
+                  <tr>
+                    <th class="smf-th-reg">REGISTRO</th>
+                    <th class="smf-th-jog">JOGADORES</th>
+                    <th class="smf-th-n">N</th>
+                    <th class="smf-th-cart">AM</th>
+                    <th class="smf-th-cart">VM</th>
+                    <th class="smf-th-acum" colspan="5">ACUMULATIVAS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let j of preencherLinhas(lado === 'A' ? s.escMandante : s.escVisitante, linhasParaAmbas(s)); let i = index"
+                      [class.vazia]="!j?.jogador">
+                    <td class="smf-td-reg"></td>
+                    <td class="smf-td-jog">{{ j?.jogador?.nome || '' }}</td>
+                    <td class="smf-td-n"></td>
+                    <td class="smf-td-cart">{{ j?.amarelos ? 'X' : '' }}</td>
+                    <td class="smf-td-cart">{{ j?.vermelhos ? 'X' : '' }}</td>
+
+                    <!-- Linhas 0-1: ACUMULATIVAS visíveis (1-5) -->
+                    <ng-container *ngIf="i < 2">
+                      <td class="smf-td-acum" *ngFor="let n of NUMEROS_1_5">{{ n }}</td>
+                    </ng-container>
+                    <!-- Linha 2: PEDIDO DE TEMPO header -->
+                    <ng-container *ngIf="i === 2">
+                      <td class="smf-pedido-header" colspan="5">PEDIDO DE TEMPO</td>
+                    </ng-container>
+                    <!-- Linha 3: 1º P / 2º P / EX labels -->
+                    <ng-container *ngIf="i === 3">
+                      <td class="smf-pedido-lbl" colspan="2">1º P</td>
+                      <td class="smf-pedido-lbl" colspan="2">2º P</td>
+                      <td class="smf-pedido-lbl">EX</td>
+                    </ng-container>
+                    <!-- Linha 4: caixas vazias pra marcar pedido de tempo -->
+                    <ng-container *ngIf="i === 4">
+                      <td class="smf-pedido-box" colspan="2"></td>
+                      <td class="smf-pedido-box" colspan="2"></td>
+                      <td class="smf-pedido-box"></td>
+                    </ng-container>
+                    <!-- Linha 5+: TÉCNICO e CAPITÃO em texto vertical
+                         (rowspan cobre o resto da tabela).
+
+                         Layout idêntico ao modelo padrão:
+                         - col 1: label TÉCNICO (vertical, ~50px)
+                         - col 2-3: área vazia (pra escrever o nome)
+                         - col 4: label CAPITÃO (vertical, ~50px)
+                         - col 5: área vazia (pra escrever o nº)
+
+                         Antes os labels tinham `colspan="2"` e `colspan="3"`
+                         e não sobrava espaço pra preenchimento manual. -->
+                    <ng-container *ngIf="i === 5">
+                      <td class="smf-vert" [attr.rowspan]="linhasParaAmbas(s) - 5">
+                        <span>TÉCNICO</span>
+                      </td>
+                      <td class="smf-vert-area" [attr.rowspan]="linhasParaAmbas(s) - 5" colspan="2"></td>
+                      <td class="smf-vert" [attr.rowspan]="linhasParaAmbas(s) - 5">
+                        <span>CAPITÃO</span>
+                      </td>
+                      <td class="smf-vert-area" [attr.rowspan]="linhasParaAmbas(s) - 5"></td>
+                    </ng-container>
+                  </tr>
+
+                  <!-- Comissão técnica embutida no rodapé da tabela -->
+                  <tr class="smf-comissao">
+                    <td class="smf-td-reg"></td>
+                    <td class="smf-comissao-nome"></td>
+                    <td class="smf-comissao-lbl">TÉCNICO</td>
+                    <td class="smf-td-cart"></td>
+                    <td class="smf-td-cart"></td>
+                    <td class="smf-comissao-extra" colspan="5"></td>
+                  </tr>
+                  <tr class="smf-comissao">
+                    <td class="smf-td-reg"></td>
+                    <td class="smf-comissao-nome"></td>
+                    <td class="smf-comissao-lbl">AUXILIAR</td>
+                    <td class="smf-td-cart"></td>
+                    <td class="smf-td-cart"></td>
+                    <td class="smf-comissao-extra" colspan="5"></td>
+                  </tr>
+                  <tr class="smf-comissao">
+                    <td class="smf-td-reg"></td>
+                    <td class="smf-comissao-nome"></td>
+                    <td class="smf-comissao-lbl">ASSISTENTE</td>
+                    <td class="smf-td-cart"></td>
+                    <td class="smf-td-cart"></td>
+                    <td class="smf-comissao-extra" colspan="5"></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- Grade numerada 1-26 abaixo da tabela (acumulado total
+                   da equipe na partida, marcado durante o jogo). -->
+              <div class="smf-grade-numerada">
+                <div class="smf-num-box" *ngFor="let n of NUMEROS_13">{{ n }}</div>
+                <div class="smf-empty-box" *ngFor="let _ of COLUNAS_VAZIAS"></div>
+                <div class="smf-num-box" *ngFor="let n of NUMEROS_13_2">{{ n }}</div>
+                <div class="smf-empty-box" *ngFor="let _ of COLUNAS_VAZIAS"></div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- ═══════════ MODELO HANDEBOL (CBHb) ═══════════
+           Modelo oficial da Confederação Brasileira de Handebol.
+           Características:
+             - 2 períodos de 30 min + prorrogação (2x5 min se necessário)
+             - 7 jogadores em quadra (1 goleiro + 6 linha) + reservas
+             - Goleiro marcado com "G" no Nº camisa, capitão com "C"
+             - Punições: 3× exclusão temporária (2'/2'/2') = desqualificação
+             - A = Advertência (cartão amarelo)
+             - D = Desqualificação direta (cartão vermelho)
+             - Pedidos de tempo: T1/T2/T3 por equipe (3 no total) -->
+      <div
+        class="sumula-folha sumula-folha-handebol"
+        *ngFor="let s of sumulas; trackBy: trackBySumula"
+        [hidden]="modeloSelecionado !== 'handebol'"
+      >
+        <div class="smh-titulo-faixa">
+          <div class="smh-titulo-bloco">
+            <div class="smh-titulo">{{ campeonato?.titulo || 'Campeonato' }} — HANDEBOL</div>
+            <div class="smh-confronto">
+              <div class="smh-time-nome">{{ nomeCompleto(s.mandante) }}</div>
+              <div class="smh-x">X</div>
+              <div class="smh-time-nome">{{ nomeCompleto(s.visitante) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <table class="smh-meta">
+          <tr>
+            <td class="smh-lbl">DATA</td>
+            <td class="smh-val">{{ formatarSomenteData(s.jogo.dataHora) }}</td>
+            <td class="smh-lbl">HORÁRIO</td>
+            <td class="smh-val">—</td>
+            <td class="smh-lbl">CATEGORIA</td>
+            <td class="smh-val" colspan="2">{{ (categoria?.titulo || '') | uppercase }}</td>
+            <td class="smh-lbl">FASE</td>
+            <td class="smh-val">{{ (s.jogo.fase || '') | uppercase }}</td>
+          </tr>
+          <tr>
+            <td class="smh-lbl">LOCAL</td>
+            <td class="smh-val" colspan="3">{{ (s.jogo.local || '') | uppercase }}</td>
+            <td class="smh-lbl">ÁRBITRO 1</td>
+            <td class="smh-val" colspan="2">{{ arbitroPor('principal', s.arbitros) }}</td>
+            <td class="smh-lbl">ÁRBITRO 2</td>
+            <td class="smh-val">{{ arbitroPor('auxiliar-1', s.arbitros) }}</td>
+          </tr>
+        </table>
+
+        <!-- Placar por período + final + 7m -->
+        <table class="smh-placar">
+          <tr>
+            <th class="smh-eq">EQUIPE</th>
+            <th>1º TEMPO</th>
+            <th>2º TEMPO</th>
+            <th>PRORROG. 1</th>
+            <th>PRORROG. 2</th>
+            <th>7m (TIROS DE 7m)</th>
+            <th class="smh-final">FINAL</th>
+            <th>PEDIDOS DE TEMPO</th>
+          </tr>
+          <tr>
+            <td class="smh-eq-nome">{{ nomeCompleto(s.mandante) }}</td>
+            <td class="smh-cell"></td>
+            <td class="smh-cell"></td>
+            <td class="smh-cell"></td>
+            <td class="smh-cell"></td>
+            <td class="smh-cell"></td>
+            <td class="smh-cell smh-final"></td>
+            <td class="smh-cell smh-pt-boxes">
+              <span class="smh-tbox">T1</span>
+              <span class="smh-tbox">T2</span>
+              <span class="smh-tbox">T3</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="smh-eq-nome">{{ nomeCompleto(s.visitante) }}</td>
+            <td class="smh-cell"></td>
+            <td class="smh-cell"></td>
+            <td class="smh-cell"></td>
+            <td class="smh-cell"></td>
+            <td class="smh-cell"></td>
+            <td class="smh-cell smh-final"></td>
+            <td class="smh-cell smh-pt-boxes">
+              <span class="smh-tbox">T1</span>
+              <span class="smh-tbox">T2</span>
+              <span class="smh-tbox">T3</span>
+            </td>
+          </tr>
+        </table>
+
+        <div class="smh-corpo">
+          <ng-container *ngFor="let lado of ['A','B']">
+            <div class="smh-equipe-bloco">
+              <div class="smh-equipe-cab">
+                EQUIPE {{ lado }} — {{ (lado === 'A' ? s.mandante : s.visitante)?.nome || '' }}
+              </div>
+              <table class="smh-jogadores">
+                <thead>
+                  <tr>
+                    <th class="smh-th-n">Nº</th>
+                    <th class="smh-th-cg">C</th>
+                    <th class="smh-th-cg">G</th>
+                    <th class="smh-th-jog">NOME DO JOGADOR</th>
+                    <th class="smh-th-gols">GOLS</th>
+                    <th class="smh-th-pun" colspan="3">EXCLUSÕES 2'</th>
+                    <th class="smh-th-pun">A</th>
+                    <th class="smh-th-pun">D</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let j of preencherLinhas(lado === 'A' ? s.escMandante : s.escVisitante, linhasParaAmbas(s, MIN_LINHAS_HANDEBOL))"
+                      [class.vazia]="!j?.jogador">
+                    <td class="smh-cell"></td>
+                    <td class="smh-cell smh-marcar"></td>
+                    <td class="smh-cell smh-marcar"></td>
+                    <td class="smh-jog-nome">{{ j?.jogador?.nome || '' }}</td>
+                    <td class="smh-cell"></td>
+                    <td class="smh-cell smh-2min"></td>
+                    <td class="smh-cell smh-2min"></td>
+                    <td class="smh-cell smh-2min"></td>
+                    <td class="smh-cell smh-cart-am">{{ j?.amarelos ? 'X' : '' }}</td>
+                    <td class="smh-cell smh-cart-vm">{{ j?.vermelhos ? 'X' : '' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="smh-comissao">
+                <div><strong>TÉCNICO:</strong> <span class="smh-linha"></span></div>
+                <div><strong>AUX. TÉCNICO:</strong> <span class="smh-linha"></span></div>
+                <div><strong>MÉDICO:</strong> <span class="smh-linha"></span></div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Linha de assinaturas no rodapé (CBHb pattern) -->
+        <div class="smh-assinaturas">
+          <div class="smh-ass"><span class="smh-ass-linha"></span><span class="smh-ass-lbl">CAPITÃO {{ nomeCompleto(s.mandante) }}</span></div>
+          <div class="smh-ass"><span class="smh-ass-linha"></span><span class="smh-ass-lbl">CAPITÃO {{ nomeCompleto(s.visitante) }}</span></div>
+          <div class="smh-ass"><span class="smh-ass-linha"></span><span class="smh-ass-lbl">ÁRBITRO 1</span></div>
+          <div class="smh-ass"><span class="smh-ass-linha"></span><span class="smh-ass-lbl">ÁRBITRO 2</span></div>
+          <div class="smh-ass"><span class="smh-ass-linha"></span><span class="smh-ass-lbl">MESÁRIO / CRONOMETRISTA</span></div>
+        </div>
+      </div>
+
+      <!-- ═══════════ MODELO BASQUETEBOL (CBB / FIBA) ═══════════
+           Modelo oficial da Confederação Brasileira de Basquete.
+           Características:
+             - 4 quartos × 10 min + prorrogações (5 min cada)
+             - Capitão marcado com C no Nº camisa
+             - Faltas pessoais: P1-P5 (5ª = expulso). Boxes vazias pra
+               marcar tipo: T (técnica), U (antiesportiva), D (desq.)
+             - Faltas de equipe por quarto (5ª = lance livre extra)
+             - Pedidos de tempo: 2 no 1º quarto, 2 no 2º, 3 no 2º tempo
+               + 1 por prorrogação -->
+      <div
+        class="sumula-folha sumula-folha-basquete"
+        *ngFor="let s of sumulas; trackBy: trackBySumula"
+        [hidden]="modeloSelecionado !== 'basquete'"
+      >
+        <div class="smb-titulo-faixa">
+          <div class="smb-titulo">{{ campeonato?.titulo || 'Campeonato' }} — BASQUETEBOL</div>
+          <div class="smb-confronto">
+            <div class="smb-time-nome">{{ nomeCompleto(s.mandante) }}</div>
+            <div class="smb-x">X</div>
+            <div class="smb-time-nome">{{ nomeCompleto(s.visitante) }}</div>
+          </div>
+        </div>
+
+        <table class="smb-meta">
+          <tr>
+            <td class="smb-lbl">DATA</td>
+            <td class="smb-val">{{ formatarSomenteData(s.jogo.dataHora) }}</td>
+            <td class="smb-lbl">HORÁRIO</td>
+            <td class="smb-val">—</td>
+            <td class="smb-lbl">CATEGORIA</td>
+            <td class="smb-val" colspan="2">{{ (categoria?.titulo || '') | uppercase }}</td>
+            <td class="smb-lbl">FASE</td>
+            <td class="smb-val">{{ (s.jogo.fase || '') | uppercase }}</td>
+          </tr>
+          <tr>
+            <td class="smb-lbl">LOCAL</td>
+            <td class="smb-val" colspan="3">{{ (s.jogo.local || '') | uppercase }}</td>
+            <td class="smb-lbl">ÁRB. PRINC.</td>
+            <td class="smb-val" colspan="2">{{ arbitroPor('principal', s.arbitros) }}</td>
+            <td class="smb-lbl">MESÁRIO</td>
+            <td class="smb-val">{{ arbitroPor('mesario', s.arbitros) }}</td>
+          </tr>
+        </table>
+
+        <!-- Placar por quarto -->
+        <table class="smb-placar-quartos">
+          <tr>
+            <th class="smb-eq">EQUIPE</th>
+            <th *ngFor="let q of QUARTOS_4">{{ q }}º QUARTO</th>
+            <th>1ª PROR.</th>
+            <th>2ª PROR.</th>
+            <th class="smb-final">FINAL</th>
+          </tr>
+          <tr>
+            <td class="smb-eq smb-eq-nome">{{ nomeCompleto(s.mandante) }}</td>
+            <td *ngFor="let _ of QUARTOS_4" class="smb-cell"></td>
+            <td class="smb-cell"></td>
+            <td class="smb-cell"></td>
+            <td class="smb-cell smb-final"></td>
+          </tr>
+          <tr>
+            <td class="smb-eq smb-eq-nome">{{ nomeCompleto(s.visitante) }}</td>
+            <td *ngFor="let _ of QUARTOS_4" class="smb-cell"></td>
+            <td class="smb-cell"></td>
+            <td class="smb-cell"></td>
+            <td class="smb-cell smb-final"></td>
+          </tr>
+        </table>
+
+        <div class="smb-corpo">
+          <ng-container *ngFor="let lado of ['A','B']">
+            <div class="smb-equipe-bloco">
+              <div class="smb-equipe-cab">
+                EQUIPE {{ lado }} — {{ (lado === 'A' ? s.mandante : s.visitante)?.nome || '' }}
+              </div>
+              <table class="smb-jogadores">
+                <thead>
+                  <tr>
+                    <th class="smb-th-lic">LICENÇA</th>
+                    <th class="smb-th-n">Nº</th>
+                    <th class="smb-th-c">C</th>
+                    <th class="smb-th-jog">NOME DO JOGADOR</th>
+                    <th class="smb-th-pts">PONTOS</th>
+                    <th class="smb-th-falta" colspan="5">FALTAS PESSOAIS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let j of preencherLinhas(lado === 'A' ? s.escMandante : s.escVisitante, linhasParaAmbas(s, MIN_LINHAS_BASQUETE))"
+                      [class.vazia]="!j?.jogador">
+                    <td class="smb-cell"></td>
+                    <td class="smb-cell"></td>
+                    <td class="smb-cell smb-marcar"></td>
+                    <td class="smb-jog-nome">{{ j?.jogador?.nome || '' }}</td>
+                    <td class="smb-cell smb-pts"></td>
+                    <td class="smb-cell smb-falta" *ngFor="let n of NUMEROS_1_5"></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- Faltas de equipe por quarto: boxes 1-4 (5ª gera lance livre) -->
+              <div class="smb-faltas-eq">
+                <strong>FALTAS DE EQUIPE:</strong>
+                <span *ngFor="let q of QUARTOS_4" class="smb-falta-q">
+                  {{ q }}ºQ
+                  <span class="smb-faltas-boxes">
+                    <span class="smb-fbox" *ngFor="let n of [1,2,3,4]"></span>
+                  </span>
+                </span>
+              </div>
+
+              <!-- Pedidos de tempo: 2 + 2 + 3 + extra por prorrogação -->
+              <div class="smb-pedidos">
+                <strong>PEDIDOS DE TEMPO:</strong>
+                <span class="smb-pt-set"><b>1ºT</b> ▢ ▢</span>
+                <span class="smb-pt-set"><b>2ºT</b> ▢ ▢</span>
+                <span class="smb-pt-set"><b>3ºT</b> ▢ ▢ ▢</span>
+                <span class="smb-pt-set"><b>PROR.</b> ▢ ▢</span>
+              </div>
+
+              <div class="smb-comissao">
+                <div><strong>TREINADOR:</strong> <span class="smb-linha"></span></div>
+                <div><strong>ASSISTENTE:</strong> <span class="smb-linha"></span></div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Linha de assinaturas no rodapé (FIBA pattern) -->
+        <div class="smb-assinaturas">
+          <div class="smb-ass"><span class="smb-ass-linha"></span><span class="smb-ass-lbl">CAP. {{ nomeCompleto(s.mandante) }}</span></div>
+          <div class="smb-ass"><span class="smb-ass-linha"></span><span class="smb-ass-lbl">CAP. {{ nomeCompleto(s.visitante) }}</span></div>
+          <div class="smb-ass"><span class="smb-ass-linha"></span><span class="smb-ass-lbl">ÁRBITRO PRINCIPAL</span></div>
+          <div class="smb-ass"><span class="smb-ass-linha"></span><span class="smb-ass-lbl">ÁRBITRO AUXILIAR</span></div>
+          <div class="smb-ass"><span class="smb-ass-linha"></span><span class="smb-ass-lbl">APONTADOR / MESÁRIO</span></div>
+        </div>
+      </div>
+
+      <!-- ═══════════ MODELO VÔLEI (CBV / FIVB) ═══════════
+           Modelo oficial da Confederação Brasileira de Vôlei.
+           Características:
+             - Best-of-5 sets (25/25/25/25/15 pts)
+             - Capitão marcado com C; Líbero(s) com L (até 2 por equipe)
+             - Pontuação por set (pontos finais por equipe)
+             - Pedidos de tempo: 2 por set (T1, T2)
+             - Substituições: 6 por set (S1-S6), entrada/saída
+             - Sem cartões típicos de futebol -->
+      <div
+        class="sumula-folha sumula-folha-volei"
+        *ngFor="let s of sumulas; trackBy: trackBySumula"
+        [hidden]="modeloSelecionado !== 'volei'"
+      >
+        <div class="smv-titulo-faixa">
+          <div class="smv-titulo">{{ campeonato?.titulo || 'Campeonato' }} — VOLEIBOL</div>
+          <div class="smv-confronto">
+            <div class="smv-time-nome">{{ nomeCompleto(s.mandante) }}</div>
+            <div class="smv-x">X</div>
+            <div class="smv-time-nome">{{ nomeCompleto(s.visitante) }}</div>
+          </div>
+        </div>
+
+        <table class="smv-meta">
+          <tr>
+            <td class="smv-lbl">DATA</td>
+            <td class="smv-val">{{ formatarSomenteData(s.jogo.dataHora) }}</td>
+            <td class="smv-lbl">HORÁRIO</td>
+            <td class="smv-val">—</td>
+            <td class="smv-lbl">CATEGORIA</td>
+            <td class="smv-val" colspan="2">{{ (categoria?.titulo || '') | uppercase }}</td>
+            <td class="smv-lbl">FASE</td>
+            <td class="smv-val">{{ (s.jogo.fase || '') | uppercase }}</td>
+          </tr>
+          <tr>
+            <td class="smv-lbl">LOCAL</td>
+            <td class="smv-val" colspan="3">{{ (s.jogo.local || '') | uppercase }}</td>
+            <td class="smv-lbl">1º ÁRBITRO</td>
+            <td class="smv-val" colspan="2">{{ arbitroPor('principal', s.arbitros) }}</td>
+            <td class="smv-lbl">2º ÁRBITRO</td>
+            <td class="smv-val">{{ arbitroPor('auxiliar-1', s.arbitros) }}</td>
+          </tr>
+        </table>
+
+        <!-- Resultado: sets por equipe -->
+        <table class="smv-sets">
+          <tr>
+            <th class="smv-eq">EQUIPE</th>
+            <th *ngFor="let n of SETS_5">SET {{ n }}</th>
+            <th class="smv-final">SETS<br>VENCIDOS</th>
+            <th class="smv-tempo">TEMPO<br>JOGO</th>
+          </tr>
+          <tr>
+            <td class="smv-eq-nome">{{ nomeCompleto(s.mandante) }}</td>
+            <td *ngFor="let _ of SETS_5" class="smv-cell smv-pts-set"></td>
+            <td class="smv-cell smv-final"></td>
+            <td class="smv-cell" rowspan="2"></td>
+          </tr>
+          <tr>
+            <td class="smv-eq-nome">{{ nomeCompleto(s.visitante) }}</td>
+            <td *ngFor="let _ of SETS_5" class="smv-cell smv-pts-set"></td>
+            <td class="smv-cell smv-final"></td>
+          </tr>
+        </table>
+
+        <div class="smv-corpo">
+          <ng-container *ngFor="let lado of ['A','B']">
+            <div class="smv-equipe-bloco">
+              <div class="smv-equipe-cab">
+                EQUIPE {{ lado }} — {{ (lado === 'A' ? s.mandante : s.visitante)?.nome || '' }}
+              </div>
+              <table class="smv-jogadores">
+                <thead>
+                  <tr>
+                    <th class="smv-th-lic">LICENÇA</th>
+                    <th class="smv-th-n">Nº</th>
+                    <th class="smv-th-cl">C</th>
+                    <th class="smv-th-cl">L</th>
+                    <th class="smv-th-jog">NOME DO JOGADOR</th>
+                    <th class="smv-th-set" *ngFor="let n of SETS_5">SET {{ n }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let j of preencherLinhas(lado === 'A' ? s.escMandante : s.escVisitante, linhasParaAmbas(s, MIN_LINHAS_VOLEI))"
+                      [class.vazia]="!j?.jogador">
+                    <td class="smv-cell"></td>
+                    <td class="smv-cell"></td>
+                    <td class="smv-cell smv-marcar"></td>
+                    <td class="smv-cell smv-marcar"></td>
+                    <td class="smv-jog-nome">{{ j?.jogador?.nome || '' }}</td>
+                    <td class="smv-cell" *ngFor="let _ of SETS_5"></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- Pedidos de tempo: 2 boxes por set (T1, T2) -->
+              <div class="smv-pedidos">
+                <strong>PEDIDOS DE TEMPO (2 por set):</strong>
+                <span *ngFor="let n of SETS_5" class="smv-pt-set">
+                  <b>S{{ n }}</b> ▢ ▢
+                </span>
+              </div>
+
+              <!-- Substituições: 6 por set, registradas com nº entra/sai -->
+              <div class="smv-subs">
+                <strong>SUBSTITUIÇÕES (até 6 por set):</strong>
+                <table class="smv-subs-table">
+                  <tr>
+                    <th>SET</th>
+                    <th *ngFor="let i of [1,2,3,4,5,6]">{{ i }}ª</th>
+                  </tr>
+                  <tr *ngFor="let n of SETS_5">
+                    <td class="smv-subs-set"><b>{{ n }}</b></td>
+                    <td class="smv-subs-cell" *ngFor="let _ of [1,2,3,4,5,6]"></td>
+                  </tr>
+                </table>
+              </div>
+
+              <div class="smv-comissao">
+                <div><strong>TÉCNICO:</strong> <span class="smv-linha"></span></div>
+                <div><strong>ASSISTENTE:</strong> <span class="smv-linha"></span></div>
+                <div><strong>MÉDICO:</strong> <span class="smv-linha"></span></div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Linha de assinaturas no rodapé (FIVB/CBV pattern) -->
+        <div class="smv-assinaturas">
+          <div class="smv-ass"><span class="smv-ass-linha"></span><span class="smv-ass-lbl">CAP. {{ nomeCompleto(s.mandante) }}</span></div>
+          <div class="smv-ass"><span class="smv-ass-linha"></span><span class="smv-ass-lbl">CAP. {{ nomeCompleto(s.visitante) }}</span></div>
+          <div class="smv-ass"><span class="smv-ass-linha"></span><span class="smv-ass-lbl">1º ÁRBITRO</span></div>
+          <div class="smv-ass"><span class="smv-ass-linha"></span><span class="smv-ass-lbl">2º ÁRBITRO</span></div>
+          <div class="smv-ass"><span class="smv-ass-linha"></span><span class="smv-ass-lbl">APONTADOR</span></div>
+        </div>
+      </div>
+
+      <!-- ═══════════ MODELO RAQUETE (CBT — Tênis / Mesa / Beach) ═══════════
+           Modelo oficial CBT pra esportes de raquete.
+           Características:
+             - Singles ou Duplas (até 2 jogadores por lado)
+             - Best-of-3 ou 5 sets
+             - Cada set: best-of-6 games (com tiebreak em 6-6)
+             - Tiebreak score separado por set
+             - Tempo de jogo registrado
+             - Vencedor explícito + observações do árbitro -->
+      <div
+        class="sumula-folha sumula-folha-raquete"
+        *ngFor="let s of sumulas; trackBy: trackBySumula"
+        [hidden]="modeloSelecionado !== 'raquete'"
+      >
+        <div class="smr-titulo-faixa">
+          <div class="smr-titulo">{{ campeonato?.titulo || 'Campeonato' }} — TÊNIS / RAQUETE</div>
+          <div class="smr-confronto">
+            <div class="smr-time-nome">{{ nomeCompleto(s.mandante) }}</div>
+            <div class="smr-x">X</div>
+            <div class="smr-time-nome">{{ nomeCompleto(s.visitante) }}</div>
+          </div>
+        </div>
+
+        <table class="smr-meta">
+          <tr>
+            <td class="smr-lbl">DATA</td>
+            <td class="smr-val">{{ formatarSomenteData(s.jogo.dataHora) }}</td>
+            <td class="smr-lbl">HORÁRIO</td>
+            <td class="smr-val">—</td>
+            <td class="smr-lbl">CATEGORIA</td>
+            <td class="smr-val" colspan="2">{{ (categoria?.titulo || '') | uppercase }}</td>
+            <td class="smr-lbl">FASE</td>
+            <td class="smr-val">{{ (s.jogo.fase || '') | uppercase }}</td>
+          </tr>
+          <tr>
+            <td class="smr-lbl">LOCAL</td>
+            <td class="smr-val" colspan="3">{{ (s.jogo.local || '') | uppercase }}</td>
+            <td class="smr-lbl">ÁRBITRO</td>
+            <td class="smr-val" colspan="2">{{ arbitroPor('principal', s.arbitros) }}</td>
+            <td class="smr-lbl">JUIZ DE CADEIRA</td>
+            <td class="smr-val">{{ arbitroPor('auxiliar-1', s.arbitros) }}</td>
+          </tr>
+          <tr>
+            <td class="smr-lbl">MODALIDADE</td>
+            <td class="smr-val" colspan="2">SINGLES ▢ &nbsp;&nbsp; DUPLAS ▢</td>
+            <td class="smr-lbl">SUPERFÍCIE</td>
+            <td class="smr-val" colspan="2">SAIBRO ▢ &nbsp;&nbsp; DURA ▢ &nbsp;&nbsp; GRAMA ▢ &nbsp;&nbsp; AREIA ▢</td>
+            <td class="smr-lbl">FORMATO</td>
+            <td class="smr-val" colspan="2">3 SETS ▢ &nbsp;&nbsp; 5 SETS ▢</td>
+          </tr>
+        </table>
+
+        <!-- Placar por set: games + tiebreak -->
+        <table class="smr-placar">
+          <thead>
+            <tr>
+              <th class="smr-eq" rowspan="2">JOGADOR(ES)</th>
+              <th *ngFor="let n of SETS_5" colspan="2">SET {{ n }}</th>
+              <th rowspan="2" class="smr-final">SETS<br>VENCIDOS</th>
+              <th rowspan="2">TEMPO<br>DE JOGO</th>
+            </tr>
+            <tr class="smr-sub">
+              <ng-container *ngFor="let _ of SETS_5">
+                <th class="smr-games">GAMES</th>
+                <th class="smr-tb">TB</th>
+              </ng-container>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="smr-eq-nome">{{ nomeCompleto(s.mandante) }}</td>
+              <ng-container *ngFor="let _ of SETS_5">
+                <td class="smr-cell"></td>
+                <td class="smr-cell smr-tb"></td>
+              </ng-container>
+              <td class="smr-cell smr-final"></td>
+              <td class="smr-cell" rowspan="2"></td>
+            </tr>
+            <tr>
+              <td class="smr-eq-nome">{{ nomeCompleto(s.visitante) }}</td>
+              <ng-container *ngFor="let _ of SETS_5">
+                <td class="smr-cell"></td>
+                <td class="smr-cell smr-tb"></td>
+              </ng-container>
+              <td class="smr-cell smr-final"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Lista de jogadores (singles: 1 por lado / duplas: 2 por lado) -->
+        <div class="smr-corpo">
+          <ng-container *ngFor="let lado of ['A','B']">
+            <div class="smr-equipe-bloco">
+              <div class="smr-equipe-cab">
+                {{ lado === 'A' ? nomeCompleto(s.mandante) : nomeCompleto(s.visitante) }}
+              </div>
+              <table class="smr-jogadores">
+                <thead>
+                  <tr>
+                    <th class="smr-th-lic">LICENÇA</th>
+                    <th class="smr-th-jog">NOME</th>
+                    <th class="smr-th-cat">CATEGORIA</th>
+                    <th class="smr-th-rank">RANKING</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let j of preencherLinhas(lado === 'A' ? s.escMandante : s.escVisitante, linhasParaAmbas(s, MIN_LINHAS_RAQUETE))"
+                      [class.vazia]="!j?.jogador">
+                    <td class="smr-cell"></td>
+                    <td class="smr-jog-nome">{{ j?.jogador?.nome || '' }}</td>
+                    <td class="smr-cell"></td>
+                    <td class="smr-cell"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Rodapé: vencedor + observações + assinaturas -->
+        <div class="smr-rodape-info">
+          <div class="smr-vencedor">
+            <strong>VENCEDOR DA PARTIDA:</strong>
+            <span class="smr-linha longa"></span>
+          </div>
+          <div class="smr-obs">
+            <strong>OBSERVAÇÕES / OCORRÊNCIAS:</strong>
+            <span class="smr-linha longa"></span>
+          </div>
+        </div>
+
+        <div class="smr-assinaturas">
+          <div class="smr-ass"><span class="smr-ass-linha"></span><span class="smr-ass-lbl">{{ nomeCompleto(s.mandante) }}</span></div>
+          <div class="smr-ass"><span class="smr-ass-linha"></span><span class="smr-ass-lbl">{{ nomeCompleto(s.visitante) }}</span></div>
+          <div class="smr-ass"><span class="smr-ass-linha"></span><span class="smr-ass-lbl">ÁRBITRO</span></div>
+          <div class="smr-ass"><span class="smr-ass-linha"></span><span class="smr-ass-lbl">JUIZ DE CADEIRA</span></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============ Overlay de visualização individual da súmula ============ -->
+  <div class="sp-modal-overlay no-print" *ngIf="verSumulaId" (click)="fecharVisualizacao()">
+    <div class="sp-modal-inner" (click)="$event.stopPropagation()">
+
+      <!-- Header do modal (botões visíveis no desktop, no mobile usa FABs flutuantes) -->
+      <div class="sp-modal-head">
+        <h3>Visualização da súmula</h3>
+        <div class="sp-modal-acoes">
+          <button type="button" class="sp-modal-btn" (click)="imprimirVisualizacaoUnica()">
+            <ion-icon name="print-outline"></ion-icon>
+            <span class="btn-txt">Imprimir</span>
+          </button>
+          <button type="button" class="sp-modal-btn fechar" (click)="fecharVisualizacao()" aria-label="Fechar">
+            <ion-icon name="close"></ion-icon>
+            <span class="btn-txt">Fechar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- FABs flutuantes (visíveis no mobile, escondidos no desktop) -->
+      <button type="button" class="sp-fab-fechar no-print" (click)="fecharVisualizacao()" aria-label="Fechar">
+        <ion-icon name="close"></ion-icon>
+      </button>
+      <button type="button" class="sp-fab-imprimir no-print" (click)="imprimirVisualizacaoUnica()" aria-label="Imprimir">
+        <ion-icon name="print-outline"></ion-icon>
+      </button>
+
+      <div class="sp-modal-body">
+        <!-- Wrapper rotacionado: no mobile, envolve a súmula com dimensões
+             trocadas (pós-rotação) pra ela caber visualmente na tela. -->
+        <div class="sp-rot-wrap">
+        <!-- Reaproveita exatamente o mesmo layout de uma súmula -->
+        <ng-container *ngIf="getSumulaPorId(verSumulaId) as s">
+          <div class="sumula-folha sp-modal-folha">
+            <div class="sm-titulo-faixa">
+              <div class="sm-logo-camp">
+                <img *ngIf="campeonato?.logoUrl" [src]="campeonato!.logoUrl" [alt]="campeonato?.titulo" />
+              </div>
+              <div class="sm-titulo-bloco">
+                <div class="sm-titulo">{{ campeonato?.titulo || 'Campeonato' }}</div>
+                <div class="sm-confronto">
+                  <div class="sm-time-nome">{{ nomeCompleto(s.mandante) }}</div>
+                  <div class="sm-placar-boxes lado-m">
+                    <span class="cx-pl" *ngFor="let i of [1]"></span>
+                  </div>
+                  <div class="sm-vs">X</div>
+                  <div class="sm-placar-boxes lado-v">
+                    <span class="cx-pl" *ngFor="let i of [1]"></span>
+                  </div>
+                  <div class="sm-time-nome">{{ nomeCompleto(s.visitante) }}</div>
+                </div>
+              </div>
+              <div class="sm-logos-times">
+                <div class="sm-logo-time">
+                  <img *ngIf="s.mandante?.logoUrl" [src]="s.mandante!.logoUrl" [alt]="s.mandante?.nome" />
+                </div>
+                <div class="sm-logo-time">
+                  <img *ngIf="s.visitante?.logoUrl" [src]="s.visitante!.logoUrl" [alt]="s.visitante?.nome" />
+                </div>
+              </div>
+            </div>
+
+            <table class="sm-meta-grid" style="text-align: center;">
+              <colgroup>
+                <col style="width: 9%" /><col style="width: 7.5%" /><col style="width: 7.5%" />
+                <col style="width: 7.5%" /><col style="width: 7.5%" /><col style="width: 7%" />
+                <col style="width: 7%" /><col style="width: 7%" /><col style="width: 7%" />
+                <col style="width: 8%" /><col style="width: 25%" />
+              </colgroup>
+              <tr>
+                <td class="lbl" style="text-align: center;">DATA</td>
+                <td class="val" colspan="4">{{ formatarSomenteData(s.jogo.dataHora) }}</td>
+                <td class="lbl" style="text-align: center;">HORÁRIO</td>
+                <td class="lbl" style="text-align: center;">INÍCIO</td>
+                <td class="lbl" style="text-align: center;">TÉRMINO</td>
+                <td class="lbl" style="text-align: center;" colspan="1">CONTAGEM</td>
+                <td class="lbl arbitro" rowspan="2">ÁRBITRO 01</td>
+                <td class="val arb-nome" rowspan="2">{{ arbitroPor('principal', s.arbitros) }}</td>
+              </tr>
+              <tr>
+                <td class="lbl" style="text-align: center;">COMPETIÇÃO</td>
+                <td class="val" colspan="4">{{ campeonato?.titulo || '' }}</td>
+                <td class="lbl" colspan="1" style="text-align: center;">1º PERÍODO</td>
+                <td class="lbl" colspan="1"></td>
+                <td class="lbl" colspan="1"></td>
+                <td class="check-box">X</td>
+              </tr>
+              <tr>
+                <td class="lbl" style="text-align: center;">CATEGORIA</td>
+                <td class="val center" colspan="4">{{ (categoria?.titulo || '') | uppercase }}</td>
+                <td class="lbl" colspan="1" style="text-align: center;">2º PERÍODO</td>
+                <td class="lbl" colspan="1"></td>
+                <td class="lbl" colspan="1"></td>
+                <td class="check-box">X</td>
+                <td class="lbl arbitro" rowspan="2">ÁRBITRO 02</td>
+                <td class="val arb-nome" rowspan="2">{{ arbitroPor('auxiliar-1', s.arbitros) }}</td>
+              </tr>
+              <tr>
+                <td class="lbl" style="text-align: center;">FASE</td>
+                <td class="val center" colspan="2">{{ (s.jogo.fase || '') | uppercase }}</td>
+                <td class="lbl serie">SÉRIE</td>
+                <td class="val-cell"></td>
+                <td class="lbl" colspan="1" style="text-align: center;">EXTRA</td>
+                <td class="lbl" colspan="1"></td>
+                <td class="lbl" colspan="1"></td>
+                <td class="check-box">X</td>
+              </tr>
+              <tr>
+                <td class="lbl" style="text-align: center;">GINÁSIO</td>
+                <td class="val" colspan="4">{{ (s.jogo.local || '') | uppercase }}</td>
+                <td class="lbl" colspan="3" style="text-align: center;">PLACAR FINAL</td>
+                <td class="check-box">X</td>
+                <td class="lbl arbitro" rowspan="2">MESÁRIO</td>
+                <td class="val arb-nome" rowspan="2">{{ arbitroPor('mesario', s.arbitros) }}</td>
+              </tr>
+              <tr>
+                <td class="lbl" style="text-align: center;">CIDADE</td>
+                <td class="val" colspan="4">{{ cidadeEquipes(s) | uppercase }}</td>
+                <td class="lbl" colspan="3" style="text-align: center;">DESEMPATE - PENALIDADES</td>
+                <td class="check-box">X</td>
+              </tr>
+            </table>
+
+            <div class="sm-corpo">
+              <ng-container *ngFor="let lado of ['A','B']">
+                <div class="sm-equipe-bloco">
+                  <div class="sm-equipe-cabecalho">
+                    <div class="celula equipe">EQUIPE {{ lado }}</div>
+                    <div class="celula nome-equipe">{{ (lado === 'A' ? s.mandante : s.visitante)?.nome || '' }}</div>
+                    <div class="celula iniciantes-lbl">INICIANTES</div>
+                    <div class="celula iniciantes-boxes">
+                      <span class="box-mini" *ngFor="let i of [1,2,3,4,5,6,7]"></span>
+                    </div>
+                  </div>
+                  <table class="sm-jogadores">
+                    <thead>
+                      <tr>
+                        <th rowspan="2" class="th-registro">Reg.</th>
+                        <th rowspan="2" class="th-jogador">JOGADORES</th>
+                        <th rowspan="2" class="th-num">Nº</th>
+                        <th colspan="5" class="th-faltas" rowspan="2">FALTAS</th>
+                        <th rowspan="2" class="th-am">AM</th>
+                        <th rowspan="2" class="th-vm">VM</th>
+                        <th colspan="7" class="th-acum" rowspan="2">ACUMULATIVAS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let j of preencherLinhas(lado === 'A' ? s.escMandante : s.escVisitante, linhasParaAmbas(s)); let i = index"
+                          [class.vazia]="!j?.jogador">
+                        <td class="td-registro"></td>
+                        <td class="td-jogador">{{ j?.jogador?.nome || '' }}</td>
+                        <td class="td-num"></td>
+                        <td class="td-falta" *ngFor="let n of [1,2,3,4,5]">{{ n }}</td>
+                        <td class="td-am">{{ j?.amarelos ? 'X' : '' }}</td>
+                        <td class="td-vm">{{ j?.vermelhos ? 'X' : '' }}</td>
+                        <ng-container *ngIf="i < 2">
+                          <td class="td-acum" *ngFor="let n of [1,2,3,4,5,6,7]">{{ n }}</td>
+                        </ng-container>
+                        <ng-container *ngIf="i === 2">
+                          <td class="td-pedido-header" colspan="7">PEDIDO DE TEMPO</td>
+                        </ng-container>
+                        <ng-container *ngIf="i === 3">
+                          <td class="td-pedido-box"></td>
+                          <td class="td-pedido-lbl" colspan="2">1º P</td>
+                          <td class="td-pedido-lbl" colspan="2">2º P</td>
+                          <td class="td-pedido-lbl" colspan="2">EX</td>
+                        </ng-container>
+                        <ng-container *ngIf="i === 4">
+                          <td class="td-pedido-box"></td>
+                          <td class="td-pedido-box" colspan="2"></td>
+                          <td class="td-pedido-box" colspan="2"></td>
+                          <td class="td-pedido-box" colspan="2"></td>
+                        </ng-container>
+                        <ng-container *ngIf="i === 5">
+                          <td class="td-pedido-box" colspan="1"></td>
+                          <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5">TÉCNICO</td>
+                          <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5" colspan="2"></td>
+                          <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5">CAPITÃO</td>
+                          <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5" colspan="2"></td>
+                        </ng-container>
+                      </tr>
+                      <tr class="comissao-row">
+                        <td class="td-comissao-lbl" colspan="3"></td>
+                        <td class="td-comissao-area" colspan="5">TÉCNICO</td>
+                        <td class="td-am"></td><td class="td-vm"></td>
+                        <td class="td-comissao-area" colspan="7"></td>
+                      </tr>
+                      <tr class="comissao-row">
+                        <td class="td-comissao-lbl" colspan="3"></td>
+                        <td class="td-comissao-area" colspan="5">AUXILIAR</td>
+                        <td class="td-am"></td><td class="td-vm"></td>
+                        <td class="td-comissao-area" colspan="7"></td>
+                      </tr>
+                      <tr class="comissao-row">
+                        <td class="td-comissao-lbl" colspan="3"></td>
+                        <td class="td-comissao-area" colspan="5">ASSISTENTE</td>
+                        <td class="td-am"></td><td class="td-vm"></td>
+                        <td class="td-comissao-area" colspan="7"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="sm-grade-numerada">
+                    <div class="num-box" *ngFor="let n of NUMEROS_13">{{ n }}</div>
+                    <div class="empty-box" *ngFor="let _ of COLUNAS_VAZIAS"></div>
+                    <div class="num-box" *ngFor="let n of NUMEROS_13_2">{{ n }}</div>
+                    <div class="empty-box" *ngFor="let _ of COLUNAS_VAZIAS"></div>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+        </ng-container>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>

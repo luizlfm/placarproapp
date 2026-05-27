@@ -1,0 +1,37 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function isUnder(maxBytes) {
+      return request.resource.size < maxBytes;
+    }
+    function isImageOrVideo() {
+      return request.resource.contentType.matches('image/.*')
+          || request.resource.contentType.matches('video/.*');
+    }
+
+    // ============ Tudo do usuário fica em /users/{uid}/... ============
+    match /users/{uid}/{allPaths=**} {
+      // Leitura pública — getDownloadURL() retorna URLs com token e o app
+      // precisa exibir imagens em <img>/<video> sem autenticação JS adicional.
+      allow read: if true;
+      // Só o próprio dono escreve. Limite 150MB (vídeos do WhatsApp passam de 50MB).
+      allow write: if isSelf(uid)
+                   && isUnder(150 * 1024 * 1024)
+                   && isImageOrVideo();
+      allow delete: if isSelf(uid);
+    }
+
+    // Bloqueia qualquer outro caminho
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

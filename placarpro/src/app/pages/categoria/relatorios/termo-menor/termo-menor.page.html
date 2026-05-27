@@ -1,0 +1,205 @@
+<ion-header class="no-print">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Termo de Autorização</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="restaurarPadrao()" aria-label="Restaurar padrão">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+      <ion-button (click)="imprimir()" aria-label="Imprimir">
+        <ion-icon slot="start" name="print-outline"></ion-icon>
+        <span class="tb-label">Imprimir</span>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="tm-layout">
+    <!-- ===========================================================
+         PAINEL DE EDIÇÃO (esquerda em desktop, em cima em mobile)
+         =========================================================== -->
+    <aside class="painel-edit no-print">
+      <h2 class="pe-titulo">
+        <ion-icon name="create-outline"></ion-icon>
+        Personalizar termo
+      </h2>
+
+      <!-- Logos -->
+      <section class="pe-secao">
+        <h3>Logos do cabeçalho</h3>
+        <p class="pe-hint">Adicione até 3 logos (esquerda, centro, direita).</p>
+
+        <div class="pe-logos-grid">
+          <div class="pe-logo-slot" *ngFor="let l of logos">
+            <label class="pe-logo-box" [class.tem-logo]="!!l.url">
+              <ng-container *ngIf="l.url; else placeholder">
+                <img [src]="l.url" [alt]="l.label" />
+              </ng-container>
+              <ng-template #placeholder>
+                <ion-icon name="image-outline"></ion-icon>
+                <span>Adicionar</span>
+              </ng-template>
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                (change)="onArquivoSelecionado(l, $event)"
+              />
+            </label>
+            <div class="pe-logo-label">{{ l.label }}</div>
+            <button
+              *ngIf="l.url"
+              class="pe-logo-clear"
+              type="button"
+              (click)="limparLogo(l)"
+            >
+              <ion-icon name="trash-outline"></ion-icon>
+              Remover
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Título + ano -->
+      <section class="pe-secao">
+        <h3>Identificação do evento</h3>
+
+        <label class="pe-campo">
+          <span class="pe-campo-lbl">Título do evento</span>
+          <textarea
+            rows="2"
+            [(ngModel)]="config.titulo"
+            placeholder="Ex.: 5ª COPA REGIONAL SPORT+ DE FUTEBOL SOCIETY"
+          ></textarea>
+        </label>
+
+        <label class="pe-campo">
+          <span class="pe-campo-lbl">Ano</span>
+          <input type="number" [(ngModel)]="config.ano" min="2000" max="2099" />
+        </label>
+
+        <label class="pe-campo">
+          <span class="pe-campo-lbl">Organizador</span>
+          <input
+            type="text"
+            [(ngModel)]="config.organizador"
+            placeholder="Ex.: JOGA 10 SPORTS"
+          />
+        </label>
+      </section>
+
+      <!-- Declaração -->
+      <section class="pe-secao">
+        <h3>Texto da declaração</h3>
+        <p class="pe-hint">
+          Use <code ngNonBindable>{{organizador}}</code> onde deseja
+          inserir o nome do organizador automaticamente.
+        </p>
+        <textarea
+          class="pe-textarea-grande"
+          rows="8"
+          [(ngModel)]="config.declaracao"
+        ></textarea>
+      </section>
+
+      <!-- Ações -->
+      <div class="pe-acoes">
+        <button class="pe-btn ghost" type="button" (click)="restaurarPadrao()">
+          <ion-icon name="refresh-outline"></ion-icon>
+          Restaurar padrão
+        </button>
+        <button class="pe-btn primary" type="button" (click)="imprimir()">
+          <ion-icon name="print-outline"></ion-icon>
+          Imprimir
+        </button>
+      </div>
+    </aside>
+
+    <!-- ===========================================================
+         PREVIEW DO TERMO (folha A4 retrato)
+         =========================================================== -->
+    <main class="tm-preview-wrap">
+      <article class="termo-folha">
+        <!-- Cabeçalho com logos + título -->
+        <header class="termo-cabec">
+          <div class="termo-logo termo-logo-esq">
+            <img *ngIf="logos[0].url; else slotEsq" [src]="logos[0].url" alt="" />
+            <ng-template #slotEsq>
+              <div class="termo-logo-placeholder"><ion-icon name="image-outline"></ion-icon></div>
+            </ng-template>
+          </div>
+
+          <h1 class="termo-titulo">
+            {{ config.titulo }}
+            <span class="termo-ano">{{ config.ano }}</span>
+          </h1>
+
+          <div class="termo-logos-extras">
+            <div class="termo-logo termo-logo-meio">
+              <img *ngIf="logos[1].url; else slotCen" [src]="logos[1].url" alt="" />
+              <ng-template #slotCen>
+                <div class="termo-logo-placeholder"><ion-icon name="image-outline"></ion-icon></div>
+              </ng-template>
+            </div>
+            <div class="termo-logo termo-logo-dir">
+              <img *ngIf="logos[2].url; else slotDir" [src]="logos[2].url" alt="" />
+              <ng-template #slotDir>
+                <div class="termo-logo-placeholder"><ion-icon name="image-outline"></ion-icon></div>
+              </ng-template>
+            </div>
+          </div>
+        </header>
+
+        <!-- Sub-título -->
+        <p class="termo-subtitulo">
+          TERMO DE AUTORIZAÇÃO PARA MENOR DE 18 (DEZOITO) ANOS PARA PARTICIPAR DE
+          COMPETIÇÕES DA {{ config.organizador }} NO ANO DE {{ config.ano }}
+        </p>
+
+        <!-- Corpo do termo -->
+        <section class="termo-corpo">
+          <p class="termo-paragrafo">
+            Eu, <span class="linha-longa"></span>,
+          </p>
+          <p class="termo-paragrafo">
+            nacionalidade <span class="linha-media"></span>,
+            estado civil <span class="linha-media"></span>,
+          </p>
+          <p class="termo-paragrafo">
+            inscrito(a) no CPF/MF sob nº <span class="linha-media"></span>,
+            portador(a) do RG nº <span class="linha-media"></span>,
+            autorizo meu filho (ou quem esteja sob minha guarda),
+          </p>
+          <p class="termo-paragrafo">
+            <span class="linha-longa"></span>, portador do RG nº
+            <span class="linha-media"></span>, a se inscrever e participar dos jogos da
+            <strong>{{ config.titulo }}</strong>,
+            {{ declaracaoRenderizada() }}
+          </p>
+
+          <p class="termo-paragrafo">
+            Declaro, ainda, estar ciente das normas do regulamento da competição.
+          </p>
+        </section>
+
+        <!-- Data + assinatura -->
+        <section class="termo-rodape">
+          <p class="termo-data">
+            <span class="linha-curta"></span> de
+            <span class="linha-media"></span>, de {{ config.ano }}
+          </p>
+
+          <div class="termo-assinatura">
+            <div class="termo-assinatura-linha"></div>
+            <p class="termo-assinatura-lbl">(Assinatura do pai/mãe/responsável)</p>
+          </div>
+        </section>
+      </article>
+    </main>
+  </div>
+</ion-content>

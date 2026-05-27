@@ -1,0 +1,178 @@
+@use '../../../../shared/print/print-base' as *;
+
+@include print-bg;
+
+.folha {
+  @include print-folha;
+}
+
+.ic-head {
+  @include print-head;
+}
+
+.ic-resumo {
+  @include print-resumo;
+}
+
+.empty {
+  @include print-empty;
+}
+
+.grupo {
+  margin-bottom: 22px;
+  page-break-inside: avoid;
+}
+
+.g-titulo {
+  @include print-section-title;
+}
+
+.tabela.classif {
+  @include print-tabela;
+
+  th {
+    text-align: center;
+    &.th-pos { width: 36px; }
+    &.th-eq { text-align: left; width: auto; }
+  }
+
+  td {
+    text-align: center;
+
+    &.td-pos { width: 36px; }
+    &.td-eq { text-align: left; }
+    &.td-num { font-weight: 600; }
+    &.td-pontos {
+      background: rgba(28, 46, 61, 0.06);
+      color: $cor-primary;
+      font-weight: 800;
+      font-size: 13px;
+    }
+    &.td-num.pos { color: $cor-secondary-soft; }
+    &.td-num.neg { color: $cor-danger; }
+  }
+
+  tr.podio {
+    background: rgba(245, 197, 24, 0.06);
+  }
+}
+
+/* Bolinha da posição */
+.pos-bola {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: $cor-surface-2;
+  color: $cor-primary;
+  font-weight: 800;
+  font-size: 12.5px;
+  padding: 0 8px;
+  border: 1px solid $cor-border;
+
+  &.medalha {
+    background: rgba(245, 197, 24, 0.25);
+    color: $cor-amarelo-soft;
+    border-color: $cor-amarelo;
+  }
+}
+
+/* Equipe na primeira coluna */
+.t-cell {
+  @include print-equipe-cell;
+  .pe-nome { max-width: 260px; }
+}
+
+/* Legenda no rodapé */
+.legenda {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  background: $cor-surface;
+  border: 1px solid $cor-border;
+  border-radius: 6px;
+  font-size: 11px;
+  color: $cor-text-muted;
+  line-height: 1.6;
+
+  strong {
+    color: $cor-primary;
+    font-weight: 800;
+    margin-right: 4px;
+  }
+}
+
+.ic-foot {
+  @include print-foot;
+}
+
+.loading {
+  @include print-loading;
+}
+
+@include print-media;
+
+/* Mobile responsivo */
+@media (max-width: 760px) {
+  .folha {
+    margin: 8px 8px;
+    padding: 14px 12px;
+    border-radius: 8px;
+  }
+
+  .ic-head {
+    grid-template-columns: 48px 1fr;
+    gap: 10px;
+
+    .ph-logo { width: 48px; height: 48px; }
+    .ph-titulo-bloco h1 { font-size: 16px; }
+    .ph-titulo-bloco h2 { font-size: 12px; }
+    .ph-sub { font-size: 11px; }
+
+    .ic-resumo {
+      grid-column: 1 / -1;
+      justify-content: stretch;
+      .r-item { flex: 1; padding: 6px 8px; min-width: 0; }
+      .r-num { font-size: 17px; }
+      .r-lbl { font-size: 9px; }
+    }
+  }
+
+  .g-titulo {
+    font-size: 11.5px;
+    flex-wrap: wrap;
+  }
+
+  /* Scroll horizontal pra não cortar colunas estreitas */
+  .grupo {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tabela.classif {
+    font-size: 10.5px;
+    th, td { padding: 4px 4px; }
+    th { font-size: 9px; }
+    .pe-nome { max-width: 110px; font-size: 10.5px; }
+    .pos-bola { min-width: 22px; height: 22px; font-size: 11px; padding: 0 6px; }
+    td.td-pontos { font-size: 11.5px; }
+  }
+
+  .legenda {
+    font-size: 10px;
+    padding: 8px 10px;
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 380px) {
+  .folha { padding: 12px 8px; }
+  .tabela.classif {
+    th, td { padding: 3px 3px; font-size: 9.5px; }
+  }
+}
+
+@media (max-width: 520px) {
+  .tb-label { display: none; }
+}

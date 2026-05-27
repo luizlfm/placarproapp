@@ -1,0 +1,87 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Seguidores</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="sincronizar()" aria-label="Sincronizar seguidores antigos" title="Sincronizar">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+      <ion-button (click)="copiarLink()" aria-label="Compartilhar link">
+        <ion-icon slot="icon-only" name="share-social-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <ng-container *ngIf="seguidores$ | async as todos">
+    <!-- Métrica grande -->
+    <div class="metric">
+      <div class="metric-num">{{ todos.length || total }}</div>
+      <div class="metric-label">{{ (todos.length || total) === 1 ? 'seguidor' : 'seguidores' }}</div>
+    </div>
+
+    <!-- Busca -->
+    <div class="busca" *ngIf="todos.length > 0">
+      <ion-searchbar
+        [value]="busca"
+        (ionInput)="busca = $any($event).detail.value || ''"
+        placeholder="Buscar seguidor"
+        debounce="120"
+      ></ion-searchbar>
+    </div>
+
+    <!-- Lista filtrada -->
+    <ng-container *ngIf="filtrados$ | async as lista">
+      <div class="lista" *ngIf="lista.length > 0">
+        <div class="seg-row" *ngFor="let s of lista; trackBy: trackByUid">
+          <div class="avatar">
+            <img *ngIf="s.fotoUrl; else avF" [src]="s.fotoUrl" [alt]="s.nome" referrerpolicy="no-referrer" />
+            <ng-template #avF><ion-icon name="person-circle-outline"></ion-icon></ng-template>
+          </div>
+          <div class="info">
+            <div class="nome">{{ s.nome }}</div>
+            <div class="meta" *ngIf="s.email">{{ s.email }}</div>
+          </div>
+          <button
+            type="button"
+            class="rem-btn"
+            (click)="removerSeguidor(s)"
+            aria-label="Remover seguidor"
+            title="Remover seguidor"
+          >
+            <ion-icon name="close-outline"></ion-icon>
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Empty / Em desenvolvimento -->
+    <div class="empty" *ngIf="todos.length === 0">
+      <ion-icon name="people-outline"></ion-icon>
+      <h3>Ainda sem seguidores</h3>
+      <p>
+        Quando seu campeonato tiver visibilidade pública, pessoas poderão seguir
+        para acompanhar resultados, lances e notícias.
+      </p>
+      <div class="empty-acoes">
+        <ion-button color="primary" (click)="copiarLink()">
+          <ion-icon slot="start" name="share-social-outline"></ion-icon>
+          Compartilhar link
+        </ion-button>
+        <ion-button fill="outline" color="primary" (click)="sincronizar()">
+          <ion-icon slot="start" name="refresh-outline"></ion-icon>
+          Sincronizar
+        </ion-button>
+      </div>
+      <p class="hint-sync">
+        Já tem seguidores mas não aparecem aqui? Toque em <strong>Sincronizar</strong>
+        para recuperar quem seguiu antes desta atualização.
+      </p>
+    </div>
+  </ng-container>
+</ion-content>

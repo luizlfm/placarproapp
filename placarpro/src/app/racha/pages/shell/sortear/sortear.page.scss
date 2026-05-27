@@ -1,0 +1,384 @@
+@import '../../../styles/racha-shared';
+
+/* ============================================================
+   Sortear Times — config + algoritmo + visualização do resultado.
+   Usa tokens PlacarPro. Mantém visual fiel ao print do FutBora.
+   ============================================================ */
+
+/* ============ Pills do hero (Times/Jogadores/Critério) ============ */
+.rs-info-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.rs-info-pill {
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 11.5px;
+
+  strong {
+    color: #fff;
+    font-weight: 800;
+    margin-left: 4px;
+  }
+}
+
+/* ============ Botões 3 ações ============ */
+.rs-acoes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rs-acao-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 180ms ease;
+  border: none;
+  line-height: 1.2;
+
+  ion-icon { font-size: 14px; }
+
+  &.yellow {
+    background: rgba(245, 197, 24, 0.12);
+    color: #b45309;
+    border: 1.5px solid rgba(245, 197, 24, 0.45);
+    &:hover {
+      background: rgba(245, 197, 24, 0.22);
+      transform: translateY(-1px);
+    }
+  }
+
+  &.lime {
+    background: linear-gradient(135deg, #7CC61D, #5a9912);
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(124, 198, 29, 0.42);
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 22px rgba(124, 198, 29, 0.55);
+    }
+  }
+}
+
+/* ============ Botão "Sorteio com IA" (full width, compacto) ============ */
+.rs-ia-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #0f1d2b, #1C2E3D);
+  color: #fff;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 180ms ease;
+  box-shadow: 0 2px 8px rgba(28, 46, 61, 0.2);
+  line-height: 1.2;
+
+  ion-icon { font-size: 16px; color: #f5c518; }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(28, 46, 61, 0.32);
+  }
+}
+
+/* ============ Card de configuração ============ */
+.rs-config {
+  padding: 22px 24px;
+}
+
+.rs-config-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+
+  @media (max-width: 540px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rs-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 11.5px;
+    color: #4b5563;
+    font-weight: 600;
+  }
+  input {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--rp-text);
+    outline: none;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+
+    &:focus {
+      border-color: var(--rp-lime);
+      box-shadow: 0 0 0 3px rgba(124, 198, 29, 0.18);
+    }
+  }
+}
+
+/* ============ Radios (critérios) ============ */
+.rs-radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 14px;
+  background: #f9fafb;
+  border-radius: 10px;
+  border: 1px solid #f3f4f6;
+}
+
+.rs-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: var(--rp-text);
+
+  input { display: none; }
+
+  .rs-radio-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--rp-lime);
+    position: relative;
+    flex: 0 0 auto;
+    transition: border-color 150ms ease;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--rp-lime);
+      transform: translate(-50%, -50%) scale(0);
+      transition: transform 150ms ease;
+    }
+  }
+  input:checked + .rs-radio-dot::after {
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .rs-radio-info {
+    font-size: 14px;
+    color: var(--rp-text-soft);
+    cursor: help;
+  }
+}
+
+/* ============ Loading ============ */
+.rs-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 25vh;
+}
+
+/* ============ Estado pendente (tem jogador, falta sortear) ============ */
+.rs-pendente {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  padding: 14px 18px;
+  color: #075985;
+  font-size: 13.5px;
+  line-height: 1.5;
+
+  p {
+    margin: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    ion-icon {
+      font-size: 18px;
+      color: #0284c7;
+      flex: 0 0 auto;
+      margin-top: 2px;
+    }
+    strong { color: #0c4a6e; }
+  }
+}
+
+/* ============ Resultado ============ */
+.rs-resultado {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rs-resultado-titulo {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--rp-text);
+}
+
+.rs-times-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.rs-time-card {
+  background: var(--rp-card);
+  border-radius: 12px;
+  border: 1px solid var(--rp-border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.rs-time-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 4px solid #7CC61D;
+  background: #f9fafb;
+  border-bottom: 1px solid var(--rp-border);
+
+  .rs-time-escudo {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #7CC61D;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    ion-icon { font-size: 18px; }
+  }
+  .rs-time-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+
+    strong {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--rp-text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    small {
+      font-size: 11.5px;
+      color: var(--rp-text-muted);
+    }
+  }
+}
+
+.rs-time-lista {
+  list-style: none;
+  padding: 8px 0;
+  margin: 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px;
+    font-size: 13px;
+
+    &:hover { background: #f9fafb; }
+  }
+  .rs-time-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7CC61D, #5a9912);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+  }
+  .rs-time-nome {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--rp-text);
+  }
+  .rs-time-nota {
+    padding: 2px 8px;
+    background: rgba(124, 198, 29, 0.16);
+    color: var(--rp-lime-deep);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+  }
+}
+
+/* ============ Banco ============ */
+.rs-banco {
+  background: #fef9c3;
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+  padding: 14px 18px;
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #92400e;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .rs-banco-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .rs-banco-chip {
+    padding: 4px 12px;
+    background: #fff;
+    border: 1px solid #fcd34d;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #92400e;
+  }
+}

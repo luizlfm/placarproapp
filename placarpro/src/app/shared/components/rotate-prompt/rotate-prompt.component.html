@@ -1,0 +1,28 @@
+<!--
+  Overlay "Gire o telefone" — só aparece em mobile portrait.
+  Auto-some quando o user gira pra landscape (matchMedia listener no .ts).
+-->
+<div class="rp-overlay" *ngIf="mostrar">
+  <div class="rp-card">
+    <!-- Animação: ícone do celular rotacionando 90° em loop sutil -->
+    <div class="rp-icon-wrap" aria-hidden="true">
+      <ion-icon name="phone-portrait-outline" class="rp-phone"></ion-icon>
+    </div>
+
+    <h2 class="rp-titulo">Gire o telefone</h2>
+    <p class="rp-texto">
+      Pra assistir a transmissão em <strong>tela cheia horizontal</strong>,
+      gire o telefone pra a posição <strong>paisagem</strong>.
+    </p>
+
+    <button
+      type="button"
+      class="rp-btn-voltar"
+      (click)="onVoltar()"
+      aria-label="Voltar pra tela anterior"
+    >
+      <ion-icon name="arrow-back-outline"></ion-icon>
+      <span>Voltar</span>
+    </button>
+  </div>
+</div>

@@ -1,0 +1,144 @@
+.modal-bg {
+  --background: var(--placar-bg);
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 24px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 8px 0 22px;
+}
+
+.field-error {
+  color: var(--ion-color-danger);
+  font-size: 12px;
+  margin: 0 4px;
+  font-weight: 500;
+}
+
+.modalidade-trigger {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--placar-surface);
+  border: 1px solid #c8c9d1;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 22px;
+  text-align: left;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+
+  &:hover {
+    border-color: var(--ion-color-primary);
+    box-shadow: 0 2px 6px rgba(28, 46, 61, 0.08);
+  }
+}
+
+.trig-badge {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+
+  ion-icon { font-size: 18px; }
+}
+
+.trig-text { flex: 1; min-width: 0; }
+
+.trig-label {
+  font-size: 11px;
+  color: var(--ion-color-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.trig-value {
+  font-size: 15px;
+  color: var(--placar-text);
+  font-weight: 600;
+  margin-top: 1px;
+}
+
+.trig-arrow {
+  color: var(--ion-color-medium);
+  font-size: 20px;
+}
+
+.fases-block {
+  background: var(--placar-surface);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 22px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.fases-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ion-color-primary);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fase-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--placar-divider);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 120ms ease;
+
+  &:last-of-type { border-bottom: none; }
+  &:hover { background: rgba(28, 46, 61, 0.03); }
+
+  &.active {
+    background: rgba(124, 198, 29, 0.08);
+
+    .fase-label { color: var(--ion-color-primary); }
+  }
+
+  ion-radio {
+    --color-checked: var(--ion-color-primary);
+    margin-top: 2px;
+  }
+
+  .fase-text { flex: 1; min-width: 0; }
+  .fase-label {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--placar-text);
+  }
+  .fase-desc {
+    font-size: 12.5px;
+    color: var(--placar-text-muted);
+    margin-top: 2px;
+  }
+}
+
+.fases-hint {
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  margin: 12px 0 0;
+}
+
+.btn-submit {
+  --border-radius: 12px;
+  --box-shadow: 0 6px 18px rgba(28, 46, 61, 0.35);
+  height: 48px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}

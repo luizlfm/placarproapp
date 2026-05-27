@@ -1,0 +1,622 @@
+// Shell — layout pós-login com sidebar smart (3 modos: global/campeonato/categoria).
+// Sidebar é fixa no desktop e off-canvas (overlay) no mobile.
+
+.shell-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  position: relative;
+  background: var(--ion-background-color, #f5f5f7);
+
+  /* No mobile, quando há `.shell-mobile-header` (modo campeonato/categoria),
+     o layout precisa virar COLUMN pra que o header fique em cima do main
+     em vez de lado a lado. A sidebar (`.shell-aside`) já é `position: fixed`
+     off-canvas em mobile, então não afeta a ordem flex. */
+  @media (max-width: 767px) {
+    &:has(.shell-mobile-header) {
+      flex-direction: column;
+    }
+  }
+}
+
+/* ============ Sidebar ============ */
+.shell-aside {
+  flex: 0 0 280px;
+  width: 280px;
+  background: var(--placar-sidebar-bg);
+  color: var(--placar-sidebar-text);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 80;
+
+  @media (max-width: 767px) {
+    /* Em mobile: sidebar fica off-canvas, com posição fixa por cima do main */
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 80vw;
+    max-width: 320px;
+    flex: 0 0 80vw;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.25);
+  }
+}
+
+.shell-layout.sidebar-aberta .shell-aside {
+  @media (max-width: 767px) {
+    transform: translateX(0);
+  }
+}
+
+/* ============ Main ============ */
+.shell-main {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  background: var(--ion-background-color, #f5f5f7);
+
+  ion-router-outlet {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  @media (max-width: 767px) {
+    /* No mobile, main ocupa tudo (a sidebar fica por cima) */
+    width: 100%;
+  }
+}
+
+/* ============ MOBILE HEADER (segments inline) ============
+   Aparece em ≤767px quando mode() === 'campeonato' || 'categoria'.
+   Sticky no topo da viewport. Brand row (back + logo + título + sair)
+   + segments row (ícones de navegação com indicador lime no ativo).
+
+   Padrão visual idêntico ao .mobile-header da publico-categoria, pra
+   dar consistência entre admin e a visualização pública. */
+.shell-mobile-header {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 75; // acima do main, abaixo da sidebar e do backdrop
+  background: var(--placar-sidebar-bg, #1C2E3D);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+  @media (max-width: 767px) {
+    display: block;
+  }
+}
+
+.smh-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.smh-back {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease;
+
+  ion-icon { font-size: 20px; }
+  &:hover { background: rgba(255, 255, 255, 0.18); }
+  &:active { transform: scale(0.95); }
+}
+
+.smh-logo {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--placar-accent, #7CC61D);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #fff;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 18px; }
+}
+
+.smh-title-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.smh-title {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fff;
+  line-height: 1.15;
+}
+
+.smh-subtitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--placar-accent, #7CC61D);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+.smh-logout {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 90, 90, 0.18);
+  border: none;
+  border-radius: 8px;
+  color: #ff8a8a;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease, color 120ms ease;
+
+  ion-icon { font-size: 20px; }
+  &:hover {
+    background: rgba(255, 90, 90, 0.32);
+    color: #ffb0b0;
+  }
+  &:active { transform: scale(0.95); }
+}
+
+/* Segments — fileira de ícones. Em mobile só ícones (texto escondido)
+   pra caber 5+ itens em 360px. Indicador lime no item ativo. */
+.smh-segments {
+  display: flex;
+  justify-content: space-around;
+  padding: 0;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.smh-seg {
+  flex: 1 1 0;
+  min-width: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 6px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  text-decoration: none;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+
+  ion-icon { font-size: 22px; }
+
+  /* Texto escondido em mobile — só ícones. */
+  span { display: none; }
+
+  &:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &.active {
+    color: var(--placar-accent, #7CC61D);
+    border-bottom-color: var(--placar-accent, #7CC61D);
+    background: rgba(124, 198, 29, 0.08);
+  }
+}
+
+/* Quando shell-mobile-header está visível (mode campeonato/categoria),
+   esconde o ion-header DE QUALQUER child page (inicio, midia, config,
+   categoria/qualquer-sub) pra não duplicar a barra navy.
+
+   Usa `:has()` pra só aplicar quando o shell-mobile-header está
+   renderizado de fato — em modo global (sem o header), os ion-header
+   dos child pages continuam aparecendo normalmente.
+
+   `::ng-deep` pierce-through é necessário pq o ion-header é renderizado
+   dentro de outro componente (a child page lazy-loaded). Sem ele, o
+   seletor não atravessa a view encapsulation do Angular. */
+@media (max-width: 767px) {
+  .shell-layout:has(.shell-mobile-header) .shell-main ::ng-deep ion-header {
+    display: none;
+  }
+}
+
+/* ============ Faixa "Voltar pro Painel Admin" ============
+   Fixa no TOPO da viewport. Quando admin master clica em "Abrir como
+   dono" no painel, navega pro shell normal mas com essa faixa visível
+   pra retornar ao painel admin a qualquer momento. */
+.shell-admin-faixa {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9000; /* acima da sidebar e do conteúdo, abaixo de modais */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: linear-gradient(90deg, #1C2E3D 0%, #2d4a63 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  font-family: inherit;
+
+  > ion-icon {
+    font-size: 22px;
+    color: var(--ion-color-warning, #ffc409);
+    flex-shrink: 0;
+  }
+
+  .adfx-msg {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .adfx-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: var(--ion-color-warning, #ffc409);
+    color: #1C2E3D;
+    border: none;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: filter 120ms ease, transform 100ms ease;
+    flex-shrink: 0;
+    ion-icon { font-size: 16px; }
+
+    &:hover { filter: brightness(1.08); }
+    &:active { transform: scale(0.97); }
+  }
+
+  /* Mobile: oculta texto longo, mantém só ícone + botão compacto */
+  @media (max-width: 600px) {
+    padding: 6px 10px;
+    gap: 8px;
+    .adfx-msg { display: none; }
+    .adfx-btn { padding: 7px 10px; font-size: 11.5px; }
+  }
+}
+
+/* Quando a faixa está visível, empurra a sidebar/main pra baixo
+   pra não cobrir conteúdo. Usamos um padding-top no layout. */
+.shell-layout:has(.shell-admin-faixa) {
+  padding-top: 42px;
+
+  @media (max-width: 600px) { padding-top: 38px; }
+}
+
+/* ============ Hambúrguer ============ */
+/* Hambúrguer embutido no ion-toolbar das pages (não mais "floating").
+   Posicionado dentro da faixa navy do ion-toolbar/header — bg transparente,
+   sem shadow, alinhado pelo safe-area-inset-top pra encostar no notch. */
+.shell-hamburger {
+  display: none;
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  left: 8px;
+  z-index: 90;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: none;
+  transition: opacity 180ms ease, transform 180ms ease, background 150ms ease;
+
+  ion-icon { font-size: 24px; }
+
+  @media (max-width: 767px) {
+    display: flex;
+  }
+
+  &:hover { background: rgba(255, 255, 255, 0.08); }
+  &:active { background: rgba(255, 255, 255, 0.14); }
+
+  &.escondido {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.8);
+  }
+}
+
+/* ============ Backdrop ============ */
+.shell-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 70;
+  animation: backdrop-in 200ms ease;
+
+  @media (min-width: 768px) {
+    display: none;
+  }
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ============ Sidebar user header (modo global) ============ */
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  @media (max-width: 767px) {
+    /* Empurra header pra não colidir com o hambúrguer */
+    padding-top: 22px;
+  }
+}
+
+.user-avatar {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--placar-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+  overflow: hidden;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.user-info { flex: 1; min-width: 0; }
+
+.user-name {
+  color: var(--placar-sidebar-text);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-logout {
+  background: none;
+  border: none;
+  color: var(--placar-accent);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 0 0;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.user-logout:hover { color: #fff; }
+
+/* ============ Context header (modos campeonato/categoria) ============ */
+.ctx-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: var(--placar-sidebar-text);
+  transition: background 120ms ease;
+
+  &:hover { background: rgba(255, 255, 255, 0.04); }
+
+  @media (max-width: 767px) {
+    padding-top: 22px;
+  }
+}
+
+.ctx-logo {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--placar-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #fff;
+  font-weight: 700;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 22px; }
+}
+
+.ctx-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--placar-sidebar-text);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.25;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.ctx-title-wrap { flex: 1; min-width: 0; }
+
+.ctx-camp-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+}
+
+.ctx-cat-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.ctx-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+
+  .user-avatar { width: 36px; height: 36px; font-size: 15px; }
+  .user-name { font-size: 13px; }
+  .user-logout { font-size: 11px; }
+}
+
+/* ============ Botão "Ver página pública" ============ */
+.btn-publica {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 16px;
+  padding: 11px 14px;
+  background: var(--placar-accent, #7CC61D);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: background 120ms ease, transform 100ms ease, box-shadow 120ms ease;
+  box-shadow: 0 2px 8px rgba(124, 198, 29, 0.3);
+  margin-top: auto;
+
+  ion-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+    text-align: left;
+  }
+
+  &:hover {
+    background: var(--ion-color-secondary-shade, #6dae1a);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(124, 198, 29, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  /* No mobile (sidebar fechada), o span some — mostra só o ícone */
+  @media (max-width: 540px) {
+    .sidebar-fechada & {
+      justify-content: center;
+      span { display: none; }
+    }
+  }
+}
+
+/* ============ Nav (compartilhado pelos 3 modos) ============ */
+.sidebar-nav {
+  padding: 12px 0;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  color: var(--placar-sidebar-text);
+  text-decoration: none;
+  font-size: 14.5px;
+  font-weight: 500;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background 150ms ease, border-color 150ms ease;
+
+  ion-icon {
+    font-size: 20px;
+    color: var(--placar-sidebar-text-muted);
+    transition: color 150ms ease;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    ion-icon { color: #fff; }
+  }
+
+  &.active {
+    background: var(--placar-sidebar-active-bg);
+    border-left-color: var(--placar-sidebar-active-border);
+    color: #fff;
+
+    ion-icon { color: var(--placar-accent); }
+  }
+}
+
+/* ============ Ajustes globais de mobile pro main ============ */
+@media (max-width: 767px) {
+  /* Garante que o conteúdo das páginas tenha espaço no topo pro hambúrguer */
+  .shell-main ion-content::part(scroll) {
+    padding-top: 0; /* Os headers das páginas já têm toolbar; ajuste fino abaixo */
+  }
+}

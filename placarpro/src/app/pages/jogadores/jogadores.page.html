@@ -1,0 +1,52 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Cadastro de jogadores</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <div class="info-banner">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      <span>
+        Visão consolidada de todos os jogadores cadastrados nos seus campeonatos.
+        Para adicionar, edite uma equipe na sua categoria.
+      </span>
+    </div>
+
+    <ng-container *ngIf="jogadores$ | async as lista">
+      <div class="counter" *ngIf="lista.length > 0">{{ lista.length }} jogador(es) no total</div>
+
+      <div class="lista-card" *ngIf="lista.length > 0; else empty">
+        <div *ngFor="let j of lista; trackBy: trackById" class="jog-row">
+          <div class="ic">
+            <img *ngIf="j.fotoUrl; else iconF" [src]="j.fotoUrl" [alt]="j.nome" loading="lazy" />
+            <ng-template #iconF><ion-icon name="person-outline"></ion-icon></ng-template>
+          </div>
+          <div class="info">
+            <div class="nome">{{ j.nome }}</div>
+            <div class="meta">
+              <span *ngIf="j.equipeNome" class="tag tag-eq">{{ j.equipeNome }}</span>
+              <span class="tag">{{ j.campeonatoTitulo }}</span>
+              <span class="tag">{{ j.categoriaTitulo }}</span>
+              <span *ngIf="j.numeroCamisa" class="num">#{{ j.numeroCamisa }}</span>
+              <span *ngIf="j.posicao" class="posicao">{{ j.posicao }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #empty>
+        <div class="empty">
+          <ion-icon name="people-outline"></ion-icon>
+          <h2>Nenhum jogador cadastrado</h2>
+          <p>Quando você cadastrar jogadores nas equipes, eles aparecerão aqui.</p>
+          <a class="empty-cta" routerLink="/app/meus-campeonatos" aria-label="Meus campeonatos">
+            <ion-icon name="trophy-outline"></ion-icon>
+            <span>Meus campeonatos</span>
+          </a>
+        </div>
+      </ng-template>
+    </ng-container>
+  </div>
+</ion-content>

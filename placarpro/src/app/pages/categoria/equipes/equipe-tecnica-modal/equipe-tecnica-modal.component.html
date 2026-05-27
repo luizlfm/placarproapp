@@ -1,0 +1,192 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="modo === 'form' ? voltar() : dismiss()" aria-label="Voltar/Fechar">
+        <ion-icon slot="icon-only" [name]="modo === 'form' ? 'arrow-back-outline' : 'close-outline'"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>
+      {{ modo === 'lista' ? 'Equipe Técnica' : (membroEditando ? 'Editar membro' : 'Novo membro') }}
+    </ion-title>
+    <ion-buttons slot="end" *ngIf="modo === 'lista'">
+      <ion-button (click)="novoMembro()" aria-label="Adicionar">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <!-- MODO LISTA -->
+  <ng-container *ngIf="modo === 'lista'">
+    <div class="head-equipe">
+      <div class="eq-logo">
+        <img *ngIf="equipe?.logoUrl; else iconE" [src]="equipe.logoUrl" alt="" />
+        <ng-template #iconE><ion-icon name="shield-outline"></ion-icon></ng-template>
+      </div>
+      <div class="eq-info">
+        <div class="eq-nome">{{ equipe.nome }}</div>
+        <div class="eq-sub">Equipe técnica</div>
+      </div>
+    </div>
+
+    <form class="quick-add" (ngSubmit)="adicionarRapido()">
+      <ion-input
+        fill="outline"
+        label="Nome do membro"
+        labelPlacement="stacked"
+        placeholder="Ex: Carlos Pereira"
+        [(ngModel)]="novoNome"
+        name="novoNome"
+        [disabled]="criando"
+      ></ion-input>
+      <button
+        type="submit"
+        class="btn-plus"
+        [disabled]="criando || !novoNome.trim()"
+        aria-label="Adicionar"
+      >
+        <ion-spinner *ngIf="criando" name="dots"></ion-spinner>
+        <ion-icon *ngIf="!criando" name="add-outline"></ion-icon>
+      </button>
+    </form>
+
+    <ion-searchbar
+      class="busca"
+      placeholder="Buscar..."
+      [value]="busca"
+      (ionInput)="busca = $any($event).target.value"
+      (ionClear)="limparBusca()"
+    ></ion-searchbar>
+
+    <ng-container *ngIf="membros$ | async as lista">
+      <div class="lista" *ngIf="lista.length > 0; else vazio">
+        <button
+          type="button"
+          *ngFor="let m of lista; trackBy: trackById"
+          class="m-row"
+          (click)="editar(m)"
+        >
+          <div class="m-foto">
+            <img *ngIf="m.fotoUrl; else fic" [src]="m.fotoUrl" alt="" />
+            <ng-template #fic><ion-icon name="person-circle-outline"></ion-icon></ng-template>
+          </div>
+          <div class="m-info">
+            <span class="m-nome">{{ m.nome }}</span>
+            <span class="m-funcao">
+              {{ m.funcao === 'outro' && m.funcaoOutro ? m.funcaoOutro : funcaoLabel[m.funcao] }}
+            </span>
+          </div>
+          <button
+            type="button"
+            class="m-rm"
+            (click)="removerInline(m, $event)"
+            aria-label="Remover"
+          >
+            <ion-icon name="trash-outline"></ion-icon>
+          </button>
+        </button>
+      </div>
+
+      <ng-template #vazio>
+        <div class="empty">
+          <ion-icon name="people-circle-outline"></ion-icon>
+          <p *ngIf="!busca">Nenhum membro cadastrado.</p>
+          <p *ngIf="busca">Nada encontrado para "{{ busca }}".</p>
+          <ion-button color="primary" size="small" (click)="novoMembro()" *ngIf="!busca">
+            <ion-icon slot="start" name="add-outline"></ion-icon>
+            Adicionar
+          </ion-button>
+        </div>
+      </ng-template>
+    </ng-container>
+  </ng-container>
+
+  <!-- MODO FORM -->
+  <ng-container *ngIf="modo === 'form'">
+    <form [formGroup]="form" (ngSubmit)="salvar()" class="form-card" novalidate>
+      <ion-input
+        fill="outline"
+        label="Nome"
+        labelPlacement="stacked"
+        placeholder="Ex: Carlos Pereira"
+        formControlName="nome"
+        required
+      ></ion-input>
+      <ion-input
+        fill="outline"
+        label="Apelido"
+        labelPlacement="stacked"
+        placeholder="Ex: Carlinhos"
+        formControlName="apelido"
+      ></ion-input>
+
+      <ion-select
+        fill="outline"
+        label="Função"
+        labelPlacement="stacked"
+        formControlName="funcao"
+        interface="popover"
+      >
+        <ion-select-option *ngFor="let f of funcoes" [value]="f">
+          {{ funcaoLabel[f] }}
+        </ion-select-option>
+      </ion-select>
+
+      <ion-input
+        *ngIf="form.value.funcao === 'outro'"
+        fill="outline"
+        label="Especifique a função"
+        labelPlacement="stacked"
+        placeholder="Ex: Preparador de goleiros"
+        formControlName="funcaoOutro"
+      ></ion-input>
+
+      <ion-input
+        fill="outline"
+        label="Documento"
+        labelPlacement="stacked"
+        mask="cpf-cnpj"
+        placeholder="000.000.000-00"
+        formControlName="documento"
+      ></ion-input>
+      <ion-input
+        fill="outline"
+        label="Telefone"
+        labelPlacement="stacked"
+        type="tel"
+        inputmode="numeric"
+        mask="telefone"
+        placeholder="(11) 99999-9999"
+        formControlName="telefone"
+      ></ion-input>
+      <app-date-input
+        label="Data de nascimento"
+        mode="date"
+        formControlName="dataNascimento"
+      ></app-date-input>
+
+      <div class="actions">
+        <ion-button
+          *ngIf="membroEditando"
+          fill="clear"
+          color="danger"
+          type="button"
+          (click)="remover()"
+        >
+          <ion-icon slot="start" name="trash-outline"></ion-icon>
+          Remover
+        </ion-button>
+        <div class="spacer"></div>
+        <ion-button
+          type="submit"
+          color="primary"
+          [disabled]="loading || form.invalid"
+        >
+          <ion-spinner *ngIf="loading" name="dots" slot="start"></ion-spinner>
+          Salvar
+        </ion-button>
+      </div>
+    </form>
+  </ng-container>
+</ion-content>

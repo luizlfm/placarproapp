@@ -1,0 +1,131 @@
+<ng-container *ngIf="patrocinadores$ | async as lista">
+  <section
+    class="pf-section"
+    *ngIf="lista.length > 0"
+    [class.escuro]="variante === 'escuro'"
+    [class.rotativo]="rotativoAtivo"
+    [class.marquee]="usarMarquee"
+  >
+    <h3 class="pf-titulo">{{ titulo }}</h3>
+
+    <!-- ===== MODO MARQUEE (esteira contínua) =====
+         Cards deslizam continuamente da direita pra esquerda em loop.
+         Lista DUPLICADA pra loop seamless. Duração calculada por
+         `marqueeDuration` (4s por card). -->
+    <div class="pf-scroller" #scroller *ngIf="usarMarquee; else gridEstatico">
+      <div class="pf-track" [style.animationDuration]="marqueeDuration">
+        <!-- 1ª passagem -->
+        <button
+          type="button"
+          class="pf-card pf-card-marquee"
+          *ngFor="let p of lista; trackBy: trackById"
+          [class.clicavel]="p.link || p.site"
+          (click)="abrirLink(p, $event)"
+          [title]="p.nome"
+        >
+          <div class="pf-banner" [class.eh-mobile]="ehMobile">
+            <ng-container *ngIf="bannerAppParaViewport(p) as src; else iconP1">
+              <div class="pf-banner-bg" [style.backgroundImage]="'url(' + src + ')'"></div>
+              <img [src]="src" [alt]="p.nome" (error)="onImgErro($event)" loading="lazy" />
+            </ng-container>
+            <ng-template #iconP1>
+              <div class="pf-banner-placeholder"><ion-icon name="megaphone-outline"></ion-icon></div>
+            </ng-template>
+          </div>
+          <div class="pf-rodape">
+            <div class="pf-logo-mini" *ngIf="p.logoUrl && p.bannerAppUrl">
+              <img [src]="p.logoUrl" [alt]="p.nome" loading="lazy" />
+            </div>
+            <div class="pf-info">
+              <div class="pf-nome">{{ p.nome }}</div>
+              <div class="pf-tipo">{{ rotuloTipo(p.tipo) }}</div>
+            </div>
+          </div>
+        </button>
+
+        <!-- 2ª passagem (cópia pro loop seamless) -->
+        <button
+          type="button"
+          class="pf-card pf-card-marquee"
+          *ngFor="let p of lista; trackBy: trackById"
+          [class.clicavel]="p.link || p.site"
+          (click)="abrirLink(p, $event)"
+          [title]="p.nome"
+          aria-hidden="true"
+          tabindex="-1"
+        >
+          <div class="pf-banner" [class.eh-mobile]="ehMobile">
+            <ng-container *ngIf="bannerAppParaViewport(p) as src; else iconP2">
+              <div class="pf-banner-bg" [style.backgroundImage]="'url(' + src + ')'"></div>
+              <img [src]="src" [alt]="p.nome" (error)="onImgErro($event)" loading="lazy" />
+            </ng-container>
+            <ng-template #iconP2>
+              <div class="pf-banner-placeholder"><ion-icon name="megaphone-outline"></ion-icon></div>
+            </ng-template>
+          </div>
+          <div class="pf-rodape">
+            <div class="pf-logo-mini" *ngIf="p.logoUrl && p.bannerAppUrl">
+              <img [src]="p.logoUrl" [alt]="p.nome" loading="lazy" />
+            </div>
+            <div class="pf-info">
+              <div class="pf-nome">{{ p.nome }}</div>
+              <div class="pf-tipo">{{ rotuloTipo(p.tipo) }}</div>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== GRID ESTÁTICO (sem rotação, fallback) ===== -->
+    <ng-template #gridEstatico>
+      <div class="pf-scroller" #scroller>
+        <button
+          type="button"
+          class="pf-card"
+          *ngFor="let p of lista; let i = index; trackBy: trackById"
+          [class.clicavel]="p.link || p.site"
+          [class.ativo]="cardVisivel(i)"
+          [class.fora]="!cardVisivel(i)"
+          [style.order]="ordemCard(i)"
+          (click)="abrirLink(p, $event)"
+          [title]="p.nome"
+        >
+          <div class="pf-banner" [class.eh-mobile]="ehMobile">
+            <ng-container *ngIf="bannerAppParaViewport(p) as src; else iconP3">
+              <div class="pf-banner-bg" [style.backgroundImage]="'url(' + src + ')'"></div>
+              <img [src]="src" [alt]="p.nome" (error)="onImgErro($event)" loading="lazy" />
+            </ng-container>
+            <ng-template #iconP3>
+              <div class="pf-banner-placeholder"><ion-icon name="megaphone-outline"></ion-icon></div>
+            </ng-template>
+          </div>
+          <div class="pf-rodape">
+            <div class="pf-logo-mini" *ngIf="p.logoUrl && p.bannerAppUrl">
+              <img [src]="p.logoUrl" [alt]="p.nome" loading="lazy" />
+            </div>
+            <div class="pf-info">
+              <div class="pf-nome">{{ p.nome }}</div>
+              <div class="pf-tipo">{{ rotuloTipo(p.tipo) }}</div>
+            </div>
+          </div>
+        </button>
+      </div>
+    </ng-template>
+
+    <!-- Dots — só fora do marquee (em marquee o loop é contínuo). -->
+    <div
+      class="pf-dots"
+      *ngIf="rotativoAtivo && !usarMarquee && totalPaginas() > 1"
+      aria-label="Indicadores de banner"
+    >
+      <button
+        *ngFor="let idx of paginas(); trackBy: trackByIdx"
+        type="button"
+        class="pf-dot"
+        [class.ativo]="idx === indiceAtivoDots()"
+        (click)="irPara(idx)"
+        [attr.aria-label]="'Banner ' + (idx + 1)"
+      ></button>
+    </div>
+  </section>
+</ng-container>

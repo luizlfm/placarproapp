@@ -1,0 +1,218 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Meus campeonatos</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Faixa decorativa verde com botão "Novo campeonato".
+       Moderador NÃO cria campeonatos — só ajuda nos do dono. Esconde o
+       botão pra ele e deixa a faixa simples (mantém a identidade visual). -->
+  <div class="hero-strip">
+    <ion-button
+      *ngIf="!(ehModerador$ | async)"
+      class="btn-novo"
+      (click)="novoCampeonato()"
+    >
+      <ion-icon slot="start" name="add-outline"></ion-icon>
+      Novo campeonato
+    </ion-button>
+  </div>
+
+  <!-- Lista de campeonatos -->
+  <div class="campeonatos-wrap">
+    <ng-container *ngIf="campeonatos$ | async as lista; else loading">
+      <div class="campeonatos-card" *ngIf="lista.length > 0; else empty">
+        <a
+          *ngFor="let c of lista; trackBy: trackById"
+          class="campeonato-row"
+          [routerLink]="c.tipo === 'unico' && c.categoriaPrincipalId
+            ? ['/app/campeonato', c.id, 'categoria', c.categoriaPrincipalId]
+            : ['/app/campeonato', c.id]"
+        >
+          <div class="row-logo">
+            <img *ngIf="c.logoUrl; else logoFallback" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
+            <ng-template #logoFallback>
+              <ion-icon name="trophy-outline"></ion-icon>
+            </ng-template>
+          </div>
+
+          <div class="row-info">
+            <div class="row-title">{{ c.titulo }}</div>
+            <div class="row-sub" *ngIf="c.subtitulo">{{ c.subtitulo }}</div>
+          </div>
+
+          <div class="row-meta">
+            <span class="seguidores">{{ c.seguidores ?? 0 }} seguidores</span>
+            <!-- Botão DUPLICAR (criar sequência). Abre modal pra escolher
+                 o que copiar (equipes, jogadores, partidas, seguidores).
+                 Antes esse botão copiava o link público — movido pra dentro
+                 da página do campeonato pra liberar este ícone pra a ação
+                 mais valiosa: duplicar a edição inteira. -->
+            <ion-button
+              fill="clear"
+              size="small"
+              class="row-action"
+              (click)="duplicarCampeonato(c, $event)"
+              [attr.aria-label]="'Duplicar ' + c.titulo"
+              [title]="'Criar sequência (duplicar) ' + c.titulo"
+            >
+              <ion-icon slot="icon-only" name="copy-outline"></ion-icon>
+            </ion-button>
+          </div>
+        </a>
+      </div>
+
+      <ng-template #empty>
+        <div class="empty-state" *ngIf="ehModerador$ | async; else emptyOrganizador">
+          <ion-icon name="shield-outline"></ion-icon>
+          <h2>Você ainda não modera nenhum campeonato</h2>
+          <p>Quando o organizador te enviar um link de convite, o campeonato vai aparecer aqui.</p>
+          <!-- Botão de diagnóstico — roda todas as estratégias e mostra
+               o resultado pra entender por que está vazio. -->
+          <ion-button fill="outline" size="small" (click)="diagnosticarAcesso()">
+            <ion-icon slot="start" name="bug-outline"></ion-icon>
+            Diagnosticar acesso
+          </ion-button>
+        </div>
+        <ng-template #emptyOrganizador>
+          <div class="empty-state">
+            <ion-icon name="trophy-outline"></ion-icon>
+            <h2>Você ainda não tem campeonatos</h2>
+            <p>Clique em "Novo campeonato" acima para começar a organizar.</p>
+          </div>
+        </ng-template>
+      </ng-template>
+    </ng-container>
+
+    <ng-template #loading>
+      <div class="loading-state">
+        <ion-spinner></ion-spinner>
+        <p>Carregando seus campeonatos...</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- ════════ MODAL DE DIAGNÓSTICO ════════
+       Aberto via botão "Diagnosticar acesso" no empty-state.
+       Mostra UID/email + resultado de cada estratégia de descoberta. -->
+  <div class="diag-overlay" *ngIf="diagAberto" (click)="fecharDiag()">
+    <div class="diag-painel" (click)="$event.stopPropagation()">
+      <header class="diag-head">
+        <h3><ion-icon name="bug"></ion-icon> Diagnóstico de acesso</h3>
+        <button type="button" class="diag-fechar" (click)="fecharDiag()" aria-label="Fechar">
+          <ion-icon name="close"></ion-icon>
+        </button>
+      </header>
+
+      <div class="diag-body">
+        <div *ngIf="diagCarregando" class="diag-loading">
+          <ion-spinner></ion-spinner>
+          <p>Coletando informações...</p>
+        </div>
+
+        <ng-container *ngIf="!diagCarregando && diagResultado as d">
+          <div class="diag-bloco">
+            <strong>Usuário logado:</strong>
+            <div class="diag-mono">UID: {{ d.uid }}</div>
+            <div class="diag-mono">Email: {{ d.email || '(sem email)' }}</div>
+          </div>
+
+          <div class="diag-bloco" [class.ok]="d.rapida.count > 0" [class.fail]="d.rapida.erro">
+            <strong>1. Query rápida (moderadorUids denormalizado)</strong>
+            <div *ngIf="!d.rapida.erro">
+              {{ d.rapida.count }} campeonato(s)
+            </div>
+            <div *ngIf="d.rapida.erro" class="diag-erro">{{ d.rapida.erro }}</div>
+          </div>
+
+          <div class="diag-bloco" [class.ok]="d.convites.count > 0" [class.fail]="d.convites.erro">
+            <strong>2. Convites aceitos (aceitoPorUid = UID)</strong>
+            <div *ngIf="!d.convites.erro">
+              {{ d.convites.count }} convite(s)
+              <div class="diag-mono" *ngIf="d.convites.ids.length">
+                IDs: {{ d.convites.ids.join(', ') }}
+              </div>
+            </div>
+            <div *ngIf="d.convites.erro" class="diag-erro">{{ d.convites.erro }}</div>
+          </div>
+
+          <div class="diag-bloco" [class.ok]="d.convitesPorEmail.count > 0" [class.fail]="d.convitesPorEmail.erro">
+            <strong>3. Convites pelo email</strong>
+            <div *ngIf="!d.convitesPorEmail.erro">
+              {{ d.convitesPorEmail.count }} convite(s)
+              <div class="diag-mono" *ngIf="d.convitesPorEmail.ids.length">
+                IDs: {{ d.convitesPorEmail.ids.join(', ') }}
+              </div>
+            </div>
+            <div *ngIf="d.convitesPorEmail.erro" class="diag-erro">{{ d.convitesPorEmail.erro }}</div>
+          </div>
+
+          <div class="diag-bloco" [class.ok]="d.categorias.matches > 0" [class.fail]="d.categorias.erro">
+            <strong>4. Scan categorias (collectionGroup)</strong>
+            <div *ngIf="!d.categorias.erro">
+              Total lidas: {{ d.categorias.totalLidas }} · Matches: {{ d.categorias.matches }}
+              <div class="diag-mono" *ngIf="d.categorias.ids.length">
+                IDs: {{ d.categorias.ids.join(', ') }}
+              </div>
+            </div>
+            <div *ngIf="d.categorias.erro" class="diag-erro">{{ d.categorias.erro }}</div>
+          </div>
+
+          <div class="diag-bloco" *ngIf="d.campeonatosCarregaveis.length">
+            <strong>5. Carregamento dos campeonatos</strong>
+            <div *ngFor="let c of d.campeonatosCarregaveis" class="diag-camp" [class.ok]="c.ok" [class.fail]="!c.ok">
+              <ion-icon [name]="c.ok ? 'checkmark-circle' : 'close-circle'"></ion-icon>
+              <span>{{ c.id }}</span>
+              <span *ngIf="c.titulo">— {{ c.titulo }}</span>
+              <span *ngIf="c.erro" class="diag-erro">{{ c.erro }}</span>
+            </div>
+          </div>
+
+          <!-- Detecta caso TODAS as 4 estratégias falham com permission-denied:
+               sinal claro de que as Firestore Rules implantadas estão
+               desatualizadas em relação ao arquivo local. -->
+          <div
+            class="diag-bloco diag-conclusao diag-rules"
+            *ngIf="d.rapida.erro && d.convites.erro && d.convitesPorEmail.erro && d.categorias.erro"
+          >
+            <strong>⚠️ Firestore Rules desatualizadas!</strong>
+            <p>
+              Todas as 4 estratégias retornaram <code>permission-denied</code>,
+              inclusive consultas que deveriam ser públicas. Isso significa
+              que as <strong>regras do Firestore deployadas estão antigas</strong>
+              em relação ao arquivo <code>firestore.rules</code> local.
+            </p>
+            <p><strong>Solução (rodar no terminal):</strong></p>
+            <pre class="diag-cmd">cd C:\placarPro\placarpro
+firebase deploy --only firestore:rules</pre>
+            <p>
+              Se ainda não tiver a Firebase CLI:
+              <code>npm install -g firebase-tools</code> +
+              <code>firebase login</code>.
+            </p>
+          </div>
+
+          <div class="diag-bloco diag-conclusao"
+               *ngIf="!d.campeonatosCarregaveis.length && d.rapida.count === 0
+                      && !(d.rapida.erro && d.convites.erro && d.convitesPorEmail.erro && d.categorias.erro)">
+            <strong>Diagnóstico:</strong>
+            <p>
+              Não encontrei vínculos do seu UID/email a nenhum campeonato.
+              Possíveis causas:
+            </p>
+            <ul>
+              <li>O organizador adicionou mas você ainda não clicou no link de convite</li>
+              <li>O convite foi enviado pra outro email diferente do logado</li>
+              <li>Você está logado com uma conta diferente daquela que aceitou</li>
+            </ul>
+            <p>
+              <strong>Solução:</strong> peça ao organizador pra reenviar o link
+              de convite e clique nele logado com a conta atual.
+            </p>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</ion-content>

@@ -1,0 +1,206 @@
+// SCSS compartilhado pelas páginas CRUD globais (locais, arbitragem, patrocinadores).
+// Import via `@import '../crud-shared.scss';` no .page.scss.
+
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+.card {
+  background: var(--placar-surface);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-card .form-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+
+  h3 {
+    margin: 0;
+    color: var(--ion-color-primary);
+    font-size: 16px;
+    font-weight: 700;
+  }
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.btn-save {
+  --border-radius: 8px;
+  --box-shadow: 0 2px 8px rgba(28, 46, 61, 0.22);
+  height: 38px;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+  margin-top: 14px;
+}
+
+.counter {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+  margin: 6px 4px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.lista-card {
+  background: var(--placar-surface);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.local-row,
+.arbitro-row,
+.patro-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--placar-divider);
+  cursor: pointer;
+  transition: background 120ms ease;
+
+  &:first-child { border-top: none; }
+  &:hover { background: var(--placar-surface-2); }
+
+  .ic {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(28, 46, 61, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ion-color-primary);
+    flex: 0 0 auto;
+
+    ion-icon { font-size: 20px; }
+  }
+
+  .info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .nome {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--placar-text);
+  }
+
+  .meta {
+    font-size: 12.5px;
+    color: var(--placar-text-muted);
+    margin-top: 2px;
+  }
+}
+
+.empty {
+  background: var(--placar-surface);
+  border-radius: 12px;
+  padding: 60px 24px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+  /* Ícone grande do empty (location-outline, person-outline, etc.) */
+  > ion-icon {
+    font-size: 64px;
+    color: var(--ion-color-medium);
+    opacity: 0.4;
+    margin-bottom: 14px;
+  }
+  h2 {
+    color: var(--ion-color-primary);
+    font-size: 18px;
+    margin: 0 0 6px;
+  }
+  p {
+    color: var(--ion-color-medium);
+    margin: 0 0 18px;
+    font-size: 14px;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Botão CTA do empty state — TAMANHO PEQUENO/MÉDIO.
+   Padronizado entre Locais / Arbitragem / Patrocinadores etc.
+
+   Antes era um card grande (220px min-width, 22px padding, ícone 36px).
+   Agora é um botão compacto, mais próximo dos demais botões do sistema.
+
+   Usar como: <button class="empty-cta" type="button" (click)="novo()">
+                 <ion-icon name="add"></ion-icon>
+                 <span>NOVO LOCAL</span>
+               </button>
+   ────────────────────────────────────────────────────────────────────── */
+.empty-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--ion-color-primary, #1C2E3D);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(28, 46, 61, 0.18);
+  transition: transform 100ms ease, box-shadow 150ms ease, background 120ms ease;
+  font-family: inherit;
+  /* Quando usado como <a routerLink="..."> remove sublinhado/foco padrão. */
+  text-decoration: none;
+  &:focus { outline: none; }
+  &:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+  ion-icon {
+    font-size: 18px;
+    flex: 0 0 auto;
+  }
+
+  span {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(28, 46, 61, 0.28);
+    background: #14242f;
+  }
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(28, 46, 61, 0.22);
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}

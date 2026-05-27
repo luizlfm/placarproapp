@@ -1,0 +1,41 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-title>
+      <img class="hdr-logo" src="assets/images/logo3.png" alt="PlacarPro" />
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="confirmLogout()" aria-label="Sair">
+        <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="home-welcome" *ngIf="user$ | async as user">
+    <div class="welcome-avatar">
+      <img
+        *ngIf="user.photoURL; else initials"
+        [src]="user.photoURL"
+        alt="{{ user.displayName || user.email }}"
+      />
+      <ng-template #initials>
+        <span>{{ (user.displayName || user.email || '?').charAt(0).toUpperCase() }}</span>
+      </ng-template>
+    </div>
+    <h1>Olá, {{ user.displayName || user.email }}!</h1>
+    <p class="welcome-sub">Você está logado no PlacarPro.</p>
+
+    <ion-card class="welcome-card">
+      <ion-card-header>
+        <ion-card-title>Próximos passos</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>
+          A tela de login está completa. O próximo marco é o
+          <strong>shell com sidebar</strong> e a lista de "Meus campeonatos".
+        </p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

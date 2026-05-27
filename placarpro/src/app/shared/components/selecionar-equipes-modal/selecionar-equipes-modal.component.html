@@ -1,0 +1,150 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Selecionar equipes</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <!-- Header com grupo do jogo (se houver) -->
+  <div class="grupo-header" *ngIf="nomeGrupo">
+    <ion-icon name="apps-outline"></ion-icon>
+    <span>{{ nomeGrupo }}</span>
+  </div>
+
+  <!-- Aviso: partida já tem resultado -->
+  <div class="aviso-resultado" *ngIf="temResultado">
+    <ion-icon name="warning-outline"></ion-icon>
+    <div class="aviso-conteudo">
+      <strong>Esta partida já tem resultado lançado ({{ placarFormatado }}).</strong>
+      <p>
+        Se você trocar as equipes, o <strong>placar</strong> e todos os
+        <strong>lances</strong> serão zerados. O status voltará para "Agendado".
+      </p>
+    </div>
+  </div>
+
+  <!-- Resumo da seleção -->
+  <div class="resumo">
+    <div class="r-lado">
+      <span class="r-label">Mandante</span>
+      <div class="r-card" *ngIf="equipeMandante; else mPlace">
+        <div class="r-logo">
+          <img *ngIf="equipeMandante.logoUrl; else mIc" [src]="equipeMandante.logoUrl" alt="" />
+          <ng-template #mIc><ion-icon name="shield-outline"></ion-icon></ng-template>
+        </div>
+        <span class="r-nome">{{ equipeMandante.nome }}</span>
+        <button type="button" class="r-clear" (click)="limpar('mandante')" aria-label="Limpar">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+      <ng-template #mPlace>
+        <div class="r-card vazio">
+          <ion-icon name="shield-outline"></ion-icon>
+          <span>Selecione abaixo</span>
+        </div>
+      </ng-template>
+    </div>
+
+    <button
+      type="button"
+      class="btn-inverter"
+      (click)="inverter()"
+      [disabled]="!mandanteId && !visitanteId"
+      aria-label="Inverter"
+      title="Inverter mandante × visitante"
+    >
+      <ion-icon name="swap-horizontal-outline"></ion-icon>
+    </button>
+
+    <div class="r-lado">
+      <span class="r-label">Visitante</span>
+      <div class="r-card" *ngIf="equipeVisitante; else vPlace">
+        <div class="r-logo">
+          <img *ngIf="equipeVisitante.logoUrl; else vIc" [src]="equipeVisitante.logoUrl" alt="" />
+          <ng-template #vIc><ion-icon name="shield-outline"></ion-icon></ng-template>
+        </div>
+        <span class="r-nome">{{ equipeVisitante.nome }}</span>
+        <button type="button" class="r-clear" (click)="limpar('visitante')" aria-label="Limpar">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+      <ng-template #vPlace>
+        <div class="r-card vazio">
+          <ion-icon name="shield-outline"></ion-icon>
+          <span>Selecione abaixo</span>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Lista de equipes disponíveis -->
+  <div class="listas">
+    <section class="coluna">
+      <h3 class="col-title">Como Mandante</h3>
+      <div class="empty-msg" *ngIf="equipesDisponiveis.length === 0">
+        Nenhuma equipe disponível.
+      </div>
+      <button
+        type="button"
+        class="eq-card"
+        *ngFor="let e of equipesDisponiveis; trackBy: trackById"
+        [class.selected]="e.id === mandanteId"
+        [class.outro-lado]="e.id === visitanteId"
+        (click)="selecionarMandante(e)"
+      >
+        <div class="eq-logo">
+          <img *ngIf="e.logoUrl; else iconE1" [src]="e.logoUrl" alt="" />
+          <ng-template #iconE1><ion-icon name="shield-outline"></ion-icon></ng-template>
+        </div>
+        <span class="eq-nome">{{ e.nome }}</span>
+        <ion-icon *ngIf="e.id === mandanteId" class="check" name="checkmark-circle"></ion-icon>
+      </button>
+    </section>
+
+    <section class="coluna">
+      <h3 class="col-title">Como Visitante</h3>
+      <div class="empty-msg" *ngIf="equipesDisponiveis.length === 0">
+        Nenhuma equipe disponível.
+      </div>
+      <button
+        type="button"
+        class="eq-card"
+        *ngFor="let e of equipesDisponiveis; trackBy: trackById"
+        [class.selected]="e.id === visitanteId"
+        [class.outro-lado]="e.id === mandanteId"
+        (click)="selecionarVisitante(e)"
+      >
+        <div class="eq-logo">
+          <img *ngIf="e.logoUrl; else iconE2" [src]="e.logoUrl" alt="" />
+          <ng-template #iconE2><ion-icon name="shield-outline"></ion-icon></ng-template>
+        </div>
+        <span class="eq-nome">{{ e.nome }}</span>
+        <ion-icon *ngIf="e.id === visitanteId" class="check" name="checkmark-circle"></ion-icon>
+      </button>
+    </section>
+  </div>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <div class="footer-actions">
+      <ion-button fill="clear" color="medium" (click)="dismiss()" [disabled]="salvando">
+        Cancelar
+      </ion-button>
+      <div class="spacer"></div>
+      <ion-button
+        color="primary"
+        (click)="salvar()"
+        [disabled]="salvando || !mandanteId || !visitanteId"
+      >
+        <ion-spinner *ngIf="salvando" name="dots" slot="start"></ion-spinner>
+        Salvar
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

@@ -1,0 +1,177 @@
+<div class="r-page" *ngIf="!loading">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">Financeiro</span>
+  </header>
+
+  <!-- ═══════════ Page header ═══════════ -->
+  <header class="r-page-head">
+    <span class="r-page-tag">FINANCEIRO · ADMINISTRADOR</span>
+    <h1>Financeiro do Racha</h1>
+    <p>Gerencie todas as entradas e saídas financeiras do seu racha com controle total.</p>
+  </header>
+
+  <!-- Faixa verde com CTAs Nova Entrada / Nova Saída -->
+  <div class="r-hero-strip">
+    <button type="button" class="r-hero-strip-btn" (click)="novaEntrada()">
+      <ion-icon name="trending-up"></ion-icon>
+      NOVA ENTRADA
+    </button>
+    <button type="button" class="r-hero-strip-btn alt" (click)="novaSaida()">
+      <ion-icon name="trending-down"></ion-icon>
+      NOVA SAÍDA
+    </button>
+  </div>
+
+  <!-- Chip de visibilidade -->
+  <div class="r-metricas-row">
+    <span class="r-metric-chip">
+      <ion-icon name="eye-off-outline"></ion-icon>
+      Visível apenas para <strong>administradores</strong>
+    </span>
+  </div>
+
+  <!-- ═══════════ 3 cards de métrica ═══════════ -->
+  <section class="rf-cards">
+    <div class="rf-card-met entrada">
+      <div class="rf-card-icone"><ion-icon name="trending-up"></ion-icon></div>
+      <div>
+        <span class="rf-card-lbl">ENTRADAS</span>
+        <strong class="rf-card-val">R$ {{ formatRs(totalEntradas) }}</strong>
+      </div>
+    </div>
+    <div class="rf-card-met saida">
+      <div class="rf-card-icone"><ion-icon name="trending-down"></ion-icon></div>
+      <div>
+        <span class="rf-card-lbl">SAÍDAS</span>
+        <strong class="rf-card-val">R$ {{ formatRs(totalSaidas) }}</strong>
+      </div>
+    </div>
+    <div class="rf-card-met saldo">
+      <div class="rf-card-icone"><ion-icon name="wallet"></ion-icon></div>
+      <div>
+        <span class="rf-card-lbl">SALDO</span>
+        <strong class="rf-card-val">R$ {{ formatRs(saldo) }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ Custos fixos ═══════════ -->
+  <section class="r-card rf-custos" [formGroup]="form">
+    <div class="rf-custos-head">
+      <div>
+        <h2>Custos fixos</h2>
+        <p>Defina os valores usados nos lançamentos automáticos do evento.</p>
+      </div>
+      <ion-icon name="settings-outline" class="rf-custos-config"></ion-icon>
+    </div>
+
+    <div class="rf-custos-row">
+      <div class="rf-field">
+        <label>Aluguel do campo (R$)</label>
+        <input type="text" inputmode="numeric" formControlName="aluguelCampoRs" placeholder="0,00" appMascara="dinheiro" />
+      </div>
+      <div class="rf-field">
+        <label>Arbitragem (R$)</label>
+        <input type="text" inputmode="numeric" formControlName="arbitragemRs" placeholder="0,00" appMascara="dinheiro" />
+      </div>
+      <div class="rf-field">
+        <label>Mensalista padrão (R$)</label>
+        <input type="text" inputmode="numeric" formControlName="mensalistaPadraoRs" placeholder="0,00" appMascara="dinheiro" />
+        <small>Usado ao ativar o badge de mensalista na fila.</small>
+      </div>
+    </div>
+
+    <div class="rf-custos-foot">
+      <button
+        type="button"
+        class="r-btn r-btn-navy r-btn-big"
+        (click)="salvarConfiguracao()"
+        [disabled]="form.invalid || form.pristine"
+      >
+        <ion-icon name="checkmark-circle-outline"></ion-icon>
+        SALVAR CONFIGURAÇÃO
+      </button>
+    </div>
+  </section>
+
+  <!-- ═══════════ Filtros ═══════════ -->
+  <section class="r-card rf-filtros">
+    <button type="button" class="rf-filtros-head" (click)="toggleFiltros()">
+      <ion-icon name="options-outline"></ion-icon>
+      <div>
+        <strong>Filtros</strong>
+        <span>{{ lancamentos.length }} lançamento(s)</span>
+      </div>
+      <span class="rf-filtros-status">Sem filtros ativos</span>
+      <button type="button" class="rf-filtros-toggle">
+        {{ filtrosAbertos ? 'OCULTAR' : 'MOSTRAR' }}
+      </button>
+    </button>
+
+    <div class="rf-filtros-body" *ngIf="filtrosAbertos">
+      <p>Em breve: filtros por tipo, categoria e período.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════ Lista de lançamentos ═══════════ -->
+  <section class="rf-lista" *ngIf="lancamentos.length > 0">
+    <h3 class="rf-lista-titulo">Últimos lançamentos</h3>
+    <article
+      *ngFor="let l of lancamentos; let i = index; trackBy: trackByIndex"
+      class="rf-lanc"
+      [attr.data-tipo]="l.tipo"
+    >
+      <div class="rf-lanc-icone">
+        <ion-icon [name]="l.tipo === 'entrada' ? 'arrow-up-circle' : 'arrow-down-circle'"></ion-icon>
+      </div>
+      <div class="rf-lanc-info">
+        <strong>{{ l.descricao }}</strong>
+        <span class="rf-lanc-meta">
+          <span *ngIf="l.categoria">{{ l.categoria }}</span>
+          <span *ngIf="l.auto" class="rf-tag-auto">AUTO</span>
+        </span>
+      </div>
+      <span class="rf-lanc-valor">
+        {{ l.tipo === 'entrada' ? '+' : '-' }} R$ {{ formatRs(l.valorRs) }}
+      </span>
+      <button type="button" class="rf-lanc-rm" (click)="removerLancamento(l, i)" aria-label="Remover">
+        <ion-icon name="trash-outline"></ion-icon>
+      </button>
+    </article>
+  </section>
+
+  <!-- ═══════════ Empty state (lançamentos) ═══════════ -->
+  <section class="r-empty" *ngIf="lancamentos.length === 0">
+    <div class="r-empty-icone"><ion-icon name="cash-outline"></ion-icon></div>
+    <h2>Sem lançamentos ainda</h2>
+    <p>Registre a primeira entrada ou saída pra começar a controlar o caixa do racha.</p>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+      <button type="button" class="r-btn r-btn-lime r-btn-big" (click)="novaEntrada()">
+        <ion-icon name="trending-up"></ion-icon>
+        NOVA ENTRADA
+      </button>
+      <button type="button" class="r-btn r-btn-outline r-btn-big" (click)="novaSaida()">
+        <ion-icon name="trending-down"></ion-icon>
+        NOVA SAÍDA
+      </button>
+    </div>
+  </section>
+
+  <!-- ═══════════ Footer: Resumo WhatsApp + Exportar ═══════════ -->
+  <section class="rf-footer-acoes">
+    <button type="button" class="r-btn r-btn-lime r-btn-big" (click)="resumoWhatsApp()">
+      <ion-icon name="logo-whatsapp"></ion-icon>
+      RESUMO WHATSAPP
+    </button>
+    <button type="button" class="r-btn r-btn-navy r-btn-big" (click)="exportar()">
+      <ion-icon name="download-outline"></ion-icon>
+      EXPORTAR RELATÓRIO
+    </button>
+  </section>
+</div>
+
+<div class="rf-loading" *ngIf="loading">
+  <ion-spinner name="dots"></ion-spinner>
+</div>

@@ -1,0 +1,231 @@
+.psc-content {
+  --background: var(--placar-bg, #f5f5f7);
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 18px;
+  --padding-bottom: 28px;
+}
+
+.psc-intro {
+  margin: 0 0 18px;
+  font-size: 14px;
+  color: var(--ion-color-medium);
+  line-height: 1.5;
+}
+
+.psc-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+.psc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.psc-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--ion-color-primary);
+  }
+}
+
+.psc-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+
+  h3 { margin: 0; }
+}
+
+.psc-counter {
+  background: var(--placar-surface-2, #f0f0f3);
+  color: var(--ion-color-medium);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.psc-hint {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  color: var(--ion-color-medium);
+  line-height: 1.4;
+}
+
+.psc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+
+  &:last-child { margin-bottom: 0; }
+}
+
+.psc-field-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+
+  .psc-label { flex: 1; margin: 0; }
+}
+
+.psc-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ion-color-medium);
+}
+
+.psc-input {
+  border: 1px solid var(--placar-divider, #ececec);
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--placar-text);
+  outline: none;
+  width: 100%;
+  font-family: inherit;
+  transition: border-color 120ms ease;
+
+  &:focus { border-color: var(--ion-color-primary); }
+  &.small { font-size: 12px; padding: 6px 10px; }
+  &.psc-input-num { max-width: 90px; text-align: center; }
+}
+
+.psc-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--placar-divider, #ececec);
+
+  &:last-of-type { border-bottom: none; }
+
+  > div:first-child {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.psc-toggle-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--placar-text);
+}
+
+.psc-toggle-sub {
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* ─── Grid de logos extras ─── */
+.psc-logos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.psc-logo-card {
+  position: relative;
+  background: var(--placar-surface-2, #f5f5f7);
+  border: 1px solid var(--placar-divider, #ececec);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.psc-logo-img {
+  width: 88px;
+  height: 88px;
+  border-radius: 8px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+}
+
+.psc-logo-rm {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(235, 68, 90, 0.9);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease;
+
+  ion-icon { font-size: 14px; }
+  &:hover { background: var(--ion-color-danger); }
+}
+
+.psc-logo-add {
+  border: 2px dashed rgba(28, 46, 61, 0.25);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ion-color-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 120ms ease, border-color 120ms ease;
+  min-height: 138px;
+
+  ion-icon { font-size: 32px; }
+
+  &:hover:not(:disabled) {
+    background: rgba(28, 46, 61, 0.04);
+    border-color: var(--ion-color-primary);
+  }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+/* ─── Ações ─── */
+.psc-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}

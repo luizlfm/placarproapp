@@ -1,0 +1,166 @@
+/* =========================================================
+   BannerSiteFaixaComponent — faixa horizontal rotativa 970×90
+   Variantes: claro (default), escuro, impresso, sticky.
+   ========================================================= */
+
+.bsf-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 970px;
+  margin: 12px auto;
+  aspect-ratio: 970 / 130;
+  /* min-height pra não desaparecer em telas estreitas */
+  min-height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+  /* Em viewport mobile, troca pra aspect-ratio do banner mobile (640×200) —
+     fica mais alto e legível em telas estreitas. Aplicado quando o
+     componente detecta `eMobile=true`. */
+  &.eh-mobile {
+    aspect-ratio: 640 / 200;
+    max-width: 640px;
+    min-height: 120px;
+  }
+}
+
+/* Slide individual — todos ficam empilhados, só o `ativo` aparece via opacity. */
+.bsf-slide {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: default;
+  opacity: 0;
+  transition: opacity 400ms ease-in-out;
+  pointer-events: none;
+
+  &.ativo {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  &.clicavel { cursor: pointer; }
+  &.clicavel.ativo:hover img { transform: scale(1.01); }
+
+  img {
+    width: 100%;
+    height: 100%;
+    /* `cover` ao invés de `contain` — quando o patrocinador não tem
+       banner-site (970×90) e o fallback usa banner-app (805×453),
+       o cover crop centraliza e preenche a faixa sem deixar borda
+       branca. Pra banners no formato correto (970×90), comporta-se
+       igual ao contain (o aspect-ratio já bate). */
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    transition: transform 200ms ease;
+  }
+}
+
+/* Em mobile (`.eh-mobile`), o container vira 640×200 (3.2:1). Quando o
+   patrocinador NÃO tem `bannerSiteMobileUrl` cadastrado, cai pro
+   `bannerSiteUrl` web (970×90 — 10.8:1). Com `cover` nesse cenário, a
+   imagem é escalada pra altura do container e a largura excedida fica
+   cortada — usuário vê só um pedaço CENTRAL horizontal (ex: "INAS R..."
+   no meio de "MEDALHINHAS RAINHA"). Trocando pra `contain` em mobile,
+   o banner inteiro aparece com pequenas bordas brancas em cima/baixo
+   (que combinam com o fundo branco padrão do .bsf-wrap). É melhor ver
+   o banner inteiro do que um pedacinho ilegível. */
+.bsf-wrap.eh-mobile .bsf-slide img {
+  object-fit: contain;
+}
+
+/* Dots indicadores — pequenos, no canto inferior direito. */
+.bsf-dots {
+  position: absolute;
+  bottom: 6px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.bsf-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.25);
+  transition: background 200ms ease, transform 200ms ease;
+
+  &.ativo {
+    background: var(--ion-color-primary, #1C2E3D);
+    transform: scale(1.3);
+  }
+}
+
+/* ────────── Variantes ────────── */
+
+/* CLARO — default, fundo branco com sombra leve. */
+.var-claro {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* ESCURO — pra overlay sobre o banner do campeonato (semi-transparente). */
+.var-escuro {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* IMPRESSO — preto e branco, fundo claro, sem sombra (otimizado pra @media print). */
+.var-impresso {
+  background: #fafafa;
+  border: 1px solid #1a1a1a;
+  box-shadow: none;
+  border-radius: 0;
+  margin: 14px 0;
+
+  .bsf-dot { display: none; }
+}
+
+/* STICKY — faixa fixa no rodapé das páginas públicas, sempre visível. */
+.var-sticky {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: none;
+  margin: 0;
+  z-index: 30;
+  border-radius: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
+  background: #fff;
+
+  /* Garante que o aspect-ratio não estoure em telas wide — limita altura. */
+  aspect-ratio: auto;
+  height: clamp(60px, 9vw, 90px);
+
+  /* Em mobile (≤ 640px), reduz altura e libera tab-bar inferior do app. */
+  @media (max-width: 640px) {
+    height: 56px;
+    bottom: 64px; /* desloca pra cima da tab-bar dos publicos (64px) */
+  }
+}
+
+/* ────────── PRINT ────────── */
+@media print {
+  /* Sticky vira inline pra fazer parte da impressão. */
+  .var-sticky {
+    position: static;
+    height: 90px;
+    box-shadow: none;
+    border-top: 1px solid #1a1a1a;
+    page-break-inside: avoid;
+  }
+  .var-impresso {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .bsf-dots { display: none; }
+}

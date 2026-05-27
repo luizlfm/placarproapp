@@ -1,0 +1,600 @@
+ion-content {
+  --background: var(--placar-bg, #f5f5f7);
+}
+
+/* Toolbar verde só dessa página (override do padrão navy) */
+:host ion-toolbar {
+  --background: var(--ion-color-secondary, #7CC61D);
+  --color: #fff;
+}
+
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  @media (max-width: 600px) {
+    padding: 12px;
+  }
+}
+
+/* ============ Card padrão ============ */
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.card-title {
+  margin: 0 0 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ion-color-tertiary, #4DABF7);
+  letter-spacing: 0.2px;
+}
+
+/* ============ Link do site ============ */
+.link-input-row {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d8d8dd;
+  border-radius: 10px;
+  background: #f5f5f7;
+  overflow: hidden;
+}
+
+.link-prefix {
+  background: #ececef;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  color: var(--ion-color-medium);
+  white-space: nowrap;
+}
+
+.link-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #2d2d2d;
+  outline: none;
+  cursor: pointer;
+
+  &::placeholder { color: #b6b6bb; }
+}
+
+.row-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.btn-danger {
+  background: var(--ion-color-danger, #eb445a);
+  color: #fff;
+  border: none;
+  padding: 8px 26px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover { opacity: 0.9; }
+}
+
+/* ============ Dados básicos — logo + campos lado a lado ============
+   Refeito pra espelhar o campeonato/config: linha com coluna do logo
+   (toggle Web/Mobile + box quadrado) à esquerda + campos título/subtítulo
+   à direita. Mesma estrutura visual usada em /app/campeonato/.../config. */
+.logo-row {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+  margin-bottom: 14px;
+
+  /* Mantemos `row` em mobile (antes virava `column` e o box do logo ocupava
+     100% da largura). Layout parecido com desktop: logo pequeno à esquerda
+     + título/subtítulo à direita. */
+  @media (max-width: 600px) {
+    gap: 10px;
+  }
+}
+
+/* Coluna que agrupa o toggle Web/Mobile + a caixa do logo. */
+.logo-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.logo-box {
+  width: 140px;
+  height: 168px;
+  flex: 0 0 auto;
+  background: rgba(28, 46, 61, 0.06);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--ion-color-medium);
+  overflow: hidden;
+  position: relative;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 32px; }
+  .size { font-size: 11px; margin-top: 4px; }
+  .hint { font-size: 10px; opacity: 0.65; margin-top: 2px; }
+
+  /* Em mobile, caixa menor (100×120, aspect 200/240 mantido) pra deixar
+     espaço pros campos ao lado. */
+  @media (max-width: 600px) {
+    width: 100px;
+    height: 120px;
+  }
+}
+
+/* Variante Mobile do logo — mesmo aspecto, borda tracejada pra deixar
+   visualmente claro que é uma versão alternativa/opcional. */
+.logo-box-mobile {
+  border: 1px dashed rgba(28, 46, 61, 0.35);
+  background: rgba(28, 46, 61, 0.03);
+}
+
+/* ===== Toggle Web/Mobile (reutilizável pras duas seções) ===== */
+.modo-toggle {
+  display: inline-flex;
+  background: rgba(28, 46, 61, 0.08);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+  align-self: flex-start;
+  margin-bottom: 8px;
+}
+
+.modo-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+
+  ion-icon { font-size: 14px; }
+
+  &.ativo {
+    background: var(--ion-color-primary, #1c2e3d);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  }
+
+  &:not(.ativo):hover {
+    background: rgba(28, 46, 61, 0.06);
+  }
+}
+
+.logo-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+  min-width: 0;
+}
+
+.field-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &.big { margin-bottom: 14px; }
+}
+
+.field-label {
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  font-weight: 500;
+}
+
+.field-input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #c4c4c8;
+  background: transparent;
+  font-size: 15px;
+  color: #2d2d2d;
+  padding: 4px 0 6px;
+  cursor: pointer;
+  outline: none;
+
+  &:focus { border-bottom-color: var(--ion-color-tertiary); }
+  &::placeholder { color: #b6b6bb; }
+}
+
+.field-input-area {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 0;
+  border-bottom: 1px solid #c4c4c8;
+  font-size: 14px;
+  color: #2d2d2d;
+  cursor: pointer;
+  white-space: pre-wrap;
+
+  &.empty { color: #b6b6bb; }
+}
+
+/* ============ Capa — toggle Web/Mobile (igual campeonato/config) ============
+   Substitui o `.banner-row/.banner-img` antigo. Variante WEB usa aspect 4:1
+   (1600×400) — mesma proporção do hero exibido na pública e no admin/inicio.
+   Variante MOBILE usa aspect 3:1 (1600×533) — clássico de banner. */
+.capa-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1600 / 400;
+  background: rgba(28, 46, 61, 0.06);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--ion-color-medium);
+  overflow: hidden;
+  margin-bottom: 14px;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 32px; }
+  span { font-size: 13px; }
+  .size { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+  .hint { font-size: 10px; opacity: 0.6; margin-top: 2px; }
+}
+
+/* Variante Mobile da capa — 3:1, max-width pra simular preview de celular
+   no editor. Borda tracejada deixa visível que é alternativa/opcional. */
+.capa-box-mobile {
+  aspect-ratio: 1600 / 533;
+  max-width: 420px;
+  margin-inline: auto;
+  border: 1px dashed rgba(28, 46, 61, 0.35);
+  background: rgba(28, 46, 61, 0.03);
+}
+
+/* ===== Upload hover (compartilhado por .logo-box e .capa-box) ===== */
+.clickable {
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+/* ============ Datas ============ */
+.dates-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 14px 0;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.date-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: #f5f5f7;
+  border: none;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 120ms ease;
+
+  &:hover { background: #ececef; }
+
+  ion-icon {
+    font-size: 22px;
+    color: var(--ion-color-medium);
+    flex: 0 0 auto;
+  }
+
+  .date-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .date-label {
+    font-size: 11px;
+    color: var(--ion-color-medium);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .date-value {
+    font-size: 14px;
+    color: #2d2d2d;
+    font-weight: 600;
+
+    &.empty { color: #b6b6bb; font-weight: 400; }
+  }
+}
+
+/* ============ Link rows (Editar) ============ */
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 14px 0;
+  border-bottom: 1px solid #f0f0f2;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  color: #2d2d2d;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: rgba(0, 0, 0, 0.015); }
+
+  ion-icon {
+    font-size: 22px;
+    color: var(--ion-color-medium);
+    flex: 0 0 auto;
+  }
+
+  .link-text {
+    flex: 1;
+    font-size: 14.5px;
+    color: #2d2d2d;
+
+    .counter {
+      color: var(--ion-color-medium);
+      font-weight: 400;
+      font-size: 13px;
+    }
+  }
+
+  .link-edit {
+    color: var(--ion-color-tertiary, #4DABF7);
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .cor-amostra {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.06);
+  }
+}
+
+/* ============ Anexos ============ */
+.anexos-list {
+  padding: 8px 0;
+}
+
+.anexo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f2;
+
+  ion-icon { color: var(--ion-color-medium); font-size: 18px; }
+
+  .anexo-link {
+    flex: 1;
+    color: var(--ion-color-tertiary, #4DABF7);
+    font-size: 13.5px;
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+  }
+
+  .anexo-rem {
+    background: none;
+    border: none;
+    color: var(--ion-color-danger);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    ion-icon { color: var(--ion-color-danger); }
+    &:hover { background: rgba(235, 68, 90, 0.1); }
+  }
+}
+
+/* ============ Localização (radio) ============ */
+.loc-block {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #f0f0f2;
+}
+
+.loc-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2d2d2d;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.radio-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  color: #2d2d2d;
+
+  input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--ion-color-tertiary, #4DABF7);
+    cursor: pointer;
+  }
+}
+
+.loc-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  background: none;
+  border: none;
+  color: var(--ion-color-tertiary, #4DABF7);
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 4px 0;
+
+  ion-icon { font-size: 16px; }
+  &:hover { text-decoration: underline; }
+}
+
+/* ============ Toggle rows ============ */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid #f0f0f2;
+  cursor: pointer;
+
+  &:last-child { border-bottom: none; }
+
+  > ion-icon {
+    font-size: 22px;
+    color: var(--ion-color-medium);
+    flex: 0 0 auto;
+  }
+
+  .t-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .t-title {
+    font-size: 14.5px;
+    color: #2d2d2d;
+    font-weight: 500;
+  }
+
+  .t-sub {
+    font-size: 12.5px;
+    color: var(--ion-color-medium);
+    margin-top: 2px;
+  }
+
+  ion-toggle {
+    --background: #ececef;
+    --background-checked: var(--ion-color-tertiary, #4DABF7);
+    --handle-background-checked: #fff;
+    flex: 0 0 auto;
+  }
+}
+
+/* ============ Sub-toggles "Exibição de nomes e datas" ============ */
+.sub-toggles {
+  margin-top: 12px;
+  padding: 12px 0 0;
+  border-top: 1px solid #f0f0f2;
+
+  .sub-titulo {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2d2d2d;
+    margin-bottom: 8px;
+  }
+}
+
+.check-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  color: #2d2d2d;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--ion-color-tertiary, #4DABF7);
+    cursor: pointer;
+  }
+}
+
+/* ============ Configurações do esporte (selects) ============ */
+.select-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f2;
+
+  &:last-of-type { border-bottom: none; }
+}
+
+.select-label {
+  font-size: 13px;
+  color: #2d2d2d;
+  font-weight: 500;
+}
+
+.select-field select {
+  width: 100%;
+  height: 44px;
+  padding: 0 36px 0 0;
+  border: none;
+  border-bottom: 1px solid #c4c4c8;
+  background: transparent
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%231C2E3D' d='M0 0l5 6 5-6z'/></svg>")
+    right 8px center no-repeat;
+  font-size: 15px;
+  color: #2d2d2d;
+  appearance: none;
+  cursor: pointer;
+  font-weight: 500;
+
+  &:focus {
+    outline: none;
+    border-bottom-color: var(--ion-color-tertiary);
+  }
+}
+
+.check-row-big {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  color: #2d2d2d;
+  border-top: 1px solid #f0f0f2;
+  margin-top: 8px;
+
+  input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--ion-color-tertiary, #4DABF7);
+    cursor: pointer;
+  }
+}

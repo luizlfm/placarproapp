@@ -1,0 +1,59 @@
+<div class="cat-layout">
+  <aside class="cat-aside">
+    <button class="cat-header" type="button" (click)="voltarParaCampeonato()">
+      <ng-container *ngIf="campeonato$ | async as camp; else catHeaderLoading">
+        <div class="cat-logo">
+          <img *ngIf="camp.logoUrl; else iconFallback" [src]="camp.logoUrl" [alt]="camp.titulo" />
+          <ng-template #iconFallback>
+            <ion-icon name="trophy-outline"></ion-icon>
+          </ng-template>
+        </div>
+        <div class="cat-title-wrap">
+          <div class="cat-camp-title">{{ camp.titulo }}</div>
+          <div class="cat-cat-title" *ngIf="categoria$ | async as cat">{{ cat.titulo }}</div>
+        </div>
+      </ng-container>
+      <ng-template #catHeaderLoading>
+        <div class="cat-logo"><ion-spinner color="light" name="dots"></ion-spinner></div>
+        <div class="cat-title-wrap">
+          <div class="cat-camp-title">Carregando</div>
+          <div class="cat-cat-title">...</div>
+        </div>
+      </ng-template>
+    </button>
+
+    <nav class="cat-nav">
+      <a
+        *ngFor="let item of menu"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        class="nav-item"
+      >
+        <ion-icon [name]="item.icon"></ion-icon>
+        <span>{{ item.label }}</span>
+      </a>
+    </nav>
+
+    <div class="cat-user" *ngIf="user$ | async as user">
+      <div class="user-avatar">
+        <img
+          *ngIf="user.photoURL; else userInit"
+          [src]="user.photoURL"
+          [alt]="user.displayName || user.email"
+          referrerpolicy="no-referrer"
+        />
+        <ng-template #userInit>
+          <span>{{ initials(user) }}</span>
+        </ng-template>
+      </div>
+      <div class="user-info">
+        <div class="user-name">{{ user.displayName || (user.email | slice:0:20) }}</div>
+        <button class="user-logout" (click)="confirmLogout()" type="button">Sair</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="cat-main">
+    <ion-router-outlet></ion-router-outlet>
+  </div>
+</div>

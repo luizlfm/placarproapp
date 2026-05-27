@@ -1,0 +1,71 @@
+@import '../auth-styles.scss';
+
+/* Grid de 3 colunas (Organizador / Moderador / Espectador). Em telas
+   estreitas vira 1 coluna pra não cortar nada. */
+.auth-tipo-grid.tipo-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Grid 2x2 (Organizador / Moderador / Racha / Espectador).
+   ANTES: virava 1 coluna abaixo de 480px — empilhava 4 botões altos.
+   AGORA: mantém 2 colunas SEMPRE (cards compactos com ícone + título +
+   subtítulo em fonte menor pra caber em mobile estreito). User pediu
+   "2 botões por linha" explicitamente. */
+.auth-tipo-grid.tipo-4col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+
+  .tipo-card {
+    padding: 14px 12px;
+    .tipo-titulo { font-size: 12.5px; }
+    .tipo-sub    { font-size: 11px; }
+    ion-icon { font-size: 26px; }
+  }
+
+  /* Mobile estreito (<= 380px): compacta ainda mais pra não estourar
+     largura. Mantém 2 colunas — só diminui padding/fontes. */
+  @media (max-width: 380px) {
+    gap: 6px;
+    .tipo-card {
+      padding: 12px 8px;
+      .tipo-titulo { font-size: 11px; letter-spacing: 0.2px; }
+      .tipo-sub    { font-size: 10px; line-height: 1.25; }
+      ion-icon { font-size: 22px; }
+    }
+  }
+}
+
+/* ── Botão Voltar (chevron + label) ── posicionado no topo do card,
+   alinhado à esquerda. Não é o mesmo do logo (esse só leva pra `/`
+   silenciosamente) — esse é EXPLÍCITO pra UX do mobile que normalmente
+   espera o gesto "voltar" no canto superior esquerdo. */
+.auth-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: -4px 0 8px -6px; // alinha visualmente ao left do card
+  padding: 6px 10px 6px 6px;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--placar-text-muted, rgba(0, 0, 0, 0.55));
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+
+  ion-icon { font-size: 18px; }
+
+  &:hover {
+    background: rgba(28, 46, 61, 0.06);
+    color: var(--placar-text, #1C2E3D);
+  }
+  &:active { background: rgba(28, 46, 61, 0.10); }
+}

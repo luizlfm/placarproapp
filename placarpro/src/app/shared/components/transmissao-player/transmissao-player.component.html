@@ -1,0 +1,127 @@
+<!-- Container só renderiza se houver transmissão ativa OU se estamos em
+     estado intermediário (connecting). Quando nada ativo + nada conectando,
+     o componente desaparece da página (sem placeholder vazio). -->
+<ng-container *ngIf="ativa$ | async as transmissao">
+  <article
+    class="tp-card"
+    [class.modo-fullscreen]="modo === 'fullscreen'"
+    [class.modo-compacto]="modo === 'compacto'"
+  >
+    <!-- Vídeo (sempre presente — recebe o track assim que o broadcaster publica). -->
+    <div class="tp-video-wrap">
+      <video
+        #videoEl
+        autoplay
+        playsinline
+        [muted]="mutado"
+        class="tp-video"
+        aria-label="Transmissão ao vivo"
+      ></video>
+
+      <!-- Overlay enquanto o broadcaster ainda não publicou tracks
+           ou estamos negociando WebRTC. -->
+      <div class="tp-overlay" *ngIf="estado === 'connecting' || estado === 'aguardando'">
+        <ion-spinner name="dots" color="light"></ion-spinner>
+        <span>Conectando à transmissão...</span>
+      </div>
+
+      <!-- Overlay de erro (sem rede, sem permissão, etc.). -->
+      <div class="tp-overlay tp-erro" *ngIf="estado === 'erro'">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        <span>{{ mensagemErro || 'Falha ao conectar à transmissão.' }}</span>
+      </div>
+
+      <!-- Badge AO VIVO no canto superior esquerdo do vídeo. -->
+      <!-- <span class="tp-badge-live">
+        <span class="dot"></span>
+        AO VIVO
+      </span> -->
+
+      <!-- ════════ PLACAR OVERLAY (broadcast TV style — igual transmissao admin) ════════
+           Renderizado se o pai passou `[placar]` com os dados do jogo.
+           Layout 2-linhas tipo overlay de TV esportiva:
+             • Top: campeonato · categoria · AO VIVO (thin bar)
+             • Bottom: 🛡 MAND  |  PLACAR  |  VIS 🛡 (main bar com escudos
+               grandes circulando pra fora do retângulo) -->
+      <div class="tp-placar" *ngIf="placar">
+        <!-- Faixa fina topo: campeonato · categoria · status -->
+        <div class="tp-placar-top" *ngIf="campeonatoNome || placar.statusTexto">
+          <span class="tp-placar-camp" *ngIf="campeonatoNome">{{ campeonatoNome }}</span>
+          <span class="tp-placar-status" *ngIf="placar.statusTexto">
+            <span class="tp-placar-live-dot" *ngIf="placar.statusTexto === 'AO VIVO' || placar.statusTexto === 'Em andamento' || placar.statusTexto === 'Ao Vivo'"></span>
+            {{ placar.statusTexto }}
+          </span>
+        </div>
+        <!-- Barra principal: logo mand · nome · placar · nome · logo vis -->
+        <div class="tp-placar-main">
+          <span class="tp-placar-escudo tp-placar-escudo-mand">
+            <img *ngIf="placar.mandanteLogo; else mEsc" [src]="placar.mandanteLogo" [alt]="placar.mandanteNome" />
+            <ng-template #mEsc><ion-icon name="shield-outline"></ion-icon></ng-template>
+          </span>
+          <span class="tp-placar-nome tp-placar-nome-mand">{{ placar.mandanteNome }}</span>
+          <div class="tp-placar-meio">
+            <ng-container *ngIf="placar.golsMandante != null && placar.golsVisitante != null; else vsBox">
+              <span class="tp-placar-gols">{{ placar.golsMandante }}</span>
+              <span class="tp-placar-x">:</span>
+              <span class="tp-placar-gols">{{ placar.golsVisitante }}</span>
+            </ng-container>
+            <ng-template #vsBox><span class="tp-placar-vs">VS</span></ng-template>
+          </div>
+          <span class="tp-placar-nome tp-placar-nome-vis">{{ placar.visitanteNome }}</span>
+          <span class="tp-placar-escudo tp-placar-escudo-vis">
+            <img *ngIf="placar.visitanteLogo; else vEsc" [src]="placar.visitanteLogo" [alt]="placar.visitanteNome" />
+            <ng-template #vEsc><ion-icon name="shield-outline"></ion-icon></ng-template>
+          </span>
+        </div>
+      </div>
+
+      <!-- (Badge de viewers SOBRE O VÍDEO foi removido — estava cobrindo
+           o banner do patrocinador na transmissao.page. Agora o contador
+           aparece no footer bottom-right da tela, fora da área de vídeo.) -->
+
+      <!-- ════════ BANNER PATROCINADOR (overlay rotativo) ════════
+           Aparece no canto inferior ESQUERDO do vídeo. Rotaciona entre
+           os patrocinadores carregados via `[ownerIdPatrocinadores]`,
+           respeitando escopo de campeonato/categoria. Some quando não
+           há nenhum patrocinador disponível. -->
+      <div class="tp-banner-patrocinador" *ngIf="bannerUrlAtual() as bUrl">
+        <img [src]="bUrl" alt="" loading="lazy" />
+      </div>
+
+      <!-- Controles (mute / fullscreen) — canto inferior direito. -->
+      <div class="tp-controles">
+        <button
+          type="button"
+          class="tp-btn-ctrl"
+          (click)="toggleMute()"
+          [attr.aria-label]="mutado ? 'Ativar som' : 'Mutar'"
+        >
+          <ion-icon [name]="mutado ? 'volume-mute-outline' : 'volume-high-outline'"></ion-icon>
+        </button>
+        <button
+          type="button"
+          class="tp-btn-ctrl"
+          (click)="toggleFullscreen()"
+          aria-label="Tela cheia"
+        >
+          <ion-icon name="expand-outline"></ion-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Info do campeonato (linha de rodapé). Mostra o nome do campeonato
+         (se passado via input) ou cai pro nome do broadcaster como fallback. -->
+    <footer class="tp-footer">
+      <div class="tp-meta">
+        <ion-icon name="radio-outline" class="ico-radio"></ion-icon>
+        <span class="tp-broadcaster">
+          {{ campeonatoNome || transmissao.broadcasterNome }}
+        </span>
+      </div>
+      <div class="tp-stats" *ngIf="(transmissao.viewersAtuais ?? 0) > 0">
+        <ion-icon name="people-outline"></ion-icon>
+        <span>{{ transmissao.viewersAtuais }}</span>
+      </div>
+    </footer>
+  </article>
+</ng-container>

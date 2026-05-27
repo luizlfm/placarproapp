@@ -1,0 +1,83 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ titulo }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <!-- Banner de aviso se a partida tem resultado -->
+  <div class="aviso-resultado" *ngIf="temResultado">
+    <ion-icon name="warning-outline"></ion-icon>
+    <div class="aviso-conteudo">
+      <strong>Partida com resultado lançado ({{ placarFormatado }}).</strong>
+      <p>
+        Trocar a equipe vai <strong>zerar o placar</strong> e remover todos os lances.
+        O status voltará para "Agendado".
+      </p>
+    </div>
+  </div>
+
+  <!-- Lista de equipes -->
+  <div class="lista">
+    <!-- Opção "Sem equipe" -->
+    <button
+      type="button"
+      class="eq-card sem-equipe"
+      [class.selecionada]="estaSelecionada(null)"
+      (click)="escolher(null)"
+    >
+      <div class="radio" [class.checked]="estaSelecionada(null)">
+        <ion-icon *ngIf="estaSelecionada(null)" name="checkmark"></ion-icon>
+      </div>
+      <div class="eq-logo vazio">
+        <ion-icon name="shield-half-outline"></ion-icon>
+      </div>
+      <span class="eq-nome">Sem equipe</span>
+    </button>
+
+    <!-- Equipes disponíveis -->
+    <button
+      type="button"
+      class="eq-card"
+      *ngFor="let e of equipesOrdenadas; trackBy: trackById"
+      [class.selecionada]="estaSelecionada(e)"
+      [class.adversario]="e.id === adversarioId"
+      [disabled]="e.id === adversarioId"
+      (click)="escolher(e)"
+    >
+      <div class="radio" [class.checked]="estaSelecionada(e)">
+        <ion-icon *ngIf="estaSelecionada(e)" name="checkmark"></ion-icon>
+      </div>
+      <div class="eq-logo">
+        <img *ngIf="e.logoUrl; else iconE" [src]="e.logoUrl" [alt]="e.nome" />
+        <ng-template #iconE><ion-icon name="shield-outline"></ion-icon></ng-template>
+      </div>
+      <span class="eq-nome">{{ e.nome }}</span>
+      <span class="badge-adv" *ngIf="e.id === adversarioId">já é adversário</span>
+    </button>
+  </div>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <div class="footer-actions">
+      <ion-button fill="clear" color="medium" (click)="dismiss()" [disabled]="salvando">
+        Cancelar
+      </ion-button>
+      <div class="spacer"></div>
+      <ion-button
+        color="primary"
+        (click)="salvar()"
+        [disabled]="salvando"
+      >
+        <ion-spinner *ngIf="salvando" name="dots" slot="start"></ion-spinner>
+        Aplicar
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

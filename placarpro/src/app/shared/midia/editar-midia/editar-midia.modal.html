@@ -1,0 +1,44 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>Editar {{ rotuloTipo }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button strong="true" [disabled]="form.invalid" (click)="salvar()">Salvar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="modal-shared">
+  <form [formGroup]="form" class="form-grid" (ngSubmit)="salvar()">
+    <!-- Preview (foto: imagem; vídeo: placeholder com ícone) -->
+    <div class="preview" *ngIf="midia.tipo === 'foto' || midia.tipo === 'video'">
+      <img *ngIf="previewUrl as src" [src]="src" alt="" />
+      <div class="preview-fallback" *ngIf="!previewUrl">
+        <ion-icon [name]="midia.tipo === 'video' ? 'film-outline' : 'image-outline'"></ion-icon>
+        <span>{{ midia.tipo === 'video' ? 'Vídeo' : 'Foto' }} já enviada</span>
+      </div>
+      <p class="preview-hint">O arquivo não pode ser trocado por aqui — remova e envie um novo se precisar substituir.</p>
+    </div>
+
+    <ion-input
+      fill="outline"
+      label="Título *"
+      labelPlacement="stacked"
+      placeholder="Ex: Final do campeonato 2026"
+      formControlName="titulo"
+      autocapitalize="sentences"
+    ></ion-input>
+
+    <ion-textarea
+      fill="outline"
+      label="Descrição (opcional)"
+      labelPlacement="stacked"
+      placeholder="Ex: Melhores momentos da partida decisiva"
+      formControlName="descricao"
+      [autoGrow]="true"
+      rows="3"
+    ></ion-textarea>
+  </form>
+</ion-content>

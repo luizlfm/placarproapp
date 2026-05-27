@@ -1,0 +1,138 @@
+@import '../../../styles/racha-shared';
+
+/* ============================================================
+   Placeholder "Em breve" — usado pelas telas do shell racha
+   ainda sem implementação real. Tokens PlacarPro.
+   ============================================================ */
+
+.ph-page {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* ============ Hero card ============ */
+.ph-hero {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1C2E3D 45%, #16a34a 100%);
+  border-radius: 16px;
+  padding: 28px 28px;
+  color: #fff;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 28px;
+  align-items: center;
+  box-shadow: 0 10px 28px rgba(28, 46, 61, 0.22);
+  margin-bottom: 24px;
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+    padding: 22px 20px;
+    gap: 16px;
+    text-align: center;
+  }
+}
+
+.ph-hero-text {
+  min-width: 0;
+
+  .ph-hero-tag {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  h1 {
+    margin: 0 0 8px;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: -0.3px;
+
+    @media (max-width: 480px) { font-size: 22px; }
+  }
+  p {
+    margin: 0 0 18px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.5;
+    max-width: 520px;
+
+    @media (max-width: 720px) { margin-left: auto; margin-right: auto; }
+  }
+}
+
+.ph-btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms ease;
+
+  ion-icon { font-size: 16px; }
+
+  &:hover { background: rgba(255, 255, 255, 0.26); }
+}
+
+.ph-hero-icon {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  ion-icon { font-size: 56px; color: #fff; }
+
+  @media (max-width: 720px) { display: none; }
+}
+
+/* ============ Card "Em construção" ============ */
+.ph-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 48px 32px;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(28, 46, 61, 0.06);
+
+  .ph-card-icone {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(245, 197, 24, 0.16));
+    margin: 0 auto 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    ion-icon { font-size: 40px; color: #16a34a; }
+  }
+  h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: 800;
+    color: #1C2E3D;
+  }
+  p {
+    margin: 0 auto;
+    max-width: 520px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #4b5563;
+
+    strong { color: #1C2E3D; font-weight: 700; }
+  }
+}

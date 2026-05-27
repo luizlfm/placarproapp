@@ -1,0 +1,57 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Configurar grupos</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <!-- Slider quantidade -->
+  <div class="card">
+    <div class="card-title">Quantidade de grupos</div>
+    <ion-range
+      min="1"
+      max="8"
+      step="1"
+      snaps="true"
+      [(ngModel)]="qtd"
+      pin="true"
+      color="secondary"
+    >
+      <ion-label slot="start">1</ion-label>
+      <ion-label slot="end">8</ion-label>
+    </ion-range>
+    <div class="qtd-actual">{{ qtd }} grupo(s)</div>
+    <ion-button expand="block" color="primary" (click)="aplicarQuantidade()" [disabled]="loading">
+      Aplicar
+    </ion-button>
+  </div>
+
+  <!-- Lista de grupos -->
+  <div class="card" *ngIf="grupos.length > 0">
+    <div class="card-title">Grupos</div>
+    <button
+      *ngFor="let g of grupos; trackBy: trackById"
+      type="button"
+      class="grupo-row"
+      (click)="renomear(g)"
+    >
+      <span>{{ g.nome }}</span>
+      <ion-icon name="create-outline"></ion-icon>
+    </button>
+  </div>
+
+  <!-- Sortear -->
+  <div class="card">
+    <div class="card-title">Distribuição</div>
+    <ion-button expand="block" color="secondary" (click)="sortear()" [disabled]="loading || grupos.length === 0">
+      <ion-icon slot="start" name="shuffle-outline"></ion-icon>
+      Sortear equipes nos grupos
+    </ion-button>
+    <p class="hint">Você ainda pode mover equipes manualmente editando cada uma.</p>
+  </div>
+</ion-content>

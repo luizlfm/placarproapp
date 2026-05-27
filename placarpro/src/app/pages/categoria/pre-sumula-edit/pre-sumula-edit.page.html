@@ -1,0 +1,244 @@
+<ion-header class="no-print">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Cabeçalho da Pré-Súmula</ion-title>
+    <ion-buttons slot="end">
+      <ion-button strong="true" [disabled]="salvando" (click)="salvar()">
+        <ion-icon slot="start" name="save-outline"></ion-icon>
+        Salvar
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="ed-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading && (view$ | async) as v">
+
+    <!-- Banner de dica acima do documento -->
+    <div class="ed-hint">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      <span>Edite os campos diretamente sobre o documento — o que você vê aqui é exatamente como vai aparecer no impresso.</span>
+    </div>
+
+    <!-- Folha do documento (mesmo SCSS da página de impressão) -->
+    <div class="presu-folha editavel">
+
+      <!-- ════════════════ HEADER ════════════════ -->
+      <header class="ps-header">
+        <!-- Logos -->
+        <div class="ps-logos">
+          <div class="ps-logo-principal" *ngIf="v.campeonato?.logoUrl">
+            <img [src]="v.campeonato!.logoUrl" alt="Logo do campeonato" />
+          </div>
+
+          <div class="ps-logo-extra ed-logo-extra"
+               *ngFor="let l of config.logosExtras; let i = index; trackBy: trackByIdx">
+            <button type="button" class="ed-logo-rm" (click)="removerLogo(i)" aria-label="Remover">
+              <ion-icon name="close"></ion-icon>
+            </button>
+            <img [src]="l.url" [alt]="l.legenda || ''" />
+            <input
+              type="text"
+              class="ed-legenda-input"
+              [value]="l.legenda || ''"
+              (input)="setLegenda(i, $any($event.target).value)"
+              placeholder="Legenda"
+            />
+          </div>
+
+          <!-- Botão "+" pra adicionar logo (placeholder estilo logo extra) -->
+          <button
+            type="button"
+            class="ed-logo-add"
+            (click)="acionarUploadLogo()"
+            [disabled]="(config.logosExtras?.length ?? 0) >= MAX_LOGOS"
+            [attr.aria-label]="(config.logosExtras?.length ?? 0) + ' de ' + MAX_LOGOS + ' logos'"
+          >
+            <ion-icon name="add-circle-outline"></ion-icon>
+            <span>Adicionar logo</span>
+          </button>
+        </div>
+
+        <!-- Título + subtítulo (editáveis inline) -->
+        <div class="ps-titulo-bloco">
+          <input
+            type="text"
+            class="ps-titulo ed-inline-input"
+            [value]="config.tituloCustom || v.campeonato?.titulo || ''"
+            (input)="setTitulo($any($event.target).value)"
+            [placeholder]="(v.campeonato?.titulo || 'TÍTULO DO CAMPEONATO').toString()"
+          />
+          <input
+            type="text"
+            class="ps-subtitulo ed-inline-input"
+            [value]="config.subtituloCustom || v.categoria?.titulo || ''"
+            (input)="setSubtitulo($any($event.target).value)"
+            [placeholder]="v.categoria?.titulo || 'Subtítulo / Categoria'"
+          />
+          <div class="ps-doc-tipo">PRÉ-SÚMULA</div>
+        </div>
+
+        <!-- Texto livre editável -->
+        <div class="ps-texto-cabec ed-texto-cabec">
+          <textarea
+            class="ed-inline-textarea"
+            [value]="config.textoCabecalho || ''"
+            (input)="setTextoCabecalho($any($event.target).value)"
+            placeholder="Texto livre — regras curtas, edição, observações... (opcional)"
+            rows="2"
+          ></textarea>
+        </div>
+      </header>
+
+      <!-- ════════════════ META (exemplo estático — não editável aqui) ════════════════ -->
+      <section class="ps-meta">
+        <div class="meta-cell">
+          <span class="lbl">Data</span>
+          <span class="val">_____ /_____ /_______</span>
+        </div>
+        <div class="meta-cell">
+          <span class="lbl">Horário</span>
+          <span class="val">___ : ___</span>
+        </div>
+        <div class="meta-cell wide">
+          <span class="lbl">Local</span>
+          <span class="val">_______________________________________</span>
+        </div>
+        <div class="meta-cell">
+          <span class="lbl">Fase</span>
+          <span class="val">____________</span>
+        </div>
+        <div class="meta-cell">
+          <span class="lbl">Rodada</span>
+          <span class="val">____</span>
+        </div>
+      </section>
+
+      <!-- ════════════════ CONFRONTO (visualização) ════════════════ -->
+      <section class="ps-confronto">
+        <div class="time-bloco mand">
+          <div class="time-logo">
+            <ion-icon name="shield-outline"></ion-icon>
+          </div>
+          <div class="time-nome">Equipe Mandante</div>
+        </div>
+        <div class="placar-box">
+          <span class="placar-cx"></span>
+          <span class="placar-x">×</span>
+          <span class="placar-cx"></span>
+        </div>
+        <div class="time-bloco vis">
+          <div class="time-logo">
+            <ion-icon name="shield-outline"></ion-icon>
+          </div>
+          <div class="time-nome">Equipe Visitante</div>
+        </div>
+      </section>
+
+      <!-- ════════════════ TABELA DE EXEMPLO ════════════════ -->
+      <section class="ps-escalacoes">
+        <div class="ps-tabela-time">
+          <h3 class="ps-tabela-titulo">{{ v.equipeExemplo?.nome || 'EQUIPE EXEMPLO' }}</h3>
+          <table class="ps-tabela" [class.com-foto]="config.incluirFotosJogadores">
+            <thead>
+              <tr>
+                <th class="w-pos">#</th>
+                <th class="w-num">N°</th>
+                <th *ngIf="config.incluirFotosJogadores" class="w-foto">Foto</th>
+                <th>Jogador</th>
+                <th class="w-card">A</th>
+                <th class="w-card">V</th>
+                <th class="w-gol">Gols</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let j of preencherLinhas(v.jogadoresExemplo, LINHAS_PREVIEW); let i = index; trackBy: trackByIdx">
+                <td class="w-pos">{{ i + 1 }}</td>
+                <td class="w-num">{{ j?.numeroCamisa ?? '' }}</td>
+                <td *ngIf="config.incluirFotosJogadores" class="w-foto">
+                  <div class="foto-box">
+                    <img *ngIf="j?.fotoUrl" [src]="j!.fotoUrl" alt="" />
+                  </div>
+                </td>
+                <td class="nome">{{ j?.nome ?? '' }}</td>
+                <td class="w-card check"></td>
+                <td class="w-card check"></td>
+                <td class="w-gol check"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Opções inline ao lado da tabela (em vez de seção separada) -->
+        <aside class="ed-opcoes">
+          <h4>Opções</h4>
+
+          <label class="ed-toggle">
+            <div>
+              <div class="ed-toggle-title">Incluir fotos dos jogadores</div>
+              <div class="ed-toggle-sub">Adiciona uma coluna "Foto" na tabela.</div>
+            </div>
+            <ion-toggle
+              [checked]="!!config.incluirFotosJogadores"
+              (ionChange)="setIncluirFotos($any($event).detail.checked)"
+            ></ion-toggle>
+          </label>
+
+          <label class="ed-field-num">
+            <span>Linhas em branco para observações</span>
+            <input
+              type="number"
+              min="0"
+              max="20"
+              [value]="config.linhasObservacoes ?? 5"
+              (input)="setLinhasObs(+$any($event.target).value)"
+            />
+          </label>
+
+          <div class="ed-info">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            <span>Esse painel não sai no impresso.</span>
+          </div>
+        </aside>
+      </section>
+
+      <!-- ════════════════ OBSERVAÇÕES (preview) ════════════════ -->
+      <section class="ps-obs" *ngIf="(config.linhasObservacoes ?? 0) > 0">
+        <h3 class="ps-tabela-titulo">Observações do Árbitro</h3>
+        <div class="obs-linha" *ngFor="let i of range(config.linhasObservacoes ?? 5); trackBy: trackByIdx"></div>
+      </section>
+
+      <!-- ════════════════ ASSINATURAS ════════════════ -->
+      <footer class="ps-assinaturas">
+        <div class="assinatura">
+          <div class="linha-assin"></div>
+          <div class="ass-label">Capitão Mandante</div>
+        </div>
+        <div class="assinatura">
+          <div class="linha-assin"></div>
+          <div class="ass-label">Árbitro</div>
+        </div>
+        <div class="assinatura">
+          <div class="linha-assin"></div>
+          <div class="ass-label">Capitão Visitante</div>
+        </div>
+      </footer>
+    </div>
+  </ng-container>
+
+  <input
+    #logoPicker
+    type="file"
+    accept="image/*"
+    style="display:none"
+    (change)="onLogoEscolhido($event)"
+  />
+</ion-content>

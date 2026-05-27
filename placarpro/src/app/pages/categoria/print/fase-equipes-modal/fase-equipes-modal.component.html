@@ -1,0 +1,47 @@
+<ion-header class="fem-header">
+  <ion-toolbar>
+    <ion-title>Selecionar Fase</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="fem-content">
+  <ul class="fem-list">
+    <li
+      class="fem-item"
+      [class.on]="faseAtualId === null"
+      (click)="selecionar(null)"
+    >
+      <ion-icon name="albums-outline" class="fem-ic"></ion-icon>
+      <span class="fem-label">Todas as fases</span>
+      <ion-icon
+        *ngIf="faseAtualId === null"
+        name="checkmark-circle"
+        class="fem-tick"
+      ></ion-icon>
+    </li>
+
+    <li
+      *ngFor="let f of fases; trackBy: trackByFase"
+      class="fem-item"
+      [class.on]="faseAtualId === f.id"
+      (click)="selecionar(f.id ?? null)"
+    >
+      <ion-icon name="layers-outline" class="fem-ic"></ion-icon>
+      <span class="fem-label">{{ f.nome }}</span>
+      <ion-icon
+        *ngIf="faseAtualId === f.id"
+        name="checkmark-circle"
+        class="fem-tick"
+      ></ion-icon>
+    </li>
+
+    <li *ngIf="fases.length === 0" class="fem-empty">
+      Nenhuma fase cadastrada.
+    </li>
+  </ul>
+</ion-content>

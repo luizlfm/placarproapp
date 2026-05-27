@@ -1,0 +1,291 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Configurações</ion-title>
+    <!-- Atalho "Salvar" no header — sincronizado com o botão do rodapé
+         via flag `salvando`. Útil em forms longos pra não rolar até o fim. -->
+    <ion-buttons slot="end">
+      <ion-button
+        type="button"
+        (click)="salvar()"
+        [disabled]="salvando"
+        aria-label="Salvar"
+      >
+        <ion-icon slot="start" name="save-outline"></ion-icon>
+        <span class="hdr-salvar-txt">Salvar</span>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+    <div class="wrap" *ngIf="user$ | async as user">
+
+      <!-- ============ DADOS PESSOAIS ============ -->
+      <section class="card">
+        <div class="card-head">
+          <h3 class="card-title">Dados pessoais</h3>
+          <span class="card-hint">
+            Campos com <span class="req">*</span> são obrigatórios
+          </span>
+        </div>
+
+        <!-- Foto avatar + nome/cidade lado a lado -->
+        <div class="dados-row">
+          <button
+            type="button"
+            class="avatar-box clickable"
+            (click)="trocarFoto()"
+            aria-label="Trocar foto"
+          >
+            <img
+              *ngIf="form.value.fotoUrl; else avatarInit"
+              [src]="form.value.fotoUrl"
+              alt="Foto de perfil"
+              referrerpolicy="no-referrer"
+            />
+            <ng-template #avatarInit>
+              <span class="avatar-inicial">{{ initials(user) }}</span>
+            </ng-template>
+            <span class="avatar-edit">
+              <ion-icon name="camera-outline"></ion-icon>
+            </span>
+          </button>
+
+          <div class="dados-fields">
+            <!-- Nome — obrigatório (asterisk no label + mensagem de erro
+                 abaixo se ficar vazio/inválido após o user tocar). -->
+            <div class="field-wrap" [class.has-error]="invalido('nome')">
+              <ion-input
+                fill="outline"
+                label="Nome *"
+                labelPlacement="stacked"
+                formControlName="nome"
+                placeholder="Seu nome completo"
+                required
+                [class.ion-invalid]="invalido('nome')"
+                [class.ion-touched]="form.get('nome')?.touched"
+              ></ion-input>
+              <div class="field-error" *ngIf="invalido('nome')">
+                <ion-icon name="alert-circle-outline"></ion-icon>
+                {{ erroDe('nome') }}
+              </div>
+            </div>
+
+            <div class="field-wrap" [class.has-error]="invalido('cidade')">
+              <ion-input
+                fill="outline"
+                label="Cidade"
+                labelPlacement="stacked"
+                formControlName="cidade"
+                placeholder="Ex: Belo Horizonte / MG"
+                [class.ion-invalid]="invalido('cidade')"
+                [class.ion-touched]="form.get('cidade')?.touched"
+              ></ion-input>
+              <div class="field-error" *ngIf="invalido('cidade')">
+                <ion-icon name="alert-circle-outline"></ion-icon>
+                {{ erroDe('cidade') }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Email (read-only) e telefone -->
+        <div class="row-2">
+          <ion-input
+            fill="outline"
+            label="Email"
+            labelPlacement="stacked"
+            [value]="user.email || ''"
+            readonly
+            disabled
+          ></ion-input>
+          <div class="field-wrap" [class.has-error]="invalido('telefone')">
+            <ion-input
+              fill="outline"
+              label="Telefone"
+              labelPlacement="stacked"
+              type="tel"
+              inputmode="numeric"
+              mask="telefone"
+              placeholder="(11) 99999-9999"
+              formControlName="telefone"
+              [class.ion-invalid]="invalido('telefone')"
+              [class.ion-touched]="form.get('telefone')?.touched"
+            ></ion-input>
+            <div class="field-error" *ngIf="invalido('telefone')">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ erroDe('telefone') }}
+            </div>
+          </div>
+        </div>
+
+        <p class="email-hint">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          Email só pode ser alterado pelo suporte (proteção de conta).
+        </p>
+
+        <!-- Bio / sobre -->
+        <div class="field-wrap" [class.has-error]="invalido('sobre')">
+          <ion-textarea
+            fill="outline"
+            label="Sobre você"
+            labelPlacement="stacked"
+            [autoGrow]="true"
+            rows="3"
+            formControlName="sobre"
+            placeholder="Fale brevemente sobre você ou sua organização..."
+            [class.ion-invalid]="invalido('sobre')"
+            [class.ion-touched]="form.get('sobre')?.touched"
+          ></ion-textarea>
+          <div class="field-error" *ngIf="invalido('sobre')">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            {{ erroDe('sobre') }}
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ REDES SOCIAIS ============ -->
+      <section class="card">
+        <h3 class="card-title">Redes sociais</h3>
+
+        <div class="row-2">
+          <div class="field-wrap" [class.has-error]="invalido('instagram')">
+            <ion-input
+              fill="outline"
+              label="Instagram"
+              labelPlacement="stacked"
+              placeholder="@seu_perfil"
+              formControlName="instagram"
+              [class.ion-invalid]="invalido('instagram')"
+              [class.ion-touched]="form.get('instagram')?.touched"
+            ></ion-input>
+            <div class="field-error" *ngIf="invalido('instagram')">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ erroDe('instagram') }}
+            </div>
+          </div>
+          <div class="field-wrap" [class.has-error]="invalido('whatsapp')">
+            <ion-input
+              fill="outline"
+              label="WhatsApp"
+              labelPlacement="stacked"
+              type="tel"
+              inputmode="numeric"
+              mask="telefone"
+              placeholder="(11) 99999-9999"
+              formControlName="whatsapp"
+              [class.ion-invalid]="invalido('whatsapp')"
+              [class.ion-touched]="form.get('whatsapp')?.touched"
+            ></ion-input>
+            <div class="field-error" *ngIf="invalido('whatsapp')">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ erroDe('whatsapp') }}
+            </div>
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="field-wrap" [class.has-error]="invalido('facebook')">
+            <ion-input
+              fill="outline"
+              label="Facebook"
+              labelPlacement="stacked"
+              placeholder="facebook.com/seu_perfil"
+              formControlName="facebook"
+              [class.ion-invalid]="invalido('facebook')"
+              [class.ion-touched]="form.get('facebook')?.touched"
+            ></ion-input>
+            <div class="field-error" *ngIf="invalido('facebook')">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ erroDe('facebook') }}
+            </div>
+          </div>
+          <div class="field-wrap" [class.has-error]="invalido('site')">
+            <ion-input
+              fill="outline"
+              label="Site"
+              labelPlacement="stacked"
+              type="url"
+              placeholder="https://seusite.com"
+              formControlName="site"
+              [class.ion-invalid]="invalido('site')"
+              [class.ion-touched]="form.get('site')?.touched"
+            ></ion-input>
+            <div class="field-error" *ngIf="invalido('site')">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              {{ erroDe('site') }}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SEGURANÇA ============ -->
+      <section class="card">
+        <h3 class="card-title">Segurança</h3>
+
+        <button type="button" class="link-row" (click)="resetarSenha()">
+          <ion-icon name="key-outline"></ion-icon>
+          <span class="link-text">Alterar senha</span>
+          <span class="link-action">Enviar link</span>
+        </button>
+
+        <button type="button" class="link-row" (click)="sair()">
+          <ion-icon name="log-out-outline" class="ico-danger"></ion-icon>
+          <span class="link-text ico-danger">Sair desta conta</span>
+          <ion-icon class="link-chev" name="chevron-forward-outline"></ion-icon>
+        </button>
+      </section>
+
+      <!-- ============ SUPORTE ============ -->
+      <section class="card">
+        <h3 class="card-title">Suporte</h3>
+
+        <button type="button" class="link-row" (click)="abrirWhatsApp()">
+          <ion-icon name="logo-whatsapp"></ion-icon>
+          <span class="link-text">WhatsApp</span>
+          <span class="link-action">+55 82 99102-7052</span>
+        </button>
+
+        <button type="button" class="link-row" (click)="abrirSuporte()">
+          <ion-icon name="mail-outline"></ion-icon>
+          <span class="link-text">Email</span>
+          <span class="link-action">suporte&#64;placarpro.app</span>
+        </button>
+      </section>
+
+      <!-- ============ SOBRE ============ -->
+      <section class="card">
+        <h3 class="card-title">Sobre</h3>
+        <div class="info-readonly">
+          <span class="info-label">Versão</span>
+          <span class="info-value">{{ versao }}</span>
+        </div>
+      </section>
+
+      <!-- ============ AÇÕES (Salvar + Zona de perigo) ============ -->
+      <div class="actions">
+        <ion-button
+          type="submit"
+          expand="block"
+          color="primary"
+          class="btn-save"
+          [disabled]="salvando"
+        >
+          <ion-icon slot="start" name="save-outline"></ion-icon>
+          Salvar alterações
+        </ion-button>
+
+        <ion-button
+          type="button"
+          fill="outline"
+          color="danger"
+          expand="block"
+          (click)="deletarConta()"
+        >
+          <ion-icon slot="start" name="trash-outline"></ion-icon>
+          Deletar minha conta
+        </ion-button>
+      </div>
+    </div>
+  </form>
+</ion-content>

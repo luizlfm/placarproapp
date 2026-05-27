@@ -1,0 +1,79 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Nova categoria</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="modal-bg">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <!-- Nome -->
+    <div class="field-group">
+      <ion-input
+        fill="outline"
+        label="Nome da categoria"
+        labelPlacement="stacked"
+        placeholder="Ex: Categoria 40+"
+        formControlName="titulo"
+        required
+      ></ion-input>
+      <div
+        class="field-error"
+        *ngIf="form.controls['titulo'].touched && form.controls['titulo'].invalid"
+      >
+        <span *ngIf="form.controls['titulo'].hasError('required')">Informe um nome.</span>
+        <span *ngIf="form.controls['titulo'].hasError('minlength')">Mínimo 2 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- Modalidade -->
+    <button type="button" class="modalidade-trigger" (click)="escolherModalidade()">
+      <div class="trig-badge" [style.background]="modalidadeSelecionada?.color || '#8E8E93'">
+        <ion-icon [name]="modalidadeSelecionada?.icon || 'ellipsis-horizontal'"></ion-icon>
+      </div>
+      <div class="trig-text">
+        <div class="trig-label">Modalidade</div>
+        <div class="trig-value">{{ modalidadeSelecionada?.label || 'Selecione' }}</div>
+      </div>
+      <ion-icon class="trig-arrow" name="chevron-forward-outline"></ion-icon>
+    </button>
+
+    <!-- Fases -->
+    <div class="fases-block">
+      <div class="fases-title">Fases do campeonato</div>
+      <ion-radio-group formControlName="tipoFase">
+        <div
+          class="fase-card"
+          *ngFor="let f of fases"
+          [class.active]="form.value.tipoFase === f.value"
+          (click)="form.controls['tipoFase'].setValue(f.value)"
+        >
+          <ion-radio
+            [value]="f.value"
+            slot="start"
+            [attr.aria-label]="f.label"
+          ></ion-radio>
+          <div class="fase-text">
+            <div class="fase-label">{{ f.label }}</div>
+            <div class="fase-desc">{{ f.desc }}</div>
+          </div>
+        </div>
+      </ion-radio-group>
+      <p class="fases-hint">Você ainda poderá criar e remover fases depois.</p>
+    </div>
+
+    <ion-button
+      expand="block"
+      type="submit"
+      color="primary"
+      class="btn-submit"
+      [disabled]="loading"
+    >
+      Criar categoria
+    </ion-button>
+  </form>
+</ion-content>

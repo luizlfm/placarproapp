@@ -1,0 +1,162 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Importar jogadores</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <div class="wrap">
+    <!-- Cabeçalho da equipe -->
+    <div class="eq-header">
+      <div class="eq-logo">
+        <img *ngIf="equipe.logoUrl; else iconF" [src]="equipe.logoUrl" [alt]="equipe.nome" />
+        <ng-template #iconF><ion-icon name="shield-outline"></ion-icon></ng-template>
+      </div>
+      <div class="eq-info">
+        <div class="eq-name">{{ equipe.nome }}</div>
+        <div class="eq-meta">Os jogadores importados serão atribuídos a esta equipe</div>
+      </div>
+    </div>
+
+    <!-- Passo 1: arquivo -->
+    <section class="step" *ngIf="colunas.length === 0">
+      <h3>1. Escolha o arquivo</h3>
+      <p class="hint">
+        Aceita <strong>CSV, XLS ou XLSX</strong>. A primeira linha deve conter os nomes das
+        colunas (ex.: Nome, Apelido, Posição, Nº, Documento, Nascimento, Telefone).
+      </p>
+      <div class="actions-row">
+        <ion-button color="primary" (click)="escolherArquivo()">
+          <ion-icon slot="start" name="document-attach-outline"></ion-icon>
+          Selecionar arquivo
+        </ion-button>
+        <ion-button fill="outline" color="primary" (click)="baixarTemplate()">
+          <ion-icon slot="start" name="download-outline"></ion-icon>
+          Baixar template CSV
+        </ion-button>
+      </div>
+    </section>
+
+    <!-- Passo 2: mapeamento + preview -->
+    <ng-container *ngIf="colunas.length > 0">
+      <section class="step">
+        <div class="step-head">
+          <h3>2. Mapeie as colunas</h3>
+          <span class="file-pill">
+            <ion-icon name="document-text-outline"></ion-icon>
+            {{ arquivoNome }}
+            <button type="button" class="link" (click)="escolherArquivo()">trocar</button>
+          </span>
+        </div>
+
+        <label class="check-row">
+          <input
+            type="checkbox"
+            [checked]="primeiraLinhaEhHeader"
+            (change)="togglePrimeiraLinhaHeader()"
+          />
+          <span>A primeira linha contém os nomes das colunas</span>
+        </label>
+
+        <p class="hint hint-required">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          Apenas <strong>Nome *</strong> é obrigatório. Os demais campos são opcionais —
+          se a coluna não tiver valor, será ignorada.
+        </p>
+
+        <div class="mapeamento">
+          <div class="map-col" *ngFor="let col of colunas; let i = index; trackBy: trackByIndex">
+            <div class="map-header" [title]="col.header">{{ col.header }}</div>
+            <select (change)="onMapeamentoChange(i, $any($event.target).value)">
+              <option
+                *ngFor="let c of camposDisponiveis"
+                [value]="c.value"
+                [selected]="col.campo === c.value"
+              >
+                {{ c.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="step" *ngIf="preview.length > 0">
+        <h3>3. Confira a prévia</h3>
+        <div class="badges">
+          <span class="badge ok">{{ totalValido }} válida(s)</span>
+          <span class="badge err" *ngIf="totalInvalido > 0">{{ totalInvalido }} com erro</span>
+        </div>
+
+        <div class="tabela-wrap">
+          <table class="tabela">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nome</th>
+                <th>Apelido</th>
+                <th>Posição</th>
+                <th>Nº</th>
+                <th>Documento</th>
+                <th>Nasc.</th>
+                <th>Telefone</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let p of preview; let i = index; trackBy: trackByIndex"
+                [class.invalid]="!p.ok"
+              >
+                <td class="num">{{ i + 1 }}</td>
+                <td>{{ p.dados.nome }}</td>
+                <td>{{ p.dados.apelido }}</td>
+                <td>{{ p.dados.posicao }}</td>
+                <td>{{ p.dados.numeroCamisa }}</td>
+                <td>{{ p.dados.documento }}</td>
+                <td>{{ p.dados.dataNascimento }}</td>
+                <td>{{ p.dados.telefone }}</td>
+                <td>
+                  <ion-icon
+                    *ngIf="p.ok"
+                    name="checkmark-circle"
+                    color="success"
+                    aria-label="OK"
+                  ></ion-icon>
+                  <span *ngIf="!p.ok" class="erro-cell" [title]="p.motivo">
+                    <ion-icon name="alert-circle" color="danger"></ion-icon>
+                    {{ p.motivo }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </ng-container>
+  </div>
+</ion-content>
+
+<ion-footer *ngIf="colunas.length > 0">
+  <ion-toolbar>
+    <div class="footer-actions">
+      <ion-button fill="clear" color="medium" (click)="dismiss()" [disabled]="importando">
+        Cancelar
+      </ion-button>
+      <div class="spacer"></div>
+      <ion-button
+        color="primary"
+        (click)="confirmar()"
+        [disabled]="importando || totalValido === 0"
+      >
+        <ion-spinner *ngIf="importando" name="dots" slot="start"></ion-spinner>
+        <ion-icon *ngIf="!importando" slot="start" name="cloud-upload-outline"></ion-icon>
+        Importar {{ totalValido }} jogador{{ totalValido === 1 ? '' : 'es' }}
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

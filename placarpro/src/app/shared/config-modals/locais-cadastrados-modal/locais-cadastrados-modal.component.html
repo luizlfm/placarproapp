@@ -1,0 +1,124 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>Locais</ion-title>
+    <ion-buttons slot="end">
+      <ion-button strong="true" [disabled]="salvando" (click)="salvar()">Salvar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="lc-content">
+  <!-- Form de adicionar / editar -->
+  <div class="add-card">
+    <div class="row">
+      <ion-input
+        fill="outline"
+        label="Nome do local"
+        labelPlacement="stacked"
+        placeholder="Ex.: Ginásio Municipal"
+        [(ngModel)]="nome"
+        (keyup.enter)="adicionar()"
+      ></ion-input>
+    </div>
+
+    <div class="row">
+      <ion-input
+        fill="outline"
+        label="Endereço (opcional)"
+        labelPlacement="stacked"
+        placeholder="Rua, número, bairro, cidade"
+        [(ngModel)]="endereco"
+      ></ion-input>
+    </div>
+
+    <div class="gps-row" *ngIf="lat !== null && lng !== null">
+      <ion-icon name="navigate-circle-outline"></ion-icon>
+      <span class="gps-coords">{{ lat }}, {{ lng }}</span>
+      <button type="button" class="gps-clear" (click)="lat = null; lng = null" aria-label="Remover GPS">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <div class="actions">
+      <ion-button
+        fill="outline"
+        size="default"
+        color="tertiary"
+        (click)="selecionarNoMapa()"
+      >
+        <ion-icon slot="start" name="map-outline"></ion-icon>
+        Selecionar no mapa
+      </ion-button>
+
+      <ion-button
+        color="primary"
+        [disabled]="!nome?.trim()"
+        (click)="adicionar()"
+      >
+        <ion-icon slot="start" [name]="editandoIdx !== null ? 'checkmark-outline' : 'add-outline'"></ion-icon>
+        {{ editandoIdx !== null ? 'Salvar edição' : 'Adicionar' }}
+      </ion-button>
+
+      <ion-button
+        *ngIf="editandoIdx !== null"
+        fill="clear"
+        color="medium"
+        (click)="cancelarEdicao()"
+      >
+        Cancelar
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Lista de locais -->
+  <div class="lc-lista" *ngIf="itens.length > 0; else vazio">
+    <div
+      class="lc-item"
+      *ngFor="let it of itens; let i = index"
+      [class.editing]="editandoIdx === i"
+      (click)="editar(i)"
+    >
+      <ion-icon class="pin" [name]="temGps(it) ? 'location' : 'location-outline'"
+                [class.has-gps]="temGps(it)"></ion-icon>
+
+      <div class="info">
+        <div class="nome">{{ it.nome }}</div>
+        <div class="endereco" *ngIf="it.endereco">{{ it.endereco }}</div>
+        <div class="coords" *ngIf="temGps(it)">
+          <ion-icon name="navigate-circle-outline"></ion-icon>
+          {{ it.lat }}, {{ it.lng }}
+        </div>
+      </div>
+
+      <button
+        *ngIf="temGps(it)"
+        type="button"
+        class="map-btn"
+        (click)="abrirNoMapa(it, $event)"
+        aria-label="Ver no mapa"
+      >
+        <ion-icon name="map-outline"></ion-icon>
+      </button>
+
+      <button
+        type="button"
+        class="lc-remove"
+        (click)="remover(i); $event.stopPropagation()"
+        [attr.aria-label]="'Remover ' + it.nome"
+      >
+        <ion-icon name="trash-outline"></ion-icon>
+      </button>
+    </div>
+  </div>
+
+  <ng-template #vazio>
+    <div class="lc-empty">
+      <ion-icon name="location-outline"></ion-icon>
+      <p>Nenhum local cadastrado.</p>
+      <span>Adicione o primeiro acima.</span>
+    </div>
+  </ng-template>
+</ion-content>

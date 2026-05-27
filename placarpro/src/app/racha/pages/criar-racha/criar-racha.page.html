@@ -1,0 +1,133 @@
+<ion-content class="cr-content">
+  <div class="cr-shell">
+    <!-- ═══════════ Page header (padrão clean) ═══════════ -->
+    <header class="r-page-head">
+      <span class="r-page-tag">NOVO RACHA</span>
+      <h1>Criar Novo Racha</h1>
+      <p>Leva menos de 30 segundos. Você poderá ajustar os detalhes depois.</p>
+    </header>
+
+    <div class="cr-card">
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <!-- Nome do racha -->
+        <div class="cr-field">
+          <ion-input
+            fill="outline"
+            label="Nome do Racha *"
+            labelPlacement="stacked"
+            formControlName="nome"
+            maxlength="50"
+            placeholder="Ex: Racha dos Tesouras"
+            required
+            errorText="Digite ao menos 2 caracteres."
+          ></ion-input>
+          <div class="cr-field-foot">
+            <span class="cr-hint">Digite um nome para seu racha</span>
+            <span class="cr-counter">{{ nomeLength }} / 50</span>
+          </div>
+        </div>
+
+        <!-- Linha com Times + Jogadores por time -->
+        <div class="cr-row">
+          <div class="cr-field">
+            <ion-input
+              fill="outline"
+              type="number"
+              label="Quantidade de Times"
+              labelPlacement="stacked"
+              formControlName="qtdTimes"
+              min="2"
+              max="8"
+              errorText="Entre 2 e 8 times."
+            ></ion-input>
+            <div class="cr-field-foot">
+              <span class="cr-hint">Ex: 2, 4, 6...</span>
+            </div>
+          </div>
+
+          <div class="cr-field">
+            <ion-input
+              fill="outline"
+              type="number"
+              label="Jogadores em cada time"
+              labelPlacement="stacked"
+              formControlName="jogadoresPorTime"
+              min="3"
+              max="11"
+              errorText="Entre 3 e 11 jogadores."
+            ></ion-input>
+            <div class="cr-field-foot">
+              <span class="cr-hint">
+                Total mínimo: <strong>{{ totalJogadores }}</strong> jogadores
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botão "Personalizar regras (opcional)" -->
+        <button
+          type="button"
+          class="cr-toggle"
+          (click)="togglePersonalizar()"
+          [attr.aria-expanded]="personalizarAberto"
+        >
+          <ion-icon [name]="personalizarAberto ? 'options' : 'options-outline'"></ion-icon>
+          <span>PERSONALIZAR REGRAS (OPCIONAL)</span>
+          <ion-icon
+            class="cr-toggle-chev"
+            [name]="personalizarAberto ? 'chevron-up' : 'chevron-down'"
+          ></ion-icon>
+        </button>
+
+        <!-- Campos opcionais -->
+        <div class="cr-opcionais" *ngIf="personalizarAberto">
+          <div class="cr-field">
+            <ion-input
+              fill="outline"
+              label="Local"
+              labelPlacement="stacked"
+              formControlName="local"
+              placeholder="Ex: Castelão Society"
+            ></ion-input>
+          </div>
+          <div class="cr-field">
+            <ion-input
+              fill="outline"
+              label="Horário recorrente"
+              labelPlacement="stacked"
+              formControlName="horario"
+              placeholder="Ex: Quartas 20h"
+            ></ion-input>
+          </div>
+        </div>
+
+        <!-- Divider antes dos botões -->
+        <div class="cr-divider"></div>
+
+        <!-- Footer com botões -->
+        <div class="cr-footer">
+          <button
+            type="button"
+            class="cr-btn cr-btn-cancel"
+            (click)="cancelar()"
+            [disabled]="loading"
+          >
+            <ion-icon name="arrow-back"></ion-icon>
+            CANCELAR
+          </button>
+
+          <button
+            type="submit"
+            class="cr-btn cr-btn-submit"
+            [disabled]="loading || form.invalid"
+          >
+            <ion-icon name="checkmark-circle"></ion-icon>
+            CRIAR RÁPIDO
+          </button>
+        </div>
+
+        <p class="cr-foot-hint">Você poderá editar depois</p>
+      </form>
+    </div>
+  </div>
+</ion-content>

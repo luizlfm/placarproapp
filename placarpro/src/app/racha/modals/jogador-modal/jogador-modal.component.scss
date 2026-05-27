@@ -1,0 +1,205 @@
+/* ============================================================
+   Jogador Modal — segue padrão dos modais de /app/* (campeonatos).
+   Header navy + body com card branco + inputs Ionic.
+   ============================================================ */
+
+.jm-content {
+  --background: var(--placar-bg, #f5f6f8);
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 16px;
+  --padding-bottom: 24px;
+}
+
+.jm-form {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px 18px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ============ Rows ============ */
+.jm-row {
+  width: 100%;
+
+  ion-input {
+    --background: #fff;
+    --border-radius: 10px;
+    --highlight-color-focused: var(--ion-color-secondary, #7CC61D);
+  }
+
+  &.dupla {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+  }
+}
+
+/* ============ Select wrapper (custom em vez de ion-select pra ficar
+   alinhado visualmente com ion-input outline) ============ */
+.jm-select-wrap {
+  position: relative;
+
+  .jm-select-label {
+    position: absolute;
+    top: -8px;
+    left: 12px;
+    padding: 0 6px;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    color: #4b5563;
+    z-index: 1;
+  }
+
+  .jm-select {
+    width: 100%;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    padding: 13px 36px 13px 14px;
+    font-family: inherit;
+    font-size: 14px;
+    color: #1C2E3D;
+    background: #fff;
+    cursor: pointer;
+    appearance: none;
+    outline: none;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231C2E3D' stroke-width='3'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+
+    &:focus {
+      border-color: var(--ion-color-secondary, #7CC61D);
+      box-shadow: 0 0 0 3px rgba(124, 198, 29, 0.16);
+    }
+  }
+}
+
+/* ============ Toggles (checkbox custom) ============ */
+.jm-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 4px 0;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 14px;
+}
+
+.jm-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  padding: 8px 4px;
+
+  input { display: none; }
+
+  .jm-toggle-box {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--ion-color-secondary, #7CC61D);
+    border-radius: 5px;
+    flex: 0 0 auto;
+    position: relative;
+    transition: all 150ms ease;
+    margin-top: 2px;
+  }
+  input:checked + .jm-toggle-box {
+    background: var(--ion-color-secondary, #7CC61D);
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 5px;
+      height: 9px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: translate(-50%, -60%) rotate(45deg);
+    }
+  }
+
+  .jm-toggle-label {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+
+    strong {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #1C2E3D;
+    }
+    small {
+      font-size: 11.5px;
+      color: #6b7280;
+      line-height: 1.4;
+    }
+  }
+}
+
+/* ============ Ações secundárias (Arquivar / Remover) ============ */
+.jm-secundarias {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.jm-btn-sec {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+  text-align: left;
+
+  ion-icon { font-size: 16px; flex: 0 0 auto; }
+
+  &.arquivar {
+    color: #4b5563;
+    background: #f9fafb;
+    border-color: #e5e7eb;
+
+    &:hover {
+      background: #f3f4f6;
+      color: #1C2E3D;
+    }
+  }
+
+  &.remover {
+    color: var(--ion-color-danger, #ef4444);
+    background: #fef2f2;
+    border-color: rgba(239, 68, 68, 0.18);
+
+    &:hover {
+      background: #fee2e2;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}

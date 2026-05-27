@@ -1,0 +1,112 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>{{ titulo }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button strong="true" [disabled]="salvando" (click)="salvar()">Salvar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ls-content">
+  <!-- Caixa de adicionar -->
+  <div class="add-box">
+    <ion-input
+      fill="outline"
+      [label]="'Novo ' + singular"
+      labelPlacement="stacked"
+      [placeholder]="'Digite o nome do ' + singular"
+      [(ngModel)]="novoItem"
+      (keyup.enter)="adicionar()"
+    ></ion-input>
+    <ion-button color="primary" (click)="adicionar()" [disabled]="!novoItem?.trim()">
+      <ion-icon slot="start" name="add-outline"></ion-icon>
+      Adicionar
+    </ion-button>
+  </div>
+
+  <!-- Contador / cabeçalho da lista -->
+  <div class="ls-head" *ngIf="itens.length > 0">
+    <span class="ls-total">
+      {{ itens.length }} {{ itens.length === 1 ? singular : (singular + 's') }}
+    </span>
+    <span class="ls-hint" *ngIf="editandoIdx < 0">
+      Toque no <ion-icon name="create-outline"></ion-icon> para editar
+    </span>
+  </div>
+
+  <!-- Lista de itens -->
+  <div class="ls-lista" *ngIf="itens.length > 0; else vazio">
+    <div
+      *ngFor="let it of itens; let i = index"
+      class="ls-item"
+      [class.editando]="editandoIdx === i"
+    >
+      <ng-container *ngIf="editandoIdx !== i; else modoEdicao">
+        <!-- ─── Modo visualização ─── -->
+        <ion-icon class="ls-icone" [name]="icone"></ion-icon>
+        <span class="ls-nome">{{ it }}</span>
+        <button
+          type="button"
+          class="ls-edit"
+          (click)="iniciarEdicao(i)"
+          [attr.aria-label]="'Editar ' + it"
+          title="Editar"
+        >
+          <ion-icon name="create-outline"></ion-icon>
+        </button>
+        <button
+          type="button"
+          class="ls-remove"
+          (click)="remover(i)"
+          [attr.aria-label]="'Remover ' + it"
+          title="Remover"
+        >
+          <ion-icon name="trash-outline"></ion-icon>
+        </button>
+      </ng-container>
+
+      <ng-template #modoEdicao>
+        <!-- ─── Modo edição inline ─── -->
+        <ion-icon class="ls-icone" [name]="icone"></ion-icon>
+        <ion-input
+          class="ls-input-edit"
+          fill="outline"
+          [(ngModel)]="valorEdicao"
+          (keyup.enter)="confirmarEdicao()"
+          (keyup.escape)="cancelarEdicao()"
+          [placeholder]="'Editar ' + singular"
+        ></ion-input>
+        <button
+          type="button"
+          class="ls-confirm"
+          (click)="confirmarEdicao()"
+          [disabled]="!valorEdicao?.trim()"
+          aria-label="Confirmar edição"
+          title="Confirmar (Enter)"
+        >
+          <ion-icon name="checkmark-outline"></ion-icon>
+        </button>
+        <button
+          type="button"
+          class="ls-cancel"
+          (click)="cancelarEdicao()"
+          aria-label="Cancelar edição"
+          title="Cancelar (Esc)"
+        >
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </ng-template>
+    </div>
+  </div>
+
+  <ng-template #vazio>
+    <div class="ls-empty">
+      <ion-icon [name]="icone"></ion-icon>
+      <p>Nenhum {{ singular }} cadastrado.</p>
+      <span>Adicione o primeiro acima.</span>
+    </div>
+  </ng-template>
+</ion-content>

@@ -1,0 +1,78 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Categoria</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="modal-bg">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="dup-form">
+    <!-- Nome -->
+    <div class="field-group">
+      <ion-input
+        fill="outline"
+        label="Nome da categoria"
+        labelPlacement="stacked"
+        placeholder="Ex: Sub-17 Masculino"
+        formControlName="titulo"
+        required
+      ></ion-input>
+      <div
+        class="field-error"
+        *ngIf="form.controls['titulo'].touched && form.controls['titulo'].invalid"
+      >
+        <span *ngIf="form.controls['titulo'].hasError('required')">Informe um nome.</span>
+        <span *ngIf="form.controls['titulo'].hasError('minlength')">Mínimo 2 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- Opções de cópia -->
+    <div class="opcoes">
+      <label class="opcao">
+        <span class="opcao-label">Copiar equipes</span>
+        <ion-checkbox
+          [checked]="form.value.copiarEquipes"
+          (ionChange)="onToggleEquipes($any($event).detail.checked)"
+        ></ion-checkbox>
+      </label>
+
+      <label class="opcao">
+        <span class="opcao-label">Copiar jogadores</span>
+        <ion-checkbox
+          [checked]="form.value.copiarJogadores"
+          (ionChange)="onToggleJogadores($any($event).detail.checked)"
+        ></ion-checkbox>
+      </label>
+
+      <label class="opcao">
+        <span class="opcao-label">Copiar partidas</span>
+        <ion-checkbox
+          [checked]="form.value.copiarPartidas"
+          (ionChange)="onTogglePartidas($any($event).detail.checked)"
+        ></ion-checkbox>
+      </label>
+    </div>
+
+    <!-- Modalidade (somente leitura - herdada da categoria de origem) -->
+    <div class="modalidade-row" *ngIf="modalidade as m">
+      <div class="mod-badge" [style.background]="m.color">
+        <ion-icon [name]="m.icon"></ion-icon>
+      </div>
+      <span class="mod-nome">{{ m.label }}</span>
+    </div>
+
+    <ion-button
+      expand="block"
+      type="submit"
+      color="primary"
+      class="btn-submit"
+      [disabled]="loading"
+    >
+      Nova categoria
+    </ion-button>
+  </form>
+</ion-content>

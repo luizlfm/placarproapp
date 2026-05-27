@@ -1,0 +1,235 @@
+<ion-content class="mr-content">
+  <!-- Header navy igual ao espectador -->
+  <header class="mr-header">
+    <a class="mr-brand" (click)="voltarHome()">
+      <img src="assets/images/logo3.png" alt="PlacarPro" class="mr-brand-img" />
+      <span class="mr-brand-sub">· Rachas</span>
+    </a>
+    <button class="mr-sair" type="button" (click)="sair()">
+      <ion-icon name="log-out-outline"></ion-icon>
+      Sair
+    </button>
+  </header>
+
+  <div class="mr-page">
+    <!-- ═══════════ Hero compacto (título + CTA juntos) ═══════════
+         Antes eram dois blocos separados (page-head + hero-strip verde),
+         o que deixava muito espaço vazio em mobile. Agora um único bloco
+         com gradient navy→lime que junta título + ação primária. -->
+    <header class="mr-hero-v2">
+      <div class="mr-hero-text">
+        <span class="mr-hero-badge">
+          <ion-icon name="football-outline"></ion-icon>
+          SEU FUTEBOL ORGANIZADO
+        </span>
+        <h1>Meus rachas</h1>
+        <p>Lista de presença, sorteio de times e ranking — tudo num só lugar.</p>
+      </div>
+      <button type="button" class="mr-hero-cta" (click)="criarRacha()">
+        <ion-icon name="add-circle"></ion-icon>
+        <span>Novo racha</span>
+      </button>
+    </header>
+
+    <!-- ═══════════ Loading ═══════════ -->
+    <div class="mr-loading" *ngIf="loading">
+      <ion-spinner name="dots"></ion-spinner>
+    </div>
+
+    <!-- ═══════════ Lista de rachas ═══════════ -->
+    <ng-container *ngIf="!loading && (rachas$ | async) as rachas">
+      <section class="mr-secao" *ngIf="rachas.length > 0">
+        <div class="mr-secao-head">
+          <h2>Meus Rachas</h2>
+          <span class="mr-secao-count">{{ rachas.length }}</span>
+        </div>
+
+        <div class="mr-grid">
+          <article
+            *ngFor="let r of rachas; trackBy: trackById"
+            class="mr-card-v2"
+            [class.rascunho]="!r.ativado"
+            (click)="abrirRacha(r)"
+            tabindex="0"
+          >
+            <!-- Faixa de cor topo (status) -->
+            <span class="mr-card-status" [attr.data-status]="r.status">
+              {{ labelStatus(r.status) }}
+            </span>
+
+            <!-- Linha principal: logo + nome -->
+            <div class="mr-card-head">
+              <div class="mr-card-logo">
+                <img *ngIf="r.logoUrl; else iconC" [src]="r.logoUrl" [alt]="r.nome" />
+                <ng-template #iconC>
+                  <ion-icon name="football"></ion-icon>
+                </ng-template>
+              </div>
+              <div class="mr-card-titulo">
+                <h3>{{ r.nome }}</h3>
+                <div class="mr-card-sub" *ngIf="r.local || r.horario">
+                  <ng-container *ngIf="r.local">
+                    <ion-icon name="location-outline"></ion-icon>
+                    {{ r.local }}
+                  </ng-container>
+                  <ng-container *ngIf="r.horario">
+                    <span class="mr-dot" *ngIf="r.local">·</span>
+                    <ion-icon name="time-outline"></ion-icon>
+                    {{ r.horario }}
+                  </ng-container>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stats em grid (cards menores) -->
+            <div class="mr-card-stats">
+              <div class="mr-stat">
+                <div class="mr-stat-valor">{{ r.qtdTimes }}×{{ r.jogadoresPorTime }}</div>
+                <div class="mr-stat-label">Times</div>
+              </div>
+              <div class="mr-stat">
+                <div class="mr-stat-valor">{{ r.capacidadeTotal }}</div>
+                <div class="mr-stat-label">Jogadores</div>
+              </div>
+            </div>
+
+            <!-- Ações -->
+            <div class="mr-card-actions">
+              <button
+                class="mr-card-btn primary"
+                type="button"
+                (click)="abrirRacha(r); $event.stopPropagation()"
+              >
+                <ion-icon [name]="r.ativado ? 'enter-outline' : 'rocket-outline'"></ion-icon>
+                <span>{{ r.ativado ? 'Abrir' : 'Configurar' }}</span>
+              </button>
+              <button
+                class="mr-card-btn danger"
+                type="button"
+                (click)="removerRacha(r, $event)"
+                aria-label="Remover racha"
+              >
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ═══════════ Empty state ═══════════ -->
+      <section class="r-empty" *ngIf="rachas.length === 0">
+        <div class="r-empty-icone">
+          <ion-icon name="football-outline"></ion-icon>
+        </div>
+        <h2>Você ainda não tem nenhum racha</h2>
+        <p>Crie o primeiro em menos de 30 segundos.</p>
+        <button type="button" class="r-btn r-btn-lime r-btn-big" (click)="criarRacha()">
+          <ion-icon name="add-outline"></ion-icon>
+          CRIAR MEU PRIMEIRO RACHA
+        </button>
+      </section>
+    </ng-container>
+
+    <!-- ═══════════ Showcase de recursos do racha ═══════════
+         Lista o que cada racha oferece (já disponível) + features
+         que estão por vir (em breve). Implementa o que o texto do
+         hero promete: "Lista de presença, sorteio de times e ranking".
+         Posicionado após a lista de rachas — funciona como onboarding
+         secundário pra novos usuários e referência pros existentes. -->
+    <section class="mr-features">
+      <div class="mr-features-head">
+        <h2>Recursos do racha</h2>
+        <p>Tudo que você precisa pra organizar a pelada — disponível em todos os planos.</p>
+      </div>
+
+      <div class="mr-features-grid">
+        <!-- ─── Disponíveis ─── -->
+        <button type="button" class="mr-feat ok" (click)="infoRecurso('Lista de presença', 'Fila automática com mensalistas, lista de espera e confirmação via link.')">
+          <ion-icon name="person-add" class="mr-feat-icon"></ion-icon>
+          <strong>Lista de presença</strong>
+          <span>Fila, mensalistas e lista de espera</span>
+          <span class="mr-feat-status ok"><ion-icon name="checkmark-circle"></ion-icon> Disponível</span>
+        </button>
+
+        <button type="button" class="mr-feat ok" (click)="infoRecurso('Sorteio de times', 'Algoritmo balanceado por posição e nota geral dos jogadores.')">
+          <ion-icon name="shuffle" class="mr-feat-icon"></ion-icon>
+          <strong>Sorteio de times</strong>
+          <span>Balanceado por nota e posição</span>
+          <span class="mr-feat-status ok"><ion-icon name="checkmark-circle"></ion-icon> Disponível</span>
+        </button>
+
+        <button type="button" class="mr-feat ok" (click)="infoRecurso('Ranking dos jogadores', 'Gols, assistências, MVP do racha e Craque da Rodada calculados automaticamente.')">
+          <ion-icon name="trophy" class="mr-feat-icon"></ion-icon>
+          <strong>Ranking dos jogadores</strong>
+          <span>Gols, assistências e MVP</span>
+          <span class="mr-feat-status ok"><ion-icon name="checkmark-circle"></ion-icon> Disponível</span>
+        </button>
+
+        <button type="button" class="mr-feat ok" (click)="infoRecurso('Financeiro', 'Entradas e saídas do racha (mensalidades, aluguel, bola). Saldo automático.')">
+          <ion-icon name="wallet" class="mr-feat-icon"></ion-icon>
+          <strong>Financeiro</strong>
+          <span>Entradas, saídas e saldo</span>
+          <span class="mr-feat-status ok"><ion-icon name="checkmark-circle"></ion-icon> Disponível</span>
+        </button>
+
+        <button type="button" class="mr-feat ok" (click)="infoRecurso('Times com escudo', 'Cores, escudos e nomes customizados pros times de cada sessão.')">
+          <ion-icon name="shield" class="mr-feat-icon"></ion-icon>
+          <strong>Times personalizados</strong>
+          <span>Escudos, cores e nomes</span>
+          <span class="mr-feat-status ok"><ion-icon name="checkmark-circle"></ion-icon> Disponível</span>
+        </button>
+
+        <button type="button" class="mr-feat ok" (click)="infoRecurso('Convite por link', 'Link único pra cada racha — quem clica entra direto na fila.')">
+          <ion-icon name="link" class="mr-feat-icon"></ion-icon>
+          <strong>Convite por link</strong>
+          <span>Compartilha no WhatsApp</span>
+          <span class="mr-feat-status ok"><ion-icon name="checkmark-circle"></ion-icon> Disponível</span>
+        </button>
+
+        <!-- ─── Novidades disponíveis (implementadas como MVP) ─── -->
+        <button type="button" class="mr-feat ok" (click)="infoRecurso('Avaliação peer-to-peer', 'Jogadores se avaliam mutuamente (1-5 estrelas). Média aparece pra todo mundo.')">
+          <ion-icon name="star" class="mr-feat-icon"></ion-icon>
+          <strong>Avaliação peer-to-peer</strong>
+          <span>Jogadores se avaliam após o jogo</span>
+          <span class="mr-feat-status ok"><ion-icon name="checkmark-circle"></ion-icon> Disponível</span>
+        </button>
+
+        <button type="button" class="mr-feat ok" (click)="infoRecurso('Conquistas', 'Badges automáticos: Primeiro Gol, Hat-Trick, Artilheiro, Veterano, Fair Play, Craque, Goleiro Imbatível.')">
+          <ion-icon name="ribbon" class="mr-feat-icon"></ion-icon>
+          <strong>Conquistas</strong>
+          <span>Badges automáticas (hat-trick, etc.)</span>
+          <span class="mr-feat-status ok"><ion-icon name="checkmark-circle"></ion-icon> Disponível</span>
+        </button>
+
+        <button type="button" class="mr-feat ok" (click)="infoRecurso('Mercado de Notas', 'Cotação dos jogadores derivada de gols, assistências, jogos e disciplina.')">
+          <ion-icon name="trending-up" class="mr-feat-icon"></ion-icon>
+          <strong>Mercado de Notas</strong>
+          <span>Cotação derivada das estatísticas</span>
+          <span class="mr-feat-status ok"><ion-icon name="checkmark-circle"></ion-icon> Disponível</span>
+        </button>
+
+        <!-- ─── Ainda em breve ─── -->
+        <button type="button" class="mr-feat em-breve" (click)="avisoEmBreve('Bot WhatsApp')">
+          <ion-icon name="logo-whatsapp" class="mr-feat-icon"></ion-icon>
+          <strong>Bot do WhatsApp</strong>
+          <span>Avisos automáticos no grupo</span>
+          <span class="mr-feat-status eb"><ion-icon name="time-outline"></ion-icon> Em breve</span>
+        </button>
+
+        <button type="button" class="mr-feat em-breve" (click)="avisoEmBreve('Ranking Mundial')">
+          <ion-icon name="earth" class="mr-feat-icon"></ion-icon>
+          <strong>Ranking Mundial</strong>
+          <span>Posição cross-racha dos jogadores</span>
+          <span class="mr-feat-status eb"><ion-icon name="time-outline"></ion-icon> Em breve</span>
+        </button>
+
+        <button type="button" class="mr-feat em-breve" (click)="avisoEmBreve('Ao Vivo / placar em tempo real')">
+          <ion-icon name="radio" class="mr-feat-icon"></ion-icon>
+          <strong>Ao Vivo</strong>
+          <span>Placar em tempo real pra galera</span>
+          <span class="mr-feat-status eb"><ion-icon name="time-outline"></ion-icon> Em breve</span>
+        </button>
+      </div>
+    </section>
+  </div>
+</ion-content>

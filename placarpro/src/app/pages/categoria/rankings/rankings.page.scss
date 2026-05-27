@@ -1,0 +1,521 @@
+.wrap {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 18px 16px 32px;
+}
+
+/* ============== Abas ============== */
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.tab {
+  --tab-cor: var(--ion-color-primary);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  border: 1px solid var(--placar-divider, #ececef);
+  border-radius: 12px;
+  padding: 12px 8px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--placar-text-muted, #6b6b70);
+  transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+
+  ion-icon {
+    font-size: 22px;
+    color: var(--ion-color-medium);
+    transition: color 120ms ease;
+  }
+
+  &:hover {
+    border-color: var(--tab-cor);
+  }
+
+  &.active {
+    background: var(--tab-cor);
+    border-color: var(--tab-cor);
+    color: #fff;
+
+    ion-icon { color: #fff; }
+  }
+}
+
+/* ============== Card de lista ============== */
+.card {
+  background: var(--placar-surface, #fff);
+  border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.lista-card { padding: 0; }
+
+.row {
+  /* Sempre 3 colunas: posição · jogador+equipe (sub-linha) · total
+     Equipe NUNCA fica como coluna lateral — sempre abaixo do nome. */
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 80px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--placar-divider, #ececef);
+  transition: background 100ms ease;
+
+  &:first-child { border-top: none; }
+  &:hover:not(.header) { background: #fafafb; }
+
+  &.header {
+    background: #fafafb;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ion-color-medium-shade, #6b6b70);
+  }
+
+  &.podio { background: rgba(255, 212, 59, 0.04); }
+
+  @media (max-width: 700px) {
+    grid-template-columns: 36px minmax(0, 1fr) 56px;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  @media (max-width: 380px) {
+    grid-template-columns: 28px minmax(0, 1fr) 48px;
+    gap: 6px;
+    padding: 10px 8px;
+  }
+}
+
+.cell { min-width: 0; }
+.cell.pos { text-align: center; }
+
+.medalha {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ion-color-primary);
+}
+
+.cell.jogador {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  @media (max-width: 700px) { gap: 8px; }
+}
+
+.jog-foto {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(28, 46, 61, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--ion-color-primary);
+  flex: 0 0 auto;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 20px; }
+
+  @media (max-width: 700px) {
+    width: 30px;
+    height: 30px;
+    ion-icon { font-size: 16px; }
+  }
+}
+
+.jog-info { min-width: 0; }
+
+.jog-nome {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--placar-text, #2d2d2d);
+  text-transform: uppercase;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  line-height: 1.25;
+  max-width: 100%;
+  display: block;
+
+  @media (max-width: 700px) {
+    font-size: 12.5px;
+    letter-spacing: 0;
+  }
+
+  @media (max-width: 380px) {
+    font-size: 11.5px;
+  }
+}
+
+.jog-sub {
+  font-size: 11.5px;
+  color: var(--ion-color-medium);
+}
+
+/* Sub-linha SEMPRE visível: equipe (com escudinho) + nº camisa.
+   Substitui a coluna lateral `.cell.equipe` (que foi removida do HTML). */
+.jog-equipe {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+
+  .eq-logo-mini {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(28, 46, 61, 0.08);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    color: var(--ion-color-primary);
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+    ion-icon { font-size: 11px; opacity: 0.75; }
+  }
+
+  .eq-txt {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    color: var(--placar-text, #2d2d2d);
+    font-weight: 600;
+    font-size: 12.5px;
+    letter-spacing: 0.2px;
+  }
+
+  .num {
+    color: var(--placar-text-muted);
+    flex-shrink: 0;
+    font-size: 11.5px;
+  }
+
+  @media (max-width: 700px) {
+    font-size: 11px;
+    margin-top: 3px;
+
+    .eq-txt { font-size: 11.5px; font-weight: 500; }
+    .eq-logo-mini { width: 16px; height: 16px; ion-icon { font-size: 10px; } }
+  }
+}
+
+/* Em mobile, a coluna jogador tem largura limitada (1fr de um grid apertado);
+   força ellipsis em todo o conteúdo da célula. */
+.cell.jogador {
+  min-width: 0;
+  overflow: hidden;
+  max-width: 100%;
+
+  .jog-info {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    max-width: 100%;
+  }
+}
+
+.cell.equipe {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+
+  @media (max-width: 600px) {
+    gap: 6px;
+  }
+}
+
+.eq-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(28, 46, 61, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--ion-color-primary);
+  flex: 0 0 auto;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 14px; }
+
+  @media (max-width: 600px) {
+    width: 18px;
+    height: 18px;
+    ion-icon { font-size: 11px; }
+  }
+}
+
+.eq-nome {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--placar-text, #2d2d2d);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+
+  @media (max-width: 600px) {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ion-color-medium);
+  }
+}
+
+.muted { color: var(--ion-color-medium); font-style: italic; }
+
+.cell.total { text-align: right; }
+
+.total-num {
+  display: inline-block;
+  min-width: 36px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ion-color-primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  text-align: center;
+
+  @media (max-width: 600px) {
+    min-width: 28px;
+    padding: 3px 8px;
+    font-size: 12.5px;
+  }
+}
+
+.empty {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--ion-color-medium);
+
+  > ion-icon { font-size: 64px; opacity: 0.35; margin-bottom: 12px; }
+  h2 {
+    color: var(--ion-color-primary);
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+  p { font-size: 13.5px; margin: 0; }
+}
+
+/* ============================================
+   Votações (Enquetes) — abaixo dos rankings
+   ============================================ */
+.vot-section {
+  margin-top: 24px;
+
+  .vot-section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 0 2px;
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--placar-text, #2d2d2d);
+    }
+    .btn-novo {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--ion-color-success, #2dd36f);
+      color: #fff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: filter 120ms ease;
+      ion-icon { font-size: 16px; }
+      &:hover { filter: brightness(1.07); }
+    }
+  }
+}
+
+.vot-lista {
+  display: grid;
+  gap: 12px;
+}
+
+.vot-card {
+  display: block;
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+
+  &:not(.read-only):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+  &.oculta, &.encerrada {
+    opacity: 0.85;
+  }
+  /* Leitor puro (moderador sem gerenciarEnquetes): card vira só leitura
+     — sem cursor pointer, sem hover lift. */
+  &.read-only {
+    cursor: default;
+  }
+
+  .vc-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+
+    .vc-pergunta {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--placar-text, #2d2d2d);
+      flex: 1;
+      min-width: 0;
+      word-break: break-word;
+    }
+    .vc-badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .vc-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(124, 198, 29, 0.15);
+      color: var(--ion-color-secondary, #7CC61D);
+      ion-icon { font-size: 12px; }
+
+      &.off {
+        background: rgba(0, 0, 0, 0.06);
+        color: var(--ion-color-medium);
+      }
+    }
+  }
+
+  .vc-meta {
+    display: flex;
+    gap: 16px;
+    color: var(--ion-color-medium);
+    font-size: 12.5px;
+    margin-bottom: 12px;
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      ion-icon { font-size: 14px; }
+    }
+  }
+
+  .vc-resultados {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .vc-alt {
+    display: grid;
+    grid-template-columns: minmax(80px, 1fr) 2fr 38px;
+    gap: 10px;
+    align-items: center;
+    font-size: 12.5px;
+
+    .vc-alt-nome {
+      color: var(--placar-text, #2d2d2d);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .vc-alt-bar {
+      height: 6px;
+      background: rgba(28, 46, 61, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .vc-alt-fill {
+      height: 100%;
+      background: var(--ion-color-secondary, #7CC61D);
+      transition: width 300ms ease;
+    }
+    .vc-alt-pct {
+      text-align: right;
+      color: var(--ion-color-medium);
+      font-weight: 600;
+    }
+  }
+
+  .vc-acoes {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ion-color-tertiary, #4DABF7);
+    font-size: 12px;
+    font-weight: 600;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f2;
+
+    > span { flex: 1; }
+    ion-icon { font-size: 16px; }
+  }
+}
+
+.vot-empty {
+  background: #fff;
+  border-radius: 12px;
+  padding: 36px 24px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  color: var(--ion-color-medium);
+
+  ion-icon { font-size: 52px; opacity: 0.35; margin-bottom: 10px; }
+  h3 { margin: 0 0 6px; font-size: 16px; font-weight: 700; color: var(--placar-text, #2d2d2d); }
+  p { margin: 0 0 16px; font-size: 13.5px; line-height: 1.5; max-width: 360px; margin-left: auto; margin-right: auto; }
+}

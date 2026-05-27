@@ -1,0 +1,275 @@
+/* No mobile, o `<app-campeonato-mobile-header>` (sticky no topo do
+   ion-content) substitui o ion-header desktop com vantagem: traz logo,
+   título, sair E os segments (Início / Mídia / Config) numa única barra
+   navy. Escondemos o `<ion-header class="cmh-desktop-only">` pra não
+   duplicar a barra superior. */
+.cmh-desktop-only {
+  @media (max-width: 767px) {
+    display: none;
+  }
+}
+
+/* Wrapper centralizado — mesma lógica usada em config */
+.wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px 16px 40px;
+}
+
+.page-title {
+  margin: 4px 0 14px;
+  color: var(--placar-text);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+/* ============ HERO CARD (mesma estrutura das telas públicas) ============
+   Imagem real + overlay compacto com gradient nas bordas. */
+.hero-card {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #1C2E3D;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 16px;
+}
+
+.hero-img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.hero-info {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px 14px;
+  color: #fff;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 35%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0) 45%);
+  pointer-events: none;
+
+  > * { pointer-events: auto; }
+}
+
+.hero-meta {
+  align-self: flex-start;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  padding: 6px 10px;
+  border-radius: 8px;
+
+  .hero-meta-label {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .hero-meta-value {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    line-height: 1.1;
+  }
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.hero-status {
+  font-size: 11.5px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+
+.hero-btn-seguir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ion-color-secondary, #7CC61D);
+  color: #fff;
+  border: 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease, transform 100ms ease;
+
+  ion-icon { font-size: 14px; }
+
+  &:disabled { opacity: 0.65; cursor: wait; }
+  &:hover:not(:disabled) { transform: translateY(-1px); }
+
+  &.ativo {
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+
+    &:hover:not(:disabled) {
+      background: rgba(235, 71, 71, 0.85);
+      border-color: rgba(235, 71, 71, 0.85);
+    }
+  }
+}
+
+.hero-share {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 0;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 120ms ease;
+
+  ion-icon { font-size: 18px; }
+  &:hover { background: rgba(255, 255, 255, 0.2); }
+}
+
+/* Sections com mesmo width do wrap (100%) */
+.section {
+  margin: 24px 0 0;
+
+  &:last-child { margin-bottom: 8px; }
+}
+
+.section-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--placar-text);
+  margin: 0 0 14px;
+}
+
+/* ===== Card genérico — mesmo estilo do config ===== */
+.card {
+  background: var(--placar-surface);
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Card de categorias: sem padding lateral porque o botão e as rows
+   gerenciam o próprio espaçamento, mas mantém a borda e o fundo. */
+.categorias-card {
+  padding: 12px;
+}
+
+.btn-nova-cat {
+  --background: var(--ion-color-primary);
+  --color: #fff;
+  --border-radius: 999px;
+  --padding-start: 24px;
+  --padding-end: 24px;
+  height: 44px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  margin: 0 0 4px;
+}
+
+.categoria-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 6px 6px 12px;
+  border-top: 1px solid var(--placar-divider);
+  transition: background 120ms ease;
+
+  &:hover { background: var(--placar-surface-2); }
+}
+
+/* Link clicável (logo + título) — ocupa o espaço da row, só os ícones ficam fora. */
+.cat-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 6px 6px 0;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
+.cat-logo {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(124, 198, 29, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--ion-color-secondary);
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 22px; }
+}
+
+.cat-title {
+  flex: 1;
+  color: var(--placar-text);
+  font-size: 14.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Bloco dos botões à direita (copiar / reordenar). */
+.cat-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.cat-action-btn {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--ion-color-medium);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease, color 120ms ease;
+
+  &:hover {
+    background: rgba(28, 46, 61, 0.06);
+    color: var(--ion-color-primary);
+  }
+
+  ion-icon { font-size: 22px; }
+}
+
+/* Card de mensagens vazias */
+.msg-empty {
+  text-align: center;
+  color: var(--placar-text-muted);
+
+  p { margin: 0; font-size: 14px; }
+}

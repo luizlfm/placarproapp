@@ -1,0 +1,62 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Cancelar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Escolher seguidor</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <p class="hint">
+    Apenas usuários que já <strong>seguem</strong> este campeonato podem ser
+    adicionados como moderadores.
+  </p>
+
+  <div class="busca">
+    <ion-searchbar
+      [value]="busca"
+      (ionInput)="busca = $any($event).detail.value || ''"
+      placeholder="Buscar por nome ou e-mail"
+      debounce="120"
+    ></ion-searchbar>
+  </div>
+
+  <ng-container *ngIf="candidatos$ | async as lista">
+    <div class="lista" *ngIf="lista.length > 0; else vazio">
+      <button
+        type="button"
+        class="cand"
+        *ngFor="let s of lista; trackBy: trackByUid"
+        (click)="escolher(s)"
+      >
+        <div class="avatar">
+          <img *ngIf="s.fotoUrl; else avF" [src]="s.fotoUrl" [alt]="s.nome" referrerpolicy="no-referrer" />
+          <ng-template #avF><ion-icon name="person-circle-outline"></ion-icon></ng-template>
+        </div>
+        <div class="info">
+          <div class="nome">{{ s.nome }}</div>
+          <div class="meta" *ngIf="s.email">{{ s.email }}</div>
+        </div>
+        <ion-icon class="chev" name="chevron-forward-outline"></ion-icon>
+      </button>
+    </div>
+
+    <ng-template #vazio>
+      <div class="empty">
+        <ion-icon name="people-outline"></ion-icon>
+        <h3>Sem seguidores disponíveis</h3>
+        <p *ngIf="busca">
+          Nenhum seguidor encontrado para "{{ busca }}".
+        </p>
+        <p *ngIf="!busca">
+          Pra adicionar um moderador, peça que ele acesse a página pública do
+          campeonato, faça login e clique em <strong>Seguir</strong>.
+          Depois ele aparecerá aqui.
+        </p>
+      </div>
+    </ng-template>
+  </ng-container>
+</ion-content>

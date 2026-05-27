@@ -1,0 +1,142 @@
+.bg {
+  --background: var(--placar-bg);
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 14px;
+  --padding-bottom: 18px;
+}
+
+.hint {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--placar-text-muted);
+  line-height: 1.4;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--placar-text-muted);
+  gap: 8px;
+
+  ion-icon { font-size: 48px; opacity: 0.45; }
+  h3 { margin: 4px 0 0; font-size: 16px; color: var(--placar-text); font-weight: 700; }
+  p { margin: 0; font-size: 13px; }
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.anx-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  background: var(--placar-card-bg);
+  border: 1px solid var(--placar-divider);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.anx-link {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  min-width: 0;
+}
+
+.anx-ic {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(28, 46, 61, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ion-color-primary);
+  flex-shrink: 0;
+
+  ion-icon { font-size: 20px; }
+}
+
+.anx-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.anx-titulo {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--placar-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.anx-url {
+  font-size: 11px;
+  color: var(--placar-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.anx-acoes {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.ic-btn {
+  background: none;
+  border: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--placar-text-muted);
+
+  ion-icon { font-size: 18px; }
+
+  &:hover {
+    background: rgba(28, 46, 61, 0.06);
+    color: var(--placar-text);
+  }
+
+  &.danger:hover {
+    background: rgba(235, 68, 90, 0.10);
+    color: var(--ion-color-danger);
+  }
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px;
+
+  .spacer { flex: 1; }
+
+  ion-button[color="primary"] {
+    --border-radius: 10px;
+    --padding-start: 22px;
+    --padding-end: 22px;
+    font-weight: 700;
+  }
+}

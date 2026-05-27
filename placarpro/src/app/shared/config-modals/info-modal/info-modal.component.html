@@ -1,0 +1,46 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ titulo }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="info-content">
+  <p class="info-desc">{{ descricao }}</p>
+
+  <!-- Embed e API: bloco de código copiável -->
+  <ng-container *ngIf="tipo === 'embed' || tipo === 'api'">
+    <div class="info-code">
+      <pre>{{ textoCopiavel }}</pre>
+    </div>
+
+    <div class="info-actions">
+      <ion-button expand="block" color="primary" (click)="copiar()">
+        <ion-icon slot="start" name="copy-outline"></ion-icon>
+        Copiar
+      </ion-button>
+      <ion-button expand="block" fill="outline" color="primary"
+                  *ngIf="tipo === 'api'" (click)="abrirNovaAba()">
+        <ion-icon slot="start" name="open-outline"></ion-icon>
+        Abrir endpoint
+      </ion-button>
+    </div>
+  </ng-container>
+
+  <!-- Visualizações: número grande + link pra abrir a página -->
+  <ng-container *ngIf="tipo === 'visualizacoes'">
+    <div class="info-metric">
+      <div class="metric-num">{{ visualizacoes }}</div>
+      <div class="metric-label">{{ visualizacoes === 1 ? 'visualização' : 'visualizações' }}</div>
+    </div>
+
+    <ion-button expand="block" fill="outline" color="primary" (click)="abrirNovaAba()">
+      <ion-icon slot="start" name="open-outline"></ion-icon>
+      Abrir página pública
+    </ion-button>
+  </ng-container>
+</ion-content>

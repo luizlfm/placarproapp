@@ -1,0 +1,201 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Moderadores</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="mod-content">
+  <!-- Intro curta -->
+  <div class="mod-intro-card">
+    <ion-icon name="shield-checkmark-outline"></ion-icon>
+    <div>
+      <strong>Convide pessoas para te ajudar a gerenciar.</strong>
+      <p>Clique no botão abaixo, copie o link e envie pelo WhatsApp/email.
+         A pessoa só precisa clicar e fazer login.</p>
+    </div>
+  </div>
+
+  <!-- Botão principal — ação primária -->
+  <button
+    type="button"
+    class="mod-cta"
+    [disabled]="trabalhando"
+    (click)="gerarLink()"
+  >
+    <ion-icon name="link-outline"></ion-icon>
+    {{ trabalhando ? 'Gerando...' : 'Gerar link de convite' }}
+  </button>
+
+  <!-- Lista de moderadores -->
+  <div class="mod-lista" *ngIf="moderadores.length > 0; else vazio">
+    <h3 class="mod-subtitulo">
+      Moderadores ({{ moderadores.length }})
+    </h3>
+
+    <div
+      class="mod-card"
+      *ngFor="let m of moderadores; let i = index; trackBy: trackByMod"
+      [class.expanded]="expandido === i"
+      [class.pendente]="pendente(m)"
+    >
+      <!-- Header da linha (sempre visível) -->
+      <div class="mod-row">
+        <span class="mod-avatar" [class.pendente]="pendente(m)">
+          <ion-icon [name]="pendente(m) ? 'time-outline' : 'person-circle-outline'"></ion-icon>
+        </span>
+        <div class="mod-info">
+          <div class="mod-nome">{{ labelNome(m) }}</div>
+          <div class="mod-status" *ngIf="pendente(m)">
+            <ion-icon name="ellipse" class="dot dot-pendente"></ion-icon>
+            Link pronto · aguardando convidado entrar
+          </div>
+          <div class="mod-status ativo" *ngIf="!pendente(m)">
+            <ion-icon name="checkmark-circle" class="dot dot-ativo"></ion-icon>
+            Ativo{{ m.email ? ' · ' + m.email : '' }}
+          </div>
+        </div>
+        <button
+          type="button"
+          class="mod-btn-icon"
+          (click)="toggle(i)"
+          [attr.aria-label]="expandido === i ? 'Recolher' : 'Configurações'"
+          title="Configurações"
+        >
+          <ion-icon [name]="expandido === i ? 'chevron-up-outline' : 'settings-outline'"></ion-icon>
+        </button>
+      </div>
+
+      <!-- Bloco expandido: link + permissões -->
+      <div class="mod-extra" *ngIf="expandido === i">
+        <!-- Link de acesso (sempre visível enquanto não aceito) -->
+        <div class="mod-link-box" *ngIf="m.linkToken">
+          <label class="link-label">LINK DE ACESSO</label>
+          <div class="link-row">
+            <code class="link-url">{{ origin }}/m/{{ m.linkToken }}</code>
+          </div>
+          <div class="link-acoes">
+            <button type="button" class="link-btn" (click)="copiarLink(m)">
+              <ion-icon name="copy-outline"></ion-icon>
+              Copiar
+            </button>
+            <button type="button" class="link-btn primary" (click)="compartilhar(m)">
+              <ion-icon name="share-social-outline"></ion-icon>
+              Compartilhar
+            </button>
+          </div>
+        </div>
+
+        <!-- Permissões — cada toggle tem descrição curta abaixo explicando
+             quais telas/ações são liberadas. Owner/admin sempre têm tudo. -->
+        <div class="mod-perms">
+          <h4>O que esse moderador pode fazer:</h4>
+
+          <label class="perm-row">
+            <div class="perm-label">
+              <span class="perm-titulo">
+                <ion-icon name="trophy-outline"></ion-icon>
+                Editar dados do campeonato
+              </span>
+              <small class="perm-desc">
+                Banner, logo, regras, slug, patrocinadores e configurações
+                das categorias.
+              </small>
+            </div>
+            <ion-toggle
+              [checked]="m.permissoes.editarCampeonato"
+              (ionChange)="setPerm(i, 'editarCampeonato', $any($event).detail.checked)"
+            ></ion-toggle>
+          </label>
+
+          <label class="perm-row">
+            <div class="perm-label">
+              <span class="perm-titulo">
+                <ion-icon name="shield-outline"></ion-icon>
+                Gerenciar equipes e jogadores
+              </span>
+              <small class="perm-desc">
+                Cadastrar e editar equipes, jogadores, equipe técnica e
+                aprovar inscrições de torcedores.
+              </small>
+            </div>
+            <ion-toggle
+              [checked]="m.permissoes.gerenciarEquipes"
+              (ionChange)="setPerm(i, 'gerenciarEquipes', $any($event).detail.checked)"
+            ></ion-toggle>
+          </label>
+
+          <label class="perm-row">
+            <div class="perm-label">
+              <span class="perm-titulo">
+                <ion-icon name="football-outline"></ion-icon>
+                Editar resultados das partidas
+              </span>
+              <small class="perm-desc">
+                Agendar jogos, lançar placar, registrar gols, cartões e
+                outros eventos do jogo ao vivo.
+              </small>
+            </div>
+            <ion-toggle
+              [checked]="m.permissoes.editarResultados"
+              (ionChange)="setPerm(i, 'editarResultados', $any($event).detail.checked)"
+            ></ion-toggle>
+          </label>
+
+          <label class="perm-row">
+            <div class="perm-label">
+              <span class="perm-titulo">
+                <ion-icon name="images-outline"></ion-icon>
+                Enviar fotos, vídeos e notícias
+              </span>
+              <small class="perm-desc">
+                Publicar conteúdo na galeria do campeonato e das categorias.
+              </small>
+            </div>
+            <ion-toggle
+              [checked]="m.permissoes.enviarMidias"
+              (ionChange)="setPerm(i, 'enviarMidias', $any($event).detail.checked)"
+            ></ion-toggle>
+          </label>
+
+          <label class="perm-row">
+            <div class="perm-label">
+              <span class="perm-titulo">
+                <ion-icon name="bar-chart-outline"></ion-icon>
+                Editar rankings e votações
+              </span>
+              <small class="perm-desc">
+                Acesso à tela "Rankings e votações". Criar e editar enquetes
+                (craque da rodada, melhor jogador etc). Rankings automáticos
+                (artilharia, cartões) refletem os jogos. A votação pública
+                continua aberta pra todos.
+              </small>
+            </div>
+            <ion-toggle
+              [checked]="m.permissoes.gerenciarEnquetes"
+              (ionChange)="setPerm(i, 'gerenciarEnquetes', $any($event).detail.checked)"
+            ></ion-toggle>
+          </label>
+        </div>
+
+        <!-- Remover (separado, no fim, em destrutivo) -->
+        <button type="button" class="mod-btn-remover" (click)="remover(i)">
+          <ion-icon name="trash-outline"></ion-icon>
+          Remover moderador
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #vazio>
+    <div class="mod-empty">
+      <ion-icon name="people-circle-outline"></ion-icon>
+      <p>Nenhum moderador ainda.</p>
+      <span>Clique em <strong>"Gerar link de convite"</strong> acima pra começar.</span>
+    </div>
+  </ng-template>
+</ion-content>

@@ -1,0 +1,93 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Arbitragem</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="adicionarManual()" aria-label="Adicionar manualmente">
+        <ion-icon slot="icon-only" name="person-add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <!-- Lista atual do jogo -->
+  <section class="atuais">
+    <h3 class="sec-title">Árbitros da partida ({{ selecionados.length }})</h3>
+
+    <div class="empty" *ngIf="selecionados.length === 0">
+      <ion-icon name="people-outline"></ion-icon>
+      <p>Nenhum árbitro vinculado. Selecione um cadastrado abaixo ou adicione manualmente (+).</p>
+    </div>
+
+    <div class="sel-card" *ngFor="let a of selecionados; let i = index; trackBy: trackByIdx">
+      <div class="sel-info">
+        <div class="sel-nome">{{ a.nome }}</div>
+        <select
+          class="sel-funcao"
+          [value]="a.funcao"
+          (change)="trocarFuncao(i, $any($event.target).value)"
+        >
+          <option *ngFor="let f of funcoes" [value]="f.value">{{ f.label }}</option>
+        </select>
+      </div>
+      <button type="button" class="sel-remover" (click)="remover(i)" aria-label="Remover">
+        <ion-icon name="close-circle-outline"></ion-icon>
+      </button>
+    </div>
+  </section>
+
+  <!-- Lista dos árbitros cadastrados (catálogo do usuário) -->
+  <section class="catalogo">
+    <h3 class="sec-title">Árbitros cadastrados</h3>
+    <p class="hint">Toque pra adicionar à partida.</p>
+
+    <ng-container *ngIf="arbitrosDisponiveis$ | async as arbitros">
+      <div class="empty cat-empty" *ngIf="arbitros.length === 0">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        <p>Nenhum árbitro cadastrado ainda. Use o botão "+" no topo para adicionar pelo nome.</p>
+      </div>
+
+      <button
+        type="button"
+        class="cat-card"
+        *ngFor="let a of arbitros; trackBy: trackById"
+        [class.disabled]="jaSelecionado(a.id!)"
+        [disabled]="jaSelecionado(a.id!)"
+        (click)="adicionarArbitro(a)"
+      >
+        <div class="cat-foto">
+          <img *ngIf="a.fotoUrl; else iconA" [src]="a.fotoUrl" [alt]="a.nome" />
+          <ng-template #iconA><ion-icon name="person-circle-outline"></ion-icon></ng-template>
+        </div>
+        <div class="cat-info">
+          <div class="cat-nome">{{ a.nome }}</div>
+          <div class="cat-fed" *ngIf="a.federacao">{{ a.federacao }}</div>
+        </div>
+        <ion-icon
+          class="cat-acao"
+          [name]="jaSelecionado(a.id!) ? 'checkmark-circle' : 'add-circle-outline'"
+        ></ion-icon>
+      </button>
+    </ng-container>
+  </section>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <div class="footer-actions">
+      <ion-button fill="clear" color="medium" (click)="dismiss()" [disabled]="salvando">
+        Cancelar
+      </ion-button>
+      <div class="spacer"></div>
+      <ion-button color="primary" (click)="salvar()" [disabled]="salvando">
+        <ion-spinner *ngIf="salvando" name="dots" slot="start"></ion-spinner>
+        Salvar
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

@@ -1,0 +1,627 @@
+/* =========================================================
+   Página pública da Equipe — exibe escudo, stats, jogadores e jogos
+   ========================================================= */
+
+.pe-content { --background: #f3f4f6; }
+
+.pe-wrap {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 16px 14px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ============ Loading / Erro ============ */
+.pe-loading,
+.pe-erro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 60vh;
+  gap: 12px;
+  padding: 0 16px;
+  color: var(--placar-text-muted, #64748b);
+
+  ion-icon {
+    font-size: 48px;
+    color: #94a3b8;
+  }
+  h2 {
+    margin: 0;
+    color: #1c2e3d;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  p { margin: 0; font-size: 14px; }
+}
+
+.pe-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: #1c2e3d;
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover { opacity: 0.9; }
+  ion-icon { font-size: 16px; }
+}
+
+/* ============ Hero (escudo + nome + meta) ============ */
+.pe-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 18px;
+  background: linear-gradient(135deg, #1c2e3d 0%, #2d4a63 100%);
+  color: #fff;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(28, 46, 61, 0.18);
+}
+
+.pe-hero-logo {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex: 0 0 auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 6px;
+  }
+  ion-icon {
+    font-size: 50px;
+    color: #94a3b8;
+  }
+}
+
+.pe-hero-info { min-width: 0; }
+
+.pe-nome {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.15;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  overflow-wrap: anywhere;
+}
+
+.pe-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    ion-icon { font-size: 14px; }
+  }
+}
+
+.pe-categ {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+/* ============ Stats agregadas ============ */
+.pe-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 14px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.pe-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 4px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+  min-height: 64px;
+
+  &.ok      { background: #f0fdf4; border-color: #bbf7d0; }
+  &.warn    { background: #fffbeb; border-color: #fde68a; }
+  &.danger  { background: #fef2f2; border-color: #fecaca; }
+}
+
+.pe-stat-num {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1c2e3d;
+  line-height: 1;
+
+  .pe-stat.ok &     { color: #15803d; }
+  .pe-stat.warn &   { color: #b45309; }
+  .pe-stat.danger & { color: #b91c1c; }
+}
+
+.pe-stat-lbl {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 600;
+}
+
+@media (min-width: 600px) {
+  .pe-stats { grid-template-columns: repeat(8, 1fr); }
+}
+
+/* ============ Segmento Jogadores / Jogos ============ */
+.pe-segmento-wrap {
+  background: #fff;
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.pe-segmento {
+  --background: transparent;
+
+  ion-segment-button {
+    --color: #64748b;
+    --color-checked: #1c2e3d;
+    --background-checked: #f0fdf4;
+    --indicator-color: #7cc61d;
+    --border-radius: 8px;
+    --padding-top: 8px;
+    --padding-bottom: 8px;
+    text-transform: none;
+    font-weight: 700;
+    font-size: 14px;
+    min-height: 44px;
+
+    ion-icon {
+      font-size: 18px;
+      margin-right: 4px;
+    }
+    ion-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: center;
+    }
+  }
+}
+
+.pe-seg-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 7px;
+  background: #e2e8f0;
+  color: #475569;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+ion-segment-button.segment-button-checked {
+  .pe-seg-badge {
+    background: #7cc61d;
+    color: #fff;
+  }
+}
+
+/* ============ Seções (Jogadores / Jogos) ============ */
+.pe-secao {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 14px 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.pe-secao-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1c2e3d;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+
+  ion-icon { font-size: 18px; color: #7cc61d; }
+}
+
+.pe-badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 8px;
+  margin-left: auto;
+  background: #eef2f5;
+  color: #475569;
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.pe-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 16px;
+  text-align: center;
+  color: #94a3b8;
+
+  ion-icon { font-size: 38px; color: #cbd5e1; }
+  p { margin: 0; font-size: 13px; }
+}
+
+/* ============ Card de Posição na tabela ============ */
+.pe-posicao-wrap {
+  /* Container só pra espaçamento */
+}
+
+.pe-posicao-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(251, 191, 36, 0.25);
+  color: #78350f;
+}
+
+.pe-posicao-medalha {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  ion-icon {
+    font-size: 26px;
+    color: #b45309;
+  }
+}
+
+.pe-posicao-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pe-posicao-num {
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+  color: #78350f;
+}
+
+.pe-posicao-lbl {
+  font-size: 12px;
+  font-weight: 600;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.pe-posicao-sub {
+  font-size: 11px;
+  font-weight: 700;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: right;
+  line-height: 1.2;
+}
+
+/* ============ Lista de jogadores (linhas horizontais) ============ */
+.pe-jogadores-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pe-jogador-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  transition: background 0.12s, border-color 0.12s;
+
+  &:hover {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+  }
+}
+
+.pe-jg-num-badge {
+  flex: 0 0 auto;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 6px;
+  background: #1c2e3d;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.vazio {
+    background: #e2e8f0;
+    color: #94a3b8;
+    font-weight: 600;
+  }
+}
+
+.pe-jg-foto-mini {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  ion-icon {
+    font-size: 22px;
+    color: #94a3b8;
+  }
+}
+
+.pe-jg-corpo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pe-jg-nome-row {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1c2e3d;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pe-jg-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.pe-jg-pos-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #1c2e3d;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.pe-jg-nome-real {
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pe-jg-stats-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.pe-jg-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 8px;
+  background: #f0fdf4;
+  color: #166534;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+
+  ion-icon { font-size: 12px; }
+
+  &.amarelo {
+    background: #fef3c7;
+    color: #92400e;
+    ion-icon { color: #f59e0b; }
+  }
+  &.vermelho {
+    background: #fef2f2;
+    color: #991b1b;
+    ion-icon { color: #ef4444; }
+  }
+}
+
+/* ============ Lista de jogos ============ */
+.pe-jogos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pe-jogo-card {
+  display: flex;
+  align-items: stretch;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+
+  &.vivo {
+    border-color: #ef4444;
+    background: #fef2f2;
+  }
+}
+
+.pe-jogo-resultado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  flex: 0 0 auto;
+  color: #fff;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.pe-jogo-corpo {
+  flex: 1;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pe-jogo-vs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.pe-jogo-lado {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.pe-jogo-versus {
+  color: #cbd5e1;
+  font-size: 11px;
+}
+
+.pe-jogo-adv {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: #1c2e3d;
+  min-width: 0;
+
+  img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+  }
+}
+
+.pe-jogo-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.pe-jogo-placar {
+  font-weight: 800;
+  font-size: 14px;
+  color: #1c2e3d;
+}
+
+.pe-jogo-status {
+  padding: 2px 6px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+
+  &.s-vivo {
+    background: #ef4444;
+    color: #fff;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.pe-jogo-data {
+  margin-left: auto;
+  font-size: 11px;
+  color: #94a3b8;
+}

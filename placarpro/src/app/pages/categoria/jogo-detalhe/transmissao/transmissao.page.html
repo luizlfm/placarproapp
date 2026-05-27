@@ -1,0 +1,852 @@
+<!-- ════════════════════════════════════════════════════════════════════
+     BOTÕES FLUTUANTES (visíveis SÓ em mobile landscape)
+     ════════════════════════════════════════════════════════════════════
+     Em landscape, o header ocupa altura preciosa. Aqui montamos botões
+     pequenos que ficam sobrepostos no canto superior do vídeo —
+     "Voltar" à esquerda, "Compartilhar" à direita. O header tradicional
+     fica escondido nesse modo (ver `.tr-fab-landscape` no SCSS). -->
+<button
+  type="button"
+  class="tr-fab-landscape tr-fab-voltar"
+  (click)="voltar()"
+  aria-label="Voltar"
+  title="Voltar"
+>
+  <ion-icon name="arrow-back-outline"></ion-icon>
+</button>
+<button
+  type="button"
+  class="tr-fab-landscape tr-fab-share"
+  (click)="compartilhar()"
+  aria-label="Compartilhar"
+  title="Compartilhar"
+>
+  <ion-icon name="share-social-outline"></ion-icon>
+</button>
+
+<!-- Overlay "Gire o telefone pra horizontal" — só aparece em mobile
+     portrait, auto-some quando rotaciona pra landscape. Botão Voltar
+     leva pra tela de detalhes do jogo. -->
+<app-rotate-prompt (voltar)="voltar()"></app-rotate-prompt>
+
+
+<ion-header class="no-print">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Transmissão</ion-title>
+    <ion-buttons slot="end">
+      <!-- Mudo do som de notificação de evento (persistido em localStorage).
+           Mostra ícone diferente conforme estado pra dar feedback visual. -->
+      <ion-button
+        (click)="toggleSom()"
+        [attr.aria-label]="somMudo ? 'Ativar som de eventos' : 'Desativar som de eventos'"
+        [title]="somMudo ? 'Som mudo — clique pra ativar' : 'Som ligado — clique pra silenciar'"
+      >
+        <ion-icon
+          slot="icon-only"
+          [name]="somMudo ? 'volume-mute-outline' : 'volume-high-outline'"
+        ></ion-icon>
+      </ion-button>
+      <!-- Configurar sons customizados por tipo de evento -->
+      <ion-button
+        (click)="toggleSonsPanel()"
+        aria-label="Configurar sons customizados"
+        title="Configurar sons customizados por tipo de lance"
+      >
+        <ion-icon slot="icon-only" name="musical-notes-outline"></ion-icon>
+      </ion-button>
+      <ion-button (click)="compartilhar()" aria-label="Compartilhar">
+        <ion-icon slot="icon-only" name="share-social-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tr-content">
+  <!-- Loading -->
+  <div class="tr-state" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <!-- Erro -->
+  <div class="tr-state erro" *ngIf="!loading && erro">
+    <ion-icon name="alert-circle-outline"></ion-icon>
+    <h2>Não foi possível carregar a transmissão.</h2>
+    <ion-button (click)="voltar()" color="primary">Voltar</ion-button>
+  </div>
+
+  <!-- Sem vídeo configurado E sem transmissão LiveKit ativa.
+       Mostra empty state com 2 opções: iniciar broadcast da câmera (admin)
+       ou voltar pro jogo. Texto explica YouTube (configurar via editor)
+       OU broadcast ao vivo (botão direto). -->
+  <div
+    class="tr-state vazio"
+    *ngIf="!loading && !erro && jogo && !jogo.youtubeVideoId && !(transmissaoAtiva$ | async)"
+  >
+    <ion-icon name="videocam-off-outline"></ion-icon>
+    <h2>Transmissão não configurada</h2>
+    <p>
+      Inicie transmitindo agora pela câmera do seu dispositivo OU configure
+      um link do YouTube Live no editor da partida pra usar o player do YouTube.
+    </p>
+
+    <!-- Botão "INICIAR TRANSMISSÃO" — visível APENAS pra owner/moderador
+         com permissão de enviar mídias OU editar resultados. Espectadores
+         comuns NÃO veem (eles caem só na opção "Voltar"). -->
+    <ng-container *ngIf="permissoes$ | async as p">
+      <ion-button
+        *ngIf="p.enviarMidias || p.editarResultados"
+        color="danger"
+        (click)="iniciarTransmissaoCamera()"
+        class="tr-btn-iniciar-camera"
+      >
+        <ion-icon slot="start" name="radio-outline"></ion-icon>
+        INICIAR TRANSMISSÃO (CÂMERA)
+      </ion-button>
+    </ng-container>
+
+    <ion-button (click)="voltar()" color="medium" fill="outline">
+      Voltar ao jogo
+    </ion-button>
+  </div>
+
+  <!-- Layout principal — exibido se há YouTube configurado OU se há
+       transmissão LiveKit ativa. Quando ambos, LiveKit tem prioridade
+       (ver render condicional do `.tr-yt-anchor` mais abaixo). -->
+  <div class="tr-stage" [class.tr-stage-full]="feedRecolhido" *ngIf="!loading && !erro && (jogo?.youtubeVideoId || (transmissaoAtiva$ | async))">
+
+    <!-- ============ Área de vídeo + overlay ============ -->
+    <div class="tr-video-wrap">
+      <div class="tr-video">
+        <!-- ── LIVEKIT PLAYER (prioridade quando há transmissão ativa) ──
+             Quando há transmissão LiveKit ativa, mostra o `app-transmissao-player`
+             OCUPANDO a área que seria do YouTube. Atende tanto o broadcaster
+             (vê seu próprio feed) quanto espectadores (na rota pública).
+             O componente é auto-suficiente: assim que o doc Firestore vira
+             `ativa: false`, ele desconecta sozinho. -->
+        <ng-container *ngIf="(transmissaoAtiva$ | async); else youtubeOuVazio">
+          <!-- `fullscreenAncestor=".tr-stage"` faz o player ir pra fullscreen
+               junto com TUDO que está dentro do stage: vídeo + overlays +
+               PAINEL LATERAL DE EVENTOS/ESCALAÇÃO. Assim, em fullscreen,
+               o usuário ainda pode clicar no FAB pra abrir o painel sem
+               precisar sair da tela cheia. -->
+          <!-- `[patrocinadoresPartida]` faz o player renderizar o banner
+               com os patrocinadores ESPECÍFICOS desta partida (cadastrados
+               em jogo-detalhe → "Patrocinadores da partida"). Tem prioridade
+               sobre `[ownerIdPatrocinadores]` (globais do owner), que aqui
+               serve só de fallback quando o jogo não tem patrocinadores
+               próprios cadastrados.
+               O banner fica INSIDE do `.tp-card` (não no `.tr-stage`),
+               então é imune ao clipping do parent grid em telas grandes. -->
+          <app-transmissao-player
+            [jogoId]="jogoId"
+            [campeonatoId]="campeonatoId"
+            [categoriaId]="categoriaId"
+            [campeonatoNome]="campeonato?.titulo || ''"
+            [patrocinadoresPartida]="jogo?.patrocinadores || null"
+            [ownerIdPatrocinadores]="campeonato?.ownerId || ''"
+            modo="fullscreen"
+            fullscreenAncestor=".tr-stage"
+            class="tr-yt-anchor"
+          ></app-transmissao-player>
+
+          <!-- Botão flutuante "ENCERRAR" — só pra owner/moderador.
+               Aparece sobreposto no canto superior direito da área de vídeo
+               (z-index acima do player). Espectadores não veem. -->
+          <ng-container *ngIf="permissoes$ | async as p">
+            <button
+              *ngIf="p.enviarMidias || p.editarResultados"
+              type="button"
+              class="tr-btn-encerrar-tx"
+              (click)="encerrarTransmissao()"
+              title="Encerrar transmissão"
+              aria-label="Encerrar transmissão"
+            >
+              <ion-icon name="stop-circle-outline"></ion-icon>
+              <span>Encerrar</span>
+            </button>
+          </ng-container>
+
+          <!-- Badge "X assistindo" REMOVIDO a pedido do usuário — o
+               player do LiveKit já mostra o contador de viewers em seu
+               próprio footer (.tp-footer com .tp-stats), então o overlay
+               flutuante duplicava informação e poluía a área de vídeo,
+               especialmente em telas grandes (>1565x945). -->
+
+        </ng-container>
+
+        <!-- ── FALLBACK: YouTube IFrame Player API (legacy) ──
+             Só renderiza quando NÃO há transmissão LiveKit ativa E o admin
+             configurou um link de YouTube no editor da partida. A API
+             substitui essa div pelo iframe. -->
+        <ng-template #youtubeOuVazio>
+          <div #ytPlayerEl class="tr-yt-anchor" *ngIf="jogo?.youtubeVideoId"></div>
+
+          <!-- Banner "Transmitir com minha câmera" — barra grande central-inferior
+               sobreposta no vídeo YouTube. Antes era um botão pequeno no canto
+               superior direito, conflitando visualmente com AO VIVO / CC do YT /
+               logo PlacarPro — invisível na prática. Agora é uma barra óbvia
+               com texto completo, exclusiva pro broadcaster. -->
+          <ng-container *ngIf="permissoes$ | async as p">
+            <button
+              *ngIf="(p.enviarMidias || p.editarResultados) && jogo?.youtubeVideoId"
+              type="button"
+              class="tr-btn-trocar-camera"
+              (click)="iniciarTransmissaoCamera()"
+              title="Iniciar transmissão com sua câmera (substitui o YouTube)"
+              aria-label="Iniciar transmissão com sua câmera"
+            >
+              <ion-icon name="videocam"></ion-icon>
+              <span>TRANSMITIR COM MINHA CÂMERA</span>
+            </button>
+          </ng-container>
+        </ng-template>
+
+        <!-- ════════ PÔSTER DE FIM DE JOGO ════════
+             Aparece em FULL OVERLAY quando o jogo é encerrado.
+             Estilo "tela final de transmissão de TV": escudos grandes,
+             placar gigante, mensagem de vitória/empate, fade-in dramático. -->
+        <div class="tr-poster-fim" *ngIf="jogo?.status === 'encerrado'">
+          <div class="tr-poster-bg"></div>
+          <!-- Botão "Baixar pôster" — gera PNG via html2canvas pra
+               compartilhar nas redes. Fora do #posterCaptura pra não
+               sair na imagem renderizada. -->
+          <button
+            type="button"
+            class="tr-poster-baixar"
+            (click)="baixarPoster()"
+            [disabled]="baixandoPoster"
+            aria-label="Baixar pôster como imagem"
+            title="Baixar pôster como imagem PNG"
+          >
+            <ion-icon [name]="baixandoPoster ? 'hourglass-outline' : 'download-outline'"></ion-icon>
+            {{ baixandoPoster ? 'Gerando...' : 'Baixar PNG' }}
+          </button>
+          <div class="tr-poster-conteudo" #posterCaptura>
+            <div class="tr-poster-camp" *ngIf="campeonato?.titulo">
+              <img *ngIf="campeonato?.logoUrl" [src]="campeonato?.logoUrl" [alt]="campeonato?.titulo" />
+              <span>
+                {{ campeonato?.titulo }}
+                <ng-container *ngIf="categoria?.titulo"> · {{ categoria?.titulo }}</ng-container>
+              </span>
+            </div>
+
+            <div class="tr-poster-titulo">FIM DE JOGO</div>
+
+            <div class="tr-poster-placar">
+              <!-- Mandante -->
+              <div class="tr-poster-time">
+                <div class="tr-poster-escudo">
+                  <img *ngIf="mandante?.logoUrl; else iconPM" [src]="mandante?.logoUrl" [alt]="mandante?.nome" />
+                  <ng-template #iconPM><ion-icon name="shield-outline"></ion-icon></ng-template>
+                </div>
+                <div class="tr-poster-nome">{{ mandante?.nome || '—' }}</div>
+              </div>
+
+              <!-- Placar central -->
+              <div class="tr-poster-numeros">
+                <span class="tr-poster-num">{{ jogo?.golsMandante ?? 0 }}</span>
+                <span class="tr-poster-x">×</span>
+                <span class="tr-poster-num">{{ jogo?.golsVisitante ?? 0 }}</span>
+                <!-- Pênaltis (se decisão) -->
+                <div class="tr-poster-pen" *ngIf="(jogo?.penaltisMandante ?? 0) || (jogo?.penaltisVisitante ?? 0)">
+                  ({{ jogo?.penaltisMandante ?? 0 }} × {{ jogo?.penaltisVisitante ?? 0 }} nos pênaltis)
+                </div>
+              </div>
+
+              <!-- Visitante -->
+              <div class="tr-poster-time">
+                <div class="tr-poster-escudo">
+                  <img *ngIf="visitante?.logoUrl; else iconPV" [src]="visitante?.logoUrl" [alt]="visitante?.nome" />
+                  <ng-template #iconPV><ion-icon name="shield-outline"></ion-icon></ng-template>
+                </div>
+                <div class="tr-poster-nome">{{ visitante?.nome || '—' }}</div>
+              </div>
+            </div>
+
+            <!-- Resultado em texto: vitória ou empate -->
+            <div class="tr-poster-resultado">
+              <ng-container [ngSwitch]="resultadoFinal()">
+                <ng-container *ngSwitchCase="'m'">
+                  <ion-icon name="star"></ion-icon>
+                  <strong>{{ mandante?.nome }}</strong> venceu
+                </ng-container>
+                <ng-container *ngSwitchCase="'v'">
+                  <ion-icon name="star"></ion-icon>
+                  <strong>{{ visitante?.nome }}</strong> venceu
+                </ng-container>
+                <ng-container *ngSwitchCase="'e'">
+                  Partida empatada
+                </ng-container>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Logo PlacarPro + Badge "AO VIVO" (canto superior direito) ===== -->
+        <div class="tr-top-right">
+          <img class="tr-logo2" src="assets/images/logo2.png" alt="PlacarPro" />
+          <div class="tr-live-tag" *ngIf="jogo?.status === 'em-andamento'">
+            <span class="dot"></span>
+            AO VIVO
+          </div>
+        </div>
+
+        <!-- ===== SCOREBOARD profissional (top do vídeo) =====
+             Topo: faixa fina com logo + nome do campeonato + status
+             Base: [ESC] [NOME] [PLACAR] [NOME] [ESC]
+             As cores extraídas das logos viram acentos visuais via
+             CSS custom properties (--cor-m / --cor-v). -->
+        <div
+          class="tr-scoreboard"
+          [style.--cor-m]="corMandante"
+          [style.--cor-v]="corVisitante"
+        >
+          <!-- Faixa do campeonato (mais fina) — só CAMP · CAT centralizados.
+               Removido o badge "AO VIVO" — quem indica live é o pill
+               vermelho do cronômetro estourando pra cima da barra. -->
+          <div class="tr-sb-camp-bar">
+            <img *ngIf="campeonato?.logoUrl" [src]="campeonato?.logoUrl" [alt]="campeonato?.titulo" />
+            <span class="tr-sb-camp-nome">{{ campeonato?.titulo || 'Campeonato' }}</span>
+            <span class="tr-sb-camp-sep" *ngIf="categoria?.titulo">·</span>
+            <span class="tr-sb-camp-cat" *ngIf="categoria?.titulo">{{ categoria?.titulo }}</span>
+          </div>
+
+          <!-- Linha do placar -->
+          <div class="tr-sb-main">
+            <div class="tr-sb-team mandante">
+              <div class="tr-sb-escudo">
+                <img *ngIf="mandante?.logoUrl; else iconM" [src]="mandante?.logoUrl" [alt]="mandante?.nome" />
+                <ng-template #iconM><ion-icon name="shield-outline"></ion-icon></ng-template>
+              </div>
+              <div class="tr-sb-nome">{{ mandante?.nome || '—' }}</div>
+            </div>
+
+            <div class="tr-sb-placar">
+              <!-- Bolinha vermelha com placar dos pênaltis do mandante.
+                   Aparece só quando a partida está em decisão por pênaltis
+                   (tempoAtual === 'penaltis'). Lê de `penaltisMandante`. -->
+              <span
+                class="tr-sb-pen-bola tr-sb-pen-m"
+                *ngIf="jogo?.tempoAtual === 'penaltis'"
+                [title]="'Pênaltis ' + (mandante?.nome || 'Mandante')"
+              >
+                {{ jogo?.penaltisMandante ?? 0 }}
+              </span>
+              <span class="tr-sb-gols">{{ jogo?.golsMandante ?? 0 }}</span>
+              <span class="tr-sb-x">×</span>
+              <span class="tr-sb-gols">{{ jogo?.golsVisitante ?? 0 }}</span>
+              <span
+                class="tr-sb-pen-bola tr-sb-pen-v"
+                *ngIf="jogo?.tempoAtual === 'penaltis'"
+                [title]="'Pênaltis ' + (visitante?.nome || 'Visitante')"
+              >
+                {{ jogo?.penaltisVisitante ?? 0 }}
+              </span>
+            </div>
+
+            <div class="tr-sb-team visitante">
+              <div class="tr-sb-nome">{{ visitante?.nome || '—' }}</div>
+              <div class="tr-sb-escudo">
+                <img *ngIf="visitante?.logoUrl; else iconV" [src]="visitante?.logoUrl" [alt]="visitante?.nome" />
+                <ng-template #iconV><ion-icon name="shield-outline"></ion-icon></ng-template>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════ TRILHA DE COBRANÇAS DE PÊNALTI ═══════
+               Aparece SÓ em tempoAtual === 'penaltis'. Apenas as bolinhas,
+               separadas por lado: mandante à esquerda, visitante à direita.
+               Verde = convertido, vermelha = errou/defendido.
+               Vem ANTES da pill PÊNALTIS — a sequência visual fica:
+               barra-azul → trilha-bolinhas → label "PÊNALTIS". -->
+          <div class="tr-sb-pen-trilha" *ngIf="jogo?.tempoAtual === 'penaltis'">
+            <div class="tr-pen-dots tr-pen-dots-m">
+              <span
+                *ngFor="let c of cobrancasPenaltis('m'); let i = index"
+                class="tr-pen-dot"
+                [class.convertido]="c.convertido"
+                [class.perdido]="!c.convertido"
+                [title]="(i + 1) + 'ª cobrança — ' + (c.convertido ? 'GOL' : 'PERDEU')"
+              ></span>
+            </div>
+            <div class="tr-pen-dots tr-pen-dots-v">
+              <span
+                *ngFor="let c of cobrancasPenaltis('v'); let i = index"
+                class="tr-pen-dot"
+                [class.convertido]="c.convertido"
+                [class.perdido]="!c.convertido"
+                [title]="(i + 1) + 'ª cobrança — ' + (c.convertido ? 'GOL' : 'PERDEU')"
+              ></span>
+            </div>
+          </div>
+
+          <!-- ═══════ PILL DE TEMPO DE JOGO ═══════
+               Pill centralizada mostrando o período atual (1º Tempo,
+               Intervalo, Prorrogação, Pênaltis). Em decisão por pênaltis
+               fica ABAIXO da trilha de bolinhas pra ser o último elemento
+               do scoreboard. -->
+          <div
+            class="tr-sb-periodo"
+            *ngIf="jogo?.status === 'em-andamento' && labelTempo(jogo?.tempoAtual)"
+          >
+            <ion-icon name="time-outline"></ion-icon>
+            <span>{{ labelTempo(jogo?.tempoAtual) }}</span>
+          </div>
+
+          <!-- Faixa de TEMPO/CRONÔMETRO — só em-andamento.
+               Em pênaltis o cronômetro não faz sentido (não tem tempo de
+               jogo, só cobranças), então o relógio MM:SS some e fica
+               apenas o label "PÊNALTIS" (já chamativo no destaque).
+               Em pausa, o dot pulsante some pra dar feedback visual de
+               "congelado" enquanto o tempo continua exibido. -->
+          <div class="tr-sb-tempo" *ngIf="jogo?.status === 'em-andamento'">
+            <span class="tr-sb-tempo-nome" *ngIf="labelTempo(jogo?.tempoAtual)">
+              {{ labelTempo(jogo?.tempoAtual) }}
+            </span>
+            <ng-container *ngIf="jogo?.tempoAtual !== 'penaltis'">
+              <span class="tr-sb-tempo-sep" *ngIf="labelTempo(jogo?.tempoAtual)">·</span>
+              <span class="tr-sb-tempo-relogio" [class.pausado]="jogo?.tempoPausado">
+                <span class="tr-tempo-dot" *ngIf="!jogo?.tempoPausado"></span>
+                <ion-icon name="pause" *ngIf="jogo?.tempoPausado"></ion-icon>
+                {{ tempoDecorrido() }}
+              </span>
+              <span class="tr-sb-tempo-acrescimo" *ngIf="(jogo?.acrescimoAtualMin || 0) > 0">
+                +{{ jogo?.acrescimoAtualMin }}
+              </span>
+            </ng-container>
+          </div>
+        </div>
+
+        <!-- ===== TOAST de Evento ao Vivo (centro do vídeo, ~5s) =====
+             Aparece quando um novo lance é registrado (gol, cartão, etc).
+             Desliza de cima pra baixo, fica visível e some com escala. -->
+        <div
+          class="tr-evento-toast"
+          *ngIf="eventoToast"
+          [ngClass]="classeTipo(eventoToast.tipo)"
+          (click)="fecharEventoToast()"
+          role="status"
+          aria-live="polite"
+        >
+          <div class="tr-toast-icone">
+            <!-- Gol normal OU pênalti convertido — mesma bola comemorativa -->
+            <ion-icon
+              *ngIf="eventoToast.tipo === 'gol' || eventoToast.tipo === 'gol-contra' || eventoToast.tipo === 'pen-convertido'"
+              name="football"
+            ></ion-icon>
+            <span
+              *ngIf="eventoToast.tipo === 'amarelo' || eventoToast.tipo === 'vermelho' || eventoToast.tipo === 'azul'"
+              class="cartao-grande"
+              [class.am]="eventoToast.tipo === 'amarelo'"
+              [class.vm]="eventoToast.tipo === 'vermelho'"
+              [class.az]="eventoToast.tipo === 'azul'"
+            ></span>
+            <ion-icon *ngIf="eventoToast.tipo === 'falta'" name="hand-left-outline"></ion-icon>
+            <!-- Defesa de campo OU pênalti defendido — mesma luva -->
+            <ion-icon
+              *ngIf="eventoToast.tipo === 'defesa' || eventoToast.tipo === 'pen-defendido'"
+              name="hand-right-outline"
+            ></ion-icon>
+            <!-- Pênalti perdido — bola batendo na trave / fora -->
+            <ion-icon
+              *ngIf="eventoToast.tipo === 'pen-perdido'"
+              name="close-circle-outline"
+            ></ion-icon>
+            <ion-icon
+              *ngIf="eventoToast.tipo === 'sub-entrou' || eventoToast.tipo === 'sub-saiu'"
+              name="swap-horizontal-outline"
+            ></ion-icon>
+          </div>
+
+          <div class="tr-toast-corpo">
+            <div class="tr-toast-titulo">
+              {{ labelEvento(eventoToast.tipo) }}
+              <span *ngIf="(eventoToast.quantidade ?? 1) > 1" class="tr-toast-qtd">
+                {{ eventoToast.quantidade }}x
+              </span>
+            </div>
+            <div class="tr-toast-jogador" *ngIf="eventoToast.jogadorNome">
+              <span class="tr-toast-num" *ngIf="eventoToast.jogadorNumero">
+                #{{ eventoToast.jogadorNumero }}
+              </span>
+              {{ eventoToast.jogadorNome }}
+            </div>
+            <!-- Pênalti defendido: destaque do GOLEIRO ADVERSÁRIO -->
+            <div
+              class="tr-toast-goleiro"
+              *ngIf="eventoToast.tipo === 'pen-defendido' && eventoToast.goleiroAdversarioNome"
+            >
+              <ion-icon name="shield-checkmark"></ion-icon>
+              Defesa de <strong>{{ eventoToast.goleiroAdversarioNome }}</strong>
+            </div>
+            <div class="tr-toast-time" *ngIf="eventoToast.equipeNome">
+              <img *ngIf="eventoToast.equipeLogoUrl"
+                   [src]="eventoToast.equipeLogoUrl"
+                   [alt]="eventoToast.equipeNome" />
+              <span>{{ eventoToast.equipeNome }}</span>
+              <span class="tr-toast-min" *ngIf="eventoToast.minuto != null">
+                · {{ eventoToast.minuto }}'
+              </span>
+            </div>
+            <div class="tr-toast-assist" *ngIf="eventoToast.assistenteNome">
+              <ion-icon name="hand-right-outline"></ion-icon>
+              Assistência: {{ eventoToast.assistenteNome }}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="tr-toast-close"
+            (click)="$event.stopPropagation(); fecharEventoToast()"
+            aria-label="Fechar"
+          >
+            <ion-icon name="close"></ion-icon>
+          </button>
+        </div>
+
+        <!-- ===== Patrocinador (banner esteira) REMOVIDO =====
+             O banner agora é controlado pelo próprio `app-transmissao-player`
+             via `[ownerIdPatrocinadores]`, MESMA experiência da página
+             pública. Como o banner do player fica INSIDE o `.tp-card`
+             (não no `.tr-stage`), é imune ao clipping do parent grid em
+             telas grandes (>1565x945) que cortava o banner antigo aqui. -->
+
+
+        <!-- FAB "Mostrar painel" DENTRO do `.tr-video` pra ficar visível
+             também em fullscreen (quando `.tr-video` vira o elemento
+             fullscreen via fullscreenAncestor). Quando recolhido, ele
+             aparece; clique reabre os painéis Eventos/Escalação. -->
+        <button
+          type="button"
+          class="tr-feed-fab tr-feed-fab--in-video"
+          *ngIf="feedRecolhido"
+          (click)="toggleFeed()"
+          aria-label="Mostrar eventos e escalação"
+          title="Mostrar eventos e escalação"
+        >
+          <ion-icon name="list-outline"></ion-icon>
+          <span class="tr-feed-fab-badge" *ngIf="eventos.length > 0">{{ eventos.length }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============ Painel lateral (segments: Eventos | Escalação) ============ -->
+    <!-- Painel lateral — SOME COMPLETAMENTE quando recolhido pra liberar
+         100% da largura pro vídeo. Volta via FAB flutuante (logo abaixo
+         do painel quando some). -->
+    <aside class="tr-feed" *ngIf="!feedRecolhido">
+      <!-- Botão "Ocultar" no topo do painel (X pequeno + texto) -->
+      <button
+        type="button"
+        class="tr-feed-toggle"
+        (click)="toggleFeed()"
+        aria-label="Ocultar eventos e escalação"
+        title="Ocultar eventos e escalação"
+      >
+        <ion-icon name="eye-off-outline"></ion-icon>
+        <span class="tr-feed-toggle-txt">Ocultar</span>
+      </button>
+
+      <!-- Segment toggle Eventos | Escalação -->
+      <nav class="tr-feed-segments" aria-label="Trocar visualização">
+        <button
+          type="button"
+          class="tr-feed-seg"
+          [class.active]="segmentAtivo === 'eventos'"
+          (click)="selecionarSegment('eventos')"
+        >
+          <ion-icon name="flash-outline"></ion-icon>
+          <span>Eventos</span>
+          <span class="tr-seg-badge" *ngIf="eventos.length > 0">{{ eventos.length }}</span>
+        </button>
+        <button
+          type="button"
+          class="tr-feed-seg"
+          [class.active]="segmentAtivo === 'escalacao'"
+          (click)="selecionarSegment('escalacao')"
+        >
+          <ion-icon name="people-outline"></ion-icon>
+          <span>Escalação</span>
+          <span class="tr-seg-badge" *ngIf="(escalacaoMandante.length + escalacaoVisitante.length) > 0">
+            {{ escalacaoMandante.length + escalacaoVisitante.length }}
+          </span>
+        </button>
+      </nav>
+
+      <!-- ===== Conteúdo: EVENTOS =====
+           #feedList = referência usada pelo TS pra fazer scroll automático
+           pro topo (onde aparece o evento mais recente) sempre que entrar
+           lance novo. Se o user rolou manualmente pra ver eventos antigos,
+           desativamos o auto-scroll até ele voltar pro topo. -->
+      <div
+        #feedList
+        class="tr-feed-list"
+        *ngIf="segmentAtivo === 'eventos'"
+        (scroll)="onFeedScroll($event)"
+      >
+        <div class="tr-feed-vazio" *ngIf="eventos.length === 0">
+          <ion-icon name="flash-outline"></ion-icon>
+          <p>Nenhum lance ainda. Acompanhe ao vivo!</p>
+        </div>
+
+        <!-- Cards estilo "Lances da Partida" (jogo-detalhe) — visual broadcast
+             leve, com cor por tipo (verde gol, amarelo cartão, etc) e
+             ícone à direita. Reusa as classes `.lance-bubble`. -->
+        <div
+          *ngFor="let ev of eventos; trackBy: trackByEvento"
+          class="lance-row"
+          [class.lado-mandante]="ev.lado === 'm'"
+          [class.lado-visitante]="ev.lado === 'v'"
+        >
+          <button
+            type="button"
+            class="lance-bubble"
+            [ngClass]="classeTipo(ev.tipo)"
+            [class.destacado]="eventoDestacadoId === ev.id"
+            [class.tem-replay]="ev.minuto"
+            (click)="ev.minuto && verLance(ev)"
+            [title]="ev.minuto ? 'Pular pro momento do lance' : ''"
+          >
+            <!-- Avatar do jogador (foto ou inicial) -->
+            <div class="lance-avatar">
+              <img *ngIf="ev.jogadorFotoUrl; else iconJog"
+                   [src]="ev.jogadorFotoUrl"
+                   [alt]="ev.jogadorNome || ''"
+                   referrerpolicy="no-referrer" />
+              <ng-template #iconJog>
+                <ion-icon name="person-circle-outline"></ion-icon>
+              </ng-template>
+            </div>
+
+            <!-- Corpo (tipo + jogador + time da ação) -->
+            <div class="lance-corpo">
+              <div class="lance-tipo">
+                {{ labelEvento(ev.tipo) }}
+                <span *ngIf="(ev.quantidade ?? 1) > 1" class="lance-qtd">{{ ev.quantidade }}x</span>
+              </div>
+              <div class="lance-nome" *ngIf="ev.jogadorNome">
+                {{ ev.jogadorNome }}
+                <span class="lance-min" *ngIf="ev.minuto != null"> · {{ ev.minuto }}'</span>
+              </div>
+              <!-- Time da ação (logo + nome) — sempre visível -->
+              <div class="lance-time" *ngIf="ev.equipeNome">
+                <img *ngIf="ev.equipeLogoUrl" [src]="ev.equipeLogoUrl" [alt]="ev.equipeNome" />
+                <span>{{ ev.equipeNome }}</span>
+              </div>
+              <!-- Assistência (em gols) -->
+              <div class="lance-assist" *ngIf="ev.assistenteNome">
+                <ion-icon name="hand-right-outline"></ion-icon>
+                {{ ev.assistenteNome }}
+              </div>
+            </div>
+
+            <!-- Ícone à direita (estilo broadcast) -->
+            <div class="lance-icone">
+              <ion-icon
+                *ngIf="ev.tipo === 'gol' || ev.tipo === 'gol-contra'"
+                name="football"
+              ></ion-icon>
+              <span
+                *ngIf="ev.tipo === 'amarelo' || ev.tipo === 'vermelho' || ev.tipo === 'azul'"
+                class="cartao"
+                [class.am]="ev.tipo === 'amarelo'"
+                [class.vm]="ev.tipo === 'vermelho'"
+                [class.az]="ev.tipo === 'azul'"
+              ></span>
+              <ion-icon *ngIf="ev.tipo === 'falta'" name="hand-left-outline"></ion-icon>
+              <ion-icon *ngIf="ev.tipo === 'defesa'" name="hand-right-outline"></ion-icon>
+              <ion-icon
+                *ngIf="ev.tipo === 'sub-entrou' || ev.tipo === 'sub-saiu'"
+                name="swap-horizontal-outline"
+              ></ion-icon>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== Conteúdo: ESCALAÇÃO (com sub-tabs por equipe) ===== -->
+      <ng-container *ngIf="segmentAtivo === 'escalacao'">
+        <!-- Sub-tabs Mandante / Visitante (cor extraída da logo do time) -->
+        <nav class="tr-esc-tabs" aria-label="Trocar equipe">
+          <button
+            type="button"
+            class="tr-esc-tab mandante"
+            [class.active]="escTimeAtivo === 'm'"
+            [style.--time-cor]="corMandante"
+            (click)="selecionarEscTime('m')"
+          >
+            <div class="tr-esc-tab-escudo">
+              <img *ngIf="mandante?.logoUrl; else tabM" [src]="mandante?.logoUrl" [alt]="mandante?.nome" />
+              <ng-template #tabM><ion-icon name="shield-outline"></ion-icon></ng-template>
+            </div>
+            <span class="tr-esc-tab-nome">{{ mandante?.nome || 'Mandante' }}</span>
+            <span class="tr-esc-tab-count">{{ escalacaoMandante.length }}</span>
+          </button>
+          <button
+            type="button"
+            class="tr-esc-tab visitante"
+            [class.active]="escTimeAtivo === 'v'"
+            [style.--time-cor]="corVisitante"
+            (click)="selecionarEscTime('v')"
+          >
+            <div class="tr-esc-tab-escudo">
+              <img *ngIf="visitante?.logoUrl; else tabV" [src]="visitante?.logoUrl" [alt]="visitante?.nome" />
+              <ng-template #tabV><ion-icon name="shield-outline"></ion-icon></ng-template>
+            </div>
+            <span class="tr-esc-tab-nome">{{ visitante?.nome || 'Visitante' }}</span>
+            <span class="tr-esc-tab-count">{{ escalacaoVisitante.length }}</span>
+          </button>
+        </nav>
+
+        <!-- Lista do time selecionado — cor do time é injetada como
+             custom property `--time-cor` e usada nas borders dos cards. -->
+        <div
+          class="tr-feed-list tr-esc-list"
+          [style.--time-cor]="escTimeAtivo === 'm' ? corMandante : corVisitante"
+        >
+          <ng-container
+            *ngTemplateOutlet="
+              escListTpl;
+              context: {
+                $implicit: escTimeAtivo === 'm' ? escalacaoMandante : escalacaoVisitante
+              }
+            "
+          ></ng-container>
+        </div>
+
+        <!-- Template reutilizável da lista de jogadores -->
+        <ng-template #escListTpl let-lista>
+          <div class="tr-feed-vazio" *ngIf="lista.length === 0">
+            <ion-icon name="people-outline"></ion-icon>
+            <p>Escalação não definida ainda.</p>
+          </div>
+          <div class="tr-esc-jog" *ngFor="let e of lista; trackBy: trackByJogador">
+            <div class="tr-esc-jog-foto">
+              <img *ngIf="e.jogador.fotoUrl; else iniJog"
+                   [src]="e.jogador.fotoUrl"
+                   [alt]="e.jogador.nome"
+                   referrerpolicy="no-referrer" />
+              <ng-template #iniJog>
+                <span>{{ ((e.jogador.nome || '?').charAt(0)) | uppercase }}</span>
+              </ng-template>
+            </div>
+            <div class="tr-esc-jog-info">
+              <div class="tr-esc-jog-nome">
+                <span class="num" *ngIf="e.jogador.numeroCamisa">#{{ e.jogador.numeroCamisa }}</span>
+                {{ e.jogador.nome }}
+              </div>
+              <div class="tr-esc-jog-pos" *ngIf="e.jogador.posicao">{{ e.jogador.posicao }}</div>
+            </div>
+            <div class="tr-esc-jog-stats" *ngIf="e.gols + e.amarelos + e.vermelhos > 0">
+              <span class="stat-gol" *ngIf="e.gols > 0" [title]="e.gols + ' gol(s)'">
+                <ion-icon name="football"></ion-icon>
+                <span *ngIf="e.gols > 1">{{ e.gols }}</span>
+              </span>
+              <span class="stat-cartao am" *ngFor="let _ of [].constructor(e.amarelos)"></span>
+              <span class="stat-cartao vm" *ngFor="let _ of [].constructor(e.vermelhos)"></span>
+            </div>
+          </div>
+        </ng-template>
+      </ng-container>
+    </aside>
+
+    <!-- FAB "Mostrar painel" foi MOVIDO pra dentro do `.tr-video` (mais
+         acima neste template) pra também ficar visível em fullscreen. -->
+  </div>
+
+  <!-- ════════ PAINEL DE SONS CUSTOMIZADOS ════════
+       Overlay modal que lista todos os tipos de lance com botões pra
+       atribuir/preview/remover áudio MP3 customizado. Limite 200KB/arquivo
+       (cabe em localStorage). Quando definido, substitui o beep sintético. -->
+  <div
+    class="tr-sons-overlay"
+    *ngIf="mostrarSonsPanel"
+    (click)="toggleSonsPanel()"
+    role="dialog"
+    aria-label="Configurar sons customizados"
+  >
+    <div class="tr-sons-painel" (click)="$event.stopPropagation()">
+      <header class="tr-sons-head">
+        <h3>
+          <ion-icon name="musical-notes"></ion-icon>
+          Sons dos lances
+        </h3>
+        <button
+          type="button"
+          class="tr-sons-fechar"
+          (click)="toggleSonsPanel()"
+          aria-label="Fechar"
+        >
+          <ion-icon name="close"></ion-icon>
+        </button>
+      </header>
+
+      <p class="tr-sons-info">
+        Escolha um MP3 customizado pra tocar quando o lance acontecer.
+        <strong>Máx. 200KB</strong> por arquivo (≈ 2-3 segundos).
+        Os arquivos ficam salvos só nesse dispositivo.
+      </p>
+
+      <ul class="tr-sons-lista">
+        <li
+          *ngFor="let t of tiposSonsConfig"
+          class="tr-sons-item"
+          [class.custom]="temSomCustom(t.tipo)"
+          [style.--cor-acento]="t.cor"
+        >
+          <div class="tr-sons-icone">
+            <ion-icon [name]="t.icon"></ion-icon>
+          </div>
+          <div class="tr-sons-info-item">
+            <div class="tr-sons-label">{{ t.label }}</div>
+            <div class="tr-sons-status">
+              <span *ngIf="temSomCustom(t.tipo)" class="tr-sons-tag tag-custom">
+                <ion-icon name="checkmark-circle"></ion-icon>
+                MP3 customizado
+              </span>
+              <span *ngIf="!temSomCustom(t.tipo)" class="tr-sons-tag tag-padrao">
+                Som padrão
+              </span>
+            </div>
+          </div>
+          <div class="tr-sons-acoes">
+            <button
+              type="button"
+              class="tr-sons-btn btn-play"
+              (click)="preverSom(t.tipo)"
+              title="Tocar preview"
+              aria-label="Tocar preview"
+            >
+              <ion-icon name="play"></ion-icon>
+            </button>
+            <button
+              type="button"
+              class="tr-sons-btn btn-upload"
+              (click)="configurarSomCustom(t.tipo)"
+              [title]="temSomCustom(t.tipo) ? 'Trocar MP3' : 'Escolher MP3'"
+              [attr.aria-label]="temSomCustom(t.tipo) ? 'Trocar MP3' : 'Escolher MP3'"
+            >
+              <ion-icon name="cloud-upload-outline"></ion-icon>
+            </button>
+            <button
+              type="button"
+              class="tr-sons-btn btn-remove"
+              (click)="removerSomCustom(t.tipo)"
+              [disabled]="!temSomCustom(t.tipo)"
+              title="Voltar pro som padrão"
+              aria-label="Remover MP3 customizado"
+            >
+              <ion-icon name="trash-outline"></ion-icon>
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+</ion-content>

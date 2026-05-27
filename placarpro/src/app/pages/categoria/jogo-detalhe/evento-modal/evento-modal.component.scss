@@ -1,0 +1,552 @@
+.bg {
+  --background: var(--placar-bg, #f5f5f7);
+}
+
+/* Botão da lixeira (toolbar) — quando "armado" (1º clique), expande
+   pra mostrar "Confirmar?" em vez do ícone e pulsa pra chamar atenção. */
+.btn-remover {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  transition: all 180ms ease;
+
+  &.armado {
+    --background: rgba(255, 255, 255, 0.18);
+    --background-hover: rgba(255, 255, 255, 0.28);
+    --color: #fff;
+    --border-radius: 999px;
+    --padding-start: 12px;
+    --padding-end: 12px;
+    margin-right: 6px;
+    animation: btnRemoverPulsa 800ms ease-in-out infinite;
+  }
+
+  .btn-confirma-txt {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: #fff;
+    white-space: nowrap;
+  }
+}
+
+@keyframes btnRemoverPulsa {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+  }
+
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
+  }
+}
+
+.wrap {
+  padding: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bloco {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+  h3 {
+    margin: 0 0 10px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ion-color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+
+    &.sub-h3 {
+      margin-top: 16px;
+    }
+
+    .opcional {
+      color: var(--ion-color-medium);
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 11.5px;
+      margin-left: 4px;
+    }
+  }
+}
+
+/* ── Chips de tipo ── */
+.chips {
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  .bt-lance {
+    text-align: center;
+
+
+    .chip {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f5f5f7;
+      border: 2px solid transparent;
+      color: #2d2d2d;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 120ms ease, border-color 120ms ease, transform 100ms ease;
+
+      ion-icon {
+        font-size: 16px;
+        color: var(--ion-color-medium);
+      }
+
+      &:hover {
+        background: #ececef;
+      }
+
+      &:active {
+        transform: scale(0.97);
+      }
+
+      &.ativo {
+        background: var(--ion-color-primary);
+        color: #fff;
+        border-color: var(--ion-color-primary);
+
+        ion-icon {
+          color: #fff;
+        }
+      }
+
+      &.amarelo {
+        ion-icon {
+          color: #f4c20d;
+        }
+
+        &.ativo {
+          background: #f4c20d;
+          color: #2d2d2d;
+          border-color: #f4c20d;
+
+          ion-icon {
+            color: #2d2d2d;
+          }
+        }
+      }
+
+      &.vermelho {
+        ion-icon {
+          color: #eb445a;
+        }
+
+        &.ativo {
+          background: #eb445a;
+          color: #fff;
+          border-color: #eb445a;
+
+          ion-icon {
+            color: #fff;
+          }
+        }
+      }
+
+      &.azul {
+        ion-icon {
+          color: #4dabf7;
+        }
+
+        &.ativo {
+          background: #4dabf7;
+          color: #fff;
+          border-color: #4dabf7;
+
+          ion-icon {
+            color: #fff;
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+
+/* ── Equipes ── */
+.equipes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.eq-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: #f5f5f7;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 120ms ease, background 120ms ease, transform 100ms ease;
+
+  &:hover {
+    background: #ececef;
+  }
+
+  &:active {
+    transform: scale(0.99);
+  }
+
+  &.ativa {
+    background: rgba(124, 198, 29, 0.12);
+    border-color: var(--ion-color-secondary);
+  }
+}
+
+.eq-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(28, 46, 61, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--ion-color-primary);
+  flex: 0 0 auto;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  ion-icon {
+    font-size: 20px;
+  }
+}
+
+.eq-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .eq-nome {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #2d2d2d;
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .eq-lado {
+    font-size: 11px;
+    color: var(--ion-color-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+/* ── Jogador / Assistência ── */
+.empty-jog {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f5f5f7;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--ion-color-medium);
+  font-size: 13px;
+
+  ion-icon {
+    font-size: 18px;
+  }
+}
+
+.sel-jog {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #d8d8dd;
+  background: #f5f5f7 url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%231C2E3D' d='M0 0l5 6 5-6z'/></svg>") right 12px center no-repeat;
+  font-size: 14px;
+  font-weight: 500;
+  color: #2d2d2d;
+  appearance: none;
+  cursor: pointer;
+}
+
+/* ── Quantidade ── */
+.qtds {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.qtd-chip {
+  width: 48px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid #d8d8dd;
+  background: #f5f5f7;
+  color: #2d2d2d;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, transform 100ms ease;
+
+  &:hover {
+    background: #ececef;
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &.ativo {
+    background: var(--ion-color-secondary);
+    border-color: var(--ion-color-secondary);
+    color: #fff;
+  }
+}
+
+/* ── Checkbox "Definir tempo" ── */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.check-box {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid #c4c4c8;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  transition: background 120ms ease, border-color 120ms ease;
+
+  ion-icon {
+    color: #fff;
+    font-size: 16px;
+  }
+
+  &.ativo {
+    background: var(--ion-color-primary);
+    border-color: var(--ion-color-primary);
+  }
+}
+
+.check-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d2d2d;
+}
+
+.minuto-wrap {
+  margin-top: 12px;
+  max-width: 160px;
+}
+
+/* ── Descrição ── */
+.desc {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #d8d8dd;
+  background: #f5f5f7;
+  font-size: 14px;
+  font-family: inherit;
+  color: #2d2d2d;
+  resize: vertical;
+  min-height: 60px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--ion-color-primary);
+  }
+}
+
+/* ── Mídia (grid) ── */
+.midia-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.midia-item {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  background: #f5f5f7;
+  border: 1px solid #ececef;
+
+  img,
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &.pendente {
+    border: 2px dashed var(--ion-color-warning, #ffb020);
+  }
+
+  .midia-del {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 120ms ease;
+
+    ion-icon {
+      font-size: 14px;
+    }
+
+    &:hover {
+      background: var(--ion-color-danger);
+    }
+  }
+
+  .midia-tag {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    background: rgba(255, 176, 32, 0.9);
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+.midia-add {
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  border: 2px dashed #c4c4c8;
+  background: #f5f5f7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, transform 100ms ease;
+  color: var(--ion-color-medium);
+
+  ion-icon {
+    font-size: 28px;
+  }
+
+  span {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  &:hover {
+    border-color: var(--ion-color-secondary);
+    background: rgba(124, 198, 29, 0.06);
+    color: var(--ion-color-secondary);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.midia-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--ion-color-medium);
+}
+
+/* ── Minuto / lbl ── */
+.lbl {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  span {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ion-color-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  input {
+    height: 40px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid #d8d8dd;
+    background: #f5f5f7;
+    font-size: 14px;
+    color: #2d2d2d;
+    font-weight: 500;
+  }
+}
+
+/* ── Footer ── */
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px;
+
+  .spacer {
+    flex: 1;
+  }
+
+  ion-button[color="primary"] {
+    --border-radius: 10px;
+    --padding-start: 26px;
+    --padding-end: 26px;
+    font-weight: 600;
+    text-transform: none;
+  }
+}

@@ -1,0 +1,53 @@
+<div class="r-page">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">Ranking Mundial</span>
+  </header>
+
+  <!-- ═══════════ Page header ═══════════ -->
+  <header class="r-page-head">
+    <span class="r-page-tag">🌎 RANKING MUNDIAL</span>
+    <h1>Compare-se com o mundo todo</h1>
+    <p>
+      Veja como você e seu racha se posicionam entre todos os jogadores e
+      rachas cadastrados no PlacarPro.
+    </p>
+  </header>
+
+  <!-- Faixa verde com CTA -->
+  <div class="r-hero-strip">
+    <button type="button" class="r-hero-strip-btn" (click)="irRankingLocal()">
+      <ion-icon name="trophy"></ion-icon>
+      RANKING LOCAL
+    </button>
+  </div>
+
+  <!-- ═══════════ 4 categorias ═══════════ -->
+  <section class="rrm-grid">
+    <article
+      *ngFor="let c of categorias; trackBy: trackByLabel"
+      class="r-card rrm-card"
+    >
+      <div class="rrm-icone" [style.background]="c.cor + '22'" [style.color]="c.cor">
+        <ion-icon [name]="c.icon"></ion-icon>
+      </div>
+      <h3>{{ c.label }}</h3>
+      <p>—</p>
+      <span class="rrm-em-breve">Em breve</span>
+    </article>
+  </section>
+
+  <!-- ═══════════ Card explicação ═══════════ -->
+  <section class="r-card rrm-explicacao">
+    <ion-icon name="lock-closed"></ion-icon>
+    <div>
+      <strong>Disponível no plano Premium / PRO</strong>
+      <p>
+        O Ranking Mundial compara estatísticas entre todos os rachas do
+        PlacarPro. Pra liberar essa visão e ver onde seus jogadores
+        aparecem no ranking global, ative um dos planos pagos.
+      </p>
+    </div>
+  </section>
+</div>

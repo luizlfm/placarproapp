@@ -1,0 +1,175 @@
+<div class="rj-page">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">Elenco</span>
+  </header>
+
+  <!-- ═══════════ Page header ═══════════ -->
+  <header class="r-page-head">
+    <span class="r-page-tag">PAINEL DE JOGADORES</span>
+    <h1>Elenco</h1>
+    <p>Mantenha notas, convocações e cadastros sempre alinhados com o racha.</p>
+  </header>
+
+  <!-- Faixa verde com CTA principal -->
+  <div class="r-hero-strip">
+    <button type="button" class="r-hero-strip-btn" (click)="novoJogador()">
+      <ion-icon name="person-add"></ion-icon>
+      NOVO JOGADOR
+    </button>
+    <button type="button" class="r-hero-strip-btn alt" (click)="cadastrarPorVoz()">
+      <ion-icon name="mic"></ion-icon>
+      POR VOZ
+    </button>
+  </div>
+
+  <!-- Métricas em chips -->
+  <div class="r-metricas-row">
+    <span class="r-metric-chip">
+      <ion-icon name="people"></ion-icon>
+      Ativos: <strong>{{ totalElenco }}</strong>
+    </span>
+    <span class="r-metric-chip">
+      <ion-icon name="shirt-outline"></ion-icon>
+      Total: <strong>{{ jogadores.length }}</strong>
+    </span>
+  </div>
+
+  <!-- ═══════════ Filtros ═══════════ -->
+  <section class="rj-filtros">
+    <div class="rj-filtro-input">
+      <label>Filtrar pelo nome</label>
+      <div class="rj-filtro-input-wrap">
+        <ion-icon name="search-outline"></ion-icon>
+        <input type="text" [(ngModel)]="busca" placeholder="" />
+        <button *ngIf="busca" type="button" class="rj-clear" (click)="limparBusca()">
+          <ion-icon name="close-circle"></ion-icon>
+        </button>
+      </div>
+    </div>
+    <label class="rj-checkbox">
+      <input type="checkbox" [(ngModel)]="apenasAtivos" />
+      <span class="rj-checkbox-box"></span>
+      <span>Mostrando apenas ativos</span>
+    </label>
+  </section>
+
+  <!-- ═══════════ Tabs ═══════════ -->
+  <nav class="rj-tabs" aria-label="Tabs jogadores">
+    <button
+      type="button"
+      class="rj-tab"
+      [class.ativa]="tabAtiva === 'elenco'"
+      (click)="selecionarTab('elenco')"
+    >ELENCO</button>
+    <button
+      type="button"
+      class="rj-tab"
+      [class.ativa]="tabAtiva === 'convidados'"
+      (click)="selecionarTab('convidados')"
+    >CONVIDADOS <span class="rj-tab-count">({{ totalConvidados }})</span></button>
+    <button
+      type="button"
+      class="rj-tab"
+      [class.ativa]="tabAtiva === 'notas'"
+      (click)="selecionarTab('notas')"
+    >NOTAS</button>
+  </nav>
+
+  <!-- ═══════════ Loading ═══════════ -->
+  <div class="rj-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <!-- ═══════════ Conteúdo ELENCO / CONVIDADOS ═══════════ -->
+  <section
+    class="rj-lista"
+    *ngIf="!loading && (tabAtiva === 'elenco' || tabAtiva === 'convidados') && jogadoresFiltrados.length > 0"
+  >
+    <article
+      *ngFor="let j of jogadoresFiltrados; trackBy: trackById"
+      class="rj-card"
+      [class.arquivado]="j.ativo === false"
+      (click)="editar(j)"
+    >
+      <div class="rj-avatar">
+        <img *ngIf="j.fotoUrl; else iniciais" [src]="j.fotoUrl" [alt]="j.nome" />
+        <ng-template #iniciais>{{ inicial(j) }}</ng-template>
+      </div>
+      <div class="rj-info">
+        <div class="rj-nome-linha">
+          <strong class="rj-nome">{{ j.nome }}</strong>
+          <span class="rj-tag mensalista" *ngIf="j.mensalista">Mensalista</span>
+          <span class="rj-tag inativo" *ngIf="j.ativo === false">Arquivado</span>
+        </div>
+        <div class="rj-meta" *ngIf="j.apelido || j.posicao || j.telefone">
+          <span *ngIf="j.apelido"><ion-icon name="happy-outline"></ion-icon>{{ j.apelido }}</span>
+          <span *ngIf="j.posicao"><ion-icon name="football-outline"></ion-icon>{{ j.posicao }}</span>
+          <span *ngIf="j.telefone"><ion-icon name="call-outline"></ion-icon>{{ j.telefone }}</span>
+        </div>
+      </div>
+      <div class="rj-nota" *ngIf="j.notaGeral !== undefined" [style.background]="corNota(j.notaGeral)">
+        {{ j.notaGeral }}
+      </div>
+      <ion-icon class="rj-chev" name="chevron-forward"></ion-icon>
+    </article>
+  </section>
+
+  <!-- ═══════════ Conteúdo NOTAS (ranking) ═══════════ -->
+  <section class="rj-notas" *ngIf="!loading && tabAtiva === 'notas' && jogadoresPorNota.length > 0">
+    <table class="rj-tabela">
+      <thead>
+        <tr>
+          <th class="pos">#</th>
+          <th>Jogador</th>
+          <th class="num">Nota</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let j of jogadoresPorNota; let i = index; trackBy: trackById" (click)="editar(j)">
+          <td class="pos">{{ i + 1 }}</td>
+          <td>
+            <div class="rj-tabela-jog">
+              <div class="rj-avatar-mini">
+                <img *ngIf="j.fotoUrl; else iniMin" [src]="j.fotoUrl" />
+                <ng-template #iniMin>{{ inicial(j) }}</ng-template>
+              </div>
+              <span>{{ j.nome }}</span>
+            </div>
+          </td>
+          <td class="num">
+            <span class="rj-nota-pill" [style.background]="corNota(j.notaGeral)">
+              {{ j.notaGeral ?? '—' }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══════════ Empty state ═══════════ -->
+  <section
+    class="rj-empty"
+    *ngIf="!loading && jogadoresFiltrados.length === 0 && tabAtiva !== 'notas'"
+  >
+    <div class="rj-empty-icone">
+      <ion-icon name="people-outline"></ion-icon>
+    </div>
+    <h2 *ngIf="busca">Nada encontrado</h2>
+    <h2 *ngIf="!busca && tabAtiva === 'elenco'">Nenhum jogador cadastrado por aqui.</h2>
+    <h2 *ngIf="!busca && tabAtiva === 'convidados'">Sem convidados ainda.</h2>
+    <p *ngIf="!busca && tabAtiva === 'elenco'">Adicione o primeiro jogador pra começar.</p>
+    <p *ngIf="!busca && tabAtiva === 'convidados'">Marque jogadores como convidados pra eles aparecerem aqui.</p>
+    <button type="button" class="rj-btn-amarelo" (click)="novoJogador()" *ngIf="!busca">
+      <ion-icon name="person-add"></ion-icon>
+      ADICIONAR JOGADOR
+    </button>
+  </section>
+
+  <section class="rj-empty" *ngIf="!loading && tabAtiva === 'notas' && jogadoresPorNota.length === 0">
+    <div class="rj-empty-icone"><ion-icon name="star-outline"></ion-icon></div>
+    <h2>Nenhuma nota atribuída ainda.</h2>
+    <p>Defina notas no perfil dos jogadores pra ver o ranking aqui.</p>
+  </section>
+</div>

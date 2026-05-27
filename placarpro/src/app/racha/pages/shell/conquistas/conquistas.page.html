@@ -1,0 +1,106 @@
+<div class="r-page co-page">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">Conquistas</span>
+  </header>
+
+  <header class="r-page-head">
+    <span class="r-page-tag">🏅 Badges</span>
+    <h1>Conquistas dos jogadores</h1>
+    <p>
+      Badges automáticos baseados nas estatísticas. Quem joga mais
+      gols, mais assistências e mantém o fair play sobe no quadro.
+    </p>
+  </header>
+
+  <!-- Catálogo de badges disponíveis -->
+  <section class="co-catalogo">
+    <h2>Badges disponíveis</h2>
+    <div class="co-catalogo-grid">
+      <div
+        *ngFor="let b of badges; trackBy: trackByBadge"
+        class="co-cat-card"
+        [style.--badge-cor]="b.cor"
+      >
+        <div class="co-cat-icone">
+          <ion-icon [name]="b.icon"></ion-icon>
+        </div>
+        <strong>{{ b.nome }}</strong>
+        <span>{{ b.descricao }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Loading -->
+  <div class="co-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <!-- Empty -->
+  <section class="r-empty" *ngIf="!loading && jogadores.length === 0">
+    <div class="r-empty-icone"><ion-icon name="ribbon-outline"></ion-icon></div>
+    <h2>Nenhum jogador cadastrado</h2>
+    <p>Cadastre o elenco e os badges aparecem aqui automaticamente.</p>
+  </section>
+
+  <!-- Lista de jogadores com seus badges -->
+  <section class="co-jogadores" *ngIf="!loading && jogadores.length > 0">
+    <h2>Quadro de honra</h2>
+    <article
+      *ngFor="let j of jogadores; trackBy: trackByJogador"
+      class="r-card co-card"
+    >
+      <div class="co-card-head">
+        <div class="co-avatar">
+          <img *ngIf="j.jogador.fotoUrl; else iconJ" [src]="j.jogador.fotoUrl" [alt]="j.jogador.nome" />
+          <ng-template #iconJ><ion-icon name="person"></ion-icon></ng-template>
+        </div>
+        <div class="co-nome">
+          <strong>{{ j.jogador.nome }}</strong>
+          <span class="co-posicao" *ngIf="j.jogador.posicao">{{ j.jogador.posicao | titlecase }}</span>
+        </div>
+        <div class="co-total">
+          <span class="co-total-num">{{ j.badges.length }}</span>
+          <span class="co-total-label">badges</span>
+        </div>
+      </div>
+
+      <!-- Badges conquistados -->
+      <div class="co-badges-conquistados" *ngIf="j.badges.length > 0">
+        <div
+          *ngFor="let b of j.badges; trackBy: trackByBadge"
+          class="co-badge desbloqueado"
+          [style.--badge-cor]="b.cor"
+          [attr.title]="b.descricao"
+        >
+          <ion-icon [name]="b.icon"></ion-icon>
+          <span>{{ b.nome }}</span>
+        </div>
+      </div>
+
+      <!-- Sem badges ainda -->
+      <p class="co-vazio" *ngIf="j.badges.length === 0">
+        Ainda não desbloqueou nenhum badge.
+      </p>
+
+      <!-- Próximas (badges pendentes — visual fraco) -->
+      <details class="co-pendentes" *ngIf="badgesPendentes(j) as pend">
+        <summary>
+          <ion-icon name="lock-closed-outline"></ion-icon>
+          Próximas conquistas ({{ pend.length }})
+        </summary>
+        <div class="co-badges-pendentes">
+          <div
+            *ngFor="let b of pend; trackBy: trackByBadge"
+            class="co-badge bloqueado"
+            [attr.title]="b.descricao"
+          >
+            <ion-icon [name]="b.icon"></ion-icon>
+            <span>{{ b.nome }}</span>
+          </div>
+        </div>
+      </details>
+    </article>
+  </section>
+</div>

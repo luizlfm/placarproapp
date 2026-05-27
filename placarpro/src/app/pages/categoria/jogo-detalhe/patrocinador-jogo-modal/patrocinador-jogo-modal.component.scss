@@ -1,0 +1,196 @@
+// ─── Layout geral ────────────────────────────────────────────────────────────
+// Usamos div em vez de ion-content pra evitar colapso de altura
+// quando o modal usa --height: auto.
+.pat-modal-content {
+  background: #f4f5f8;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+.pat-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 16px 16px;
+}
+
+// ─── Crop area ───────────────────────────────────────────────────────────────
+.crop-area {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  background: #111;
+  min-height: 260px;
+  max-height: calc(90vh - 120px);  // 90vh menos header + footer
+  overflow: hidden;
+}
+
+.crop-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #ccc;
+  font-size: 13px;
+  z-index: 2;
+  background: #111;
+}
+
+.cropper {
+  width: 100%;
+  height: 100%;
+  // A lib usa height 100% do container
+  ::ng-deep .ngx-ic-overlay {
+    outline-color: rgba(124, 198, 29, 0.6) !important;
+  }
+  ::ng-deep .ngx-ic-move {
+    border: 2px solid var(--ion-color-secondary, #7cc61d) !important;
+  }
+}
+
+// ─── Área de foto ────────────────────────────────────────────────────────────
+.pat-foto-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.pat-foto-box {
+  position: relative;
+  width: 180px;
+  aspect-ratio: 16 / 9;
+  background: #fff;
+  border: 2px dashed #c8cad0;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.18s, background 0.18s;
+  padding: 0;
+
+  &:hover {
+    border-color: var(--ion-color-secondary, #7cc61d);
+    background: rgba(124, 198, 29, 0.04);
+  }
+
+  &.tem-imagem {
+    border-style: solid;
+    border-color: #c8cad0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+  }
+}
+
+.pat-foto-plus {
+  font-size: 32px;
+  color: #9ea3ae;
+  pointer-events: none;
+}
+
+// Botão "×" flutuante sobre a imagem
+.pat-foto-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  z-index: 2;
+
+  ion-icon { font-size: 16px; }
+
+  &:hover { background: rgba(220, 38, 38, 0.85); }
+}
+
+// Legenda de dimensões
+.pat-foto-dim {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: #7c8290;
+
+  ion-icon { font-size: 13px; }
+}
+
+// Botão "Trocar foto" (aparece quando já tem preview)
+.pat-trocar-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--ion-color-secondary, #7cc61d);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 600;
+
+  ion-icon { font-size: 14px; }
+
+  &:hover { opacity: 0.75; }
+}
+
+// ─── Campo de texto ───────────────────────────────────────────────────────────
+.pat-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pat-input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 15px;
+  color: #1a1a2e;
+  background: #fff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+
+  &::placeholder { color: #adb5bd; }
+
+  &:focus {
+    border-color: var(--ion-color-secondary, #7cc61d);
+    box-shadow: 0 0 0 3px rgba(124, 198, 29, 0.12);
+  }
+}
+
+// ─── Footer ──────────────────────────────────────────────────────────────────
+.pat-footer-btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 4px 8px;
+}

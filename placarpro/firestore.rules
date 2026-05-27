@@ -1,0 +1,476 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    /**
+     * Lista hardcoded de super-admins permanentes — espelha
+     * `environment.adminMasterUids` no front. UIDs aqui têm bypass total
+     * SEM precisar do campo `isMaster: true` no doc Firestore.
+     *
+     * IMPORTANTE: ao adicionar novo super-admin no environment.ts, espelhe
+     * aqui também — senão o guard passa mas as Rules bloqueiam.
+     */
+    function isHardcodedMaster() {
+      return isSignedIn() && (
+        request.auth.uid == 'ntGeuckC1udr4p3yPEnRvkLciIE3'
+      );
+    }
+
+    /**
+     * Admin master — duas fontes (OR):
+     *  - UID hardcoded em `isHardcodedMaster()` (root permanente)
+     *  - Campo `isMaster: true` no doc `users/{uid}` (admins promovidos)
+     * Bypass de ownership pra leitura/edição via painel admin.
+     * Usa `exists()` antes de `get()` porque o doc pode não existir ainda.
+     */
+    function isMaster() {
+      return isHardcodedMaster() || (
+        isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isMaster == true
+      );
+    }
+    function isOwner(campeonatoId) {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data.ownerId == request.auth.uid;
+    }
+    /** Owner do campeonato OU admin master. Usado em todas as subcoleções. */
+    function isOwnerOrMaster(campeonatoId) {
+      return isOwner(campeonatoId) || isMaster();
+    }
+
+    /**
+     * Moderador VALIDADO deste campeonato.
+     *
+     * Checa 2 condições (ambas obrigatórias):
+     *  - UID está na lista DENORMALIZADA `campeonato.moderadorUids[]`.
+     *    Essa lista é mantida pela CF `aceitarConviteModerador` que
+     *    adiciona o UID quando o user aceita o link mágico /m/:token.
+     *    Lista plana evita iterar subcoleções (não suportado nas rules).
+     *  - `users/{uid}.moderadorValidado == true` — admin master aprovou
+     *    a conta de moderador (ou usou código de convite no signup).
+     *
+     * Sem o flag `moderadorValidado`, um moderador pendente NÃO consegue
+     * escrever — mesmo que esteja no array do campeonato.
+     */
+    function isModerador(campeonatoId) {
+      return isSignedIn()
+             && exists(/databases/$(database)/documents/campeonatos/$(campeonatoId))
+             && ('moderadorUids' in get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data)
+             && request.auth.uid in get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data.moderadorUids
+             && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+             && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.moderadorValidado == true;
+    }
+
+    /** Pode editar = owner OU admin master OU moderador validado. Use
+     *  isto em vez de `isOwnerOrMaster` em writes que moderadores devem
+     *  conseguir fazer (jogos, eventos, equipes, etc.). */
+    function podeEditar(campeonatoId) {
+      return isOwnerOrMaster(campeonatoId) || isModerador(campeonatoId);
+    }
+
+    /** Checa se o UID logado tem a permissão específica `permKey` no
+     *  campeonato. As listas planas (`editarCampeonatoUids`,
+     *  `editarResultadosUids`, `enviarMidiasUids`) são denormalizadas pelo
+     *  modal de moderadores + CF aceitarConviteModerador. Owner/admin
+     *  sempre passam. */
+    function temPermModerador(campeonatoId, permKey) {
+      return exists(/databases/$(database)/documents/campeonatos/$(campeonatoId))
+             && (permKey in get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data)
+             && request.auth.uid in get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data[permKey];
+    }
+    function podeEditarCampeonato(campeonatoId) {
+      return isOwnerOrMaster(campeonatoId)
+             || (isModerador(campeonatoId) && temPermModerador(campeonatoId, 'editarCampeonatoUids'));
+    }
+    function podeGerenciarEquipes(campeonatoId) {
+      return isOwnerOrMaster(campeonatoId)
+             || (isModerador(campeonatoId) && temPermModerador(campeonatoId, 'gerenciarEquipesUids'));
+    }
+    function podeEditarResultados(campeonatoId) {
+      return isOwnerOrMaster(campeonatoId)
+             || (isModerador(campeonatoId) && temPermModerador(campeonatoId, 'editarResultadosUids'));
+    }
+    function podeEnviarMidias(campeonatoId) {
+      return isOwnerOrMaster(campeonatoId)
+             || (isModerador(campeonatoId) && temPermModerador(campeonatoId, 'enviarMidiasUids'));
+    }
+    function podeGerenciarEnquetes(campeonatoId) {
+      return isOwnerOrMaster(campeonatoId)
+             || (isModerador(campeonatoId) && temPermModerador(campeonatoId, 'gerenciarEnquetesUids'));
+    }
+    function isCreatingAsSelf() {
+      return isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+    }
+    /**
+     * Campeonato é considerado público se:
+     *  - publico == true, OU
+     *  - o campo `publico` ainda não foi gravado (legacy / migração pendente).
+     * Sem essa segunda cláusula, queries no Firestore quebravam em massa
+     * porque docs antigos não tinham o campo `publico` definido.
+     */
+    function campeonatoEhPublico(camp) {
+      return !('publico' in camp) || camp.publico == true;
+    }
+
+    /**
+     * Valida que o token passado no documento (`inscricaoToken`) realmente
+     * corresponde a um convite ativo para a equipe informada. Usado por
+     * jogadores/equipeTecnica criados via formulário público.
+     *
+     * Em Firestore Rules não dá pra fazer query, só getDoc com id conhecido.
+     * Por isso o cliente envia o token explicitamente como campo do doc.
+     */
+    function tokenValidoPara(campeonatoId, categoriaId, equipeId, token) {
+      let conv = get(/databases/$(database)/documents/convitesEquipe/$(token));
+      return conv != null
+             && conv.data.campeonatoId == campeonatoId
+             && conv.data.categoriaId == categoriaId
+             && conv.data.equipeId == equipeId;
+    }
+
+    // ============ users ============
+    match /users/{uid} {
+      // GET de um doc específico: o próprio usuário OU o admin master.
+      allow get: if isSelf(uid) || isMaster();
+
+      // LIST (queries no `users`): só o admin master. Importante separar
+      // de `get` porque `list` é avaliado como uma única predicate sobre
+      // a query inteira — `isSelf(uid)` não pode ser usada em list (o
+      // engine não sabe o uid de cada doc em tempo de query).
+      allow list: if isMaster();
+
+      // Escrita: dono OU admin master (pra alterar plano, marcar isMaster, etc.).
+      allow write: if isSelf(uid) || isMaster();
+
+      // Patrocinadores: leitura pública (qualquer um pode listar os
+      // patrocinadores de um organizador para exibir nas páginas públicas
+      // dos campeonatos dele). Escrita só o próprio dono ou admin.
+      match /patrocinadores/{patrocinadorId} {
+        allow read: if true;
+        allow write: if isSelf(uid) || isMaster();
+      }
+
+      match /{sub=**} {
+        allow read, write: if isSelf(uid) || isMaster();
+      }
+    }
+
+    // ============ campeonatos ============
+    match /campeonatos/{campeonatoId} {
+      /*
+       * LIST (queries): liberada para QUALQUER UM, inclusive anônimo.
+       * Necessária para resolver slug/shortCode na página pública (`/luizz`).
+       * Cada documento retornado AINDA precisa passar pela regra `get`
+       * abaixo, então campeonatos privados continuam protegidos no fluxo
+       * de busca por ID direto. Para listar privados, a regra get filtra.
+       *
+       * Importante: dividimos `read` em `list` (queries) e `get` (doc único)
+       * para que queries públicas por slug não exijam autenticação.
+       */
+      allow list: if true;
+
+      // Leitura de um doc específico: público, dono, admin master OU
+      // moderador validado (precisa ler pra aparecer em "Meus campeonatos"
+      // e pra acessar as telas internas que o moderador tem permissão).
+      allow get: if campeonatoEhPublico(resource.data)
+                 || (isSignedIn() && resource.data.ownerId == request.auth.uid)
+                 || isMaster()
+                 || (isSignedIn() && ('moderadorUids' in resource.data)
+                     && request.auth.uid in resource.data.moderadorUids);
+
+      allow create: if isCreatingAsSelf();
+      allow update, delete: if (isSignedIn() && resource.data.ownerId == request.auth.uid)
+                            || isMaster();
+
+      // Subcoleções herdam a visibilidade do pai.
+      // Writes liberados pra `podeEditar(...)` = owner | master | moderador
+      // validado. Antes era só `isOwnerOrMaster` — moderadores convidados
+      // não conseguiam editar nada.
+      match /categorias/{categoriaId} {
+        allow read: if campeonatoEhPublico(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data)
+                    || isOwnerOrMaster(campeonatoId);
+        // Edição da categoria em si (nome, regras, banner) → editarCampeonato.
+        allow write: if podeEditarCampeonato(campeonatoId);
+
+        // ─── Jogadores: gerenciarEquipes OU usuário autenticado com token
+        //     válido (fluxo público de inscrição via /inscricao/:token) ───
+        match /jogadores/{jogadorId} {
+          allow read: if campeonatoEhPublico(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data)
+                      || isOwnerOrMaster(campeonatoId);
+          allow create: if podeGerenciarEquipes(campeonatoId)
+                        || (isSignedIn()
+                            && 'inscricaoToken' in request.resource.data
+                            && tokenValidoPara(
+                                 campeonatoId, categoriaId,
+                                 request.resource.data.equipeId,
+                                 request.resource.data.inscricaoToken));
+          // Update via convite: usuário autenticado pode atualizar dados
+          // do jogador SE estiver editando uma equipe cuja inscrição
+          // ainda está válida (token bate). Não permite trocar de equipe.
+          allow update: if podeGerenciarEquipes(campeonatoId)
+                        || (isSignedIn()
+                            && 'inscricaoToken' in request.resource.data
+                            && tokenValidoPara(
+                                 campeonatoId, categoriaId,
+                                 resource.data.equipeId,
+                                 request.resource.data.inscricaoToken)
+                            && request.resource.data.equipeId == resource.data.equipeId);
+          allow delete: if podeGerenciarEquipes(campeonatoId);
+        }
+
+        // ─── Equipe técnica: mesma regra (criação + update via convite) ───
+        match /equipeTecnica/{membroId} {
+          allow read: if campeonatoEhPublico(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data)
+                      || isOwnerOrMaster(campeonatoId);
+          allow create: if podeGerenciarEquipes(campeonatoId)
+                        || (isSignedIn()
+                            && 'inscricaoToken' in request.resource.data
+                            && tokenValidoPara(
+                                 campeonatoId, categoriaId,
+                                 request.resource.data.equipeId,
+                                 request.resource.data.inscricaoToken));
+          allow update: if podeGerenciarEquipes(campeonatoId)
+                        || (isSignedIn()
+                            && 'inscricaoToken' in request.resource.data
+                            && tokenValidoPara(
+                                 campeonatoId, categoriaId,
+                                 resource.data.equipeId,
+                                 request.resource.data.inscricaoToken)
+                            && request.resource.data.equipeId == resource.data.equipeId);
+          allow delete: if podeGerenciarEquipes(campeonatoId);
+        }
+
+        // ─── Equipes: gerenciarEquipes OU update via convite (só atualiza, nunca cria) ───
+        match /equipes/{equipeId} {
+          allow read: if campeonatoEhPublico(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data)
+                      || isOwnerOrMaster(campeonatoId);
+          allow create, delete: if podeGerenciarEquipes(campeonatoId);
+          allow update: if podeGerenciarEquipes(campeonatoId)
+                        || (isSignedIn()
+                            && 'inscricaoToken' in request.resource.data
+                            && tokenValidoPara(
+                                 campeonatoId, categoriaId, equipeId,
+                                 request.resource.data.inscricaoToken));
+        }
+
+        // Enquetes: criar/editar (curadoria) precisa de gerenciarEnquetes.
+        // Votação pública continua aberta (update parcial só com 'alternativas',
+        // 'totalVotos', 'atualizadoEm' — registrar voto).
+        match /enquetes/{enqId} {
+          allow read: if campeonatoEhPublico(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data)
+                      || isOwnerOrMaster(campeonatoId);
+          allow create, delete: if podeGerenciarEnquetes(campeonatoId);
+          // Update: gestor pode tudo; autenticado só pode mudar campos do voto.
+          allow update: if podeGerenciarEnquetes(campeonatoId)
+                        || (isSignedIn()
+                            && request.resource.data.diff(resource.data).affectedKeys()
+                                .hasOnly(['alternativas', 'totalVotos', 'atualizadoEm']));
+
+          // Voto individual: doc id = uid do votante; só o próprio usuário escreve.
+          match /votos/{uid} {
+            allow read: if isSelf(uid) || isOwnerOrMaster(campeonatoId);
+            allow create, update, delete: if isSelf(uid);
+          }
+        }
+
+        // ─── Transmissões ao vivo (LiveKit) — Path: .../jogos/{jId}/transmissoes/{tId} ───
+        // Path: campeonatos/{cId}/categorias/{catId}/jogos/{jId}/transmissoes/{tId}
+        //
+        // Read: público (igual outras subcoleções) — qualquer um que abrir a
+        //       página pública do jogo precisa saber se tem transmissão ativa.
+        //
+        // Write: owner OU moderador com `enviarMidias` OU `editarResultados`.
+        //   - O Cloud Function `gerarTokenLiveKit` valida a mesma lógica antes
+        //     de emitir o JWT, então o broadcaster real PRECISA ter permissão
+        //     dos dois lados (token + escrita do metadata aqui).
+        //   - Sem `podeEnviarMidias` na lista, moderador que só tem permissão
+        //     de mídia (sem editar resultados) NÃO conseguiria criar o doc da
+        //     transmissão — bloqueando a UX antes mesmo de chegar ao LiveKit.
+        match /jogos/{jogoId}/transmissoes/{transmissaoId} {
+          allow read: if campeonatoEhPublico(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data)
+                      || isOwnerOrMaster(campeonatoId);
+          allow write: if podeEnviarMidias(campeonatoId)
+                       || podeEditarResultados(campeonatoId);
+        }
+
+        // Catch-all pra subcoleções não-listadas (jogos, eventos, fases,
+        // grupos, classificação, etc.) — leitura pública/owner; write pra
+        // quem pode editar resultados (jogos/eventos/agendamento são a
+        // grande maioria dos writes que caem aqui).
+        match /{deep=**} {
+          allow read: if campeonatoEhPublico(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data)
+                      || isOwnerOrMaster(campeonatoId);
+          allow write: if podeEditarResultados(campeonatoId);
+        }
+      }
+
+      // Mídias do campeonato (galeria root) — só quem tem enviarMidias.
+      match /midias/{midiaId} {
+        allow read: if campeonatoEhPublico(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data)
+                    || isOwnerOrMaster(campeonatoId);
+        allow create: if podeEnviarMidias(campeonatoId) && request.resource.data.ownerId == request.auth.uid;
+        allow update, delete: if podeEnviarMidias(campeonatoId);
+      }
+
+      // Inscrições públicas: qualquer um pode criar pedido (formulário público).
+      // Só o owner pode ler/aprovar/rejeitar.
+      match /inscricoes/{inscricaoId} {
+        allow read: if isOwnerOrMaster(campeonatoId);
+        allow create: if request.resource.data.status == 'pendente';
+        allow update, delete: if isOwnerOrMaster(campeonatoId);
+      }
+
+      // Seguidores: leitura pública (qualquer um vê quem segue),
+      // escrita só o próprio usuário (`uid` do doc == request.auth.uid).
+      match /seguidores/{uid} {
+        allow read: if true;
+        allow create, delete: if isSignedIn() && request.auth.uid == uid;
+        allow update: if isSignedIn() && request.auth.uid == uid;
+      }
+    }
+
+    // ============ convitesEquipe ============
+    // Tokens públicos vinculados a uma equipe específica. Permitem que
+    // quem tem o link preencha a ficha de inscrição pública.
+    //
+    //  - get: leitura ABERTA por token (a URL contém o id; quem chegou
+    //         no link tem acesso ao convite)
+    //  - list: PROIBIDA (não dá pra varrer a coleção sem o token)
+    //  - create: só o dono do campeonato pode gerar convites
+    //  - update: dono OU usuário autenticado marcando como preenchido
+    //  - delete: só o dono do campeonato
+    match /convitesEquipe/{token} {
+      allow get: if true;
+      allow list: if false;
+
+      allow create: if isSignedIn()
+                    && request.resource.data.criadoPor == request.auth.uid
+                    && isOwner(request.resource.data.campeonatoId);
+
+      // Update: owner pode tudo. Autenticado pode marcar `usado` + preenchidoPor/Em
+      // (campos permitidos: 'usado', 'preenchidoPor', 'preenchidoEm', 'atualizadoEm').
+      allow update: if isSignedIn() && (
+        isOwner(resource.data.campeonatoId)
+        || (
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['usado', 'preenchidoPor', 'preenchidoEm', 'atualizadoEm'])
+          && request.resource.data.preenchidoPor == request.auth.uid
+        )
+      );
+
+      allow delete: if isSignedIn() && isOwner(resource.data.campeonatoId);
+    }
+
+    // ============ rachas (peladas / pickup games) ============
+    // Coleção root paralela a `campeonatos`. Cada doc tem `ownerId`.
+    // Diferenças vs. campeonato:
+    //  - Tudo público por padrão (rachas são informais, descobertos pelo link)
+    //  - Não tem inscrições formais (só presença) — subcoleções mais simples
+    match /rachas/{rachaId} {
+      // LIST: liberado (filtro `visibilidade=='publico'` é client-side em
+      // listPublicos$; listMeus$ filtra por ownerId server-side).
+      allow list: if true;
+      allow get: if true;
+
+      // CREATE: usuário logado setando ownerId == próprio uid
+      allow create: if isCreatingAsSelf();
+
+      // UPDATE/DELETE: só owner ou admin master
+      allow update, delete: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid || isMaster()
+      );
+
+      // Subcoleções (jogadores, sessoes, presencas) — herdam permissão do owner.
+      // Leitura aberta pra qualquer um (ranking público), escrita só owner.
+      match /{sub=**} {
+        allow read: if true;
+        allow write: if isSignedIn() && (
+          get(/databases/$(database)/documents/rachas/$(rachaId)).data.ownerId == request.auth.uid
+          || isMaster()
+        );
+      }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // COLLECTION GROUP — transmissões ao vivo (qualquer path)
+    // ════════════════════════════════════════════════════════════════
+    // Permite query collectionGroup de `transmissoes` em qualquer nível
+    // (`/{path=**}/transmissoes`). Usado pela home pública pra mostrar
+    // a seção "Ao Vivo Agora" sem precisar varrer subcoleções manualmente.
+    //
+    // Leitura ABERTA (qualquer um pode ver "quem está ao vivo"). Writes
+    // continuam controlados pela regra específica dentro de categorias.
+    match /{path=**}/transmissoes/{transmissaoId} {
+      allow read: if true;
+    }
+
+    // ============ cobrancas (faturas de assinatura) ============
+    //  - Read: admin master OU o próprio usuário cobrado
+    //  - Create: admin master OU o próprio usuário criando cobrança
+    //    'aguardando' pra si mesmo (não pode auto-marcar como paga!)
+    //  - Update/Delete: admin master ou Cloud Function (que roda com
+    //    privilégio elevado e ignora rules)
+    match /cobrancas/{cobrancaId} {
+      allow read: if isMaster()
+                 || (isSignedIn() && resource.data.usuarioId == request.auth.uid);
+
+      allow create: if isMaster()
+                   || (
+                     isSignedIn()
+                     && request.resource.data.usuarioId == request.auth.uid
+                     && request.resource.data.status == 'aguardando'
+                   );
+
+      allow update, delete: if isMaster();
+    }
+
+    // ============ convitesModerador (link mágico /m/:token) ============
+    //  - get/list: aberto pra qualquer um (o token na URL = segredo)
+    //  - create: dono do campeonato referenciado
+    //  - update: dono OU user logado marcando como aceito (campos limitados)
+    //  - delete: dono do campeonato
+    match /convitesModerador/{token} {
+      allow get, list: if true;
+
+      allow create: if isSignedIn()
+                    && request.resource.data.criadoPor == request.auth.uid;
+
+      allow update: if isSignedIn() && (
+        // Owner pode atualizar tudo (sincronizar nome/email/permissões)
+        resource.data.criadoPor == request.auth.uid
+        ||
+        // User logado pode marcar como aceito (campos limitados)
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['aceitoEm', 'aceitoPorUid'])
+      );
+
+      allow delete: if isSignedIn() && resource.data.criadoPor == request.auth.uid;
+    }
+
+    // ============ logs de auditoria ============
+    //  - Read: admin master only
+    //  - Create: qualquer usuário autenticado (pra registrar suas ações)
+    //  - Update/Delete: admin master only
+    match /logs/{logId} {
+      allow read:   if isMaster();
+      allow create: if isSignedIn();
+      allow update, delete: if isMaster();
+    }
+
+    // ============ configurações globais ============
+    //  - Read: público (signup precisa checar invite codes)
+    //  - Write: admin master only
+    match /config/{docId} {
+      allow read:  if true;
+      allow write: if isMaster();
+    }
+  }
+}

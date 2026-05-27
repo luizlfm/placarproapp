@@ -1,0 +1,217 @@
+<ion-content class="ar-content">
+  <!-- Loading inicial -->
+  <div class="ar-state" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <div class="ar-shell" *ngIf="!loading && racha">
+    <!-- ═══════════ Page header (padrão clean) ═══════════ -->
+    <header class="r-page-head">
+      <span class="r-page-tag">ATIVAÇÃO GUIADA · PASSO {{ passoAtual }}/3</span>
+      <h1>{{ racha.nome }}</h1>
+      <p>
+        Vamos deixar seu racha pronto em poucos minutos. Você pode ajustar
+        os detalhes depois.
+      </p>
+    </header>
+
+    <!-- Chips de info -->
+    <div class="r-metricas-row">
+      <span class="r-metric-chip">
+        <ion-icon name="people-outline"></ion-icon>
+        Times: <strong>{{ racha.qtdTimes }}</strong>
+      </span>
+      <span class="r-metric-chip">
+        <ion-icon name="person-outline"></ion-icon>
+        Capacidade: <strong>{{ capacidadeTotal }}</strong>
+      </span>
+    </div>
+
+    <!-- ═══════════ Step indicator ═══════════ -->
+    <nav class="ar-steps" aria-label="Progresso da ativação">
+      <button
+        type="button"
+        class="ar-step"
+        [class.active]="passoAtual === 1"
+        [class.done]="passoAtual > 1"
+        (click)="irParaPasso(1)"
+      >
+        <span class="ar-step-num">
+          <ion-icon *ngIf="passoAtual > 1" name="checkmark"></ion-icon>
+          <span *ngIf="passoAtual <= 1">1</span>
+        </span>
+        <span class="ar-step-label">Times</span>
+      </button>
+      <button
+        type="button"
+        class="ar-step"
+        [class.active]="passoAtual === 2"
+        [class.done]="passoAtual > 2"
+        (click)="irParaPasso(2)"
+      >
+        <span class="ar-step-num">
+          <ion-icon *ngIf="passoAtual > 2" name="checkmark"></ion-icon>
+          <span *ngIf="passoAtual <= 2">2</span>
+        </span>
+        <span class="ar-step-label">Jogadores</span>
+      </button>
+      <button
+        type="button"
+        class="ar-step"
+        [class.active]="passoAtual === 3"
+        (click)="irParaPasso(3)"
+      >
+        <span class="ar-step-num"><span>3</span></span>
+        <span class="ar-step-label">Pronto</span>
+      </button>
+    </nav>
+
+    <!-- ═══════════ Passo 1: Times ═══════════ -->
+    <section class="ar-painel" *ngIf="passoAtual === 1">
+      <h2 class="ar-painel-titulo">Times pré-cadastrados</h2>
+      <p class="ar-painel-sub">Ajuste a quantidade e os nomes dos times, depois avance.</p>
+
+      <div class="ar-stepper-row">
+        <span class="ar-stepper-label">Quantidade de times</span>
+        <div class="ar-stepper">
+          <button
+            type="button"
+            class="ar-stepper-btn"
+            (click)="ajustarQtdTimes(-1)"
+            [disabled]="racha.qtdTimes <= 2"
+            aria-label="Diminuir times"
+          >
+            <ion-icon name="remove"></ion-icon>
+          </button>
+          <span class="ar-stepper-valor">{{ racha.qtdTimes }}</span>
+          <button
+            type="button"
+            class="ar-stepper-btn"
+            (click)="ajustarQtdTimes(1)"
+            [disabled]="(racha.qtdTimes ?? 2) >= 8"
+            aria-label="Aumentar times"
+          >
+            <ion-icon name="add"></ion-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista editável dos nomes dos times -->
+      <div class="ar-times-grid">
+        <div class="ar-time-field" *ngFor="let nome of nomesTimes; let i = index; trackBy: trackByIndex">
+          <span class="ar-time-num">{{ i + 1 }}</span>
+          <input
+            type="text"
+            [(ngModel)]="nomesTimes[i]"
+            placeholder="Nome do time"
+            maxlength="30"
+          />
+        </div>
+      </div>
+
+      <div class="ar-acoes">
+        <button type="button" class="ar-btn ar-btn-ghost" (click)="voltarPasso()">
+          <ion-icon name="arrow-back"></ion-icon>
+          Voltar
+        </button>
+        <button type="button" class="ar-btn ar-btn-primary" (click)="salvarPasso1EAvancar()">
+          Salvar e Avançar
+          <ion-icon name="arrow-forward"></ion-icon>
+        </button>
+      </div>
+    </section>
+
+    <!-- ═══════════ Passo 2: Jogadores ═══════════ -->
+    <section class="ar-painel" *ngIf="passoAtual === 2">
+      <h2 class="ar-painel-titulo">Jogadores sugeridos</h2>
+      <p class="ar-painel-sub">
+        Adicione nomes dos jogadores fixos do racha. Você pode pular essa
+        etapa e adicionar depois.
+      </p>
+
+      <div class="ar-jogador-input">
+        <input
+          #jogInput
+          type="text"
+          placeholder="Digite o nome e tecle Enter ou +"
+          (keyup.enter)="adicionarJogador(jogInput)"
+        />
+        <button type="button" class="ar-add-btn" (click)="adicionarJogador(jogInput)">
+          <ion-icon name="add"></ion-icon>
+        </button>
+      </div>
+
+      <div class="ar-jogadores-lista" *ngIf="jogadoresSugeridos.length > 0">
+        <span class="ar-jogador-tag" *ngFor="let j of jogadoresSugeridos; let i = index">
+          {{ j }}
+          <button type="button" class="ar-jogador-remove" (click)="removerJogador(i)" aria-label="Remover">
+            <ion-icon name="close"></ion-icon>
+          </button>
+        </span>
+      </div>
+
+      <div class="ar-jogadores-vazio" *ngIf="jogadoresSugeridos.length === 0">
+        <ion-icon name="person-add-outline"></ion-icon>
+        <p>Nenhum jogador adicionado ainda. Você pode pular.</p>
+      </div>
+
+      <div class="ar-acoes">
+        <button type="button" class="ar-btn ar-btn-ghost" (click)="voltarPasso()">
+          <ion-icon name="arrow-back"></ion-icon>
+          Voltar
+        </button>
+        <button type="button" class="ar-btn ar-btn-primary" (click)="salvarPasso2EAvancar()">
+          {{ jogadoresSugeridos.length === 0 ? 'Pular e Avançar' : 'Salvar e Avançar' }}
+          <ion-icon name="arrow-forward"></ion-icon>
+        </button>
+      </div>
+    </section>
+
+    <!-- ═══════════ Passo 3: Pronto ═══════════ -->
+    <section class="ar-painel ar-painel-pronto" *ngIf="passoAtual === 3">
+      <div class="ar-pronto-icone">
+        <ion-icon name="trophy"></ion-icon>
+      </div>
+      <h2 class="ar-painel-titulo">Tudo pronto!</h2>
+      <p class="ar-painel-sub">
+        Seu racha <strong>{{ racha.nome }}</strong> está configurado.
+        Compartilhe o link e comece a chamar a galera.
+      </p>
+
+      <div class="ar-resumo">
+        <div class="ar-resumo-item">
+          <ion-icon name="people-outline"></ion-icon>
+          <div>
+            <div class="ar-resumo-lbl">Times</div>
+            <div class="ar-resumo-val">{{ racha.qtdTimes }}</div>
+          </div>
+        </div>
+        <div class="ar-resumo-item">
+          <ion-icon name="person-outline"></ion-icon>
+          <div>
+            <div class="ar-resumo-lbl">Por time</div>
+            <div class="ar-resumo-val">{{ racha.jogadoresPorTime }}</div>
+          </div>
+        </div>
+        <div class="ar-resumo-item">
+          <ion-icon name="grid-outline"></ion-icon>
+          <div>
+            <div class="ar-resumo-lbl">Capacidade</div>
+            <div class="ar-resumo-val">{{ capacidadeTotal }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ar-acoes">
+        <button type="button" class="ar-btn ar-btn-ghost" (click)="voltarPasso()">
+          <ion-icon name="arrow-back"></ion-icon>
+          Voltar
+        </button>
+        <button type="button" class="ar-btn ar-btn-primary ar-btn-finalizar" (click)="finalizar()">
+          <ion-icon name="checkmark-done"></ion-icon>
+          Finalizar e abrir
+        </button>
+      </div>
+    </section>
+  </div>
+</ion-content>

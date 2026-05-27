@@ -1,0 +1,58 @@
+.bg {
+  --background: var(--placar-bg);
+  --padding-start: 18px;
+  --padding-end: 18px;
+  --padding-top: 22px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ion-color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.qtd-actual {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ion-color-primary);
+  margin: 4px 0 10px;
+}
+
+.grupo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  border-top: 1px solid #f0f0f2;
+  padding: 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d2d2d;
+  cursor: pointer;
+
+  &:first-of-type { border-top: none; }
+  &:hover { color: var(--ion-color-primary); }
+
+  ion-icon { color: var(--ion-color-medium); font-size: 18px; }
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  margin: 12px 0 0;
+  text-align: center;
+}

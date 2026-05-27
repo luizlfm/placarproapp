@@ -1,0 +1,46 @@
+.picker-content {
+  --background: #ffffff;
+}
+
+.modalidade-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 18px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #f0f0f2;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease;
+
+  &:hover { background: #fafafb; }
+  &.selected { background: rgba(124, 198, 29, 0.08); }
+}
+
+.badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex: 0 0 auto;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+
+  ion-icon { font-size: 18px; }
+}
+
+.nome {
+  flex: 1;
+  font-size: 15px;
+  color: #2d2d2d;
+  font-weight: 500;
+}
+
+.check {
+  color: var(--ion-color-secondary);
+  font-size: 22px;
+}

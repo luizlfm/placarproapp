@@ -1,0 +1,389 @@
+/* Esconde o ion-header desktop quando o `<app-campeonato-mobile-header>`
+   (sticky no topo do ion-content) está visível. */
+.cmh-desktop-only {
+  @media (max-width: 767px) {
+    display: none;
+  }
+}
+
+.wrap {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 18px 16px 40px;
+}
+
+/* Botão "Salvar" no header — em telas muito estreitas (≤380px) esconde
+   o texto e mantém só o ícone, pra não brigar com o título "Configurações"
+   por espaço. Em desktop/mobile médio o texto continua visível. */
+.hdr-salvar-txt {
+  @media (max-width: 380px) {
+    display: none;
+  }
+}
+
+.card {
+  background: var(--placar-surface);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  h3 {
+    margin: 0;
+    color: var(--ion-color-tertiary);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+}
+
+/* ===== Logo + Título ===== */
+/* Layout sempre em coluna: logo → título → subtítulo empilhados.
+   Melhor aproveitamento do espaço e consistência com mobile e desktop. */
+.logo-row {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: stretch;
+}
+
+/* Coluna que agrupa o toggle Web/Mobile + a caixa do logo. */
+.logo-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 0 0 auto;
+  align-items: center; /* logo centralizado horizontalmente */
+}
+
+.logo-box {
+  width: 140px;
+  height: 140px;
+  flex: 0 0 auto;
+  background: rgba(28, 46, 61, 0.06);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--ion-color-medium);
+  overflow: hidden;
+  position: relative;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 32px; }
+  .size { font-size: 11px; margin-top: 4px; }
+  .hint { font-size: 10px; opacity: 0.65; margin-top: 2px; }
+
+  @media (max-width: 600px) {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+/* Variante Mobile do logo — mesmo aspecto quadrado (240×240) mas borda
+   tracejada pra deixar visualmente claro que é uma versão opcional. */
+.logo-box-mobile {
+  border: 1px dashed rgba(28, 46, 61, 0.35);
+  background: rgba(28, 46, 61, 0.03);
+}
+
+/* ===== Toggle Web/Mobile (reutilizável pras duas seções) ===== */
+.modo-toggle {
+  display: inline-flex;
+  background: rgba(28, 46, 61, 0.08);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+  align-self: flex-start;
+}
+
+.modo-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+
+  ion-icon { font-size: 14px; }
+
+  &.ativo {
+    background: var(--ion-color-primary, #1c2e3d);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  }
+
+  &:not(.ativo):hover {
+    background: rgba(28, 46, 61, 0.06);
+  }
+}
+
+.logo-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* ===== Capa ===== */
+.capa-box {
+  width: 100%;
+  /* 1600×400 (4:1) — mesma proporção do `.banner` exibido na pública. */
+  aspect-ratio: 1600 / 400;
+  background: rgba(28, 46, 61, 0.06);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--ion-color-medium);
+  overflow: hidden;
+  position: relative;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 32px; }
+  span { font-size: 13px; }
+  .size { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+  .hint { font-size: 10px; opacity: 0.6; margin-top: 2px; }
+}
+
+/* Variante Mobile da capa — proporção 3:1 (1600×533). Mesma proporção
+   clássica de banner; em mobile o container será exibido em 100% da
+   largura. No preview do config, limitamos a largura pra simular o
+   layout do celular. */
+.capa-box-mobile {
+  aspect-ratio: 1600 / 533;
+  max-width: 420px;
+  margin-inline: auto;
+  border: 1px dashed rgba(28, 46, 61, 0.35);
+  background: rgba(28, 46, 61, 0.03);
+}
+
+/* ===== Upload hover ===== */
+.clickable {
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+
+  /* Mantemos 2 colunas em mobile (antes era 1fr stack). Datas + telefones
+     são campos curtos, cabem lado a lado em 412px. Layout fica igual
+     ao desktop, como o usuário pediu. Em telas muito estreitas (≤380px),
+     se ficar apertado demais, o ion-input internamente quebra a label. */
+  @media (max-width: 600px) {
+    gap: 8px;
+  }
+}
+
+/* ===== Sub-blocos (Contatos / Regras / etc.) ===== */
+.sub-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.sub-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ion-color-primary);
+  font-size: 13px;
+  font-weight: 700;
+
+  ion-icon { font-size: 18px; }
+}
+
+/* ===== Cor row ===== */
+.cor-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  font-size: 14px;
+
+  > ion-icon { color: var(--ion-color-medium); font-size: 20px; }
+  .label { color: var(--placar-text); font-weight: 500; flex: 1; }
+
+  input[type="color"] {
+    width: 44px;
+    height: 32px;
+    border: 1px solid #c8c9d1;
+    border-radius: 8px;
+    cursor: pointer;
+    background: none;
+    padding: 0;
+  }
+}
+
+/* ===== Link rows ===== */
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--placar-divider);
+  padding: 14px 4px;
+  font-size: 14px;
+  color: var(--placar-text);
+  cursor: pointer;
+  text-align: left;
+
+  &:first-of-type { border-top: none; }
+  &:hover { background: rgba(28, 46, 61, 0.03); }
+
+  > ion-icon:first-child {
+    color: var(--ion-color-medium);
+    font-size: 20px;
+    flex: 0 0 auto;
+  }
+
+  span:first-of-type {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .link-action {
+    color: var(--ion-color-tertiary);
+    font-weight: 600;
+    font-size: 13px;
+  }
+}
+
+/* ===== Radio cards ===== */
+.radio-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: 1.5px solid var(--placar-border);
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: border-color 120ms ease, background 120ms ease;
+
+  &:last-of-type { margin-bottom: 0; }
+  &.active {
+    border-color: var(--ion-color-primary);
+    background: rgba(28, 46, 61, 0.04);
+  }
+
+  .r-text { flex: 1; font-size: 14px; color: var(--placar-text); font-weight: 500; }
+}
+
+/* ===== Link bloco ===== */
+.link-block {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  .link-prefix {
+    background: rgba(28, 46, 61, 0.06);
+    color: var(--ion-color-primary);
+    padding: 0 14px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+  }
+  ion-input { flex: 1; min-width: 180px; }
+  ion-button {
+    --border-radius: 10px;
+    font-weight: 600;
+  }
+}
+
+/* ===== Toggle rows ===== */
+.toggle-row {
+  --background: transparent;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  border-top: 1px solid var(--placar-divider);
+  --min-height: 56px;
+
+  &:first-of-type { border-top: none; }
+
+  ion-icon[slot="start"] {
+    color: var(--ion-color-medium);
+    font-size: 20px;
+    margin-right: 8px;
+  }
+
+  .t-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--placar-text);
+  }
+  .t-sub {
+    font-size: 12px;
+    color: var(--ion-color-medium);
+    margin-top: 2px;
+    white-space: normal;
+  }
+
+  ion-toggle {
+    --background-checked: var(--ion-color-secondary);
+    --handle-background-checked: #fff;
+  }
+}
+
+/* ===== Botões finais ===== */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 18px 0 22px;
+}
+
+.btn-save {
+  --border-radius: 12px;
+  --box-shadow: 0 6px 18px rgba(28, 46, 61, 0.35);
+  height: 48px;
+  font-weight: 600;
+}
+
+.btn-remove {
+  --border-radius: 999px;
+  --padding-start: 32px;
+  --padding-end: 32px;
+  align-self: center;
+  font-weight: 600;
+}
+
+/* ===== Suporte ===== */
+.suporte {
+  text-align: center;
+  border-top: 1px solid var(--placar-border);
+  padding-top: 20px;
+
+  h4 {
+    color: var(--ion-color-primary);
+    font-size: 15px;
+    margin: 0 0 8px;
+  }
+  p {
+    color: var(--ion-color-medium);
+    margin: 2px 0;
+    font-size: 13px;
+  }
+}

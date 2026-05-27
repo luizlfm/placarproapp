@@ -1,0 +1,344 @@
+// Sub-shell do Campeonato — layout flex puro (sem ion-split-pane).
+// `ion-page` no host é flex-column; `.camp-layout` ocupa todo o espaço.
+.camp-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  background: var(--ion-background-color, #f5f5f7);
+
+  /* Em mobile vira coluna: header navy no topo + main embaixo.
+     A `.camp-aside` (sidebar lateral) é escondida — sua função fica
+     no `.camp-mobile-header`. Mesmo padrão usado em publico-categoria
+     pra dar consistência visual entre admin e visualização pública. */
+  @media (max-width: 767px) {
+    flex-direction: column;
+  }
+}
+
+.camp-aside {
+  flex: 0 0 280px;
+  width: 280px;
+  background: var(--placar-sidebar-bg);
+  color: var(--placar-sidebar-text);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+
+  /* No mobile a sidebar some — navegação fica no `.camp-mobile-header`
+     que aparece no topo (brand + segments). Antes a sidebar ficava
+     espremida em 240px ocupando metade da tela; agora dá 100% da largura
+     pro conteúdo. */
+  @media (max-width: 767px) {
+    display: none;
+  }
+}
+
+/* ============ Header MOBILE (≤ 767px) ============
+   Aparece SOMENTE em mobile. Espelha o padrão do .mobile-header da
+   publico-categoria.page: brand row no topo (back + logo + título +
+   sair) + segments row embaixo (ícones de navegação). Sticky pra
+   ficar visível mesmo quando o conteúdo rola. */
+.camp-mobile-header {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--placar-sidebar-bg, #1C2E3D);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+  @media (max-width: 767px) {
+    display: block;
+  }
+}
+
+.cmh-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cmh-back {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease;
+
+  ion-icon { font-size: 20px; }
+  &:hover { background: rgba(255, 255, 255, 0.18); }
+  &:active { transform: scale(0.95); }
+}
+
+.cmh-logo {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--placar-accent, #7CC61D);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #fff;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 18px; }
+}
+
+.cmh-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmh-logout {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 90, 90, 0.18);
+  border: none;
+  border-radius: 8px;
+  color: #ff8a8a;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease, color 120ms ease;
+
+  ion-icon { font-size: 20px; }
+  &:hover {
+    background: rgba(255, 90, 90, 0.32);
+    color: #ffb0b0;
+  }
+  &:active { transform: scale(0.95); }
+}
+
+/* Segments — linha de ícones de navegação. Texto escondido em mobile
+   pra caber 3+ itens em 360px. Indicador é uma faixa lime no border
+   bottom do item ativo (espelha .mh-seg da publico-categoria). */
+.cmh-segments {
+  display: flex;
+  justify-content: space-around;
+  padding: 0;
+  gap: 0;
+}
+
+.cmh-seg {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 6px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  text-decoration: none;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+
+  ion-icon { font-size: 22px; }
+
+  /* Só ícones no mobile — texto seria apertado demais. */
+  span { display: none; }
+
+  &:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &.active {
+    color: var(--placar-accent, #7CC61D);
+    border-bottom-color: var(--placar-accent, #7CC61D);
+    background: rgba(124, 198, 29, 0.08);
+  }
+}
+
+.camp-main {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+
+  ion-router-outlet {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* No mobile, os child pages (inicio/midia/config) têm seus próprios
+     `<ion-header>` com `<ion-back-button>`. Como o shell agora desenha
+     o `.camp-mobile-header` no topo (logo + título + segments), o header
+     do child ficaria DUPLICADO (uma barra navy em cima da outra).
+     `::ng-deep` é necessário pra atravessar a view encapsulation do
+     Angular — sem ele a regra não atinge o ion-header renderizado
+     dentro de outro componente (inicio.page, midia.page, config.page). */
+  @media (max-width: 767px) {
+    ::ng-deep ion-header {
+      display: none;
+    }
+  }
+}
+
+/* Header com logo + nome */
+.camp-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: var(--placar-sidebar-text);
+  transition: background 120ms ease;
+
+  &:hover { background: rgba(255, 255, 255, 0.04); }
+}
+
+.camp-logo {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--placar-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #fff;
+  font-weight: 700;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 22px; }
+}
+
+.camp-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--placar-sidebar-text);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.25;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Nav */
+.camp-nav {
+  padding: 12px 0;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  color: var(--placar-sidebar-text);
+  text-decoration: none;
+  font-size: 14.5px;
+  font-weight: 500;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background 150ms ease, border-color 150ms ease;
+
+  ion-icon {
+    font-size: 20px;
+    color: var(--placar-sidebar-text-muted);
+    flex-shrink: 0;
+    transition: color 150ms ease;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    ion-icon { color: #fff; }
+  }
+
+  &.active {
+    background: var(--placar-sidebar-active-bg);
+    border-left-color: var(--placar-sidebar-active-border);
+    color: #fff;
+    ion-icon { color: var(--placar-accent); }
+  }
+}
+
+/* User footer */
+.camp-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: auto;
+}
+
+.user-avatar {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--placar-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  overflow: hidden;
+  font-size: 15px;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  color: var(--placar-sidebar-text);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-logout {
+  background: none;
+  border: none;
+  color: var(--placar-accent);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 0 0;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.user-logout:hover { color: #fff; }

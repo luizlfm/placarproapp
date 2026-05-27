@@ -1,0 +1,1079 @@
+/*
+ * App Global CSS — PlacarPro
+ * Tipografia clean + inputs outlined + dark mode automático.
+ */
+
+/* Ionic core */
+@import "@ionic/angular/css/core.css";
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+/* IMPORTANTE: removemos o auto dark do Ionic — controlamos via ThemeService. */
+/* @import "@ionic/angular/css/palettes/dark.system.css"; */
+
+/* ============ Tipografia base ============ */
+body {
+  font-family:
+    'Inter', -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--placar-text);
+}
+
+/* Suaviza títulos */
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.01em;
+}
+
+/* ============ Inputs globais (outlined) ============ */
+ion-input[fill="outline"],
+ion-select[fill="outline"],
+ion-textarea[fill="outline"] {
+  --background: var(--placar-surface);
+  --color: var(--placar-text);
+  --placeholder-color: var(--placar-text-muted);
+  --placeholder-opacity: 0.7;
+  --border-color: var(--placar-border-strong);
+  --border-radius: 10px;
+  --highlight-color-focused: var(--ion-color-primary);
+  --highlight-color-valid: var(--ion-color-primary);
+
+  /* Fallback de borda forçada via box-shadow inset — fica visível mesmo
+     quando o ::part(outline) interno do Ionic perde renderização ao
+     receber foco em alguns contextos. Garante o look "outline rounded"
+     consistente em todos os estados. */
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px var(--placar-border-strong);
+  transition: box-shadow 150ms ease;
+
+  &.has-focus,
+  &.ion-focused {
+    box-shadow: inset 0 0 0 2px var(--ion-color-primary);
+  }
+
+  &.ion-invalid.ion-touched {
+    box-shadow: inset 0 0 0 2px var(--ion-color-danger);
+  }
+  &::part(label) {
+    color: var(--placar-text-muted);
+    font-weight: 500;
+    letter-spacing: 0.1px;
+  }
+
+  &.label-floating::part(label),
+  &.has-focus::part(label) {
+    color: var(--ion-color-primary);
+    font-weight: 600;
+  }
+
+  &.ion-invalid.ion-touched {
+    --border-color: var(--ion-color-danger);
+    --highlight-color: var(--ion-color-danger);
+
+    &::part(label) { color: var(--ion-color-danger); }
+  }
+
+  ion-button[slot="end"] {
+    --padding-start: 4px;
+    --padding-end: 4px;
+    margin: 0;
+  }
+}
+
+/* ============ Ion-content base ============ */
+ion-content {
+  --background: var(--placar-bg);
+}
+
+/* ============ Cards padrão ============ */
+.placar-card,
+ion-card {
+  --background: var(--placar-surface);
+  background: var(--placar-surface);
+  border-radius: 12px;
+  box-shadow: var(--placar-shadow);
+}
+
+/* ============ Toolbar (header das páginas) ============ */
+ion-toolbar {
+  --background: var(--campeonato-cor, var(--ion-color-primary));
+  --color: #ffffff;
+  --border-color: transparent;
+  --min-height: 56px;
+}
+
+/* Empurra o título do toolbar pra direita no mobile (espaço pro hambúrguer) */
+@media (max-width: 767px) {
+  ion-toolbar ion-title {
+    padding-inline-start: 48px;
+  }
+  /* Se a página tem botão de voltar (ion-buttons slot="start"), não precisa empurrar */
+  ion-toolbar:has(ion-buttons[slot="start"]) ion-title {
+    padding-inline-start: 0;
+  }
+
+  /* Esconde o hambúrguer global quando a página renderiza seu próprio botão
+     voltar (ion-buttons slot="start" dentro do shell). Cobre páginas profundas
+     (sumulas/print/jogo/etc) e qualquer página com back nativo do Ionic. */
+  app-shell:has(ion-buttons[slot="start"]) .shell-hamburger {
+    display: none !important;
+  }
+}
+
+/* Páginas que usam .page-head (cabeçalho customizado fora do toolbar) — pad-top no mobile */
+@media (max-width: 767px) {
+  .page-wrap > .page-head,
+  .page-head:first-child {
+    padding-top: 6px;
+  }
+}
+
+/* Quando o campeonato tem uma cor própria, alguns elementos refletem ela */
+.campeonato-themed {
+  .accent-bg { background: var(--campeonato-cor); }
+  .accent-text { color: var(--campeonato-cor); }
+  .accent-border { border-color: var(--campeonato-cor); }
+}
+
+/* ============ Modais ============ */
+ion-modal {
+  --background: var(--placar-bg);
+}
+
+/* ── Mobile (<540px): garante que modal-card NÃO corte nas laterais ──
+   Aplica nos `.modal-card` que muitos modais do app usam como wrapper interno.
+   Reduz width fixa em px e padding lateral para caber em telas estreitas. */
+@media (max-width: 540px) {
+  ion-modal .modal-card,
+  ion-modal .modal-bg,
+  ion-modal ion-content .modal-card {
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px) !important;
+    max-height: calc(100vh - 32px) !important;
+    margin: 10px !important;
+    padding: 16px 14px !important;
+    box-sizing: border-box;
+  }
+
+  /* Form groups dentro de modais — reduzir gap/padding */
+  ion-modal .field-group,
+  ion-modal .form-group,
+  ion-modal .form-card,
+  ion-modal .fields {
+    gap: 10px !important;
+  }
+
+  /* Footer actions — empilha vertical em telas muito pequenas */
+  ion-modal .footer-actions,
+  ion-modal .actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+.sc-ion-alert-md-h{
+  --max-width: 357px!important;
+}
+
+/* Modal patrocinador da partida.
+   Usa flex column no ::part(content) pra que o div.pat-modal-content
+   (substituindo ion-content) cresça corretamente sem colapsar. */
+ion-modal.modal-patrocinador-jogo {
+  --width: 96%;
+  --max-width: 480px;
+  --height: auto;
+  --max-height: 90vh;
+  --border-radius: 14px;
+
+  &::part(content) {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* Modal grande (admin) — 90% da tela, com max 900px */
+ion-modal.modal-large {
+  --width: 92%;
+  --max-width: 900px;
+  --height: 92%;
+  --max-height: 900px;
+  --border-radius: 14px;
+}
+
+/* Modal de Login — overlay escuro com card centralizado */
+ion-modal.modal-login {
+  --width: 100%;
+  --height: 100%;
+  --max-width: 100%;
+  --max-height: 100%;
+  --min-width: 0;
+  --min-height: 0;
+  --background: transparent;
+  --box-shadow: none;
+  --backdrop-opacity: 0.55;
+
+  &::part(content) {
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+  }
+}
+
+/* Viewer de mídia (foto/vídeo/youtube/notícia/link) — fullscreen.
+   Sem isso, o ion-modal vira um card centralizado com fundo branco e
+   bordas arredondadas, deixando o visual quebrado por cima do dark backdrop
+   que o ViewerModalComponent desenha internamente. */
+ion-modal.midia-viewer-modal {
+  --width: 100%;
+  --height: 100%;
+  --max-width: 100%;
+  --max-height: 100%;
+  --min-width: 0;
+  --min-height: 0;
+  --border-radius: 0;
+  --background: transparent;
+  --box-shadow: none;
+  --backdrop-opacity: 0.92;
+
+  &::part(content) {
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+  }
+}
+
+
+/* Modal compacto (cartão centralizado pequeno, p/ Editar fase) */
+ion-modal.modal-editar-fase {
+  --width: auto;
+  --height: auto;
+  --max-width: 460px;
+  --min-width: 320px;
+  --background: transparent;
+  --box-shadow: none;
+  --backdrop-opacity: 0.5;
+
+  &::part(content) {
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+/* Alert "Nova fase" — botões grandes empilhados */
+ion-alert.alert-nova-fase {
+  .alert-button-group {
+    flex-direction: column !important;
+    padding: 6px 18px 14px !important;
+    gap: 4px;
+  }
+  .alert-button.alert-btn-tipo {
+    background: transparent;
+    color: var(--ion-color-primary);
+    font-size: 15px;
+    font-weight: 600;
+    text-align: left;
+    text-transform: none;
+    margin: 0;
+    padding: 14px 0;
+    border-bottom: 1px solid #eee;
+    width: 100%;
+  }
+  .alert-button.alert-btn-cancel {
+    color: var(--ion-color-medium);
+    margin-top: 6px;
+    font-weight: 600;
+  }
+}
+
+ion-alert.alert-tall {
+  --max-height: 80vh;
+  .alert-checkbox-group {
+    max-height: 50vh !important;
+  }
+}
+
+/* ============ Toast ============ */
+ion-toast {
+  --border-radius: 10px;
+  --box-shadow: var(--placar-shadow-md);
+}
+
+/* ============ Alert ============ */
+ion-alert {
+  --background: var(--placar-surface);
+}
+
+/* =========================================================================
+   Botões — padronização global PlacarPro
+   -------------------------------------------------------------------------
+   Tokens em theme/variables.scss controlam altura/padding/radius.
+   Páginas individuais ainda podem sobrescrever via `style.scss` quando
+   precisarem, mas sem sobrescrita o app inteiro usa estes defaults.
+
+   Tamanhos (padronização atualizada — DEFAULT = small):
+     - ion-button (default) / [size="small"]   → sm (32px)
+     - ion-button[size="default"]              → md (40px, opt-in explícito)
+     - ion-button[size="large"] / [expand]     → lg (48px) — submits/CTAs
+     - .btn-icon, .btn-icon-sm, .btn-icon-lg   → botão circular HTML puro
+   ========================================================================= */
+.buttons:host(.button-full:not(.button-round)) .button-native {
+    border-radius: 4 !important;
+    border-right-width: 0;
+    border-left-width: 0;
+}
+ion-button {
+  /* Defaults compactos: sem size declarado, vira `sm` automaticamente.
+     IMPORTANTE: min-height/font-size precisam ficar no host (ion-button),
+     porque é onde o Ionic 8 declara essas props no :host. Setar via
+     ::part(native) NÃO sobrescreve por ordem/specificity. */
+  --border-radius: var(--btn-radius-sm);
+  --padding-start: var(--btn-px-sm);
+  --padding-end:   var(--btn-px-sm);
+  --padding-top:    0;
+  --padding-bottom: 0;
+  min-height: var(--btn-h-sm) !important;
+  height: auto !important;
+  font-size: var(--btn-font-sm) !important;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+
+  /* Small — explícito (idêntico ao default). Mantido pra retrocompat. */
+  &[size="small"] {
+    --border-radius: var(--btn-radius-sm);
+    --padding-start: var(--btn-px-sm);
+    --padding-end:   var(--btn-px-sm);
+    min-height: var(--btn-h-sm) !important;
+    height: auto !important;
+    font-size: var(--btn-font-sm) !important;
+  }
+
+  /* Default (md) — opt-in quando explicitamente declarado. */
+  &[size="default"] {
+    --border-radius: var(--btn-radius-md);
+    --padding-start: var(--btn-px-md);
+    --padding-end:   var(--btn-px-md);
+    min-height: var(--btn-h-md) !important;
+    height: auto !important;
+    font-size: var(--btn-font-md) !important;
+  }
+
+  /* Large — para CTAs principais (login, submits, expand=block). */
+  &[size="large"],
+  &[expand="block"] {
+    --border-radius: var(--btn-radius-lg);
+    --padding-start: var(--btn-px-lg);
+    --padding-end:   var(--btn-px-lg);
+    min-height: var(--btn-h-lg) !important;
+    height: auto !important;
+    font-size: var(--btn-font-lg) !important;
+  }
+
+  /* Botão de ícone só (sem texto) — fica circularzinho. */
+  &[fill="clear"][aria-label] ion-icon[slot="icon-only"],
+  &[aria-label]:not([fill]) ion-icon[slot="icon-only"] {
+    /* não muda forma — apenas garante espaçamento mínimo via padding já dado */
+  }
+
+  /* slot=end dentro de ion-input já está tratado acima (linhas 69-73) */
+}
+
+/* =========================================================================
+   FIX GLOBAL — ícones dentro de ion-button
+   -------------------------------------------------------------------------
+   Vários SCSS de página declaram regras como:
+     .empty { ion-icon { font-size: 60px; } }
+   Esse seletor DESCENDENTE pega TAMBÉM o ícone dentro de <ion-button>
+   filho da `.empty`, estourando a altura do botão (ex: "CADASTRAR EQUIPES"
+   com "+" gigantesco).
+
+   Em vez de corrigir dezenas de SCSS individualmente, esta regra global
+   garante que ícones dentro de qualquer ion-button sempre sigam o tamanho
+   relativo ao botão — mimetizando o comportamento default do Ionic.
+
+   `!important` é necessário porque regras com classe (`.empty ion-icon`)
+   têm specificity > `ion-button ion-icon`.
+   ========================================================================= */
+ion-button ion-icon {
+  font-size: 1.4em !important;
+}
+ion-button ion-icon[slot="icon-only"] {
+  font-size: 1.8em !important;
+}
+ion-button ion-icon[slot="start"],
+ion-button ion-icon[slot="end"] {
+  font-size: 1.4em !important;
+}
+
+/* Botão circular HTML puro — para FABs pequenos / ações em cards.
+   Uso: <button class="btn-icon btn-icon-sm" type="button"><ion-icon /></button> */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--btn-circle-md);
+  height: var(--btn-circle-md);
+  border-radius: 50%;
+  background: rgba(28, 46, 61, 0.06);
+  color: var(--placar-text);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background 120ms ease, transform 100ms ease, color 120ms ease;
+
+  ion-icon { font-size: 18px; }
+
+  &:hover:not(:disabled) {
+    background: rgba(28, 46, 61, 0.12);
+  }
+  &:active:not(:disabled) { transform: scale(0.94); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Variantes */
+  &.btn-icon-sm {
+    width: var(--btn-circle-sm);
+    height: var(--btn-circle-sm);
+    ion-icon { font-size: 16px; }
+  }
+  &.btn-icon-lg {
+    width: var(--btn-circle-lg);
+    height: var(--btn-circle-lg);
+    ion-icon { font-size: 22px; }
+  }
+
+  /* Cores semânticas */
+  &.btn-icon-primary {
+    background: var(--ion-color-primary);
+    color: #fff;
+    &:hover:not(:disabled) { background: var(--ion-color-primary-shade); }
+  }
+  &.btn-icon-accent {
+    background: var(--placar-accent);
+    color: #fff;
+    &:hover:not(:disabled) { background: var(--ion-color-secondary-shade); }
+  }
+  &.btn-icon-danger {
+    background: rgba(235, 71, 71, 0.1);
+    color: var(--ion-color-danger);
+    &:hover:not(:disabled) { background: var(--ion-color-danger); color: #fff; }
+  }
+  &.btn-icon-ghost {
+    background: transparent;
+    color: var(--placar-text-muted);
+    &:hover:not(:disabled) {
+      background: rgba(28, 46, 61, 0.06);
+      color: var(--placar-text);
+    }
+  }
+  &.btn-icon-dark {
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    &:hover:not(:disabled) { background: rgba(0, 0, 0, 0.8); }
+  }
+}
+
+/* Botões HTML puros retangulares já existentes no app — padroniza
+   altura mínima, radius e font-weight sem mexer no fundo/cor de cada um.
+   Acompanha o default dos ion-buttons (sm). Se um botão específico
+   precisar parecer "primary CTA" maior, basta adicionar `data-size="lg"`.
+   `.btn-plus` é circular (FAB inline em listas) e ficou de fora aqui. */
+.btn-save,
+.btn-add,
+.btn-novo,
+.btn-back,
+.btn-link,
+.btn-seguir,
+.btn-unfollow,
+.btn-danger {
+  min-height: var(--btn-h-sm);
+  border-radius: var(--btn-radius-sm);
+  font-size: var(--btn-font-sm);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  padding: 0 var(--btn-px-sm);
+  transition: background 120ms ease, transform 100ms ease, box-shadow 120ms ease;
+
+  &:active:not(:disabled) { transform: scale(0.98); }
+
+  /* Opt-in para botão grande (CTA principal): <button class="btn-save" data-size="lg"> */
+  &[data-size="lg"] {
+    min-height: var(--btn-h-lg);
+    border-radius: var(--btn-radius-lg);
+    font-size: var(--btn-font-lg);
+    padding: 0 var(--btn-px-lg);
+  }
+}
+
+/* `.btn-plus` (FAB inline circular) — só padroniza o tamanho pra não ficar
+   3 dimensões diferentes pelo app (era 44/52/56). */
+.btn-plus:not([class*="btn-icon"]) {
+  /* Quando o arquivo NÃO definiu width/height próprio, herda do token md.
+     Como CSS prevê especificidade, qualquer override local com width fixo
+     vence esse default (este `width` só ganha contra navegador default). */
+  transition: background 120ms ease, transform 100ms ease, box-shadow 120ms ease;
+  &:active:not(:disabled) { transform: scale(0.96); }
+}
+
+/* Variante "pílula" pra botões que querem ficar mais arredondados */
+.btn-pill {
+  border-radius: 999px !important;
+  --border-radius: 999px !important;
+}
+
+/* ============================================================
+   PRINT — esconde shell (sidebar, toolbars) em qualquer página
+   imprimível. Cada página individual ainda pode declarar suas
+   próprias regras pra @page (size, margin).
+   ============================================================ */
+@media print {
+  /* Esconde menu lateral, header global, FAB de "ver página pública" */
+  .shell-layout .shell-aside,
+  .shell-layout > ion-menu,
+  ion-menu,
+  app-shell ion-header,
+  .shell-layout .shell-topbar,
+  .shell-fab,
+  ion-fab,
+  ion-tab-bar {
+    display: none !important;
+  }
+
+  /* Conteúdo da página ocupa 100% e sem padding/margem */
+  .shell-layout {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .shell-layout .shell-main,
+  .shell-main,
+  ion-content {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    --background: #fff !important;
+    --padding-start: 0 !important;
+    --padding-end: 0 !important;
+    --padding-top: 0 !important;
+    --padding-bottom: 0 !important;
+    --offset-top: 0 !important;
+    --offset-bottom: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Esconde toolbars/cabeçalhos do Ionic do shell (mas a página específica
+     pode mostrar os seus de novo se quiser, com seletor mais específico). */
+  app-root > ion-header,
+  app-root > ion-menu,
+  body > app-root > ion-app > ion-menu {
+    display: none !important;
+  }
+
+  /* Força cores de fundo/bordas a saírem no PDF */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  body, html {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+/* ============ Popover "Exportar" da página de impressão de equipes ============ */
+ion-popover.exportar-popover {
+  --width: 240px;
+  --max-width: 92vw;
+  --offset-y: 4px;
+
+  &::part(content) {
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  }
+}
+
+/* ============ Popover de ações dos Jogos (Adicionar Rodada/Partida etc.) ============
+   Sem este override, o `ion-popover` deixava cantos brancos visíveis nas
+   pontas porque o ::part(content) tem background branco padrão E o
+   `.acoes` interno tem border-radius 12px — a diferença de raios criava
+   aqueles "pontinhos" brancos nos cantos. Aqui:
+    - Background do content casa com o navy interno (mesmo --ion-color-primary)
+    - Border-radius idêntico (12px)
+    - Sem seta (arrow: false já no TS) */
+ion-popover.popover-jogos-acoes,
+ion-popover.popover-jogo-acoes {
+  --background: var(--ion-color-primary);
+  --width: 240px;
+  --max-width: 92vw;
+  --offset-y: 6px; // pequeno gap entre o botão e o popover
+
+  &::part(content) {
+    background: var(--ion-color-primary);
+    border-radius: 12px;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.28);
+  }
+
+  /* Mesmo com `arrow: false`, alguns builds do Ionic ainda renderizam o
+     pseudo-elemento — escondemos defensivamente. */
+  &::part(arrow) {
+    display: none;
+  }
+}
+
+/* Modal "Lista das equipes" (seleção de colunas) — sheet visual padronizado */
+ion-modal.colunas-equipes-modal,
+ion-modal.fase-equipes-modal {
+  --border-radius: 12px;
+  --height: auto;
+}
+
+/* Alert "Tipo de conta diferente" — destaca o conteúdo (formatado com <b>)
+   pra ficar mais fácil de ler. Estilo está em global.scss porque ion-alert
+   é portado para fora do componente. */
+.alert-tipo-conta {
+  --max-width: 360px;
+
+  .alert-message {
+    line-height: 1.45;
+    b { color: var(--ion-color-primary); font-weight: 800; }
+  }
+}
+
+/* ============================================================
+   RACHA — Design tokens globais
+   Definimos as CSS variables em :root NO GLOBAL porque variáveis
+   definidas em :root dentro de SCSS scoped (component-level) são
+   escopadas pelo Angular e não funcionam. Aqui ficam acessíveis
+   por todas as páginas do shell `/racha/*`.
+   ============================================================ */
+:root {
+  --rp-navy:        #1C2E3D;
+  --rp-navy-soft:   #2d4a63;
+  --rp-navy-deep:   #0f1d2b;
+  --rp-lime:        #7CC61D;
+  --rp-lime-soft:   #95d63f;
+  --rp-lime-deep:   #4a7e0e;
+  --rp-amarelo:     #f5c518;
+  --rp-amarelo-soft: #fcd34d;
+  --rp-amarelo-deep: #b45309;
+  --rp-azul:        #4DABF7;
+  --rp-azul-deep:   #1d4ed8;
+  --rp-vermelho:    #ef4444;
+  --rp-roxo:        #845EF7;
+  --rp-rosa:        #FF6B9D;
+  --rp-laranja:     #ff9f43;
+
+  /* Gradientes padrão pros heroes. Mais suaves do que antes pra
+     aproximar do visual mais clean da área de campeonatos. */
+  --rp-grad-hero:      linear-gradient(135deg, #1C2E3D 0%, #2d4a63 60%, #4a7e0e 110%);
+  --rp-grad-hero-soft: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 50%, #4a7e0e 100%);
+
+  /* Neutros usados em fundos, bordas e textos. */
+  --rp-bg:         #f5f6f8;
+  --rp-card:       #ffffff;
+  --rp-border:     #e5e7eb;
+  --rp-text:       #1C2E3D;
+  --rp-text-muted: #6b7280;
+  --rp-text-soft:  #94a3b8;
+}
+
+/* =========================================================================
+   MOBILE FIXES GLOBAIS — auditoria
+   -------------------------------------------------------------------------
+   Pega 4 problemas comuns em telas estreitas:
+     1. Overflow horizontal (scroll lateral aparecendo)
+     2. Botões muito grandes/pequenos pra touch
+     3. Modais cortados sem scroll interno
+     4. Inputs/forms apertados
+
+   As regras são GLOBAIS pra evitar tocar dezenas de SCSS individuais.
+   Páginas/modais que tenham layout intencionalmente fora dessas defaults
+   podem sobrescrever localmente com especificidade maior.
+   ========================================================================= */
+
+/* ---------- 1. Overflow horizontal — bloqueia scroll lateral ---------- */
+html, body, ion-app, app-root {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* `box-sizing: border-box` no universo todo — padding/border não somam
+   à largura. Sem isso, qualquer `width: 100%` + `padding: 14px` estoura
+   pra 100% + 28px. */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Tabelas (classificação, jogos, rankings, financeiro racha) — wrap
+   automático em scroll horizontal pro mobile não estourar. Quem usa
+   `.tabela-scroll` (publico-categoria) já trata, mas existem tables
+   soltas pela app que precisam dessa proteção. */
+@media (max-width: 767px) {
+  ion-content table:not(.tabela-print):not([data-no-scroll]) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Imagens nunca estouram a largura do container. */
+  ion-content img:not(.no-cap) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Pre/code são fontes comuns de overflow horizontal — quebra texto. */
+  ion-content pre,
+  ion-content code {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+}
+
+/* ---------- 2. Touch targets — mínimo 40px em mobile ---------- */
+@media (max-width: 767px) {
+  /* Botões nativos (HTML <button>) — garantia de touch target.
+     `ion-button` já tem `min-height` via tokens, este alvo é pra
+     <button> puro que aparece em listas/cards customizados. */
+  button:not([class*="ion-"]):not(.btn-icon):not(.btn-icon-sm):not([data-compact]) {
+    min-height: 36px;
+  }
+
+  /* Botões em forma de chip/pílula — não forçam min-height (eles são
+     pequenos por design). Detectados pelo radius pill. */
+  button.chip,
+  button.pill,
+  button[class*="-chip"],
+  button[class*="-pill"] {
+    min-height: 28px;
+  }
+
+  /* Botões de ação em listas (.btn-icon-sm) — mantém compacto mas
+     aumenta a área toucável via padding interno. */
+  .btn-icon-sm {
+    padding: 4px;
+  }
+}
+
+/* ---------- 3. Modais — full-screen em telas estreitas ---------- */
+@media (max-width: 640px) {
+  /* Modais "padrão" (sem classe modal-large/modal-login etc) viram
+     full-screen no mobile. O conteúdo interno (header + body + footer)
+     já tem scroll próprio via ion-content/ion-footer, então a tela
+     toda fica disponível. */
+  ion-modal:not(.modal-large):not(.modal-login):not(.midia-viewer-modal):not(.modal-editar-fase):not(.colunas-equipes-modal):not(.fase-equipes-modal):not(.exportar-popover) {
+    --width: 100%;
+    --height: 100%;
+    --max-width: 100%;
+    --max-height: 100%;
+    --border-radius: 0;
+  }
+
+  /* Conteúdo interno do modal — garante scroll vertical quando o form
+     é longo. Sem isso, botões "Salvar" ficavam fora do alcance no fim
+     do form. */
+  ion-modal ion-content {
+  }
+
+  /* Footer sticky no fundo dos modais — botões Salvar/Cancelar sempre
+     acessíveis. Aplica em qualquer .modal-footer dentro de modal, sem
+     precisar declarar em cada um. */
+  ion-modal .modal-footer,
+  ion-modal .footer-actions:not([data-inline]) {
+    position: sticky;
+    bottom: 0;
+    background: var(--placar-surface, #fff);
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--placar-divider, #ececef);
+    z-index: 10;
+  }
+}
+
+.buttons {
+
+  --border-radius: 12px;
+  --padding-start: 18px;
+  --padding-end: 18px;
+  height: 56px;
+  align-self: flex-start;
+  font-weight: 600;
+  margin-top: 6px;
+  width: 100% !important;
+}
+/* ---------- 4. Inputs/forms — apertados em mobile ---------- */
+@media (max-width: 640px) {
+  /* Inputs do Ionic — font-size: 16px pra evitar AUTO-ZOOM no iOS quando
+     o usuário toca no input (Safari aplica zoom em fontes <16px). */
+  ion-input,
+  ion-textarea,
+  ion-select {
+    --inner-padding-top: 10px;
+    --inner-padding-bottom: 10px;
+    font-size: 14px;
+  }
+
+  /* Inputs HTML puros — mesmo tratamento. */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="password"],
+  input[type="date"],
+  input[type="search"],
+  input[type="url"],
+  textarea,
+  select {
+    font-size: 16px;
+    min-height: 40px;
+  }
+
+  /* `.row-2` (grids 2-col) muito apertados em mobile — vira 1-col se
+     a página não definiu override próprio. */
+  .row-2:not([data-keep-cols]) {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Gap padrão entre seções de formulário — mais respirável. */
+  form .card,
+  form .form-group,
+  form .fields,
+  form section.card {
+    margin-bottom: 12px;
+  }
+
+  /* Form row de ações (Cancelar/Salvar) — empilha vertical em mobile
+     pra cada botão ficar full-width e fácil de tocar. Mantém side-by-side
+     se a página explicitamente marcar com data-inline-actions. */
+  .form-actions:not([data-inline-actions]),
+  .actions-row:not([data-inline-actions]) {
+    flex-direction: column;
+    gap: 8px;
+
+    > button,
+    > ion-button {
+      width: 100%;
+    }
+  }
+}
+
+
+/* ---------- Polimentos finais ---------- */
+@media (max-width: 767px) {
+  /* Cards genéricos — padding lateral menor. */
+  .card,
+  .placar-card {
+    padding: 14px;
+  }
+
+  /* Page titles muito grandes em mobile — escalada visual. */
+  h1.page-title,
+  .page-title {
+    font-size: 18px;
+  }
+
+  /* Section headers — gap menor. */
+  .section-header {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   TRANSMISSÃO — wrapper marcado pra ir junto pro fullscreen
+   ════════════════════════════════════════════════════════════════════
+   Quando o player viewer (app-transmissao-player) é fullscreenado via
+   `[fullscreenAncestor]`, o wrapper externo (.js-tx-fs-root) entra em
+   fullscreen — placar e overlays internos vão JUNTO.
+
+   Estratégia: vídeo OCUPA tudo (position:absolute em background), e
+   placar/scoreboard FLUTUA por cima (estilo overlay broadcast TV).
+   Sem isso, o flexbox espremia o placar pra ~0px ou empurrava o
+   vídeo pra fora da tela. */
+/* `.live-wrap` em fullscreen (público) — quando o usuário clica
+   expand no player das páginas públicas, é o `.live-wrap` que vai
+   pra fullscreen (em vez do `.js-tx-fs-root` que envolvia mais
+   coisas — antes o fullscreen mostrava o "card placar" externo
+   atrás do vídeo). Mantém o vídeo preenchendo a viewport com
+   overlays internos do player (placar broadcast, banner, controles). */
+.live-wrap:fullscreen,
+.live-wrap:-webkit-full-screen {
+  position: relative;
+  display: block;
+  background: #000;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+
+  /* O player ocupa 100% da viewport */
+  app-transmissao-player,
+  .tp-card {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .tp-video-wrap,
+  .tp-video {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+  .tp-video { object-fit: contain; }
+}
+
+.js-tx-fs-root:fullscreen,
+.js-tx-fs-root:-webkit-full-screen {
+  position: relative;
+  display: block;
+  background: #000;
+  width: 100vw;
+  height: 100vh;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+
+  /* ═══ Vídeo (camada de fundo) — ocupa 100% da viewport ═══ */
+  .live-wrap,
+  .tp-card,
+  .tp-video-wrap {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    aspect-ratio: auto;
+    background: #000;
+  }
+  .tp-video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* black bars se proporção do vídeo difere — sem cortar */
+  }
+
+  /* ═══ Placar / scoreboard FLUTUANTE no topo ═══
+     Aplica em ambos os formatos usados pelas páginas:
+      - .card.jd-card-placar (publico-categoria — placar compacto)
+      - .hero (publico-jogo — header com placar grande sobre capa)
+      - .ld-scoreboard (jogo-detalhe admin — scoreboard broadcast)
+     Background translúcido com blur pra dar sensação de overlay
+     premium sem esconder a ação no vídeo. */
+  .card.jd-card-placar,
+  .hero,
+  .ld-scoreboard {
+    position: absolute !important;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    max-width: min(95vw, 720px);
+    width: auto;
+    margin: 0 !important;
+    padding: 10px 16px;
+    background: rgba(15, 25, 35, 0.85) !important;
+    backdrop-filter: blur(10px);
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    /* Hero: anula bg image, deixa só o placar visível */
+    background-image: none !important;
+    min-height: auto;
+  }
+
+  /* Hero tem botão back + meta enormes — em fullscreen escondemos
+     o que não cabe na pílula sobreposta (background image, padding
+     vertical exagerado, meta da partida). */
+  .hero {
+    height: auto !important;
+    .btn-back,
+    .camp-info,
+    .meta {
+      display: none;
+    }
+    .hero-overlay {
+      padding: 0 !important;
+      background: transparent !important;
+    }
+    .placar-area {
+      padding: 0;
+    }
+  }
+
+  /* Wrapper marca .js-tx-fs-root pode envolver outros elementos
+     (botão voltar, abas, etc) que NÃO devem aparecer no fullscreen.
+     Escondemos qualquer filho que não seja player ou scoreboard. */
+  > *:not(.live-wrap):not(.card.jd-card-placar):not(.hero):not(.ld-scoreboard) {
+    display: none !important;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   <app-date-input> — popover compacto com ion-datetime.
+   ion-popover é renderizado fora do shadow DOM do componente, então
+   o estilo precisa ser global.
+   ════════════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════
+   <app-action-modal> — substitui ion-action-sheet por modal centralizado.
+   O componente desenha o próprio backdrop e card, então o ion-modal
+   precisa ficar transparente e cobrindo toda a tela.
+   ════════════════════════════════════════════════════════════════════ */
+ion-modal.action-modal-overlay {
+  --width: 100%;
+  --max-width: 100%;
+  --height: 100%;
+  --max-height: 100%;
+  --background: transparent;
+  --box-shadow: none;
+  --backdrop-opacity: 0;
+  --border-radius: 0;
+
+  &::part(content) {
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+  }
+}
+
+ion-popover.dt-popover {
+  --width: 320px;
+  --max-width: 92vw;
+  --offset-y: 6px;
+  --backdrop-opacity: 0.35;
+  --box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+
+  &::part(content) {
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  &::part(arrow) {
+    display: none;
+  }
+
+  ion-datetime {
+    --background: #fff;
+    --background-rgb: 255, 255, 255;
+    --title-color: var(--ion-color-primary);
+    --wheel-highlight-background: rgba(124, 198, 29, 0.18);
+    --wheel-fade-background-rgb: 255, 255, 255;
+    width: 320px;
+    max-width: 100%;
+    min-height: 0;
+  }
+}
+

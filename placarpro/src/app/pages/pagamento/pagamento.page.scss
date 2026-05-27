@@ -1,0 +1,520 @@
+/* =========================================================
+   Tela de Pagamento — visual estilo Asaas/PagSeguro
+   ========================================================= */
+
+.pg-content { --background: #f3f4f6; }
+
+.pg-wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+/* ============ Card de Resumo ============ */
+.pg-resumo {
+  background: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 100%);
+  color: #fff;
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: 0 6px 18px rgba(28, 46, 61, 0.18);
+  margin-bottom: 16px;
+}
+
+.pg-resumo-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  opacity: 0.85;
+
+  ion-icon { font-size: 18px; }
+
+  .pg-status {
+    margin-left: auto;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.18);
+
+    &.aguardando {
+      background: #F39C12;
+      color: #fff;
+    }
+  }
+}
+
+.pg-resumo-valor {
+  font-size: 36px;
+  font-weight: 900;
+  margin: 8px 0 12px;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pg-resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.18);
+
+  @media (max-width: 480px) { grid-template-columns: 1fr 1fr; }
+}
+
+.pg-cell {
+  display: flex;
+  flex-direction: column;
+  .pg-cell-lbl {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    opacity: 0.7;
+  }
+  .pg-cell-val {
+    font-size: 13.5px;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+}
+
+/* ============ Aviso ============ */
+.pg-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #eff6ff;
+  border-left: 3px solid #4DABF7;
+  padding: 12px 14px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: #1e40af;
+  margin-bottom: 14px;
+  line-height: 1.4;
+
+  ion-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; color: #2563eb; }
+  strong { color: #1e3a8a; }
+}
+
+/* ============ Tabs de método ============ */
+.pg-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  background: #fff;
+  padding: 6px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  @media (max-width: 520px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.pg-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 10px;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  ion-icon { font-size: 18px; }
+
+  &:hover { background: #f3f4f6; }
+  &.on {
+    background: #1C2E3D;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(28, 46, 61, 0.2);
+  }
+}
+
+/* ============ Painel do método (PIX/Boleto/Cartão) ============ */
+.pg-painel {
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 16px;
+}
+
+.pg-painel-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ion-color-primary, #1C2E3D);
+
+  ion-icon { font-size: 22px; color: #7CC61D; }
+}
+
+.pg-painel-sub {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: var(--placar-text-muted);
+  line-height: 1.5;
+}
+
+/* ============ QR Code (PIX) ============ */
+.pg-qr {
+  width: 220px;
+  height: 220px;
+  margin: 0 auto 18px;
+  background: #fff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 8px;
+  position: relative;
+  overflow: hidden;
+
+  &.pg-qr-real {
+    border-color: #7CC61D;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+  }
+}
+
+.pg-qr-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  gap: 1px;
+
+  span {
+    background: rgba(28, 46, 61, 0.1);
+    aspect-ratio: 1;
+
+    /* "Pixels" pseudo-random — alterna cores em padrão pra parecer QR */
+    &:nth-child(3n)  { background: #1C2E3D; }
+    &:nth-child(7n)  { background: #1C2E3D; }
+    &:nth-child(11n) { background: #1C2E3D; }
+    &:nth-child(13n) { background: rgba(28, 46, 61, 0.7); }
+  }
+}
+
+.pg-qr-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.92);
+  text-align: center;
+  color: var(--placar-text-muted);
+
+  ion-icon { font-size: 48px; opacity: 0.4; }
+  small { font-size: 11px; margin-top: 6px; padding: 0 10px; }
+}
+
+/* ============ Campos de cópia (chave PIX / copia-cola) ============ */
+.pg-campo-copia {
+  margin-bottom: 12px;
+
+  label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+  }
+}
+
+.pg-copia-row {
+  display: flex;
+  gap: 6px;
+
+  input, textarea {
+    flex: 1;
+    padding: 9px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 12.5px;
+    background: #f9fafb;
+    font-family: 'Courier New', monospace;
+    color: var(--placar-text);
+    resize: none;
+
+    &:focus { outline: none; border-color: #7CC61D; }
+  }
+}
+
+.pg-btn-icon {
+  background: #1C2E3D;
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+
+  ion-icon { font-size: 18px; }
+  &:hover { background: #102433; }
+}
+
+/* ============ Passos como pagar ============ */
+.pg-passos {
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: rgba(124, 198, 29, 0.08);
+  border-radius: 8px;
+  border-left: 3px solid #7CC61D;
+
+  h4 {
+    margin: 0 0 8px;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #4a7e0e;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  ol {
+    margin: 0;
+    padding-left: 20px;
+    color: #1f2937;
+    font-size: 13px;
+    line-height: 1.7;
+
+    li::marker { color: #4a7e0e; font-weight: 700; }
+    strong { color: #4a7e0e; }
+  }
+}
+
+/* ============ Boleto stub ============ */
+.pg-boleto-stub {
+  text-align: center;
+  padding: 36px 20px;
+  background: #fef9c3;
+  border: 1px dashed #f59e0b;
+  border-radius: 10px;
+  color: #92400e;
+
+  > ion-icon { font-size: 56px; opacity: 0.45; margin-bottom: 8px; color: #b45309; }
+  p { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+  small { font-size: 11.5px; opacity: 0.75; font-style: italic; }
+}
+
+.pg-boleto-real {
+  text-align: center;
+  padding: 32px 20px;
+  background: rgba(124, 198, 29, 0.10);
+  border: 1px solid rgba(124, 198, 29, 0.32);
+  border-radius: 10px;
+  color: #4a7e0e;
+
+  ion-icon {
+    font-size: 56px;
+    color: #7CC61D;
+    margin-bottom: 8px;
+  }
+  p { margin: 0 0 6px; font-size: 16px; font-weight: 800; }
+  small { font-size: 12.5px; }
+  strong { color: var(--placar-text); }
+}
+
+/* Quando boleto-real está visível, o "a" do .pg-btn-secondary funciona como botão */
+.pg-boleto-acoes a.pg-btn-secondary {
+  text-decoration: none;
+  flex: 1;
+  background: #1C2E3D;
+  color: #fff;
+  border-color: #1C2E3D;
+  &:hover { background: #102433; }
+}
+
+.pg-boleto-acoes {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.pg-btn-secondary {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  color: #4b5563;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+
+  ion-icon { font-size: 16px; }
+  &:hover:not(:disabled) { background: #f3f4f6; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+/* ============ Form Cartão ============ */
+.pg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pg-campo {
+  display: block;
+
+  .pg-lbl {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 13.5px;
+    background: #fff;
+    color: var(--placar-text);
+    font-family: inherit;
+
+    &:focus { outline: none; border-color: #7CC61D; }
+  }
+}
+
+.pg-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pg-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: #7CC61D;
+  color: #fff;
+  border: 0;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 4px 12px rgba(124, 198, 29, 0.35);
+  transition: all 0.15s ease;
+  margin-top: 6px;
+
+  ion-icon { font-size: 18px; }
+  &:hover {
+    background: #4a7e0e;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(124, 198, 29, 0.45);
+  }
+}
+
+/* ============ Rodapé ============ */
+.pg-rodape {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px;
+  background: #fff;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: var(--placar-text-muted);
+
+  ion-icon { font-size: 18px; color: #7CC61D; }
+  strong { color: var(--placar-text); }
+}
+
+/* ============ Loading ============ */
+.pg-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  color: var(--placar-text-muted);
+
+  p { margin-top: 12px; font-size: 14px; }
+}
+
+/* ============ Status pós-pagamento de cartão ============ */
+.pg-status-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 1.45;
+
+  ion-icon {
+    font-size: 22px;
+    flex: 0 0 auto;
+    margin-top: 1px;
+  }
+
+  &.ok {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #065f46;
+    ion-icon { color: #10b981; }
+  }
+  &.pendente {
+    background: #fef3c7;
+    border-color: #fde68a;
+    color: #92400e;
+    ion-icon { color: #d97706; }
+  }
+  &.erro {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+    ion-icon { color: #ef4444; }
+  }
+}
+
+.pg-cartoes-aceitos {
+  text-align: center;
+  margin-top: 12px;
+
+  small {
+    color: var(--placar-text-muted);
+    font-size: 12px;
+  }
+}
+

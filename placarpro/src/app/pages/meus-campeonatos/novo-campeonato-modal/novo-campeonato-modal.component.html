@@ -1,0 +1,122 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="step === 'detalhes' ? voltar() : dismiss()" aria-label="Voltar">
+        <ion-icon slot="icon-only" [name]="step === 'detalhes' ? 'arrow-back-outline' : 'close-outline'"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Novo campeonato</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="modal-bg">
+  <!-- Passo 1: escolher tipo -->
+  <div class="step-pane" *ngIf="step === 'tipo'">
+    <h2 class="step-title">Que tipo de campeonato você quer criar?</h2>
+    <p class="step-sub">Você poderá mudar depois nas configurações.</p>
+
+    <button class="tipo-card" type="button" (click)="escolherTipo('unico')">
+      <ion-icon name="trophy-outline" class="tipo-icon"></ion-icon>
+      <div class="tipo-text">
+        <div class="tipo-title">Campeonato único</div>
+        <div class="tipo-sub">Uma única modalidade com apenas 1 categoria.</div>
+      </div>
+      <ion-icon name="chevron-forward-outline" class="tipo-arrow"></ion-icon>
+    </button>
+
+    <button class="tipo-card" type="button" (click)="escolherTipo('com-categorias')">
+      <ion-icon name="grid-outline" class="tipo-icon"></ion-icon>
+      <div class="tipo-text">
+        <div class="tipo-title">Campeonato com categorias</div>
+        <div class="tipo-sub">
+          Várias categorias. Ex: divisões por idade, masculino/feminino, esportes ou outras divisões.
+        </div>
+      </div>
+      <ion-icon name="chevron-forward-outline" class="tipo-arrow"></ion-icon>
+    </button>
+  </div>
+
+  <!-- Passo 2: detalhes -->
+  <div class="step-pane" *ngIf="step === 'detalhes'">
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <h2 class="step-title">Como vai se chamar?</h2>
+      <p class="step-sub">
+        Você está criando um
+        <strong>{{ isUnico ? 'campeonato único' : 'campeonato com categorias' }}</strong>.
+      </p>
+
+      <div class="field-group">
+        <ion-input
+          fill="outline"
+          label="Nome do campeonato"
+          labelPlacement="stacked"
+          placeholder="Ex: Copa Regional 2026"
+          formControlName="titulo"
+          required
+        ></ion-input>
+        <div
+          class="field-error"
+          *ngIf="form.controls['titulo'].touched && form.controls['titulo'].invalid"
+        >
+          <span *ngIf="form.controls['titulo'].hasError('required')">Informe um nome.</span>
+          <span *ngIf="form.controls['titulo'].hasError('minlength')">Mínimo 3 caracteres.</span>
+        </div>
+      </div>
+
+      <!-- Campos extras quando único -->
+      <ng-container *ngIf="isUnico">
+        <!-- Modalidade -->
+        <button type="button" class="modalidade-trigger" (click)="escolherModalidade()">
+          <div class="trig-badge" [style.background]="modalidadeSelecionada?.color || '#8E8E93'">
+            <ion-icon [name]="modalidadeSelecionada?.icon || 'ellipsis-horizontal'"></ion-icon>
+          </div>
+          <div class="trig-text">
+            <div class="trig-label">Modalidade</div>
+            <div class="trig-value">{{ modalidadeSelecionada?.label || 'Selecione' }}</div>
+          </div>
+          <ion-icon class="trig-arrow" name="chevron-forward-outline"></ion-icon>
+        </button>
+
+        <!-- Tipo de fase -->
+        <div class="fases-block">
+          <div class="fases-title">Fases do campeonato</div>
+          <ion-radio-group formControlName="tipoFase">
+            <div
+              class="fase-card"
+              *ngFor="let f of fases"
+              [class.active]="form.value.tipoFase === f.value"
+              (click)="form.controls['tipoFase'].setValue(f.value)"
+            >
+              <ion-radio
+                [value]="f.value"
+                slot="start"
+                [attr.aria-label]="f.label"
+              ></ion-radio>
+              <div class="fase-text">
+                <div class="fase-label">{{ f.label }}</div>
+                <div class="fase-desc">{{ f.desc }}</div>
+              </div>
+            </div>
+          </ion-radio-group>
+          <p class="fases-hint">Você ainda poderá criar e remover fases depois.</p>
+        </div>
+      </ng-container>
+
+      <!-- Aviso quando com categorias -->
+      <div *ngIf="!isUnico" class="info-card">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        <span>Você vai adicionar as categorias (com modalidade e fases) depois de criar o campeonato.</span>
+      </div>
+
+      <ion-button
+        expand="block"
+        type="submit"
+        color="primary"
+        class="btn-submit"
+        [disabled]="loading"
+      >
+        Criar campeonato
+      </ion-button>
+    </form>
+  </div>
+</ion-content>

@@ -1,0 +1,91 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Criar sequência</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="modal-bg">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="dup-form">
+    <!-- Sub-título explicativo -->
+    <p class="dup-hint">
+      Crie um novo campeonato como cópia de
+      <strong>{{ original?.titulo }}</strong>. Escolha o que será mantido.
+    </p>
+
+    <!-- Nome do novo campeonato -->
+    <div class="field-group">
+      <ion-input
+        fill="outline"
+        label="Nome do campeonato"
+        labelPlacement="stacked"
+        placeholder="Ex: Copa Regional 2027"
+        formControlName="titulo"
+        required
+      ></ion-input>
+      <div
+        class="field-error"
+        *ngIf="form.controls['titulo'].touched && form.controls['titulo'].invalid"
+      >
+        <span *ngIf="form.controls['titulo'].hasError('required')">Informe um nome.</span>
+        <span *ngIf="form.controls['titulo'].hasError('minlength')">Mínimo 3 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- Subtítulo -->
+    <div class="field-group">
+      <ion-input
+        fill="outline"
+        label="Subtítulo"
+        labelPlacement="stacked"
+        placeholder="Opcional"
+        formControlName="subtitulo"
+      ></ion-input>
+    </div>
+
+    <!-- Opções de cópia (checkboxes) -->
+    <div class="opcoes-block">
+      <label class="opcao-row">
+        <span class="opcao-text">Manter seguidores</span>
+        <ion-checkbox formControlName="manterSeguidores" labelPlacement="start"></ion-checkbox>
+      </label>
+
+      <label class="opcao-row">
+        <span class="opcao-text">Copiar equipes</span>
+        <ion-checkbox formControlName="copiarEquipes" labelPlacement="start"></ion-checkbox>
+      </label>
+
+      <!-- Filhos dependentes — ficam visualmente recolhidos quando desabilitados -->
+      <label class="opcao-row dep" [class.disabled]="!form.value.copiarEquipes">
+        <span class="opcao-text">Copiar jogadores</span>
+        <ion-checkbox formControlName="copiarJogadores" labelPlacement="start"></ion-checkbox>
+      </label>
+
+      <label class="opcao-row dep" [class.disabled]="!form.value.copiarEquipes">
+        <span class="opcao-text">Copiar partidas <small class="dep-hint">(sem placar)</small></span>
+        <ion-checkbox formControlName="copiarPartidas" labelPlacement="start"></ion-checkbox>
+      </label>
+
+      <label class="opcao-row">
+        <span class="opcao-text">Campeonato com categorias</span>
+        <ion-checkbox formControlName="comCategorias" labelPlacement="start"></ion-checkbox>
+      </label>
+    </div>
+
+    <!-- Ação principal alinhada à direita -->
+    <div class="actions">
+      <button
+        type="submit"
+        class="btn-novo"
+        [disabled]="loading"
+      >
+        <ion-spinner *ngIf="loading" name="dots"></ion-spinner>
+        <span *ngIf="!loading">Novo campeonato</span>
+      </button>
+    </div>
+  </form>
+</ion-content>

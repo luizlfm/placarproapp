@@ -1,0 +1,47 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>{{ editando ? 'Editar link' : 'Adicionar link' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button strong="true" [disabled]="form.invalid" (click)="salvar()">Salvar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="modal-shared">
+  <form [formGroup]="form" class="form-grid" (ngSubmit)="salvar()">
+    <ion-input
+      fill="outline"
+      label="Título *"
+      labelPlacement="stacked"
+      placeholder="Ex: Reportagem sobre a final"
+      formControlName="titulo"
+      autocapitalize="sentences"
+    ></ion-input>
+
+    <ion-input
+      fill="outline"
+      label="URL *"
+      labelPlacement="stacked"
+      formControlName="url"
+      type="url"
+      inputmode="url"
+      placeholder="https://..."
+    ></ion-input>
+    <small class="error-msg" *ngIf="form.controls.url.touched && form.controls.url.invalid">
+      Informe uma URL começando com http:// ou https://
+    </small>
+
+    <ion-textarea
+      fill="outline"
+      label="Descrição (opcional)"
+      labelPlacement="stacked"
+      placeholder="Ex: Matéria publicada no portal local"
+      formControlName="descricao"
+      [autoGrow]="true"
+      rows="3"
+    ></ion-textarea>
+  </form>
+</ion-content>

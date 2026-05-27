@@ -1,0 +1,214 @@
+<div class="r-page" *ngIf="!loading">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">Lista de Presença</span>
+  </header>
+
+  <!-- ═══════════ Page header ═══════════ -->
+  <header class="r-page-head">
+    <span class="r-page-tag" [class.aberta]="filaAberta">
+      <ion-icon [name]="filaAberta ? 'checkmark-circle' : 'lock-closed'"></ion-icon>
+      {{ filaAberta ? 'Fila liberada' : 'Fila fechada' }}
+    </span>
+    <h1>Lista de Presença</h1>
+    <p>Confirme sua presença abaixo e acompanhe o status da fila.</p>
+  </header>
+
+  <!-- Faixa verde com VOU / NÃO VOU -->
+  <div class="r-hero-strip">
+    <button
+      type="button"
+      class="r-hero-strip-btn"
+      [class.ativo]="meuStatus === 'vou'"
+      (click)="marcarVou()"
+    >
+      <ion-icon name="checkmark-circle"></ion-icon>
+      VOU
+    </button>
+    <button
+      type="button"
+      class="r-hero-strip-btn alt"
+      [class.ativo]="meuStatus === 'nao-vou'"
+      (click)="marcarNaoVou()"
+    >
+      <ion-icon name="close-circle"></ion-icon>
+      NÃO VOU
+    </button>
+  </div>
+
+  <!-- Status atual -->
+  <p class="rp-status-atual">
+    Status atual:
+    <strong>{{
+      meuStatus === 'vou' ? 'confirmado' :
+      meuStatus === 'nao-vou' ? 'não vou' : 'sem resposta.'
+    }}</strong>
+  </p>
+
+  <!-- Métricas em 4 cards brancos -->
+  <div class="rp-metricas">
+    <div class="rp-metrica destaque">
+      <span class="rp-metrica-lbl">SEU STATUS</span>
+      <strong class="rp-metrica-grande">
+        {{ meuStatus === 'vou' ? 'Você está dentro' : 'Você está fora' }}
+      </strong>
+      <span class="rp-metrica-sub">
+        {{ meuStatus === 'vou'
+            ? 'Confirmado pra jogar.'
+            : 'Entre na fila para disputar sua vaga.' }}
+      </span>
+    </div>
+    <div class="rp-metrica">
+      <span class="rp-metrica-lbl">CAPACIDADE</span>
+      <strong class="rp-metrica-num">{{ capacidade }}</strong>
+      <span class="rp-metrica-sub">{{ confirmados }} confirmados</span>
+    </div>
+    <div class="rp-metrica">
+      <span class="rp-metrica-lbl">VAGAS LIVRES</span>
+      <strong class="rp-metrica-num">{{ vagasLivres }}</strong>
+      <span class="rp-metrica-sub">de {{ capacidade }}</span>
+    </div>
+    <div class="rp-metrica">
+      <span class="rp-metrica-lbl">EM ESPERA</span>
+      <strong class="rp-metrica-num">{{ emEspera }}</strong>
+      <span class="rp-metrica-sub">Atualizado {{ horarioAtualizacao }}</span>
+    </div>
+  </div>
+
+  <!-- Endereço (link discreto) -->
+  <button type="button" class="rp-endereco-btn" (click)="adicionarEndereco()">
+    <ion-icon name="location-outline"></ion-icon>
+    {{ racha?.endereco || 'Adicionar endereço do racha' }}
+  </button>
+
+  <!-- ═══════════ Administração da Fila ═══════════ -->
+  <section class="r-card rp-admin">
+    <div class="rp-admin-head">
+      <ion-icon name="settings" class="rp-admin-icon"></ion-icon>
+      <div class="rp-admin-info">
+        <h2>Administração da Fila</h2>
+        <p>Gerencie horários, pagamentos e configurações</p>
+      </div>
+      <button
+        type="button"
+        class="rp-admin-toggle"
+        [class.aberta]="filaAberta"
+        (click)="toggleFila()"
+      >
+        <ion-icon [name]="filaAberta ? 'checkmark-circle' : 'lock-closed'"></ion-icon>
+        {{ filaAberta ? 'Aberta' : 'Fechada' }}
+      </button>
+    </div>
+
+    <div class="rp-accordion">
+      <!-- Janela de Abertura -->
+      <button
+        type="button"
+        class="rp-accord-item"
+        [class.aberto]="accordionAberto === 'janela'"
+        (click)="toggleAccordion('janela')"
+      >
+        <ion-icon name="time-outline" class="rp-accord-icon"></ion-icon>
+        <div class="rp-accord-info">
+          <strong>Janela de Abertura</strong>
+          <span>Abre: Não definido — Fecha: Não definido</span>
+        </div>
+        <ion-icon
+          class="rp-accord-chev"
+          [name]="accordionAberto === 'janela' ? 'chevron-up' : 'chevron-down'"
+        ></ion-icon>
+      </button>
+      <div class="rp-accord-body" *ngIf="accordionAberto === 'janela'">
+        <p>Em breve: defina horário automático de abertura e fechamento da lista.</p>
+      </div>
+
+      <!-- Capacidade -->
+      <button
+        type="button"
+        class="rp-accord-item"
+        [class.aberto]="accordionAberto === 'capacidade'"
+        (click)="toggleAccordion('capacidade')"
+      >
+        <ion-icon name="people-outline" class="rp-accord-icon"></ion-icon>
+        <div class="rp-accord-info">
+          <strong>Capacidade da fila</strong>
+          <span>{{ racha?.qtdTimes ?? 0 }} times • {{ racha?.jogadoresPorTime ?? 0 }} por time</span>
+        </div>
+        <ion-icon
+          class="rp-accord-chev"
+          [name]="accordionAberto === 'capacidade' ? 'chevron-up' : 'chevron-down'"
+        ></ion-icon>
+      </button>
+      <div class="rp-accord-body" *ngIf="accordionAberto === 'capacidade'">
+        <p>Capacidade total: <strong>{{ capacidade }} jogadores</strong>. Pra ajustar, edite no Meu Racha.</p>
+      </div>
+
+      <!-- Dia e Horário -->
+      <button
+        type="button"
+        class="rp-accord-item"
+        [class.aberto]="accordionAberto === 'horario'"
+        (click)="toggleAccordion('horario')"
+      >
+        <ion-icon name="calendar-outline" class="rp-accord-icon"></ion-icon>
+        <div class="rp-accord-info">
+          <strong>Dia e Horário do Racha</strong>
+          <span>{{
+            racha?.diaSemana
+              ? diaSemanaLabel(racha?.diaSemana) + ' às ' + (racha?.horarioInicio || '—')
+              : 'Próximo: —'
+          }}</span>
+        </div>
+        <ion-icon
+          class="rp-accord-chev"
+          [name]="accordionAberto === 'horario' ? 'chevron-up' : 'chevron-down'"
+        ></ion-icon>
+      </button>
+      <div class="rp-accord-body" *ngIf="accordionAberto === 'horario'">
+        <p>Configure dia e horário em <strong>Meu Racha → Informações Básicas</strong>.</p>
+      </div>
+
+      <!-- PIX -->
+      <button
+        type="button"
+        class="rp-accord-item"
+        [class.aberto]="accordionAberto === 'pix'"
+        (click)="toggleAccordion('pix')"
+      >
+        <ion-icon name="cash-outline" class="rp-accord-icon"></ion-icon>
+        <div class="rp-accord-info">
+          <strong>Pagamento PIX</strong>
+          <span>Não definido • {{ pagosCount }}/{{ capacidade }} pagos</span>
+        </div>
+        <ion-icon
+          class="rp-accord-chev"
+          [name]="accordionAberto === 'pix' ? 'chevron-up' : 'chevron-down'"
+        ></ion-icon>
+      </button>
+      <div class="rp-accord-body" *ngIf="accordionAberto === 'pix'">
+        <p>Em breve: configure chave PIX e cobre automaticamente os confirmados.</p>
+      </div>
+    </div>
+
+    <div class="rp-admin-acoes">
+      <button
+        type="button"
+        class="r-btn r-btn-navy"
+        (click)="usarFilaNoSorteio()"
+        [disabled]="confirmados === 0"
+      >
+        <ion-icon name="shuffle"></ion-icon>
+        USAR FILA NO SORTEIO
+      </button>
+      <button type="button" class="r-btn r-btn-outline" (click)="limparFila()">
+        <ion-icon name="trash-outline"></ion-icon>
+        LIMPAR FILA
+      </button>
+    </div>
+  </section>
+</div>
+
+<div class="rp-loading" *ngIf="loading">
+  <ion-spinner name="dots"></ion-spinner>
+</div>

@@ -1,0 +1,314 @@
+<div class="mr-page" *ngIf="racha && !loading">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">Meu Racha</span>
+  </header>
+
+  <!-- ═══════════ Header ═══════════ -->
+  <header class="mr-header">
+    <div>
+      <h1 class="mr-nome">{{ racha.nome }}</h1>
+      <p class="mr-sub">Atualize as informações do seu racha e mantenha tudo organizado para as próximas partidas.</p>
+    </div>
+  </header>
+
+  <!-- ═══════════ Card principal: Informações + Regras ═══════════ -->
+  <form class="mr-card" [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+    <!-- ─── Foto do racha ─── -->
+    <div class="mr-foto-row">
+      <div class="mr-foto-avatar">
+        <img *ngIf="racha.logoUrl; else ftDefault" [src]="racha.logoUrl" [alt]="racha.nome" />
+        <ng-template #ftDefault>
+          <ion-icon name="football"></ion-icon>
+        </ng-template>
+      </div>
+      <div class="mr-foto-text">
+        <strong>FOTO DO RACHA <small>(OPCIONAL)</small></strong>
+        <span>Fica visível para o grupo. Máximo 5MB (JPG, PNG).</span>
+      </div>
+    </div>
+
+    <!-- ─── Informações Básicas ─── -->
+    <h2 class="mr-secao">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      Informações Básicas
+    </h2>
+
+    <!-- Nome do racha -->
+    <div class="mr-field">
+      <label class="mr-label">Nome do Racha*</label>
+      <input
+        type="text"
+        formControlName="nome"
+        maxlength="50"
+        placeholder="Ex: Racha dos Tesouras"
+      />
+      <div class="mr-field-foot">
+        <span class="mr-hint">Digite um nome para seu racha</span>
+        <span class="mr-counter">{{ nomeLength }} / 50</span>
+      </div>
+    </div>
+
+    <!-- Linha: Qtd Times + Jogadores por time -->
+    <div class="mr-row">
+      <div class="mr-field">
+        <label class="mr-label">Quantidade de Times</label>
+        <input
+          type="number"
+          formControlName="qtdTimes"
+          min="2"
+          max="8"
+        />
+        <div class="mr-field-foot">
+          <span class="mr-hint">Ex: 2, 4, 6...</span>
+        </div>
+      </div>
+
+      <div class="mr-field">
+        <label class="mr-label">Jogadores em cada time</label>
+        <input
+          type="number"
+          formControlName="jogadoresPorTime"
+          min="3"
+          max="11"
+        />
+        <div class="mr-field-foot">
+          <span class="mr-hint">
+            Total mínimo para completar o elenco:
+            <strong>{{ form.value.qtdTimes }} × {{ form.value.jogadoresPorTime }} = {{ capacidadeTotal }} jogadores.</strong>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Linha: Dia da semana + Horário de início -->
+    <div class="mr-row">
+      <div class="mr-field">
+        <label class="mr-label">Dia da Semana</label>
+        <select formControlName="diaSemana">
+          <option value="">Selecione um dia</option>
+          <option *ngFor="let d of diasSemana" [value]="d.value">{{ d.label }}</option>
+        </select>
+        <div class="mr-field-foot">
+          <span class="mr-hint">Quando acontece?</span>
+        </div>
+      </div>
+
+      <div class="mr-field">
+        <label class="mr-label">Horário de Início</label>
+        <app-date-input
+          label=""
+          mode="time"
+          formControlName="horarioInicio"
+        ></app-date-input>
+      </div>
+    </div>
+
+    <!-- ─── Personalizar regras (opcional) ─── -->
+    <h2 class="mr-secao">
+      <ion-icon name="options-outline"></ion-icon>
+      Personalizar regras <small>(Opcional)</small>
+    </h2>
+
+    <!-- Código de convite + Tempo de partida -->
+    <div class="mr-row">
+      <div class="mr-field">
+        <label class="mr-label">Código de convite</label>
+        <div class="mr-input-with-action">
+          <input
+            type="text"
+            formControlName="codigoConvite"
+            maxlength="5"
+            placeholder="RFJBX"
+            appMascara="codigo"
+            style="text-transform: uppercase; letter-spacing: 2px;"
+          />
+          <button
+            type="button"
+            class="mr-input-action"
+            (click)="gerarCodigoConvite()"
+            title="Gerar código aleatório"
+          >
+            <ion-icon name="dice-outline"></ion-icon>
+          </button>
+        </div>
+        <div class="mr-field-foot">
+          <span class="mr-hint">Use 5 caracteres com letras A-Z e números.</span>
+          <span class="mr-counter">{{ (form.value.codigoConvite || '').length }} / 5</span>
+        </div>
+      </div>
+
+      <div class="mr-field">
+        <label class="mr-label">Tempo de Partida (min)</label>
+        <input type="number" formControlName="tempoPartidaMin" min="1" max="120" placeholder="Ex: 10" />
+      </div>
+    </div>
+
+    <!-- Linha: Aluguel + Arbitragem + Custo app -->
+    <div class="mr-row tres">
+      <div class="mr-field">
+        <label class="mr-label">Aluguel do campo (R$)</label>
+        <input type="text" inputmode="numeric" formControlName="aluguelCampoRs" placeholder="0,00" appMascara="dinheiro" />
+      </div>
+      <div class="mr-field">
+        <label class="mr-label">Arbitragem (R$)</label>
+        <input type="text" inputmode="numeric" formControlName="arbitragemRs" placeholder="0,00" appMascara="dinheiro" />
+      </div>
+      <div class="mr-field">
+        <label class="mr-label">Custo do app (R$)</label>
+        <input type="text" inputmode="numeric" formControlName="custoAppRs" placeholder="0,00" appMascara="dinheiro" />
+      </div>
+    </div>
+
+    <!-- Linha: Tipo do campo + Estado + Município -->
+    <div class="mr-row tres">
+      <div class="mr-field">
+        <label class="mr-label">Tipo do Campo*</label>
+        <select formControlName="tipoCampo">
+          <option *ngFor="let t of tiposCampo" [value]="t.value">{{ t.label }}</option>
+        </select>
+      </div>
+      <div class="mr-field">
+        <label class="mr-label">Estado</label>
+        <select formControlName="estado">
+          <option value="">Estado</option>
+          <option *ngFor="let e of estados" [value]="e.value">{{ e.label }}</option>
+        </select>
+      </div>
+      <div class="mr-field">
+        <label class="mr-label">Município</label>
+        <input
+          type="text"
+          formControlName="municipio"
+          placeholder="Município"
+        />
+      </div>
+    </div>
+
+    <!-- Endereço -->
+    <div class="mr-field">
+      <label class="mr-label">Endereço do Racha</label>
+      <input
+        type="text"
+        formControlName="endereco"
+        placeholder="Rua, número, complemento"
+      />
+    </div>
+
+    <!-- Toggles -->
+    <div class="mr-toggles">
+      <label class="mr-toggle">
+        <input type="checkbox" formControlName="exibirNotas" />
+        <span class="mr-toggle-box"></span>
+        <span class="mr-toggle-label">Exibir notas atribuídas aos jogadores</span>
+      </label>
+
+      <label class="mr-toggle">
+        <input
+          type="checkbox"
+          [checked]="mostrarIndicacao"
+          (change)="toggleIndicacao()"
+        />
+        <span class="mr-toggle-box"></span>
+        <span class="mr-toggle-label">Tenho um código de indicação</span>
+      </label>
+
+      <div class="mr-indicacao" *ngIf="mostrarIndicacao">
+        <input
+          type="text"
+          formControlName="codigoIndicacao"
+          placeholder="Insira o código de indicação"
+        />
+      </div>
+    </div>
+
+    <!-- Footer do card -->
+    <div class="mr-footer">
+      <button type="button" class="mr-btn-cancel" (click)="cancelar()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+        CANCELAR
+      </button>
+      <button type="submit" class="mr-btn-save" [disabled]="!form.valid">
+        <ion-icon name="checkmark-circle-outline"></ion-icon>
+        SALVAR ALTERAÇÕES
+      </button>
+    </div>
+  </form>
+
+  <!-- ═══════════ Card: Avaliação de jogadores ═══════════ -->
+  <section class="mr-card mr-card-avaliacao" [formGroup]="formAvaliacao">
+    <div class="mr-aval-head">
+      <ion-icon name="star" class="mr-aval-icon"></ion-icon>
+      <div>
+        <h2>Avaliação de jogadores</h2>
+        <p>Permita que os jogadores avaliem seus companheiros após cada evento</p>
+      </div>
+    </div>
+
+    <!-- Toggle Ativada -->
+    <label class="mr-switch">
+      <input type="checkbox" formControlName="ativa" />
+      <span class="mr-switch-track"><span class="mr-switch-thumb"></span></span>
+      <span class="mr-switch-label">{{ formAvaliacao.value.ativa ? 'Ativada' : 'Desativada' }}</span>
+    </label>
+
+    <!-- Conteúdo só quando ativada -->
+    <div class="mr-aval-body" *ngIf="formAvaliacao.value.ativa">
+      <!-- Bola Murcha (sub-toggle) -->
+      <label class="mr-switch sub">
+        <input type="checkbox" formControlName="bolaMurcha" />
+        <span class="mr-switch-track"><span class="mr-switch-thumb"></span></span>
+        <span class="mr-switch-label">Bola Murcha</span>
+        <span class="mr-switch-sub">Exibe o jogador com menor desempenho nos destaques</span>
+      </label>
+
+      <!-- Slider Prazo -->
+      <div class="mr-slider-block">
+        <label>Prazo do mercado de notas</label>
+        <span class="mr-slider-val">{{ prazoHorasLabel }}</span>
+        <input
+          type="range"
+          formControlName="prazoHoras"
+          min="1"
+          max="168"
+          step="1"
+        />
+      </div>
+
+      <!-- Slider Peso Avaliação / Estatísticas -->
+      <div class="mr-slider-block">
+        <label>Peso do Craque da Rodada</label>
+        <div class="mr-slider-duplo">
+          <div class="mr-slider-meio">
+            <span class="mr-slider-meio-lbl">Avaliação</span>
+            <input
+              type="range"
+              formControlName="pesoAvaliacao"
+              min="0"
+              max="100"
+              step="5"
+            />
+            <span class="mr-slider-meio-val">{{ pesoAvaliacao }}%</span>
+          </div>
+          <div class="mr-slider-meio">
+            <span class="mr-slider-meio-lbl">Estatísticas</span>
+            <input
+              type="range"
+              formControlName="pesoEstatisticas"
+              min="0"
+              max="100"
+              step="5"
+            />
+            <span class="mr-slider-meio-val">{{ pesoEstatisticas }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Loading -->
+<div class="mr-loading" *ngIf="loading">
+  <ion-spinner name="dots"></ion-spinner>
+</div>

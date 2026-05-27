@@ -1,0 +1,334 @@
+/* ============================================================
+   Racha Shell — Layout IDÊNTICO ao shell de /app/* (campeonatos).
+   Usa as MESMAS CSS variables globais (--placar-sidebar-bg, etc.)
+   pra garantir que mudanças de tema afetem ambas as áreas.
+   ============================================================ */
+
+.rs-content {
+  --background: var(--placar-bg, #F6F7F9);
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.rs-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+/* ============ Shell container ============ */
+.shell {
+  display: flex;
+  align-items: flex-start;
+  background: var(--placar-bg, #F6F7F9);
+  position: relative;
+  /* Sem min-height: 100vh — quem garante altura mínima é o ion-content.
+     `align-items: flex-start` evita que sidebar/main estiquem juntos. */
+}
+
+/* ============ Sidebar (280px navy, sticky no topo) ============ */
+.shell-aside {
+  flex: 0 0 280px;
+  width: 280px;
+  background: var(--placar-sidebar-bg, #1C2E3D);
+  color: var(--placar-sidebar-text, #fff);
+  display: flex;
+  flex-direction: column;
+  transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Z-index entre o backdrop (z:70) e o header (z:80) — sidebar fica em
+     CIMA do backdrop pros itens serem clicáveis no mobile, mas o header
+     ainda passa por cima da sidebar no topo. Antes estava em 70 igual
+     ao backdrop, então o backdrop (sibling DOM posterior) interceptava
+     os clicks dos itens — bug do "menu mobile parou de funcionar". */
+  z-index: 75;
+
+  /* Sticky: fica fixa enquanto o main rola. Começa logo ABAIXO do header
+     fixo (top: 52px = padding 10+10 + altura do botão 32px) pra não ser
+     coberta pelo header. `height: calc(100vh - 52px)` mantém scroll
+     interno limitado ao espaço visível. */
+  position: sticky;
+  top: 52px;
+  height: calc(100vh - 52px);
+  overflow-y: auto;
+
+  /* Mobile: vira off-canvas — começa abaixo do header fixo (52px) pra
+     não cobri-lo quando abrir. */
+  @media (max-width: 767px) {
+    position: fixed;
+    top: 52px;
+    left: 0;
+    bottom: 0;
+    width: 80vw;
+    max-width: 320px;
+    flex: 0 0 80vw;
+    height: calc(100% - 52px);
+    transform: translateX(-100%);
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.25);
+
+    &.aberta { transform: translateX(0); }
+  }
+}
+
+/* ============ Logo PlacarPro (marca no topo) ============ */
+.brand-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 16px 8px;
+  cursor: pointer;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: opacity 150ms ease;
+
+  &:hover { opacity: 0.85; }
+}
+
+.brand-logo {
+  height: 32px;
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
+  /* Logo é dark — inverte pra ficar visível no navy.
+     Se o logo já for claro no arquivo, remova esse filter. */
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
+}
+
+/* ============ Context header (logo+nome do racha) ============ */
+.ctx-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: var(--placar-sidebar-text, #fff);
+  transition: background 120ms ease;
+  font-family: inherit;
+
+  &:hover { background: rgba(255, 255, 255, 0.04); }
+
+  @media (max-width: 767px) { padding-top: 18px; }
+}
+
+.ctx-logo {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--placar-accent, #7CC61D);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #fff;
+  font-weight: 700;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 20px; }
+}
+
+.ctx-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--placar-sidebar-text, #fff);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+/* ============ Nav (flat, igual /app) ============ */
+.sidebar-nav {
+  padding: 12px 0;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 18px;
+  color: var(--placar-sidebar-text, #fff);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background 150ms ease, border-color 150ms ease;
+
+  ion-icon {
+    font-size: 19px;
+    color: var(--placar-sidebar-text-muted, rgba(255, 255, 255, 0.65));
+    transition: color 150ms ease;
+    flex-shrink: 0;
+  }
+
+  > span:first-of-type {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    ion-icon { color: #fff; }
+  }
+
+  &.active {
+    background: var(--placar-sidebar-active-bg, rgba(124, 198, 29, 0.18));
+    border-left-color: var(--placar-sidebar-active-border, #7CC61D);
+    color: #fff;
+
+    ion-icon { color: var(--placar-accent, #7CC61D); }
+  }
+}
+
+.nav-badge {
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--placar-accent, #7CC61D);
+  color: #fff;
+  letter-spacing: 0.4px;
+}
+
+/* ============ User no rodapé (igual /app modo campeonato) ============ */
+.ctx-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.user-avatar {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--placar-accent, #7CC61D);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  overflow: hidden;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  color: var(--placar-sidebar-text, #fff);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-logout {
+  background: none;
+  border: none;
+  color: var(--placar-accent, #7CC61D);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 0 0;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  font-family: inherit;
+
+  &:hover { color: #fff; }
+}
+
+/* ============ Backdrop (mobile, fecha sidebar) ============ */
+.shell-backdrop {
+  display: none;
+
+  @media (max-width: 767px) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 70;
+  }
+}
+
+/* ============ Hamburger embutido no toolbar (só mobile) ============
+   Botão posicionado dentro da faixa navy do `.r-toolbar` — sem shadow,
+   sem bg próprio (transparente), pra parecer parte do header. O top é
+   calculado a partir do safe-area-inset-top pra alinhar com o título
+   quando o toolbar esticar pelo notch. */
+.shell-hamburger {
+  display: none;
+
+  @media (max-width: 767px) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 4px);
+    right: 8px;
+    /* Z-index acima do `.r-toolbar` (z:80) pra ficar clicável quando o
+       header full-width passa por baixo. */
+    z-index: 90;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: none;
+    /* Transparente — herda visualmente o navy do toolbar atrás dele. */
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    /* Sem box-shadow — não é mais "floating", é parte do header. */
+    box-shadow: none;
+    transition: background 150ms ease;
+
+    ion-icon { font-size: 26px; }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    &:active {
+      background: rgba(255, 255, 255, 0.14);
+    }
+  }
+}
+
+/* Botão voltar flutuante removido — agora vive DENTRO do `.r-toolbar` de
+   cada página (mais previsível visualmente, não corre risco de sumir).
+   Estilo está em `_racha-shared.scss > .r-toolbar-back`. */
+
+/* ============ Main (área de conteúdo) ============ */
+.shell-main {
+  flex: 1;
+  min-width: 0;
+  /* Padding-top reserva espaço pro `.r-toolbar` fixed (52px + safe-area).
+     Antes não precisava (toolbar era sticky), mas como agora ela é
+     fixed full-width, ela "sai do fluxo" e o conteúdo subiria pra baixo
+     dela sem esse padding. */
+  padding: calc(24px + 52px + env(safe-area-inset-top, 0px)) 28px 48px;
+  overflow-x: hidden;
+  overflow-x: clip;
+  background: var(--placar-bg, #F6F7F9);
+
+  @media (max-width: 720px) {
+    padding: calc(16px + 52px + env(safe-area-inset-top, 0px)) 14px 60px;
+  }
+}

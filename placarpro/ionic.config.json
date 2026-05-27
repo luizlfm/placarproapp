@@ -1,0 +1,7 @@
+{
+  "name": "placarpro",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}

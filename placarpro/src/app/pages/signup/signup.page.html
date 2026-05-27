@@ -1,0 +1,240 @@
+<ion-content [fullscreen]="true" class="auth-bg">
+  <div class="auth-shell">
+    <div class="auth-card">
+      <!-- Botão Voltar explícito — padroniza com login.page.html. -->
+      <button
+        type="button"
+        class="auth-back-btn"
+        routerLink="/"
+        aria-label="Voltar"
+      >
+        <ion-icon name="chevron-back-outline"></ion-icon>
+        <span>Voltar</span>
+      </button>
+
+      <div class="auth-brand">
+        <a routerLink="/" class="auth-brand-link" title="Voltar para a página inicial">
+          <img
+            src="assets/images/logo3.png"
+            alt="PlacarPro — clique para voltar à página inicial"
+            width="200"
+            height="160"
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
+            onerror="this.onerror=null;this.src='assets/branding/logo-vertical.png';"
+          />
+        </a>
+        <p class="auth-tagline">
+          {{
+            tipoCadastro === 'cliente'
+              ? 'Crie sua conta para acompanhar campeonatos.'
+              : 'Crie sua conta para organizar campeonatos.'
+          }}
+        </p>
+      </div>
+
+      <!-- Seletor de tipo de cadastro -->
+      <div class="auth-tipo-grid tipo-4col">
+        <button
+          type="button"
+          class="tipo-card"
+          [class.ativo]="tipoCadastro === 'organizador'"
+          (click)="selecionarTipo('organizador')"
+        >
+          <ion-icon name="trophy-outline"></ion-icon>
+          <div class="tipo-titulo">SOU ORGANIZADOR</div>
+          <div class="tipo-sub">Crio e gerencio campeonatos</div>
+        </button>
+        <button
+          type="button"
+          class="tipo-card"
+          [class.ativo]="tipoCadastro === 'moderador'"
+          (click)="selecionarTipo('moderador')"
+        >
+          <ion-icon name="shield-checkmark-outline"></ion-icon>
+          <div class="tipo-titulo">SOU MODERADOR</div>
+          <div class="tipo-sub">Ajudo a organizar campeonatos</div>
+        </button>
+        <button
+          type="button"
+          class="tipo-card"
+          [class.ativo]="tipoCadastro === 'racha'"
+          (click)="selecionarTipo('racha')"
+        >
+          <ion-icon name="football-outline"></ion-icon>
+          <div class="tipo-titulo">SOU RACHA</div>
+          <div class="tipo-sub">Organizo peladas/rachas</div>
+        </button>
+        <button
+          type="button"
+          class="tipo-card"
+          [class.ativo]="tipoCadastro === 'cliente'"
+          (click)="selecionarTipo('cliente')"
+        >
+          <ion-icon name="eye-outline"></ion-icon>
+          <div class="tipo-titulo">SOU ESPECTADOR</div>
+          <div class="tipo-sub">Acompanho jogos e resultados</div>
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="field-group">
+          <ion-input
+            fill="outline"
+            label="Nome"
+            labelPlacement="stacked"
+            placeholder="Ex: João da Silva"
+            type="text"
+            autocomplete="name"
+            formControlName="name"
+            required
+          ></ion-input>
+
+          <ion-input
+            fill="outline"
+            label="E-mail"
+            labelPlacement="stacked"
+            placeholder="nome@email.com"
+            type="email"
+            inputmode="email"
+            autocomplete="email"
+            mask="email"
+            formControlName="email"
+            required
+          ></ion-input>
+
+          <ion-input
+            fill="outline"
+            label="Senha"
+            labelPlacement="stacked"
+            placeholder="Digite uma senha (mín. 6 caracteres)"
+            helperText="Mínimo 6 caracteres"
+            errorText="Senha precisa ter no mínimo 6 caracteres."
+            [type]="showPassword ? 'text' : 'password'"
+            autocomplete="new-password"
+            formControlName="password"
+            required
+          >
+            <ion-button
+              slot="end"
+              fill="clear"
+              color="medium"
+              type="button"
+              aria-label="Alternar senha"
+              [attr.title]="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
+              (click)="togglePassword()"
+            >
+              <ion-icon
+                slot="icon-only"
+                [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+              ></ion-icon>
+            </ion-button>
+          </ion-input>
+
+          <ion-input
+            fill="outline"
+            label="Confirmar senha"
+            labelPlacement="stacked"
+            placeholder="Repita a senha"
+            errorText="Confirme sua senha."
+            [type]="showPassword ? 'text' : 'password'"
+            autocomplete="new-password"
+            formControlName="confirm"
+            required
+          >
+            <ion-button
+              slot="end"
+              fill="clear"
+              color="medium"
+              type="button"
+              aria-label="Alternar senha"
+              [attr.title]="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
+              (click)="togglePassword()"
+            >
+              <ion-icon
+                slot="icon-only"
+                [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+              ></ion-icon>
+            </ion-button>
+          </ion-input>
+          <div
+            class="field-error"
+            *ngIf="form.controls['confirm'].touched && form.hasError('passwordMismatch')"
+          >
+            As senhas não conferem.
+          </div>
+
+          <!-- Código de convite — aparece para organizador e moderador.
+               Pra organizador é OBRIGATÓRIO; pra moderador é OPCIONAL
+               (sem código, conta vira pendente de validação pelo admin). -->
+          <ng-container *ngIf="mostraCodigoConvite">
+            <ion-input
+              fill="outline"
+              [label]="tipoCadastro === 'moderador' ? 'Código de convite (opcional)' : 'Código de convite'"
+              labelPlacement="stacked"
+              placeholder="Informe o código fornecido pelo admin"
+              [helperText]="hintCodigoConvite"
+              type="text"
+              autocomplete="off"
+              formControlName="codigoConvite"
+            ></ion-input>
+            <div class="codigo-aviso">
+              <ion-icon name="information-circle-outline"></ion-icon>
+              <span *ngIf="tipoCadastro === 'organizador'">
+                A conta de organizador exige código de convite válido.
+                Não tem código? Selecione <b>SOU ESPECTADOR</b> acima.
+              </span>
+              <span *ngIf="tipoCadastro === 'moderador'">
+                Sem código? Tudo bem — sua conta será criada como
+                <b>pendente</b> e o admin master valida em seguida.
+                Você também pode entrar direto num campeonato pelo
+                <b>link mágico</b> recebido do organizador.
+              </span>
+            </div>
+          </ng-container>
+        </div>
+
+        <ion-button
+          expand="block"
+          type="submit"
+          color="primary"
+          class="auth-submit"
+          [disabled]="loading"
+        >
+          Criar conta
+        </ion-button>
+
+        <div class="auth-divider"><span>ou</span></div>
+
+        <ion-button
+          expand="block"
+          fill="outline"
+          type="button"
+          class="auth-google"
+          (click)="loginWithGoogle()"
+          [disabled]="loading"
+        >
+          <ion-icon slot="start" name="logo-google"></ion-icon>
+          Cadastrar com Google
+        </ion-button>
+
+        <ion-button
+          expand="block"
+          type="button"
+          class="auth-apple"
+          (click)="loginWithApple()"
+          [disabled]="loading"
+        >
+          <ion-icon slot="start" name="logo-apple"></ion-icon>
+          Cadastrar com Apple
+        </ion-button>
+
+        <p class="auth-footer">
+          Já tem conta?
+          <a routerLink="/login">Entrar</a>
+        </p>
+      </form>
+    </div>
+  </div>
+</ion-content>

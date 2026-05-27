@@ -1,0 +1,114 @@
+<div class="r-page rl-page">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">Ao Vivo</span>
+  </header>
+
+  <!-- ═══════════ Card "Minhas estatísticas" ═══════════ -->
+  <section class="rl-stats">
+    <div class="rl-stats-info">
+      <ion-icon name="bar-chart-outline" class="rl-stats-icone"></ion-icon>
+      <div>
+        <h3>Minhas estatísticas no evento</h3>
+        <p class="rl-jogador-aviso">Jogador não identificado</p>
+      </div>
+    </div>
+    <span class="rl-previa">
+      <span class="rl-dot"></span>
+      Prévia ao vivo: {{ segundos }}s
+    </span>
+  </section>
+
+  <div class="rl-aviso" *ngIf="jogadores.length > 0">
+    <ion-icon name="alert-circle"></ion-icon>
+    Não encontramos seu jogador neste racha.
+    <button type="button" (click)="vincularAoTime()">Vincule-se ao time</button>
+    para acompanhar suas estatísticas ao vivo.
+  </div>
+
+  <!-- ═══════════ Card "Aguardando" ═══════════ -->
+  <section class="r-card rl-aguardando">
+    <div class="rl-ampulheta">
+      <ion-icon name="hourglass-outline"></ion-icon>
+    </div>
+    <h2>Aguardando o início de uma nova partida</h2>
+    <p class="rl-aguardando-sub">Em breve uma nova partida</p>
+  </section>
+
+  <!-- ═══════════ Card "Sorteio dos Times" ═══════════ -->
+  <section class="r-card rl-secao-link" (click)="irSorteio()">
+    <div class="rl-secao-icone">
+      <ion-icon name="dice-outline"></ion-icon>
+    </div>
+    <strong>Sorteio dos Times</strong>
+    <ion-icon class="rl-chev" name="chevron-forward"></ion-icon>
+  </section>
+
+  <!-- ═══════════ Card "Ranking" ═══════════ -->
+  <section class="r-card rl-ranking">
+    <div class="rl-ranking-head">
+      <ion-icon name="bar-chart"></ion-icon>
+      <h3>Ranking</h3>
+    </div>
+
+    <table class="rl-tabela" *ngIf="topJogadores.length > 0">
+      <thead>
+        <tr>
+          <th class="time">Time</th>
+          <th class="num">V</th>
+          <th class="num">E</th>
+          <th class="num">D</th>
+          <th class="num">SG</th>
+          <th class="num">P</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let j of topJogadores; trackBy: trackByJogador">
+          <td class="time">{{ j.apelido || j.nome }}</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">{{ j.notaGeral ?? 0 }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table class="rl-tabela" *ngIf="topJogadores.length === 0">
+      <thead>
+        <tr>
+          <th class="time">Time</th>
+          <th class="num">V</th>
+          <th class="num">E</th>
+          <th class="num">D</th>
+          <th class="num">SG</th>
+          <th class="num">P</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="6" class="rl-vazio">Sem dados ainda.</td></tr>
+      </tbody>
+    </table>
+
+    <p class="rl-legenda">
+      V = Vitórias • E = Empates • D = Derrotas • SG = Saldo de Gols • P = Pontos
+    </p>
+    <p class="rl-desempate">
+      <strong>Desempate:</strong> vitórias, empates, SG, menos derrotas e
+      confronto direto em empate total.
+    </p>
+  </section>
+
+  <!-- ═══════════ Card "Partidas" ═══════════ -->
+  <section class="r-card rl-secao">
+    <div class="rl-ranking-head">
+      <ion-icon name="flag"></ion-icon>
+      <h3>Partidas</h3>
+    </div>
+    <div class="rl-empty-inline">
+      <p>Nenhuma partida em andamento no momento.</p>
+      <small>Quando uma partida começar, ela aparece aqui em tempo real.</small>
+    </div>
+  </section>
+</div>

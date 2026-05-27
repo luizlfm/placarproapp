@@ -1,0 +1,126 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="cancelar()" [disabled]="salvando">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>{{ modoEdicao ? 'Editar jogador' : 'Novo jogador' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button
+        strong="true"
+        [disabled]="salvando || form.invalid"
+        (click)="salvar()"
+      >
+        Salvar
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="jm-content">
+  <form class="jm-form" [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+    <!-- Nome (obrigatório) -->
+    <div class="jm-row">
+      <ion-input
+        fill="outline"
+        label="Nome do jogador *"
+        labelPlacement="stacked"
+        placeholder="Digite o nome completo"
+        formControlName="nome"
+        maxlength="60"
+        required
+        errorText="Mínimo 2 caracteres."
+      ></ion-input>
+    </div>
+
+    <!-- Apelido + Nota (linha) -->
+    <div class="jm-row dupla">
+      <ion-input
+        fill="outline"
+        label="Apelido"
+        labelPlacement="stacked"
+        placeholder="Como é chamado?"
+        formControlName="apelido"
+        maxlength="40"
+      ></ion-input>
+      <ion-input
+        fill="outline"
+        type="number"
+        label="Nota (0-10)"
+        labelPlacement="stacked"
+        placeholder="0-10"
+        formControlName="notaGeral"
+        min="0"
+        max="10"
+        step="0.5"
+        errorText="Entre 0 e 10."
+      ></ion-input>
+    </div>
+
+    <!-- Telefone (com máscara (00) 00000-0000) -->
+    <div class="jm-row">
+      <ion-input
+        fill="outline"
+        type="tel"
+        inputmode="numeric"
+        label="Telefone (opcional)"
+        labelPlacement="stacked"
+        placeholder="(00) 00000-0000"
+        formControlName="telefone"
+        maxlength="16"
+        appMascara="telefone"
+      ></ion-input>
+    </div>
+
+    <!-- Posição -->
+    <div class="jm-row">
+      <div class="jm-select-wrap">
+        <label class="jm-select-label">Posição preferida</label>
+        <select formControlName="posicao" class="jm-select">
+          <option *ngFor="let p of posicoes" [value]="p.value">{{ p.label }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Toggles -->
+    <div class="jm-toggles">
+      <label class="jm-toggle">
+        <input type="checkbox" formControlName="mensalista" />
+        <span class="jm-toggle-box"></span>
+        <span class="jm-toggle-label">
+          <strong>Mensalista</strong>
+          <small>Paga valor fixo independente de presença e vai pra frente da fila.</small>
+        </span>
+      </label>
+      <label class="jm-toggle">
+        <input type="checkbox" formControlName="convidado" />
+        <span class="jm-toggle-box"></span>
+        <span class="jm-toggle-label">
+          <strong>Convidado</strong>
+          <small>Não é jogador fixo. Aparece na tab "Convidados".</small>
+        </span>
+      </label>
+    </div>
+
+    <!-- Ações secundárias (só em edição) -->
+    <div class="jm-secundarias" *ngIf="modoEdicao">
+      <button
+        type="button"
+        class="jm-btn-sec arquivar"
+        (click)="toggleArquivar()"
+        [disabled]="salvando || removendo"
+      >
+        <ion-icon [name]="jogador?.ativo === false ? 'refresh-outline' : 'archive-outline'"></ion-icon>
+        {{ jogador?.ativo === false ? 'Reativar jogador' : 'Arquivar jogador' }}
+      </button>
+      <button
+        type="button"
+        class="jm-btn-sec remover"
+        (click)="remover()"
+        [disabled]="salvando || removendo"
+      >
+        <ion-icon name="trash-outline"></ion-icon>
+        Remover jogador
+      </button>
+    </div>
+  </form>
+</ion-content>

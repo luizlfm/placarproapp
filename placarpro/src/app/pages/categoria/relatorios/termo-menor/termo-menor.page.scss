@@ -1,0 +1,475 @@
+/* =========================================================
+   Termo de Autorização para Menor — split panel:
+   ┌─────────────┬──────────────────────────────┐
+   │ Editor      │ Preview (A4)                 │
+   │ (logos +    │                              │
+   │  textos)    │                              │
+   └─────────────┴──────────────────────────────┘
+   Em mobile vira coluna única (editor encima).
+   ========================================================= */
+
+ion-content { --background: #e9ecef; }
+
+.tm-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  padding: 16px;
+  min-height: 100%;
+  align-items: start;
+}
+
+/* ============ Painel de edição ============ */
+.painel-edit {
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.pe-titulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1C2E3D;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+
+  ion-icon { font-size: 18px; color: #4DABF7; }
+}
+
+.pe-secao {
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed #e5e7eb;
+
+  &:last-of-type { border-bottom: 0; }
+
+  h3 {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1C2E3D;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+}
+
+.pe-hint {
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: #6b7280;
+  line-height: 1.4;
+
+  code {
+    background: #f3f4f6;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    color: #1C2E3D;
+  }
+}
+
+/* ----- Slots de logo (3 quadrados) ----- */
+.pe-logos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.pe-logo-slot { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+.pe-logo-box {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px dashed #cbd5e0;
+  border-radius: 8px;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  ion-icon { font-size: 22px; color: #94a3b8; }
+  span {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-weight: 600;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 4px;
+  }
+
+  &:hover {
+    border-color: #4DABF7;
+    background: rgba(77, 171, 247, 0.05);
+  }
+
+  &.tem-logo {
+    border-style: solid;
+    background: #fff;
+  }
+}
+
+.pe-logo-label {
+  font-size: 10px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 600;
+}
+
+.pe-logo-clear {
+  background: transparent;
+  border: 0;
+  color: #b91c1c;
+  font-size: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 4px;
+  border-radius: 4px;
+
+  ion-icon { font-size: 11px; }
+
+  &:hover { background: rgba(185, 28, 28, 0.06); }
+}
+
+/* ----- Campos de texto ----- */
+.pe-campo {
+  display: block;
+  margin-bottom: 8px;
+
+  .pe-campo-lbl {
+    display: block;
+    font-size: 10.5px;
+    color: #4b5563;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 3px;
+  }
+
+  input, textarea {
+    width: 100%;
+    border: 1px solid #cbd5e0;
+    border-radius: 5px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-family: inherit;
+    color: #1f2937;
+    background: #fff;
+    transition: border-color 0.15s ease;
+    resize: vertical;
+
+    &:focus {
+      outline: none;
+      border-color: #4DABF7;
+      box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.15);
+    }
+  }
+}
+
+.pe-textarea-grande {
+  width: 100%;
+  border: 1px solid #cbd5e0;
+  border-radius: 5px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  font-family: inherit;
+  color: #1f2937;
+  background: #fff;
+  resize: vertical;
+  line-height: 1.4;
+
+  &:focus {
+    outline: none;
+    border-color: #4DABF7;
+    box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.15);
+  }
+}
+
+/* ----- Botões de ação ----- */
+.pe-acoes {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+
+  .pe-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    transition: all 0.15s ease;
+
+    ion-icon { font-size: 14px; }
+
+    &.ghost {
+      background: transparent;
+      border-color: #cbd5e0;
+      color: #4b5563;
+      &:hover { background: #f3f4f6; }
+    }
+
+    &.primary {
+      background: #1C2E3D;
+      color: #fff;
+      &:hover { background: #102433; }
+    }
+  }
+}
+
+/* =========================================================
+   Folha A4 — preview do termo
+   ========================================================= */
+.tm-preview-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-bottom: 24px;
+}
+
+.termo-folha {
+  background: #fff;
+  width: 210mm;
+  min-height: 297mm;
+  max-width: 100%;
+  padding: 18mm 18mm;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  font-size: 12pt;
+  line-height: 1.8;
+  color: #1a1a1a;
+}
+
+/* ----- Cabeçalho com logos ----- */
+.termo-cabec {
+  display: grid;
+  grid-template-columns: 80px 1fr 160px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12mm;
+}
+
+.termo-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    max-width: 100%;
+    max-height: 80px;
+    object-fit: contain;
+  }
+}
+
+.termo-logo-placeholder {
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  border: 1px dashed #cbd5e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon { font-size: 24px; color: #cbd5e0; }
+}
+
+.termo-titulo {
+  margin: 0;
+  text-align: center;
+  font-size: 18pt;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1.2;
+  text-transform: uppercase;
+
+  .termo-ano {
+    display: block;
+    margin-top: 2px;
+    font-size: 16pt;
+  }
+}
+
+.termo-logos-extras {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+
+  .termo-logo {
+    width: 70px;
+    img { max-height: 70px; }
+  }
+}
+
+/* ----- Sub-título em caixa alta ----- */
+.termo-subtitulo {
+  margin: 0 0 8mm;
+  text-align: justify;
+  font-size: 11pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+
+/* ----- Corpo do termo ----- */
+.termo-corpo {
+  text-align: justify;
+}
+
+.termo-paragrafo {
+  margin: 0 0 6mm;
+  text-align: justify;
+  font-size: 12pt;
+  line-height: 1.8;
+
+  strong {
+    font-weight: 700;
+    color: #1C2E3D;
+  }
+}
+
+/* Linhas pontilhadas para preencher à mão */
+.linha-curta,
+.linha-media,
+.linha-longa {
+  display: inline-block;
+  border-bottom: 1px solid #1a1a1a;
+  vertical-align: bottom;
+  margin: 0 2px;
+}
+
+.linha-curta { width: 50px; }
+.linha-media { width: 160px; }
+.linha-longa { width: 100%; }
+
+/* ----- Rodapé com data + assinatura ----- */
+.termo-rodape {
+  margin-top: 18mm;
+}
+
+.termo-data {
+  margin: 0 0 14mm;
+  text-align: center;
+  font-size: 12pt;
+}
+
+.termo-assinatura {
+  margin-top: 16mm;
+  text-align: center;
+}
+
+.termo-assinatura-linha {
+  margin: 0 auto;
+  width: 80%;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.termo-assinatura-lbl {
+  margin: 4mm 0 0;
+  font-size: 11pt;
+}
+
+/* =========================================================
+   Mobile — empilha editor encima do preview
+   ========================================================= */
+@media (max-width: 1024px) {
+  .tm-layout {
+    grid-template-columns: 1fr;
+    padding: 8px;
+    gap: 10px;
+  }
+
+  .painel-edit {
+    position: relative;
+    top: 0;
+    max-height: none;
+  }
+
+  .termo-folha {
+    width: auto;
+    padding: 14mm 12mm;
+    font-size: 11pt;
+  }
+
+  .termo-cabec {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 8px;
+
+    .termo-logo { justify-content: center; }
+    .termo-logos-extras { justify-content: center; }
+  }
+
+  .termo-titulo { font-size: 16pt; }
+  .termo-titulo .termo-ano { font-size: 14pt; }
+}
+
+@media (max-width: 520px) {
+  .termo-folha {
+    padding: 10mm 8mm;
+    font-size: 10pt;
+    line-height: 1.7;
+  }
+  .termo-titulo { font-size: 14pt; }
+  .termo-paragrafo { font-size: 10pt; line-height: 1.7; }
+  .linha-media { width: 100px; }
+  .tb-label { display: none; }
+}
+
+/* =========================================================
+   Print — só o termo aparece, sem painel
+   ========================================================= */
+@media print {
+  ion-header,
+  .no-print { display: none !important; }
+
+  ion-content { --background: #fff; }
+
+  .tm-layout {
+    display: block;
+    padding: 0;
+    margin: 0;
+  }
+
+  .painel-edit { display: none !important; }
+
+  .tm-preview-wrap { padding: 0; }
+
+  .termo-folha {
+    box-shadow: none;
+    padding: 18mm;
+    width: 100%;
+    min-height: auto;
+  }
+
+  @page { size: A4 portrait; margin: 0; }
+}

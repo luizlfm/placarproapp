@@ -1,0 +1,43 @@
+<ion-content class="ce-content">
+  <div class="ce-card">
+    <div class="ce-header">
+      <h2>Selecionar equipes</h2>
+      <button class="ce-todas" type="button" (click)="selecionarTodas()">
+        {{ qtdMarcadas === lista.length ? 'Desmarcar todas' : 'Marcar todas' }}
+      </button>
+    </div>
+
+    <div class="ce-lista">
+      <button
+        *ngFor="let e of lista; trackBy: trackById"
+        type="button"
+        class="ce-item"
+        [class.marcada]="isMarcada(e)"
+        (click)="toggle(e)"
+      >
+        <span class="ce-nome">
+          {{ e.nome }}<span class="ce-local">{{ labelLocal(e) }}</span>
+        </span>
+        <ion-icon
+          [name]="isMarcada(e) ? 'checkbox' : 'square-outline'"
+        ></ion-icon>
+      </button>
+
+      <div class="ce-vazio" *ngIf="lista.length === 0">
+        Nenhuma equipe cadastrada nesta categoria.
+      </div>
+    </div>
+
+    <div class="ce-actions">
+      <button class="ce-btn ghost" type="button" (click)="cancelar()">Cancelar</button>
+      <button
+        class="ce-btn primary"
+        type="button"
+        [disabled]="qtdMarcadas === 0"
+        (click)="continuar()"
+      >
+        Continuar
+      </button>
+    </div>
+  </div>
+</ion-content>

@@ -1,0 +1,4277 @@
+/* ==========================================================
+   Página de transmissão — player YouTube + overlay de placar
+   ========================================================== */
+
+.tr-content {
+  --background: #0a0e12;
+}
+
+/* Badge "X assistindo" — pill flutuante ACIMA do FAB de eventos (que fica
+   no canto inferior direito do vídeo). Posicionado `absolute` dentro de
+   `.tr-video` (que tem `position: relative`). Tom escuro translúcido com
+   borda verde pra destacar sobre qualquer cor de fundo do stream.
+
+   Bottom 80px = ~52px da altura do FAB + ~28px de respiro. Z-index alto
+   pra ficar SOBRE qualquer overlay do player. */
+.tr-viewers-video {
+  position: absolute;
+  bottom: 80px;
+  right: 18px;
+  z-index: 55;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(124, 198, 29, 0.55);
+  border-radius: 16px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  /* `pointer-events: none` deixa cliques passarem pra trás
+     (não bloqueia o vídeo nem outros overlays). */
+
+  ion-icon {
+    font-size: 14px;
+    color: #b7e660;
+  }
+
+  @media (max-width: 520px) {
+    bottom: 72px;
+    /* FAB no mobile = 48px, ainda fica acima */
+    right: 14px;
+    font-size: 11px;
+    padding: 5px 9px;
+
+    ion-icon {
+      font-size: 12px;
+    }
+  }
+}
+
+/* States (loading / erro / vazio) */
+.tr-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  text-align: center;
+  padding: 24px;
+  color: rgba(255, 255, 255, 0.75);
+
+  ion-icon {
+    font-size: 64px;
+    opacity: 0.5;
+    margin-bottom: 12px;
+  }
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  p {
+    margin: 0 0 18px;
+    font-size: 14px;
+    max-width: 420px;
+    line-height: 1.5;
+  }
+}
+
+/* ============ Layout principal ============ */
+.tr-stage {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 14px;
+  padding: 14px;
+  /* Altura EXATA da viewport menos header — não cresce, não rola. O
+     scroll da página inteira fica DESATIVADO, apenas o feed (eventos/
+     escalação) rola internamente. Assim o vídeo nunca sai de vista. */
+  height: calc(100vh - 56px);
+  overflow: hidden;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    /* Em mobile/tablet, vira coluna: vídeo em cima (auto) + feed
+       embaixo ocupando o resto (1fr) com scroll interno próprio. */
+    grid-template-rows: auto 1fr;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   PAINEL DE SONS CUSTOMIZADOS — modal overlay
+   ════════════════════════════════════════════════════════════════════
+   Aberto via botão musical-notes no toolbar. Lista todos os tipos de
+   lance com botões pra tocar preview, escolher MP3 e remover. */
+.tr-sons-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: sonsOverlayFade 200ms ease-out;
+}
+
+.tr-sons-painel {
+  width: 100%;
+  max-width: 520px;
+  max-height: 88vh;
+  overflow: auto;
+  background: linear-gradient(180deg, #1c2935 0%, #0a0e12 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+  color: #fff;
+  animation: sonsPainelSobe 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tr-sons-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    ion-icon {
+      font-size: 20px;
+      color: var(--ion-color-secondary, #7CC61D);
+    }
+  }
+}
+
+.tr-sons-fechar {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0;
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 120ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+  }
+
+  ion-icon {
+    font-size: 18px;
+  }
+}
+
+.tr-sons-info {
+  margin: 0;
+  padding: 12px 18px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+  strong {
+    color: #fff;
+    font-weight: 700;
+  }
+}
+
+.tr-sons-lista {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tr-sons-item {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid transparent;
+  transition: all 140ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  &.custom {
+    background: linear-gradient(180deg,
+        color-mix(in srgb, var(--cor-acento, #fff) 12%, transparent) 0%,
+        rgba(255, 255, 255, 0.04) 100%);
+    border-color: color-mix(in srgb, var(--cor-acento, #fff) 30%, transparent);
+  }
+}
+
+.tr-sons-icone {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cor-acento, #fff) 18%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 18px;
+    color: var(--cor-acento, #fff);
+  }
+}
+
+.tr-sons-info-item {
+  min-width: 0;
+}
+
+.tr-sons-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.tr-sons-status {
+  margin-top: 2px;
+}
+
+.tr-sons-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+
+  ion-icon {
+    font-size: 12px;
+  }
+
+  &.tag-custom {
+    background: rgba(124, 198, 29, 0.18);
+    color: #b8e36a;
+
+    ion-icon {
+      color: var(--ion-color-secondary, #7CC61D);
+    }
+  }
+
+  &.tag-padrao {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.55);
+  }
+}
+
+.tr-sons-acoes {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tr-sons-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: all 120ms ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.16);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  ion-icon {
+    font-size: 16px;
+  }
+
+  &.btn-play:hover {
+    color: var(--ion-color-secondary, #7CC61D);
+  }
+
+  &.btn-upload:hover {
+    color: #4DABF7;
+  }
+
+  &.btn-remove:hover:not(:disabled) {
+    background: rgba(235, 68, 90, 0.22);
+    color: #ff8a9a;
+    border-color: rgba(235, 68, 90, 0.4);
+  }
+}
+
+@keyframes sonsOverlayFade {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes sonsPainelSobe {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 600px) {
+  .tr-sons-overlay {
+    padding: 8px;
+  }
+
+  .tr-sons-painel {
+    max-height: 92vh;
+  }
+
+  .tr-sons-info {
+    padding: 10px 14px;
+    font-size: 11px;
+  }
+
+  .tr-sons-item {
+    gap: 10px;
+    padding: 8px 10px;
+  }
+
+  .tr-sons-icone {
+    width: 32px;
+    height: 32px;
+  }
+
+  .tr-sons-btn {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   BOTÃO "INICIAR TRANSMISSÃO (CÂMERA)" — empty state
+   ════════════════════════════════════════════════════════════════════
+   Aparece destacado no empty state pra admin/moderador. Vermelho
+   chamativo (estilo "REC") diferenciando da ação "Voltar" (cinza). */
+.tr-btn-iniciar-camera {
+  --background: #d32f2f;
+  --background-hover: #b71c1c;
+  --background-activated: #b71c1c;
+  --color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  height: 52px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  min-width: 280px;
+
+  /* Em mobile usa LARGURA MÁXIMA do empty state pra ficar bem clicável,
+     sem ficar pequena demais. Texto compactado pra caber em telas estreitas. */
+  @media (max-width: 600px) {
+    min-width: 0;
+    width: 100%;
+    max-width: 360px;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   BOTÃO "ENCERRAR TRANSMISSÃO" — flutuante sobre o player LiveKit
+   ════════════════════════════════════════════════════════════════════
+   Visível só pra owner/moderador enquanto a transmissão está ativa.
+   Posicionado no canto superior DIREITO da área de vídeo (z-index >
+   player). Vermelho com ícone stop pra ser óbvio. */
+.tr-btn-encerrar-tx {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: rgba(211, 47, 47, 0.92);
+  backdrop-filter: blur(6px);
+  border: none;
+  border-radius: 18px;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  transition: background 150ms ease, transform 100ms ease;
+
+  ion-icon {
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: rgba(183, 28, 28, 0.95);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  @media (max-width: 520px) {
+
+    /* Em mobile, só ícone (sem o texto "Encerrar") pra economizar espaço. */
+    span {
+      display: none;
+    }
+
+    padding: 8px;
+
+    ion-icon {
+      font-size: 22px;
+    }
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   BOTÃO "TRANSMITIR COM MINHA CÂMERA" — banner inferior sobre YouTube
+   ════════════════════════════════════════════════════════════════════
+   Aparece pro broadcaster quando o jogo tem YouTube configurado mas
+   ele quer publicar com a própria câmera. Posicionado CENTRAL-BOTTOM
+   do vídeo (não topo-direito, que conflita com AO VIVO / CC do YT /
+   logo PlacarPro). Verde primário da marca pra destacar como ação
+   primária; pulse sutil pra chamar atenção sem irritar. */
+.tr-btn-trocar-camera {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #7CC61D 0%, #5fa317 100%);
+  border: none;
+  border-radius: 28px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(124, 198, 29, 0.45), 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: transform 120ms ease, box-shadow 150ms ease, background 150ms ease;
+  animation: tr-btn-camera-pulse 2.2s ease-in-out infinite;
+
+  ion-icon {
+    font-size: 20px;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, #8dd620 0%, #6cb31a 100%);
+    box-shadow: 0 8px 30px rgba(124, 198, 29, 0.55), 0 3px 10px rgba(0, 0, 0, 0.45);
+    transform: translateX(-50%) translateY(-2px);
+  }
+
+  &:active {
+    transform: translateX(-50%) scale(0.97);
+  }
+
+  /* Mobile: barra mais compacta mas ainda óbvia (texto mantido — é a
+     ação principal). */
+  @media (max-width: 520px) {
+    bottom: 12px;
+    padding: 10px 16px;
+    font-size: 11.5px;
+    gap: 7px;
+
+    ion-icon {
+      font-size: 16px;
+    }
+  }
+}
+
+@keyframes tr-btn-camera-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 6px 24px rgba(124, 198, 29, 0.45), 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 6px 30px rgba(124, 198, 29, 0.75), 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* ============ Vídeo + overlay ============ */
+.tr-video-wrap {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.tr-video {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+
+  /* O YouTube IFrame API SUBSTITUI o div pelo iframe — então o iframe
+     fica como filho DIRETO de .tr-video. Garante que o iframe ocupe
+     100% mesmo se a API setar width/height inline fixos. */
+  >iframe,
+  iframe {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border: 0 !important;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   PÔSTER DE FIM DE JOGO — full overlay sobre o vídeo
+   ════════════════════════════════════════════════════════════════════
+   Aparece quando jogo.status === 'encerrado'. Cobre 100% do vídeo
+   com gradient + escudos grandes + placar gigante. Estilo TV broadcast. */
+.tr-poster-fim {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  /* acima de tudo (scoreboard, ao vivo, toast) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  animation: posterAparece 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.tr-poster-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(124, 198, 29, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 80%, rgba(77, 171, 247, 0.16) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(5, 8, 12, 0.94) 0%, rgba(0, 0, 0, 0.98) 100%);
+  backdrop-filter: blur(8px);
+}
+
+/* Botão "Baixar PNG" no canto superior direito do pôster */
+.tr-poster-baixar {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 150ms ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  ion-icon {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .tr-poster-baixar {
+    top: 10px;
+    right: 10px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+}
+
+.tr-poster-conteudo {
+  position: relative;
+  z-index: 1;
+  width: 92%;
+  max-width: 880px;
+  /* Trava de altura pra NÃO transbordar a área do vídeo em landscape mobile.
+     `max-height: 100%` + flex-column garante que tudo cabe na tela visível
+     do `.tr-poster-fim` (que é `inset: 0` dentro do container). */
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #fff;
+  animation: posterConteudoSobe 700ms cubic-bezier(0.34, 1.56, 0.64, 1) 200ms backwards;
+  top: -35px;
+}
+
+.tr-poster-camp {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 18px;
+
+  img {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+}
+
+.tr-poster-titulo {
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.8),
+    0 0 32px rgba(225, 29, 72, 0.4);
+  margin-bottom: 22px;
+
+  @media (max-width: 700px) {
+    font-size: 26px;
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 20px;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 360px) {
+    font-size: 17px;
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+  }
+}
+
+.tr-poster-placar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 28px;
+  margin-bottom: 22px;
+
+  /* Mobile (portrait estreito ≤ 480px): mantém 3-col mas com gap menor.
+     Score continua entre os 2 escudos — mais compacto e legível que
+     empilhar tudo numa coluna só (que ficava muito alto). */
+  @media (max-width: 480px) {
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+}
+
+.tr-poster-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.tr-poster-escudo {
+  width: 120px;
+  height: 120px;
+  border-radius: 16px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow:
+    0 12px 36px rgba(0, 0, 0, 0.6),
+    0 0 0 2px rgba(255, 255, 255, 0.15);
+  animation: posterEscudoEntra 600ms cubic-bezier(0.34, 1.56, 0.64, 1) 300ms backwards;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 8px;
+  }
+
+  ion-icon {
+    font-size: 60px;
+    color: rgba(0, 0, 0, 0.3);
+  }
+
+  @media (max-width: 700px) {
+    width: 80px;
+    height: 80px;
+    border-radius: 14px;
+
+    ion-icon {
+      font-size: 44px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+
+    ion-icon {
+      font-size: 34px;
+    }
+
+    img {
+      padding: 5px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+
+    ion-icon {
+      font-size: 28px;
+    }
+
+    img {
+      padding: 4px;
+    }
+  }
+}
+
+.tr-poster-nome {
+  font-size: 18px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #fff;
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @media (max-width: 700px) {
+    font-size: 14px;
+    max-width: 160px;
+    letter-spacing: 0.6px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    max-width: 110px;
+    letter-spacing: 0.4px;
+  }
+
+  @media (max-width: 360px) {
+    font-size: 11px;
+    max-width: 95px;
+    letter-spacing: 0.2px;
+  }
+}
+
+/* Numeros = bloco central do placar. ROW flex pra "1 × 4" ler em linha
+   (era column, gerava "1 / × / 4" empilhado e tomava muita altura em
+   landscape mobile). Pênaltis quebra na linha de baixo via flex-basis. */
+.tr-poster-numeros {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.tr-poster-num {
+  font-size: 88px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+  display: inline-block;
+  animation: posterNumEntra 700ms cubic-bezier(0.34, 1.56, 0.64, 1) 400ms backwards;
+
+  &:nth-of-type(2) {
+    animation-delay: 500ms;
+  }
+
+  @media (max-width: 700px) {
+    font-size: 56px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 44px;
+  }
+
+  @media (max-width: 360px) {
+    font-size: 38px;
+  }
+}
+
+.tr-poster-x {
+  font-size: 48px;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0 18px;
+  display: inline-block;
+  vertical-align: middle;
+
+  @media (max-width: 700px) {
+    font-size: 30px;
+    margin: 0 10px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 24px;
+    margin: 0 8px;
+  }
+
+  @media (max-width: 360px) {
+    font-size: 20px;
+    margin: 0 6px;
+  }
+}
+
+.tr-poster-pen {
+  flex-basis: 100%;
+  /* força quebra de linha pra ficar embaixo do 1×4 */
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--ion-color-secondary, #7CC61D);
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+    margin-top: 4px;
+  }
+}
+
+.tr-poster-resultado {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 24px;
+  background: rgba(124, 198, 29, 0.18);
+  border: 2px solid rgba(124, 198, 29, 0.55);
+  border-radius: 999px;
+  font-size: 16px;
+  color: #fff;
+  font-weight: 600;
+
+  ion-icon {
+    font-size: 22px;
+    color: #ffd95a;
+    animation: posterTrofeu 1.4s ease-in-out infinite;
+  }
+
+  strong {
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+
+  @media (max-width: 700px) {
+    font-size: 13px;
+    padding: 8px 18px;
+    gap: 7px;
+
+    ion-icon {
+      font-size: 17px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    font-size: 11px;
+    padding: 6px 14px;
+    gap: 6px;
+    border-width: 1.5px;
+
+    ion-icon {
+      font-size: 15px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    font-size: 10px;
+    padding: 5px 12px;
+
+    ion-icon {
+      font-size: 13px;
+    }
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   LANDSCAPE MOBILE — viewport curto e largo (ex.: celular deitado).
+   Aplicado quando a altura é ≤ 600px pra cobrir a maioria dos celulares
+   em landscape (370–600px). Tamanhos baseados em `vh` pra escalar com
+   a altura real do viewport — assim TUDO cabe sem cortar nada.
+   `gap` substitui `margin-bottom` (flex column do conteudo já distribui). */
+@media (max-width: 900px) and (max-height: 600px) {
+  .tr-poster-conteudo {
+    gap: 1.2vh;
+    /* Sem padding extra — usa todo o espaço útil */
+  }
+
+  .tr-poster-camp {
+    font-size: clamp(9px, 1.8vh, 11px);
+    padding: 0.4vh 1.5vw;
+    margin-bottom: 0;
+
+    /* gap do flex parent assume */
+    img {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .tr-poster-titulo {
+    font-size: clamp(15px, 4.5vh, 22px);
+    letter-spacing: 1.5px;
+    margin-bottom: 0;
+    line-height: 1.1;
+  }
+
+  .tr-poster-placar {
+    gap: clamp(8px, 2.5vw, 18px);
+    margin-bottom: 0;
+  }
+
+  .tr-poster-time {
+    gap: 0.6vh;
+  }
+
+  .tr-poster-escudo {
+    width: clamp(38px, 13vh, 64px);
+    height: clamp(38px, 13vh, 64px);
+    border-radius: 8px;
+
+    img {
+      padding: 3px;
+    }
+
+    ion-icon {
+      font-size: clamp(22px, 6vh, 32px);
+    }
+  }
+
+  .tr-poster-nome {
+    font-size: clamp(9px, 2vh, 12px);
+    max-width: 90px;
+    letter-spacing: 0.2px;
+  }
+
+  .tr-poster-numeros {
+    gap: 0;
+  }
+
+  .tr-poster-num {
+    font-size: clamp(26px, 8vh, 44px);
+  }
+
+  .tr-poster-x {
+    font-size: clamp(14px, 4.5vh, 24px);
+    margin: 0 6px;
+  }
+
+  .tr-poster-pen {
+    font-size: clamp(8px, 1.6vh, 11px);
+    margin-top: 0;
+  }
+
+  .tr-poster-resultado {
+    font-size: clamp(9px, 1.9vh, 12px);
+    padding: 0.6vh 2vw;
+    gap: 4px;
+    border-width: 1.5px;
+
+    ion-icon {
+      font-size: clamp(12px, 2.6vh, 16px);
+    }
+  }
+
+  .tr-poster-baixar {
+    top: 8px;
+    right: 8px;
+    padding: 4px 9px;
+    font-size: 10px;
+    gap: 4px;
+
+    ion-icon {
+      font-size: 12px;
+    }
+  }
+}
+
+@keyframes posterAparece {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes posterConteudoSobe {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes posterEscudoEntra {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(-12deg);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes posterNumEntra {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+
+  60% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes posterTrofeu {
+
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+
+  50% {
+    transform: rotate(8deg);
+  }
+}
+
+/* ====== Stack canto SUPERIOR direito: Logo PlacarPro + Badge "AO VIVO" ====== */
+.tr-top-right {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+  /* cliques passam pro vídeo */
+}
+
+.tr-logo2 {
+  width: 92px;
+  height: auto;
+  max-height: 56px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.55));
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* ====== Badge "AO VIVO" (dentro de .tr-top-right) ====== */
+.tr-live-tag {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.5);
+  pointer-events: auto;
+  animation: liveTagBreath 2s ease-in-out infinite;
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.8);
+    animation: dotPulse 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes dotPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.8);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
+  }
+}
+
+@keyframes liveTagBreath {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   SCOREBOARD ESTILO BROADCAST TV  v2  (clean + profissional)
+   ────────────────────────────────────────────────────────────────────
+   Inspirado em overlays oficiais de transmissão de futebol:
+     • Barra horizontal única, comprida
+     • Logos CIRCULARES grandes nas pontas (overflow no eixo Y)
+     • Faixas de nome AMPLAS em branco — "TV strap"
+     • Placar central em painel navy, números brancos huge
+     • Camp/categoria + "AO VIVO" numa faixa fina superior
+
+   Cores das equipes ainda viram `--cor-m` / `--cor-v` (CSS vars),
+   usadas em detalhes sutis (linhas, glow do AO VIVO).
+   ════════════════════════════════════════════════════════════════════ */
+.tr-scoreboard {
+  position: absolute;
+  /* 48px de clearance pro título do YouTube não cortar o pill. */
+  top: 48px;
+  left: 14px;
+  right: 14px;
+  max-width: 520px;
+  /* MUITO mais compacto — versão "broadcast mini" */
+  margin: 0 auto;
+  padding: 0;
+  color: #fff;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── Faixa de cima: CAMP · CATEGORIA centralizados (TV strap topo) ──
+   padding-top maior (14px) pra DEIXAR ESPAÇO pro pill do cronômetro
+   que sobressai do topo. Sem isso, o pill cobre o nome do campeonato. */
+.tr-sb-camp-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 56px 4px;
+  /* top maior pra esquivar da pill mini de período */
+  margin: 0 auto;
+  background: linear-gradient(180deg, rgba(28, 46, 61, 0.94) 0%, rgba(20, 33, 44, 0.96) 100%);
+  border-radius: 6px 6px 0 0;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-bottom: none;
+  font-size: 8.5px;
+  box-shadow: 0 -3px 14px rgba(0, 0, 0, 0.45);
+
+  img {
+    width: 13px;
+    height: 13px;
+    border-radius: 3px;
+    object-fit: contain;
+    background: #fff;
+    padding: 1px;
+    flex-shrink: 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .tr-sb-camp-nome {
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+  }
+
+  .tr-sb-camp-sep {
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  .tr-sb-camp-cat {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+  }
+}
+
+/* ════════════ BARRA PRINCIPAL — azul royal ════════════
+   3 zonas: [nome+logo M] [placar branco] [nome+logo V]
+   Logos circulares são posicionados ABSOLUTOS, ultrapassando
+   a borda do retângulo (efeito "broadcast TV strap"). */
+.tr-sb-main {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 4px;
+  height: 36px;
+  /* COMPACTO — versão mini */
+  padding: 3px;
+  /* Navy PlacarPro (#1C2E3D primary) — gradiente sutil pra dar profundidade
+     mantendo identidade da marca. Antes era #1e40af (azul royal genérico). */
+  background: linear-gradient(180deg,
+      var(--ion-color-primary-shade, #192836) 0%,
+      var(--ion-color-primary, #1C2E3D) 50%,
+      var(--ion-color-primary-shade, #192836) 100%);
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.50),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+
+  /* Linha fina verde PlacarPro no rodapé da barra pra dar identidade visual */
+  &::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    bottom: 0;
+    height: 2px;
+    border-radius: 0 0 4px 4px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        var(--ion-color-secondary, #7CC61D) 50%,
+        transparent 100%);
+    opacity: 0.6;
+  }
+
+  .tr-sb-camp-bar+& {
+    border-radius: 0 0 5px 5px;
+    border-top: none;
+  }
+}
+
+/* Time = nome em caixa alta com logo CIRCULAR sobrepondo a ponta. */
+.tr-sb-team {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  background: linear-gradient(180deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0.00) 100%);
+  border-radius: 3px;
+
+  &.mandante {
+    padding: 0 8px 0 34px;
+    justify-content: flex-start;
+
+    .tr-sb-nome {
+      text-align: left;
+    }
+
+    .tr-sb-escudo {
+      left: -22px;
+    }
+  }
+
+  &.visitante {
+    padding: 0 34px 0 8px;
+    justify-content: flex-end;
+
+    .tr-sb-nome {
+      text-align: right;
+    }
+
+    .tr-sb-escudo {
+      right: -22px;
+    }
+  }
+
+  /* Logo CIRCULAR — pequeno, encostado nas pontas */
+  .tr-sb-escudo {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 2px;
+    z-index: 3;
+    box-shadow:
+      0 0 0 2px #fff,
+      0 0 0 3px rgba(0, 0, 0, 0.20),
+      0 3px 10px rgba(0, 0, 0, 0.55);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    ion-icon {
+      font-size: 20px;
+      color: var(--ion-color-medium);
+    }
+  }
+
+  .tr-sb-nome {
+    flex: 1;
+    min-width: 0;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.50);
+  }
+}
+
+@media (max-width: 720px) {
+  .tr-scoreboard {
+    max-width: 440px;
+  }
+
+  .tr-sb-main {
+    height: 32px;
+    padding: 2px;
+  }
+
+  .tr-sb-team.mandante {
+    padding-left: 30px;
+    padding-right: 6px;
+  }
+
+  .tr-sb-team.visitante {
+    padding-right: 30px;
+    padding-left: 6px;
+  }
+
+  .tr-sb-team .tr-sb-escudo {
+    width: 40px;
+    height: 40px;
+    padding: 2px;
+    box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px rgba(0, 0, 0, 0.20), 0 3px 8px rgba(0, 0, 0, 0.45);
+
+    ion-icon {
+      font-size: 18px;
+    }
+  }
+
+  .tr-sb-team.mandante .tr-sb-escudo {
+    left: -20px;
+  }
+
+  .tr-sb-team.visitante .tr-sb-escudo {
+    right: -20px;
+  }
+
+  .tr-sb-team .tr-sb-nome {
+    font-size: 10px;
+    letter-spacing: 0.4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tr-scoreboard {
+    top: 44px;
+    left: 8px;
+    right: 8px;
+    max-width: 360px;
+  }
+
+  .tr-sb-camp-bar {
+    padding: 2px 32px;
+    font-size: 7.5px;
+  }
+
+  .tr-sb-camp-bar img {
+    width: 11px;
+    height: 11px;
+  }
+
+  .tr-sb-camp-bar .tr-sb-camp-nome {
+    max-width: 90px;
+  }
+
+  .tr-sb-camp-bar .tr-sb-camp-cat {
+    max-width: 80px;
+  }
+
+  .tr-sb-main {
+    height: 28px;
+    padding: 2px;
+  }
+
+  .tr-sb-team.mandante {
+    padding-left: 26px;
+    padding-right: 5px;
+  }
+
+  .tr-sb-team.visitante {
+    padding-right: 26px;
+    padding-left: 5px;
+  }
+
+  .tr-sb-team .tr-sb-escudo {
+    width: 34px;
+    height: 34px;
+    padding: 1.5px;
+    box-shadow: 0 0 0 1.5px #fff, 0 0 0 2px rgba(0, 0, 0, 0.20), 0 2px 6px rgba(0, 0, 0, 0.45);
+
+    ion-icon {
+      font-size: 15px;
+    }
+  }
+
+  .tr-sb-team.mandante .tr-sb-escudo {
+    left: -16px;
+  }
+
+  .tr-sb-team.visitante .tr-sb-escudo {
+    right: -16px;
+  }
+
+  .tr-sb-team .tr-sb-nome {
+    font-size: 9px;
+    letter-spacing: 0.2px;
+  }
+}
+
+/* ════════════ PILL DE TEMPO DE JOGO ════════════
+   Badge centralizado abaixo da barra principal mostrando o período
+   atual do jogo (1º Tempo, Intervalo, 2º Tempo, Prorrogação, etc.).
+   Estilo "TV strap" compacto: fundo dark com texto em caps amarelo
+   pra leitura rápida durante a transmissão. */
+/* PILL DE PERÍODO (1º TEMPO, INTERVALO, etc.) no TOPO da barra.
+   Versão MINI — bem compacta pra não poluir, já que é só um rótulo.
+   Paleta navy+verde PlacarPro. */
+.tr-sb-periodo {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 2px 8px;
+  background: linear-gradient(180deg,
+      rgba(28, 46, 61, 0.94) 0%,
+      rgba(20, 33, 44, 0.96) 100%);
+  border: 1px solid rgba(124, 198, 29, 0.55);
+  /* verde secondary */
+  border-radius: 999px;
+  color: var(--ion-color-secondary, #7CC61D);
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.50),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  width: fit-content;
+  line-height: 1.1;
+
+  ion-icon {
+    font-size: 8.5px;
+    color: var(--ion-color-secondary, #7CC61D);
+  }
+}
+
+/* Garante que o pill .tr-sb-periodo fique centralizado no scoreboard
+   absoluto. Como .tr-scoreboard é position absolute, usamos um
+   wrapper flex implícito via display block + text-align center. */
+.tr-scoreboard {
+  text-align: center;
+  /* afeta inline-flex children como .tr-sb-periodo */
+}
+
+.tr-sb-camp-bar,
+.tr-sb-main,
+.tr-sb-pen-trilha {
+  text-align: initial;
+  /* reset pros filhos que não querem este align */
+}
+
+@media (max-width: 480px) {
+  .tr-sb-periodo {
+    margin-top: 5px;
+    padding: 3px 12px;
+    font-size: 10px;
+    letter-spacing: 0.6px;
+
+    ion-icon {
+      font-size: 11px;
+    }
+  }
+}
+
+/* Trilha de cobranças de pênalti — só em tempoAtual='penaltis'.
+   Linha única horizontal: bolinhas do MANDANTE à esquerda, do VISITANTE
+   à direita, com divisor central. Verde = convertido, vermelha =
+   perdeu/defendido. Sem labels — formato compacto e visual. */
+.tr-sb-pen-trilha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 4px 28px 0;
+  /* respiro lateral pra não passar dos logos circulares */
+  padding: 4px 10px;
+  background: linear-gradient(180deg, rgba(8, 12, 18, 0.92) 0%, rgba(15, 23, 32, 0.94) 100%);
+  border: 1px solid rgba(225, 29, 72, 0.45);
+  border-radius: 4px;
+  min-height: 14px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+}
+
+.tr-pen-dots {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+
+  /* Mandante: dots crescem da esquerda pra direita.
+     Visitante: dots crescem da direita pra esquerda (espelhado),
+     pra que a cobrança mais recente fique sempre perto do CENTRO,
+     visualmente equivalente em ambos os lados. */
+  &.tr-pen-dots-m {
+    justify-content: flex-start;
+  }
+
+  &.tr-pen-dots-v {
+    justify-content: flex-end;
+    flex-direction: row-reverse;
+  }
+}
+
+.tr-pen-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 200ms ease;
+
+  &.convertido {
+    background: #16a34a;
+    box-shadow: 0 1px 3px rgba(22, 163, 74, 0.6);
+  }
+
+  &.perdido {
+    background: #e11d48;
+    box-shadow: 0 1px 3px rgba(225, 29, 72, 0.6);
+  }
+}
+
+@media (max-width: 480px) {
+  .tr-sb-pen-trilha {
+    margin: 2px 8px 4px;
+    padding: 4px 8px;
+    gap: 8px;
+  }
+
+  .tr-pen-dot {
+    width: 9px;
+    height: 9px;
+  }
+
+  .tr-pen-dots {
+    gap: 4px;
+  }
+}
+
+/* ════════════ CRONÔMETRO — pill VERMELHO-VINHO no TOPO CENTRO ════════════
+   Posicionamento absoluto pra "saltar" pra cima da barra principal
+   (efeito de overlay broadcast TV — o relógio fica solto, destacado).
+   Mostra "1ºT · 12:34" — nome do período + relógio + bolinha pulsante.
+   Em pausado, ícone de pause troca a bolinha. */
+/* CRONÔMETRO mora EMBAIXO da barra (invertido com a pill de período).
+   Posição relativa, centralizado via margin auto + width fit-content.
+   PALETA VERDE PLACARPRO (`--ion-color-secondary` #7CC61D) — fundo
+   sólido com texto branco pra diferenciar da pill de período no topo
+   (que tem texto verde sobre navy). */
+.tr-sb-tempo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 5px auto 0;
+  padding: 5px 16px;
+  width: fit-content;
+  background: linear-gradient(180deg,
+      var(--ion-color-secondary-tint, #8ccf33) 0%,
+      var(--ion-color-secondary, #7CC61D) 50%,
+      var(--ion-color-secondary-shade, #6dae1a) 100%);
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.40);
+  box-shadow:
+    0 5px 14px rgba(124, 198, 29, 0.40),
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.30);
+  color: #fff;
+  font-family: 'SF Mono', 'Roboto Mono', 'Menlo', 'Consolas', monospace;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+
+  /* Nome do período e separador ficam OCULTOS no pill do topo —
+     o nome agora aparece numa pill própria (.tr-sb-periodo) abaixo
+     da barra principal, deixando o cronômetro do topo limpo (só MM:SS). */
+  .tr-sb-tempo-nome,
+  .tr-sb-tempo-sep {
+    display: none;
+  }
+
+  .tr-sb-tempo-relogio {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #fff;
+
+    &.pausado {
+      color: rgba(255, 255, 255, 0.70);
+
+      ion-icon {
+        font-size: 13px;
+        color: #f1b500;
+      }
+    }
+
+    .tr-tempo-dot {
+      width: 5px;
+      height: 5px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.80);
+      animation: trTempoPulse 1.2s ease-in-out infinite;
+    }
+  }
+
+  .tr-sb-tempo-acrescimo {
+    background: #f1b500;
+    color: #1c2e3d;
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.2px;
+  }
+
+  @media (max-width: 600px) {
+    margin-top: 4px;
+    padding: 4px 12px;
+    font-size: 11px;
+    gap: 5px;
+
+    .tr-sb-tempo-relogio {
+      font-size: 11.5px;
+    }
+  }
+}
+
+@keyframes trTempoPulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(1.4);
+  }
+}
+
+/* ════════════ PLACAR CENTRAL — caixa branca/cinza com números navy ════════════
+   Versão COMPACTA: fundo cinza claro, números 22px navy escuro,
+   contraste com a barra azul royal ao redor. */
+.tr-sb-placar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 8px;
+  min-width: 48px;
+  /* Branco PlacarPro (`--placar-surface`) com leve sombra pra "afundar"
+     no fundo navy — caixinha de placar broadcast. */
+  background: linear-gradient(180deg,
+      var(--placar-surface, #fff) 0%,
+      var(--ion-color-light, #F6F7F9) 100%);
+  border-radius: 3px;
+  border: 1px solid var(--placar-border, #E5E7EB);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+    0 2px 5px rgba(0, 0, 0, 0.30);
+  flex-shrink: 0;
+  position: relative;
+  align-self: stretch;
+
+  .tr-sb-gols {
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--ion-color-primary, #1C2E3D);
+    /* Navy primary do sistema */
+    font-family: 'SF Mono', 'Roboto Mono', 'Menlo', 'Consolas', monospace;
+    font-variant-numeric: tabular-nums;
+    min-width: 14px;
+    text-align: center;
+    letter-spacing: -0.5px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .tr-sb-gols:first-of-type,
+  .tr-sb-gols:last-of-type {
+    color: var(--ion-color-primary, #1C2E3D);
+  }
+
+  .tr-sb-x {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--placar-text-muted, #6B7280);
+    /* texto mudo do sistema */
+    font-family: 'SF Mono', 'Roboto Mono', monospace;
+    line-height: 1;
+  }
+
+  /* Bolinha de pênaltis — só em decisão (mantém vermelho dramatic) */
+  .tr-sb-pen-bola {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono', 'Roboto Mono', monospace;
+    line-height: 1;
+    box-shadow:
+      0 1px 4px rgba(225, 29, 72, 0.55),
+      0 0 0 1.5px #f1f3f5;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    animation: trPenBolaPulse 1.6s ease-in-out infinite;
+  }
+}
+
+@media (max-width: 720px) {
+  .tr-sb-placar {
+    padding: 0 12px;
+    min-width: 64px;
+    gap: 6px;
+
+    .tr-sb-gols {
+      font-size: 24px;
+      min-width: 20px;
+    }
+
+    .tr-sb-x {
+      font-size: 16px;
+    }
+
+    .tr-sb-pen-bola {
+      min-width: 18px;
+      height: 18px;
+      font-size: 10px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .tr-sb-placar {
+    padding: 0 9px;
+    min-width: 52px;
+    gap: 4px;
+
+    .tr-sb-gols {
+      font-size: 19px;
+      min-width: 16px;
+    }
+
+    .tr-sb-x {
+      font-size: 13px;
+    }
+
+    .tr-sb-pen-bola {
+      min-width: 15px;
+      height: 15px;
+      font-size: 9px;
+    }
+  }
+}
+
+@keyframes trPenBolaPulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 6px rgba(225, 29, 72, 0.5);
+  }
+
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 2px 10px rgba(225, 29, 72, 0.8);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   TOAST de EVENTO AO VIVO — popup grande centralizado sobre o vídeo
+   ════════════════════════════════════════════════════════════════════
+   Aparece quando um novo lance é registrado (gol, cartão, etc).
+   Posicionado no RODAPÉ do vídeo, centralizado horizontalmente.
+   Entra deslizando de baixo pra cima com bounce, sai com fade após ~5s. */
+.tr-evento-toast {
+  position: absolute;
+  /* CENTRO da área de vídeo — ANTES estava em `bottom: 72px` mas em
+     mobile portrait o toast extrapolava o final do container e ficava
+     cortado/atrás do rodapé do player. Centralizar vertical garante
+     que o GOOL! sempre aparece inteiro, independente do tamanho da
+     área de vídeo. Acima do scoreboard interno (z-index > placar). */
+  top: 50%;
+  left: 12px;
+  right: 12px;
+  transform: translateY(-50%);
+  margin: 0 auto;
+  z-index: 20;
+  width: fit-content;
+  min-width: min(360px, calc(100% - 24px));
+  max-width: min(640px, calc(100% - 24px));
+  /* Evita que conteúdo longo (jogador com nome grande + assistência +
+     minuto) faça o toast ultrapassar a área de vídeo. */
+  max-height: calc(100% - 24px);
+  overflow: hidden;
+  padding: 12px 40px 12px 14px;
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  align-items: center;
+  gap: 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(20, 28, 38, 0.96) 0%, rgba(8, 12, 18, 0.98) 100%);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  color: #fff;
+  cursor: pointer;
+  pointer-events: auto;
+  backdrop-filter: blur(6px);
+  transform-origin: center;
+  animation:
+    toastEntrada 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    toastSaida 500ms ease 4500ms forwards;
+
+  &.tipo-gol,
+  &.tipo-gol-contra {
+    border-color: rgba(124, 198, 29, 0.6);
+    box-shadow:
+      0 18px 50px rgba(0, 0, 0, 0.55),
+      0 0 32px rgba(124, 198, 29, 0.4),
+      0 0 0 1px rgba(124, 198, 29, 0.2) inset;
+  }
+
+  &.tipo-amarelo {
+    border-color: rgba(245, 197, 24, 0.7);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55), 0 0 32px rgba(245, 197, 24, 0.35);
+  }
+
+  &.tipo-vermelho {
+    border-color: rgba(235, 68, 90, 0.75);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55), 0 0 32px rgba(235, 68, 90, 0.4);
+  }
+
+  &.tipo-azul {
+    border-color: rgba(77, 171, 247, 0.7);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55), 0 0 32px rgba(77, 171, 247, 0.35);
+  }
+
+  /* PÊNALTIS — glow mais intenso + pulse no card pra dar dramatic */
+  &.tipo-pen-convertido {
+    border-color: rgba(124, 198, 29, 0.85);
+    box-shadow:
+      0 -8px 30px rgba(0, 0, 0, 0.55),
+      0 0 48px rgba(124, 198, 29, 0.6),
+      0 0 0 1px rgba(124, 198, 29, 0.3) inset;
+    animation:
+      toastEntrada 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+      penGoolPulse 600ms ease-in-out 3,
+      toastSaida 500ms ease 4500ms forwards;
+  }
+
+  &.tipo-pen-perdido {
+    border-color: rgba(235, 68, 90, 0.85);
+    box-shadow:
+      0 -8px 30px rgba(0, 0, 0, 0.55),
+      0 0 40px rgba(235, 68, 90, 0.5);
+    animation:
+      toastEntrada 600ms cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards,
+      penPerdidoShake 200ms ease-in-out 3 600ms,
+      toastSaida 500ms ease 4500ms forwards;
+  }
+
+  &.tipo-pen-defendido {
+    border-color: rgba(77, 171, 247, 0.85);
+    box-shadow:
+      0 -8px 30px rgba(0, 0, 0, 0.55),
+      0 0 48px rgba(77, 171, 247, 0.55),
+      0 0 0 1px rgba(77, 171, 247, 0.3) inset;
+  }
+}
+
+/* Linha do goleiro adversário (somente pen-defendido) */
+.tr-toast-goleiro {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: rgba(77, 171, 247, 0.95);
+  font-weight: 600;
+  background: rgba(77, 171, 247, 0.12);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border-left: 3px solid #4DABF7;
+  width: fit-content;
+
+  strong {
+    color: #fff;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  ion-icon {
+    font-size: 16px;
+    color: #4DABF7;
+  }
+}
+
+@keyframes penGoolPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.55), 0 0 48px rgba(124, 198, 29, 0.6);
+  }
+
+  50% {
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.55), 0 0 80px rgba(124, 198, 29, 0.95);
+  }
+}
+
+@keyframes penPerdidoShake {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  25% {
+    transform: translateY(0) translateX(-6px);
+  }
+
+  75% {
+    transform: translateY(0) translateX(6px);
+  }
+}
+
+.tr-toast-icone {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  ion-icon {
+    font-size: 32px;
+    color: #fff;
+  }
+
+  .tr-evento-toast.tipo-gol &,
+  .tr-evento-toast.tipo-gol-contra & {
+    background: radial-gradient(circle, rgba(124, 198, 29, 0.4) 0%, rgba(124, 198, 29, 0.1) 100%);
+
+    ion-icon {
+      color: #7CC61D;
+      animation: golSpin 800ms ease-out;
+    }
+  }
+
+  .cartao-grande {
+    width: 32px;
+    height: 44px;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    transform: rotate(-8deg);
+
+    &.am {
+      background: #f5c518;
+    }
+
+    &.vm {
+      background: #eb445a;
+    }
+
+    &.az {
+      background: #4DABF7;
+    }
+  }
+}
+
+.tr-toast-corpo {
+  min-width: 0;
+}
+
+.tr-toast-titulo {
+  font-size: 22px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #fff;
+  line-height: 1.1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+
+  .tr-evento-toast.tipo-gol &,
+  .tr-evento-toast.tipo-gol-contra & {
+    color: #c5e88a;
+  }
+
+  .tr-evento-toast.tipo-amarelo & {
+    color: #ffd95a;
+  }
+
+  .tr-evento-toast.tipo-vermelho & {
+    color: #ff8a9a;
+  }
+}
+
+.tr-toast-qtd {
+  font-size: 16px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.18);
+  letter-spacing: 0.5px;
+}
+
+.tr-toast-jogador {
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  .tr-toast-num {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    margin-right: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.tr-toast-time {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+
+  img {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #fff;
+    flex-shrink: 0;
+  }
+
+  .tr-toast-min {
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+  }
+}
+
+.tr-toast-assist {
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.55);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  ion-icon {
+    font-size: 13px;
+  }
+}
+
+.tr-toast-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 120ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+  }
+
+  ion-icon {
+    font-size: 16px;
+  }
+}
+
+/* Entrada: sobe de baixo (translateY 80px) com bounce.
+   Centralização horizontal é feita por `margin: 0 auto` no SCSS,
+   não pelo translateX — então as keyframes só animam Y. */
+/* IMPORTANTE: o `transform: translateY(-50%)` do .tr-evento-toast vem
+   do centering vertical (`top: 50%`). Os keyframes precisam manter esse
+   offset base e sobrepor a animação por cima — caso contrário a
+   animação pinga o toast lá embaixo da viewport. */
+@keyframes toastEntrada {
+  0% {
+    opacity: 0;
+    transform: translateY(calc(-50% + 80px)) scale(0.9);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translateY(calc(-50% - 6px)) scale(1.02);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+@keyframes toastSaida {
+  0% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(calc(-50% + 20px)) scale(0.95);
+  }
+}
+
+@keyframes golSpin {
+  0% {
+    transform: rotate(-180deg) scale(0.5);
+  }
+
+  100% {
+    transform: rotate(0) scale(1);
+  }
+}
+
+@media (max-width: 600px) {
+  .tr-evento-toast {
+    /* Mobile: usa o mesmo centro vertical da regra base — não force
+       bottom/top extra. Padding/grid menores pra caber bem. */
+    left: 8px;
+    right: 8px;
+    min-width: auto;
+    max-width: calc(100% - 16px);
+    grid-template-columns: 42px 1fr;
+    gap: 10px;
+    padding: 9px 28px 9px 10px;
+  }
+
+  .tr-toast-icone {
+    width: 42px;
+    height: 42px;
+
+    ion-icon {
+      font-size: 24px;
+    }
+  }
+
+  .tr-toast-titulo {
+    font-size: 15px;
+  }
+
+  .tr-toast-jogador {
+    font-size: 13px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Banner ESTEIRA de patrocinadores — overlay responsivo
+   ════════════════════════════════════════════════════════════════════
+   Card retangular flutuante no canto INFERIOR ESQUERDO da área de vídeo.
+   Rotação automática entre patrocinadores ("esteira"/conveyor). Click →
+   site do patrocinador.
+
+   Responsividade:
+   - Largura via `clamp()` adapta naturalmente entre 100px (mobile pequeno)
+     e 220px (desktop wide). Sem precisar de media query por tamanho.
+   - `max-width: 40vw` impede que ele OCUPE mais que 40% da largura do
+     vídeo em qualquer breakpoint (caso o clamp dê valor alto numa tela
+     estranhamente estreita).
+   - `bottom/left` em unidades pequenas + safe-area-inset pra notch iOS. */
+.tr-overlay-patrocinio {
+  position: absolute;
+  top: auto;
+  /* Bottom afastado do rodapé do vídeo (50px) — garante que o banner
+     não cole nos controles de play/mute do player, principalmente
+     em fullscreen onde a barra do navegador some e o banner ia colar
+     no controle. Mantém safe-area-inset pra iOS notch/curvatura. */
+  bottom: max(50px, env(safe-area-inset-bottom, 0px));
+  left: max(10px, env(safe-area-inset-left, 0px));
+  pointer-events: none;
+  /* z-index alto pra sobrepor QUALQUER overlay do player LiveKit, mas
+     ABAIXO do toast de evento (z-index: 20) pra que GOOL! cubra o banner
+     temporariamente. */
+  z-index: 15;
+  /* Largura adaptativa MENOR — usuário pediu pra ficar discreto:
+       - mínimo:  70px (smartphones bem pequenos)
+       - típico:  9vw  (viewport 1280px → 115px)
+       - máximo: 140px (desktop wide — visível mas não invasivo)
+     `max-width: 18%` trava em 18% da largura do vídeo. */
+  width: clamp(70px, 9vw, 140px);
+  max-width: 18%;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Override do player LiveKit DENTRO da transmissao.page
+   ════════════════════════════════════════════════════════════════════
+   O `app-transmissao-player` dentro de `.tr-video` deve OCULTAR seus
+   badges internos (AO VIVO, etc) porque o scoreboard da transmissao.page
+   já exibe esses indicadores com UI mais rica.
+
+   ⚠️ PRECISA de `::ng-deep` pra furar a encapsulação de view do Angular —
+   sem isso, a regra fica isolada e não chega ao SCSS do componente filho.
+   `::ng-deep` é deprecated mas continua funcionando e é a forma oficial
+   recomendada pelo Angular team enquanto a substituta `@apply` ou estilos
+   sem encapsulação não são adotados. */
+:host ::ng-deep .tr-video app-transmissao-player .tp-badge-live,
+.tr-video ::ng-deep .tp-badge-live {
+  display: none !important;
+}
+
+/* Force `.tp-card.modo-fullscreen` a CABER no container `.tr-video`
+   (que tem aspect-ratio 16:9), em vez de tomar 100vh (default do modo
+   fullscreen do player, que é pra quando ele ocupa a viewport inteira).
+   Sem isso, o card transbordava pra baixo e o `.tp-footer` (com nome
+   do campeonato + viewers) ficava clipado, invisível. */
+:host ::ng-deep .tr-video .tp-card.modo-fullscreen,
+.tr-video ::ng-deep .tp-card.modo-fullscreen {
+  height: 100% !important;
+}
+
+/* `.tp-video-wrap` em fullscreen tem `flex: 1 + height: 100%`. O
+   `height: 100%` força ele a tomar 100% do card, fazendo o footer
+   ser comprimido a 0px (flex-shrink default = 1). Aqui zeramos o
+   `height: 100%` (deixa só o `flex: 1`) E travamos o footer com
+   `flex-shrink: 0` pra manter altura natural do conteúdo. */
+:host ::ng-deep .tr-video .tp-card.modo-fullscreen .tp-video-wrap,
+.tr-video ::ng-deep .tp-card.modo-fullscreen .tp-video-wrap {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+:host ::ng-deep .tr-video .tp-card.modo-fullscreen .tp-footer,
+.tr-video ::ng-deep .tp-card.modo-fullscreen .tp-footer {
+  flex-shrink: 0 !important;
+}
+
+.tr-pat-stage {
+  position: relative;
+  /* ANTES: `width: 180px` fixo — não escalava com o wrapper responsivo
+     `.tr-overlay-patrocinio` (que agora usa clamp/max-width). AGORA
+     usa 100% do wrapper: ele dimensiona via `clamp()`, e o stage
+     simplesmente herda. Aspect-ratio 16:9 calcula a altura sozinho. */
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  border: 1px solid #fff;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.tr-pat-card {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  background: #fff;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  pointer-events: auto;
+  font-family: inherit;
+  /* Posição inicial: AGUARDANDO entrar pela direita */
+  transform: translateX(110%);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    transform 800ms cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 500ms ease,
+    visibility 0s linear 800ms;
+  will-change: transform, opacity;
+
+  /* Card ATIVO: está no centro, visível */
+  &.ativo {
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+    transition:
+      transform 800ms cubic-bezier(0.65, 0, 0.35, 1),
+      opacity 500ms ease,
+      visibility 0s linear 0s;
+  }
+
+  /* Card SAINDO: estava ativo, agora desliza pra esquerda e some */
+  &.saindo {
+    transform: translateX(-110%);
+    opacity: 0;
+    visibility: visible;
+    transition:
+      transform 800ms cubic-bezier(0.65, 0, 0.35, 1),
+      opacity 500ms ease 200ms,
+      visibility 0s linear 800ms;
+  }
+
+  &:hover.ativo {
+    transform: translateX(0) scale(1.03);
+  }
+
+  &:active.ativo {
+    transform: translateX(0) scale(0.97);
+  }
+
+  /* Logo cortado 16:9 no modal — preenche o stage sem bordas. */
+  padding: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+/* ============ Feed lateral de eventos ============
+   Container do painel — flex column com altura controlada pelo grid
+   pai (.tr-stage). Conteúdo interno (.tr-feed-list) recebe `overflow-y`
+   pra rolar só ele, mantendo segments e título fixos. */
+.tr-feed {
+  background: #1C2E3D;
+  border-radius: 12px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* permite shrinking dentro do grid */
+  overflow: hidden;
+  /* o filho .tr-feed-list cuida do scroll */
+}
+
+/* Quando o feed está oculto, o stage vira full-width — vídeo expande
+   pra ocupar 100% (no desktop a grid muda de "1fr 320px" pra "1fr"). */
+.tr-stage-full {
+  grid-template-columns: 1fr !important;
+}
+
+/* Botão "Ocultar" no topo do painel — pequeno, discreto, fixo no header.
+   Alinha à direita pra não estorvar o título dos segments abaixo. */
+.tr-feed-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-end;
+  margin: 8px 8px 0;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 140ms ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  ion-icon {
+    font-size: 14px;
+  }
+}
+
+/* FAB flutuante "Mostrar" — só aparece quando o feed está oculto.
+   Canto inferior direito, com badge de contagem de eventos.
+   No mobile fica menor pra não competir com controles do vídeo. */
+.tr-feed-fab {
+  position: fixed;
+  bottom: 18px;
+  right: 18px;
+  z-index: 50;
+
+  /* MODIFICADOR `--in-video`: prende o FAB DENTRO da área do vídeo
+     (`.tr-video`) em vez de colar no canto inferior direito da
+     viewport. Sem isso, em desktops com `.tr-video` que não enche
+     a tela (ex: 1565x945 com aspect-ratio 16:9 deixando ~150px
+     livre embaixo), o FAB ficava visualmente desligado do player.
+     Com position: absolute + offset parent .tr-video, ele acompanha
+     o canto do vídeo independente do tamanho da viewport. */
+  &.tr-feed-fab--in-video {
+    position: absolute;
+    bottom: 100px;
+    right: 14px;
+  }
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--ion-color-secondary, #7CC61D) 0%, #5a9912 100%);
+  color: #fff;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow:
+    0 6px 18px rgba(124, 198, 29, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  transition: all 180ms ease;
+  animation: feedFabAparece 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  &:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 24px rgba(124, 198, 29, 0.6);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  ion-icon {
+    font-size: 26px;
+  }
+
+  /* Badge contador de eventos (canto superior direito do FAB) */
+  .tr-feed-fab-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+    color: #fff;
+    border-radius: 999px;
+    border: 2px solid #1c2e3d;
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 18px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 2px 6px rgba(225, 29, 72, 0.5);
+  }
+
+  @media (max-width: 600px) {
+    bottom: 14px;
+    right: 14px;
+    width: 48px;
+    height: 48px;
+
+    ion-icon {
+      font-size: 22px;
+    }
+  }
+
+  /* Mobile landscape — FAB BEM menor e mais transparente pra não cobrir
+     o vídeo (em landscape, espaço é precioso e o FAB grande compete com
+     a área do stream da câmera). */
+  @media (orientation: landscape) and (max-height: 500px) {
+    width: 34px;
+    height: 34px;
+    /* Subido pra ~71px de baixo pra não cobrir o "X assistindo"
+       (que fica em bottom: 52px). Margem direita extra (17px) afasta
+       da borda da viewport. */
+    bottom: 71px;
+    right: 17px;
+    /* Transparência forte — gradient verde com 50% de opacidade. Fica
+       visível mas discreto. Backdrop-filter blur dá efeito glassmorph
+       harmonizando com o vídeo atrás. */
+    background: linear-gradient(135deg,
+        rgba(124, 198, 29, 0.5) 0%,
+        rgba(90, 153, 18, 0.5) 100%);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+
+    ion-icon {
+      font-size: 16px;
+    }
+
+    .tr-feed-fab-badge {
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      top: -3px;
+      right: -3px;
+      font-size: 9px;
+      line-height: 12px;
+      border-width: 1.5px;
+    }
+  }
+}
+
+@media (min-width: 1564px) {
+  .tr-feed-fab[_ngcontent-ng-c1003075807] {
+    position: fixed;
+    bottom: 90px;
+    right: 45px;
+    z-index: 50;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--ion-color-secondary, #7CC61D) 0%, #5a9912 100%);
+    color: #fff;
+    border: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(124, 198, 29, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+    transition: all 180ms ease;
+    animation: _ngcontent-ng-c1003075807_feedFabAparece 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+
+  }
+
+
+  :host ::ng-deep .tr-video .tp-card.modo-fullscreen,
+  .tr-video ::ng-deep .tp-card.modo-fullscreen {
+    max-height: 92vh !important;
+  }
+
+}
+/* ════════════════════════════════════════════════════════════════════
+   LANDSCAPE — Move "X assistindo" pra ACIMA do FAB de eventos
+   ════════════════════════════════════════════════════════════════════
+   Em landscape, FAB de eventos fica em bottom-right (34×34 + 8px de
+   margem = ocupa até 50px do canto). Mover o badge "X assistindo" pra
+   cima do FAB pra os dois não se sobreporem. */
+@media (orientation: landscape) and (max-height: 500px) {
+
+  /* Badge "X assistindo" oculto em landscape mobile também — o footer
+     do player já tem o contador de viewers visível. */
+  .tr-viewers-video {
+    display: none !important;
+  }
+
+  /* ── Cards de eventos COMPACTOS em landscape ─────────────────────
+     Painel direito (Eventos/Escalação) tem só 240px de largura em
+     landscape. Cards precisam ser bem menores pra mostrar mais sem
+     scroll, e cabe melhor com avatar pequeno + textos compactos. */
+  .lance-bubble {
+    grid-template-columns: 26px 1fr 26px;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 8px;
+
+    .lance-avatar {
+      width: 26px;
+      height: 26px;
+
+      ion-icon {
+        font-size: 18px;
+      }
+    }
+
+    .lance-tipo {
+      font-size: 11px;
+      letter-spacing: 0.3px;
+      gap: 3px;
+
+      .lance-qtd {
+        font-size: 8.5px;
+        padding: 1px 4px;
+      }
+    }
+
+    .lance-nome {
+      font-size: 9.5px;
+      letter-spacing: 0.1px;
+    }
+
+    .lance-time {
+      font-size: 9px;
+
+      img {
+        width: 12px;
+        height: 12px;
+      }
+    }
+  }
+
+  /* Lista de eventos com gap menor entre cards. */
+  .tr-feed-list {
+    padding: 6px;
+    gap: 4px;
+  }
+
+  /* Tabs do feed (Eventos/Escalação) — header compacto. */
+  .tr-feed-seg {
+    padding: 5px 4px !important;
+    font-size: 10px !important;
+
+    ion-icon {
+      font-size: 12px !important;
+    }
+  }
+
+  .tr-feed-segments .tr-seg-badge {
+    font-size: 8.5px;
+    padding: 0 4px;
+    min-width: 14px;
+    height: 14px;
+    line-height: 14px;
+  }
+
+  /* Botão "Ocultar" no topo do feed em landscape. */
+  .tr-feed-toggle {
+    font-size: 9.5px;
+    padding: 4px 7px;
+
+    ion-icon {
+      font-size: 11px;
+    }
+  }
+
+  /* Tabs de seleção de equipe (Mandante/Visitante) na Escalação —
+     em landscape, ESCONDE o nome do time (truncado vira só "M...") e
+     usa só o ESCUDO grande + badge de quantidade. Logo identifica o
+     time muito melhor que texto cortado em painel estreito.
+     Conteúdo CENTRALIZADO horizontalmente dentro do botão. */
+  .tr-esc-tab {
+    padding: 4px 6px !important;
+    gap: 6px !important;
+    justify-content: center !important;
+    text-align: center !important;
+
+    .tr-esc-tab-escudo {
+      width: 26px !important;
+      height: 26px !important;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      ion-icon {
+        font-size: 18px !important;
+      }
+    }
+
+    /* Esconde o nome truncado — o logo basta pra identificar o time. */
+    .tr-esc-tab-nome {
+      display: none !important;
+    }
+
+    .tr-esc-tab-count {
+      font-size: 10px !important;
+      padding: 1px 6px !important;
+      min-width: 22px !important;
+      height: 16px !important;
+      line-height: 14px !important;
+    }
+  }
+
+  /* ── Feed como OVERLAY flutuante sobre o vídeo ────────────────────
+     Em landscape, ao abrir o feed (via FAB), ele NÃO rouba largura do
+     vídeo (não vira coluna lateral) — vira um overlay semi-transparente
+     no canto direito, sobre o vídeo. Vídeo continua ocupando largura
+     toda da tela. Usuário toca "Ocultar" pra fechar. */
+  .tr-feed {
+    position: fixed;
+    top: 2%;
+    right: 8px;
+    height: 96%;
+    max-height: 100%;
+    width: 260px;
+    max-width: 50vw;
+    z-index: 40;
+    /* Background semi-transparente + blur — vídeo aparece levemente por trás. */
+    background: rgba(28, 46, 61, 0.88);
+    backdrop-filter: blur(8px);
+    box-shadow: -4px 0 18px rgba(0, 0, 0, 0.45);
+    border-radius: 6px;
+    /* Animação leve ao abrir */
+    animation: trFeedSlideIn 220ms ease-out;
+  }
+
+  /* Reverte o grid pra 1 coluna em landscape — vídeo ocupa largura
+     toda (feed sai do grid e vira fixed overlay). */
+  .tr-stage {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@keyframes trFeedSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes feedFabAparece {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.tr-feed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  h3 {
+    margin: 0;
+    font-size: 12.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .tr-feed-count {
+    background: var(--ion-color-secondary, #7CC61D);
+    color: #fff;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+}
+
+/* ═════ Segments do feed (Eventos / Escalação) ═════ */
+.tr-feed-segments {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tr-feed-seg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease, color 120ms ease;
+
+  ion-icon {
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  &.active {
+    background: var(--ion-color-secondary, #7CC61D);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(124, 198, 29, 0.35);
+  }
+
+  .tr-seg-badge {
+    background: rgba(0, 0, 0, 0.25);
+    color: #fff;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  &.active .tr-seg-badge {
+    background: rgba(255, 255, 255, 0.25);
+  }
+}
+
+/* ═════ Sub-tabs de Equipes (Mandante | Visitante) ═════ */
+.tr-esc-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 10px 10px 0 10px;
+  background: rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.tr-esc-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px 10px 0 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: none;
+  cursor: pointer;
+  transition: all 150ms ease;
+  min-width: 0;
+  text-align: left;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .tr-esc-tab-escudo {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    max-width: 28px;
+    min-height: 28px;
+    max-height: 28px;
+    border-radius: 6px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    ion-icon {
+      font-size: 16px;
+      color: var(--ion-color-medium);
+    }
+  }
+
+  .tr-esc-tab-nome {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.78);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tr-esc-tab-count {
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.85);
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Estado ativo: usa cor extraída da logo (--time-cor) — aplicada via
+     [style.--time-cor] no template. Fallback fica nas defaults do .ts. */
+  &.active {
+    background: color-mix(in srgb, var(--time-cor, #7CC61D) 22%, transparent);
+    border-color: color-mix(in srgb, var(--time-cor, #7CC61D) 45%, transparent);
+    box-shadow: inset 0 -2px 0 var(--time-cor, #7CC61D);
+    transform: translateY(1px);
+
+    .tr-esc-tab-nome {
+      color: #fff;
+    }
+
+    .tr-esc-tab-count {
+      background: color-mix(in srgb, var(--time-cor, #7CC61D) 35%, rgba(255, 255, 255, 0.2));
+      color: #fff;
+    }
+  }
+}
+
+/* ═════ Lista de Escalação ═════ */
+.tr-esc-list {
+  gap: 4px;
+}
+
+.tr-esc-jog {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  /* Borda esquerda na cor extraída da logo do time (.tr-esc-list injeta) */
+  border-left: 3px solid var(--time-cor, rgba(255, 255, 255, 0.15));
+  background: color-mix(in srgb, var(--time-cor, #ffffff) 6%, transparent);
+  transition: background 120ms ease, transform 120ms ease;
+
+  &:hover {
+    background: color-mix(in srgb, var(--time-cor, #ffffff) 14%, transparent);
+    transform: translateX(2px);
+  }
+
+  .tr-esc-jog-foto {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    /* Aro fininho na cor do time */
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--time-cor, #ffffff) 55%, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .tr-esc-jog-info {
+    min-width: 0;
+  }
+
+  .tr-esc-jog-nome {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    .num {
+      display: inline-block;
+      background: color-mix(in srgb, var(--time-cor, #ffffff) 35%, rgba(255, 255, 255, 0.18));
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-right: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .tr-esc-jog-pos {
+    font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-top: 1px;
+  }
+
+  .tr-esc-jog-stats {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+
+    .stat-gol {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      color: var(--ion-color-secondary, #7CC61D);
+      font-size: 11px;
+      font-weight: 700;
+
+      ion-icon {
+        font-size: 14px;
+      }
+    }
+
+    .stat-cartao {
+      display: inline-block;
+      width: 9px;
+      height: 13px;
+      border-radius: 2px;
+      transform: rotate(-12deg);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+      &.am {
+        background: #f5c518;
+      }
+
+      &.vm {
+        background: #eb445a;
+      }
+    }
+  }
+}
+
+.tr-feed-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tr-feed-vazio {
+  text-align: center;
+  padding: 32px 12px;
+  color: rgba(255, 255, 255, 0.4);
+
+  ion-icon {
+    font-size: 36px;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 8px 0 0;
+    font-size: 13px;
+  }
+}
+
+/* ═══════ Cards estilo "Lances da Partida" (lance-bubble) ═══════
+   Replicado do jogo-detalhe.page.scss pra ter visual consistente
+   estilo broadcast. Cards CLAROS sobre o fundo escuro do feed. */
+.lance-row {
+  display: flex;
+  width: 100%;
+
+  &.lado-mandante {
+    justify-content: flex-start;
+  }
+
+  &.lado-visitante {
+    justify-content: flex-end;
+  }
+}
+
+.lance-bubble {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  /* Fundo SÓLIDO (cinza claro) — pra o dark panel do feed não vazar
+     pela transparência e bagunçar o contraste do texto. */
+  background: #f3f4f6;
+  border: 1px solid transparent;
+  cursor: default;
+  text-align: left;
+  font-family: inherit;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+
+  &.tem-replay {
+    cursor: pointer;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  &.destacado {
+    box-shadow: 0 0 0 3px rgba(255, 196, 9, 0.7);
+    animation: lanceFlash 1.8s ease-out;
+  }
+
+  .lance-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(28, 46, 61, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(0, 0, 0, 0.45);
+    flex: 0 0 auto;
+    overflow: hidden;
+
+    ion-icon {
+      font-size: 26px;
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .lance-corpo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .lance-tipo {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    line-height: 1;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    color: var(--placar-text, #2d2d2d);
+
+    .lance-qtd {
+      background: rgba(0, 0, 0, 0.12);
+      color: inherit;
+      font-size: 10.5px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+  }
+
+  .lance-nome {
+    font-size: 12.5px;
+    color: #1f2937;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    .lance-min {
+      color: #64748b;
+      font-weight: 600;
+    }
+  }
+
+  .lance-assist {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--ion-color-medium);
+    margin-top: 2px;
+    font-style: italic;
+
+    ion-icon {
+      font-size: 12px;
+      color: var(--ion-color-secondary, #7CC61D);
+    }
+  }
+
+  .lance-icone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+
+    ion-icon {
+      font-size: 24px;
+    }
+
+    .cartao {
+      display: inline-block;
+      width: 16px;
+      height: 22px;
+      border-radius: 2px;
+      transform: rotate(-12deg);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+
+      &.am {
+        background: #f5c518;
+      }
+
+      &.vm {
+        background: #eb445a;
+      }
+
+      &.az {
+        background: #2563eb;
+      }
+    }
+  }
+
+  /* ===== Cores por tipo (sólidas + claras pra MÁXIMO contraste) ===== */
+  &.tipo-gol {
+    background: linear-gradient(90deg, #e3f4cb 0%, #f4faea 100%);
+    border-color: #7CC61D;
+
+    .lance-tipo {
+      color: #3d6f0a;
+    }
+
+    .lance-icone ion-icon {
+      color: #5a9912;
+    }
+  }
+
+  &.tipo-gol-contra {
+    background: linear-gradient(90deg, #eef7d8 0%, #f8fbef 100%);
+    border-color: rgba(124, 198, 29, 0.5);
+
+    .lance-tipo {
+      color: #4a7e0e;
+    }
+
+    .lance-icone ion-icon {
+      color: #5a9912;
+    }
+
+    .lance-nome {
+      font-style: italic;
+    }
+  }
+
+  &.tipo-amarelo {
+    background: linear-gradient(90deg, #fdf1c3 0%, #fef8df 100%);
+    border-color: #f5c518;
+
+    .lance-tipo {
+      color: #8a6500;
+    }
+  }
+
+  &.tipo-vermelho {
+    background: linear-gradient(90deg, #fbd7dc 0%, #fdebee 100%);
+    border-color: #eb445a;
+
+    .lance-tipo {
+      color: #b51f30;
+    }
+  }
+
+  &.tipo-azul {
+    background: linear-gradient(90deg, #d9e4fb 0%, #ecf1fd 100%);
+    border-color: #2563eb;
+
+    .lance-tipo {
+      color: #1d4ed8;
+    }
+  }
+
+  &.tipo-sub {
+    background: linear-gradient(90deg, #e2d9ff 0%, #efebff 100%);
+    border-color: rgba(112, 68, 255, 0.5);
+
+    .lance-tipo {
+      color: #5d2fff;
+    }
+
+    .lance-icone ion-icon {
+      color: #5d2fff;
+    }
+  }
+
+  &.tipo-falta {
+    background: #e5e7eb;
+    border-color: #cbd5e1;
+
+    .lance-tipo {
+      color: #475569;
+    }
+
+    .lance-icone ion-icon {
+      color: #64748b;
+    }
+  }
+
+  &.tipo-defesa {
+    background: linear-gradient(90deg, #cfeeff 0%, #e6f4fd 100%);
+    border-color: #0ea5e9;
+
+    .lance-tipo {
+      color: #0369a1;
+    }
+
+    .lance-icone ion-icon {
+      color: #0284c7;
+    }
+  }
+}
+
+/* Time da ação — linha com escudo + nome do time */
+.lance-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #475569;
+
+  img {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* Visitante: inverte ordem visual (avatar à direita, ícone à esquerda) */
+.lado-visitante .lance-bubble {
+  direction: rtl;
+
+  .lance-corpo,
+  .lance-tipo,
+  .lance-nome,
+  .lance-assist {
+    direction: ltr;
+    text-align: right;
+  }
+}
+
+@keyframes lanceFlash {
+  0% {
+    box-shadow: 0 0 0 4px rgba(255, 196, 9, 0.7);
+  }
+
+  100% {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* Mobile: scoreboard e patrocinadores menores pra não cobrir o vídeo */
+@media (max-width: 600px) {
+  .tr-pat-stage {
+    position: relative;
+    width: auto;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+    border: 1px solid #fff;
+    background: rgba(255, 255, 255, 0.98);
+  }
+
+  
+  .tr-top-right {
+    top: 8px;
+    right: 8px;
+    gap: 5px;
+  }
+
+  .tr-logo2 {
+    width: 64px;
+    max-height: 38px;
+  }
+
+  .tr-live-tag {
+    padding: 4px 10px;
+    font-size: 10px;
+  }
+
+  .tr-scoreboard {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    padding: 5px 8px;
+    gap: 6px;
+  }
+
+  .tr-sb-camp-mini img {
+    width: 18px;
+    height: 18px;
+  }
+
+  .tr-sb-team {
+    gap: 5px;
+
+    .tr-sb-escudo {
+      width: 22px;
+      height: 22px;
+    }
+
+    .tr-sb-nome {
+      font-size: 10.5px;
+      letter-spacing: 0.3px;
+    }
+  }
+
+  .tr-sb-placar {
+    padding: 2px 9px;
+    gap: 6px;
+
+    .tr-sb-gols {
+      font-size: 16px;
+      min-width: 14px;
+    }
+
+    .tr-sb-x {
+      font-size: 10px;
+    }
+  }
+
+  .tr-sb-status-mini {
+    display: none;
+  }
+
+  /* esconde no mobile pra caber */
+
+  /* Mobile: bottom-left mais colado nas bordas. A largura é controlada
+     pelo `clamp(100px, 18vw, 220px)` da regra base — em mobile o vw
+     pequeno já gera um valor pequeno automaticamente. */
+  .tr-overlay-patrocinio {
+    top: auto;
+    bottom: max(6px, env(safe-area-inset-bottom, 0px));
+    left: max(6px, env(safe-area-inset-left, 0px));
+    width: clamp(70px, 9vw, 140px);
+    max-width: 18%;
+  }
+
+  /* `.tr-pat-stage` herda 100% do wrapper agora (sem largura fixa). */
+  .tr-pat-card {
+    padding: 3px 5px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   AJUSTES GERAIS DE MOBILE — bloco abrangente
+   ════════════════════════════════════════════════════════════════════
+   Em mobile, o LAYOUT É TRAVADO: a página inteira não rola — em vez
+   disso, o vídeo fica fixo no topo e o feed (eventos/escalação) tem
+   scroll INTERNO. Isso garante que o broadcaster e os viewers nunca
+   percam de vista o vídeo enquanto leem eventos antigos. */
+@media (max-width: 640px) {
+
+  /* `ion-content` da página tem scroll interno por padrão (shadow DOM).
+     Em mobile da transmissao, queremos que NÃO haja scroll global, só
+     scroll interno do feed. Travamos overflow. */
+  .tr-content {
+    --overflow: hidden;
+  }
+
+  .tr-stage {
+    padding: 6px;
+    gap: 6px;
+    grid-template-columns: 1fr;
+    /* Altura fixa = viewport menos header (56px) — assim o vídeo +
+       feed somam exatamente a tela toda, sem precisar rolar a página. */
+    min-height: 0;
+    height: calc(100vh - 56px);
+    /* Linhas: vídeo (auto/aspect-ratio) + feed (1fr restante). */
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
+  }
+
+  /* Vídeo: border-radius menor + NÃO encolhe (mantém aspect-ratio 16:9). */
+  .tr-video {
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    flex-shrink: 0;
+  }
+
+  /* Feed lateral: ocupa o restante da altura (1fr) e tem scroll INTERNO.
+     Quando user troca pra "Eventos" ou "Escalação", a lista interna
+     desce com overflow-y; o vídeo continua visível em cima. */
+  .tr-feed {
+    border-radius: 8px;
+    min-height: 0;
+    /* permite encolher dentro do grid */
+    overflow: hidden;
+    /* o filho .tr-feed-list cuida do scroll */
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Lista interna do feed — esta é a parte que ROLA. */
+  .tr-feed-list,
+  .tr-feed-segments+* {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Tabs do segment Eventos/Escalação — fontes menores + padding compacto.
+     Ficam no TOPO do .tr-feed, NÃO rolam (são header sticky). */
+  .tr-feed-segments {
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  .tr-feed-seg {
+    font-size: 12px;
+    padding: 8px 10px;
+
+    ion-icon {
+      font-size: 14px;
+    }
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   AJUSTES TELAS BEM PEQUENAS — ≤380px (iPhone SE, Galaxy A05, etc)
+   ════════════════════════════════════════════════════════════════════
+   Tipografia ainda mais compacta + remove gaps pra economizar espaço. */
+@media (max-width: 380px) {
+  .tr-stage {
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .tr-feed {
+    max-height: 45vh;
+  }
+
+  .tr-feed-seg {
+    font-size: 11px;
+    padding: 7px 8px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   SCOREBOARD ULTRA RESPONSIVO — escala com a viewport (vw)
+   ════════════════════════════════════════════════════════════════════
+   Em mobile, o scoreboard usa unidades VW (viewport-width) ao invés de
+   px fixos. Isso garante que ele SEMPRE caiba sem cortar nomes longos
+   tipo "MANCHESTER CITY" / "EXALTETAS", independente do tamanho da tela.
+
+   Aproximação: o scoreboard ocupa ~75-85% da largura mobile e escala
+   linearmente. Em 360px → ~280px de scoreboard. Em 480px → ~380px. */
+@media (max-width: 640px) {
+  .tr-scoreboard {
+    top: 22px;
+    left: 4px;
+    right: 4px;
+    /* MUITO menor agora — capped em 220px e 55vw.
+       Em 378px → ~208px (~55% da tela). Margem generosa nos lados. */
+    max-width: min(55vw, 220px);
+    font-size: clamp(6.5px, 1.9vw, 8.5px);
+  }
+
+  .tr-sb-camp-bar {
+    padding: 1px 16px;
+    font-size: clamp(5.5px, 1.6vw, 7.5px);
+  }
+
+  .tr-sb-camp-bar img {
+    width: clamp(7px, 2vw, 9px);
+    height: clamp(7px, 2vw, 9px);
+  }
+
+  .tr-sb-camp-bar .tr-sb-camp-nome {
+    max-width: 22vw;
+  }
+
+  .tr-sb-camp-bar .tr-sb-camp-cat {
+    max-width: 16vw;
+  }
+
+  .tr-sb-main {
+    height: clamp(20px, 5.5vw, 26px);
+    padding: 1px;
+  }
+
+  .tr-sb-team.mandante {
+    padding-left: 17px;
+    padding-right: 3px;
+  }
+
+  .tr-sb-team.visitante {
+    padding-right: 17px;
+    padding-left: 3px;
+  }
+
+  .tr-sb-team .tr-sb-escudo {
+    width: clamp(22px, 6.5vw, 28px);
+    height: clamp(22px, 6.5vw, 28px);
+    padding: 1px;
+
+    ion-icon {
+      font-size: clamp(11px, 3.2vw, 13px);
+    }
+  }
+
+  .tr-sb-team.mandante .tr-sb-escudo {
+    left: -11px;
+  }
+
+  .tr-sb-team.visitante .tr-sb-escudo {
+    right: -11px;
+  }
+
+  .tr-sb-team .tr-sb-nome {
+    font-size: clamp(6.5px, 1.9vw, 8.5px);
+    letter-spacing: 0.1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  /* Pill central com placar (números). */
+  .tr-sb-placar {
+    padding: 1px 5px;
+
+    .tr-sb-gols {
+      font-size: clamp(10px, 3.2vw, 14px);
+    }
+
+    .tr-sb-x {
+      font-size: clamp(6.5px, 2vw, 9px);
+    }
+  }
+
+  /* Pill do período (1º TEMPO) mini. */
+  .tr-sb-periodo {
+    font-size: clamp(5.5px, 1.7vw, 7.5px);
+    padding: 1px 5px;
+    top: -7px;
+
+    ion-icon {
+      font-size: clamp(6px, 1.8vw, 7.5px);
+    }
+  }
+
+  /* Logo PlacarPro (canto superior direito do vídeo) — pequeno mas legível.
+     Antes muito pequeno (24-32); ajustado pra 32-44 pra ficar bem
+     identificável sem ocupar muito espaço. Centralizado via flex parent. */
+  .tr-logo2 {
+    width: clamp(32px, 9vw, 44px);
+    max-height: clamp(20px, 5.5vw, 26px);
+  }
+
+  /* Badge "AO VIVO" — sob o logo, dois fica alinhado verticalmente. */
+  .tr-live-tag {
+    padding: 1.5px 6px;
+    font-size: clamp(6.5px, 1.8vw, 8px);
+    gap: 3px;
+    border-radius: 8px;
+
+    .dot {
+      width: 4px;
+      height: 4px;
+    }
+  }
+
+  /* Wrapper top-right: stack vertical alinhado À DIREITA — assim logo
+     e AO VIVO ficam visualmente centralizados em coluna. */
+  .tr-top-right {
+    top: 5px;
+    right: 5px;
+    gap: 4px;
+    align-items: flex-end;
+  }
+
+  /* Banner do patrocinador — largura levemente reduzida, 16:9 mantido. */
+  .tr-pat-stage {
+    width: auto;
+  }
+
+  /* Badge "X assistindo" — OCULTO em mobile. O footer do player
+     (`.tp-footer` com `((•)) INTERCLUBLES + 👥 N`) já mostra o
+     contador de viewers ali, então o badge flutuante seria duplicação
+     de info. Em desktop o badge continua visível (não tem essa regra). */
+  .tr-viewers-video {
+    display: none !important;
+  }
+
+  /* Botão "Encerrar" flutuante: só ícone em mobile. */
+  .tr-btn-encerrar-tx {
+    top: 8px;
+    right: 8px;
+    padding: 6px;
+
+    span {
+      display: none;
+    }
+
+    ion-icon {
+      font-size: clamp(18px, 5vw, 22px);
+    }
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   BOTÕES FLUTUANTES LANDSCAPE — voltar / share (default: escondidos)
+   ════════════════════════════════════════════════════════════════════
+   Só ficam visíveis em mobile landscape (regra dentro do @media
+   abaixo). Em portrait/desktop, o header convencional faz o trabalho. */
+.tr-fab-landscape {
+  display: none;
+  position: fixed;
+  top: 8px;
+  z-index: 50;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  transition: background 150ms ease, transform 100ms ease;
+
+  ion-icon {
+    font-size: 20px;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.8);
+  }
+
+  &:active {
+    transform: scale(0.92);
+  }
+}
+
+.tr-fab-voltar {
+  left: 8px;
+}
+
+/* Share movido pra perto do voltar (não no canto direito) — assim
+   não conflita com a logo PlacarPro + badge AO VIVO no top-right. */
+.tr-fab-share {
+  left: 52px;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   MODAL FULLSCREEN "ENTRAR EM TELA CHEIA"
+   ════════════════════════════════════════════════════════════════════
+   Em mobile, bloqueia o conteúdo da transmissão até o usuário clicar
+   pra entrar em fullscreen + landscape lock. Cobre toda a viewport com
+   gradient escuro. */
+.tr-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: radial-gradient(ellipse at center,
+      rgba(28, 46, 61, 0.96) 0%,
+      rgba(10, 14, 18, 0.99) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: trFsOverlayFade 250ms ease-out;
+}
+
+.tr-fullscreen-modal {
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  color: #fff;
+  padding: 24px;
+
+  .tr-fs-icon {
+    font-size: 72px;
+    color: var(--ion-color-secondary, #7CC61D);
+    margin-bottom: 8px;
+    animation: trFsIconBounce 1.6s ease-in-out infinite;
+  }
+
+  h2 {
+    margin: 0 0 12px;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+
+  p {
+    margin: 0 0 28px;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 14px;
+    line-height: 1.5;
+
+    strong {
+      color: var(--ion-color-secondary, #7CC61D);
+      font-weight: 700;
+    }
+  }
+}
+
+.tr-fs-btn-entrar {
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #7CC61D 0%, #5a9912 100%);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(124, 198, 29, 0.5);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+
+  ion-icon {
+    font-size: 20px;
+  }
+
+  &:active {
+    transform: scale(0.97);
+    box-shadow: 0 4px 12px rgba(124, 198, 29, 0.4);
+  }
+}
+
+.tr-fs-btn-sair {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+@keyframes trFsOverlayFade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes trFsIconBounce {
+
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+
+  50% {
+    transform: scale(1.08) rotate(-6deg);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   LANDSCAPE MOBILE — telefone rotacionado (deitado)
+   ════════════════════════════════════════════════════════════════════
+   Detecta telas baixas + largas (típico smartphone deitado: ~700×400).
+   Nesse modo, valorizamos largura: vídeo grande à esquerda, feed lateral
+   à direita (em vez de empilhado embaixo). Scoreboard fica BEM mini
+   pra não roubar espaço vertical preciso. */
+@media (orientation: landscape) and (max-height: 500px) {
+
+  /* ESCONDE header inteiro pra ganhar altura preciosa no landscape. */
+  ion-header {
+    display: none !important;
+  }
+
+  /* Stage usa 100vh inteiro (não precisa descontar header). */
+  .tr-content {
+    --padding-top: 0;
+  }
+
+  /* Mostra os botões flutuantes (default: display none, ver acima). */
+  .tr-fab-landscape {
+    display: inline-flex !important;
+  }
+
+  .tr-stage {
+    /* Volta layout 2 colunas (vídeo | feed) — útil em landscape porque
+       tem largura sobrando E altura é o gargalo. */
+    grid-template-columns: 1fr 240px;
+    /* IMPORTANTE: explicitamente declarar 1 ROW de 100% — sem isso o
+       grid usa `auto` que colapsa pra altura do conteúdo (vídeo +
+       aspect-ratio), deixando empty space embaixo. Com 1fr aqui, o
+       grid item .tr-video-wrap recebe 100% da altura disponível. */
+    grid-template-rows: 1fr;
+    padding: 4px;
+    gap: 6px;
+    /* Sem header, stage ocupa 100vh inteiro. */
+    height: 100vh;
+  }
+
+  /* Vídeo em landscape mobile — ABANDONA o aspect-ratio 16:9 e ocupa
+     toda a altura disponível do grid row. Sem isso, com aspect-ratio
+     fixo, o `.tr-video` ficava com altura calculada pela largura (que
+     em landscape é grande), passando pra fora da viewport e fazendo
+     o banner patrocinador (bottom: 50px) cair em zona invisível. */
+  .tr-video {
+    border-radius: 6px;
+    box-shadow: none;
+    aspect-ratio: unset;
+    height: 100%;
+    width: 100%;
+  }
+
+  .tr-video-wrap {
+    height: 100%;
+    min-height: 0;
+  }
+
+  /* Override do override: em landscape mobile o .tp-card precisa esticar
+     pra cobrir toda a altura do .tr-video (que agora é 100%, não aspect
+     ratio). Sem isso ele ficaria 73vh do parent que pode ser menor. */
+  ::ng-deep .tr-video .tp-card.modo-fullscreen,
+  :host ::ng-deep .tr-video .tp-card.modo-fullscreen {
+    height: 100% !important;
+  }
+
+  /* Feed lateral compacto — 240px em landscape mobile. */
+  .tr-feed {
+    max-height: 100%;
+    border-radius: 6px;
+  }
+
+  /* Header reduz altura — todo pixel vertical conta em landscape. */
+  ion-header ion-toolbar {
+    --min-height: 40px;
+  }
+
+  /* Scoreboard EXTRA compacto. */
+  .tr-scoreboard {
+    top: 22px;
+    max-width: 320px;
+  }
+
+  .tr-sb-camp-bar {
+    padding: 1px 22px;
+    font-size: 7.5px;
+  }
+
+  .tr-sb-camp-bar img {
+    width: 10px;
+    height: 10px;
+  }
+
+  .tr-sb-main {
+    height: 26px;
+  }
+
+  .tr-sb-team .tr-sb-escudo {
+    width: 30px;
+    height: 30px;
+
+    ion-icon {
+      font-size: 13px;
+    }
+  }
+
+  .tr-sb-team.mandante .tr-sb-escudo {
+    left: -15px;
+  }
+
+  .tr-sb-team.visitante .tr-sb-escudo {
+    right: -15px;
+  }
+
+  .tr-sb-team .tr-sb-nome {
+    font-size: 8.5px;
+  }
+
+  /* Banner do patrocinador em landscape — POSITION FIXED pra não ser
+     clipado pelo `overflow: hidden` do `.tr-video` (em landscape mobile
+     o vídeo 16:9 fica mais alto que o container, e o `bottom` calculado
+     de dentro dele caía na zona invisível). Fixed cola no viewport real.
+     Bottom 35px sobe o banner pra acima dos controles do player. */
+  .tr-overlay-patrocinio {
+    position: fixed;
+    top: auto;
+    bottom: max(45px, env(safe-area-inset-bottom, 0px));
+    left: max(14px, env(safe-area-inset-left, 0px));
+    z-index: 60;
+    /* acima dos FABs flutuantes (z-index: 50) */
+    /* Landscape: ainda menor que portrait — vídeo ocupa toda tela
+       e o banner precisa ser bem discreto pra não atrapalhar. */
+    width: clamp(80px, 12vw, 130px);
+  }
+
+  /* Stage herda 100% do wrapper (sem altura fixa — aspect-ratio cuida). */
+
+  /* Logo PlacarPro em landscape — tamanho ajustado pra ficar bem
+     reconhecível sem competir muito com o vídeo. */
+  .tr-logo2 {
+    width: 54px !important;
+    max-height: 29px !important;
+  }
+
+  .tr-live-tag {
+    padding: 1px 5px !important;
+    font-size: 7px !important;
+
+    .dot {
+      width: 4px;
+      height: 4px;
+    }
+  }
+
+  .tr-top-right {
+    top: 4px !important;
+    right: 4px !important;
+    gap: 3px !important;
+    align-items: flex-end !important;
+    /* Margem extra pra afastar o conjunto logo+AO VIVO do canto. */
+    margin: 10px 10px;
+  }
+
+  /* `.tr-viewers-video` em landscape mobile já está `display: none !important`
+     na regra acima — não precisa de tamanho aqui. */
+
+  .tr-btn-encerrar-tx {
+    top: 6px;
+    right: 6px;
+    padding: 5px;
+
+    ion-icon {
+      font-size: 16px;
+    }
+  }
+
+  /* Header — título mais discreto. */
+  ion-title {
+    font-size: 13px;
+  }
+
+  /* Tabs do feed: ícones + texto MUITO compactos. */
+  .tr-feed-seg {
+    font-size: 10px;
+    padding: 6px 6px;
+
+    ion-icon {
+      font-size: 12px;
+    }
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   LANDSCAPE MOBILE ULTRA-ESTREITO — alturas ≤ 380px
+   ════════════════════════════════════════════════════════════════════
+   Galaxy A05 deitado, iPhone SE deitado, etc. Tudo BEM mini —
+   vídeo é a estrela; demais elementos quase invisíveis. */
+@media (orientation: landscape) and (max-height: 380px) {
+  .tr-stage {
+    grid-template-columns: 1fr 200px;
+  }
+
+  /* Tabs do feed: só ícone (sem texto) pra economizar largura. */
+  .tr-feed-seg span {
+    display: none;
+  }
+
+  /* Esconde a barra superior do scoreboard (campeonato · categoria)
+     em landscape extremo — não vale o espaço vertical pago. O nome
+     da partida continua visível via mandante/visitante. */
+  .tr-sb-camp-bar {
+    display: none;
+  }
+
+  .tr-scoreboard {
+    top: 12px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   LANDSCAPE MOBILE — Mesmas regras pra JOGO-DETALHE
+   ════════════════════════════════════════════════════════════════════
+   No jogo-detalhe (admin), em landscape, ajustamos o FAB pra não
+   atrapalhar. Z-index do FAB permanece, mas reduz tamanho. */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* O FAB do jogo-detalhe não é definido aqui (está em jogo-detalhe.scss),
+     mas pra qualquer outro element flutuante que dependa de altura,
+     adicionar regras aqui no futuro. Por enquanto, vazio. */
+}

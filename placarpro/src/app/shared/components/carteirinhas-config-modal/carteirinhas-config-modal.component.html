@@ -1,0 +1,56 @@
+<ion-content class="cc-content">
+  <div class="cc-card">
+    <h2 class="cc-title">Carteirinhas</h2>
+
+    <label class="cc-field">
+      <span class="cc-label">Nome do campeonato</span>
+      <input type="text" class="cc-input" [(ngModel)]="nomeCampeonato" />
+    </label>
+
+    <label class="cc-field">
+      <span class="cc-label">Subtítulo / Categoria</span>
+      <input type="text" class="cc-input" [(ngModel)]="subtitulo" />
+    </label>
+
+    <label class="cc-field">
+      <span class="cc-label">Organização (rodapé)</span>
+      <input
+        type="text"
+        class="cc-input"
+        placeholder="Ex: JOGA10SPORTS"
+        [(ngModel)]="organizacao"
+      />
+    </label>
+
+    <div class="cc-row-check">
+      <span>Incluir escudo da equipe</span>
+      <ion-checkbox [(ngModel)]="incluirEscudo"></ion-checkbox>
+    </div>
+
+    <div class="cc-row-check">
+      <span>Imprimir verso (Nome do clube / Endereço / Cidade / Telefone)</span>
+      <ion-checkbox [(ngModel)]="incluirVerso"></ion-checkbox>
+    </div>
+
+    <!-- Campos extras do verso, só visíveis quando ativado -->
+    <ng-container *ngIf="incluirVerso">
+      <label class="cc-field">
+        <span class="cc-label">Endereço do clube</span>
+        <input type="text" class="cc-input" [(ngModel)]="endereco" />
+      </label>
+      <label class="cc-field">
+        <span class="cc-label">Cidade</span>
+        <input type="text" class="cc-input" [(ngModel)]="cidade" />
+      </label>
+      <label class="cc-field">
+        <span class="cc-label">Telefone</span>
+        <input type="tel" inputmode="numeric" mask="telefone" placeholder="(11) 99999-9999" class="cc-input" [(ngModel)]="telefone" />
+      </label>
+    </ng-container>
+
+    <div class="cc-actions">
+      <button class="cc-btn ghost" type="button" (click)="cancelar()">Cancelar</button>
+      <button class="cc-btn primary" type="button" (click)="imprimir()">Imprimir</button>
+    </div>
+  </div>
+</ion-content>

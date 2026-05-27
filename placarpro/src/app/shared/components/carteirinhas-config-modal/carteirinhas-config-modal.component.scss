@@ -1,0 +1,121 @@
+.cc-content {
+  --background: #f4f3f6;
+}
+.cc-card {
+  margin: 12px;
+  padding: 18px 16px 14px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+.cc-title {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 800;
+  color: #1c2e3d;
+}
+.cc-field {
+  display: block;
+  margin-bottom: 12px;
+}
+.cc-label {
+  display: block;
+  font-size: 11px;
+  color: #6b6b70;
+  margin-bottom: 2px;
+}
+.cc-input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #c9c9d0;
+  background: transparent;
+  padding: 4px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f1f23;
+  outline: none;
+
+  &:focus { border-bottom-color: #1c2e3d; }
+}
+.cc-select {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #c9c9d0;
+  background: transparent;
+  padding: 4px 0;
+  font-size: 14px;
+  color: #1f1f23;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%231C2E3D' d='M0 0l5 6 5-6z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+}
+.cc-row-cor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 14px;
+  font-size: 13.5px;
+  color: #1c2e3d;
+  ion-icon { font-size: 18px; }
+  .cc-link {
+    background: none;
+    border: none;
+    color: #4dabf7;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+  }
+  .cc-color {
+    border: none;
+    background: none;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    cursor: pointer;
+  }
+  .cc-amostra {
+    margin-left: auto;
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+  }
+}
+.cc-row-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0 14px;
+  font-size: 13.5px;
+  color: #1f1f23;
+  ion-checkbox { margin-left: auto; }
+}
+.cc-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+.cc-btn {
+  background: none;
+  border: none;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+
+  &.ghost {
+    color: #6b6b70;
+    &:hover { background: #f5f5f7; }
+  }
+  &.primary {
+    color: #4dabf7;
+    &:hover { background: rgba(77, 171, 247, 0.08); }
+  }
+}

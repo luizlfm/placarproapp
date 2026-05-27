@@ -1,0 +1,333 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Apoios e Patrocinadores</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="novo()" aria-label="Novo">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <!-- ============ Form de cadastro/edição ============ -->
+    <section class="form-card card" *ngIf="abrirForm" [formGroup]="form">
+      <div class="form-head">
+        <h3>{{ editandoId ? 'Editar' : 'Novo apoio/patrocinador' }}</h3>
+        <ion-button fill="clear" color="medium" (click)="fechar()" aria-label="Fechar">
+          <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <!-- Logo (clicável) + Título -->
+      <div class="logo-titulo-row">
+        <button
+          type="button"
+          class="logo-box clickable"
+          (click)="abrirPicker('logo')"
+          [disabled]="enviandoImagem === 'logo'"
+          aria-label="Trocar logo"
+        >
+          <img *ngIf="form.value.logoUrl; else lIc" [src]="form.value.logoUrl" alt="Logo" />
+          <ng-template #lIc>
+            <ion-icon name="add-outline"></ion-icon>
+            <span class="size">150×150</span>
+          </ng-template>
+          <span class="hover-overlay">
+            <ion-icon name="camera-outline"></ion-icon>
+          </span>
+          <span
+            class="remove-img"
+            *ngIf="form.value.logoUrl"
+            (click)="removerImagem('logo', $event)"
+            aria-label="Remover logo"
+          >
+            <ion-icon name="close"></ion-icon>
+          </span>
+        </button>
+        <div class="titulo-fields">
+          <ion-input
+            fill="outline"
+            label="Título"
+            labelPlacement="stacked"
+            placeholder="Nome do patrocinador"
+            formControlName="nome"
+            required
+          ></ion-input>
+          <ion-select
+            fill="outline"
+            label="Tipo"
+            labelPlacement="stacked"
+            formControlName="tipo"
+            interface="popover"
+          >
+            <ion-select-option value="patrocinador">Patrocinador</ion-select-option>
+            <ion-select-option value="apoiador">Apoiador</ion-select-option>
+            <ion-select-option value="organizador">Organizador</ion-select-option>
+          </ion-select>
+        </div>
+      </div>
+
+      <!-- Banner do aplicativo — separado em Web (805×453 landscape) e
+           Mobile (1:1 quadrado). Toggle alterna qual versão está editando. -->
+      <div class="banner-block">
+        <div class="block-head-row">
+          <h4 class="block-title">Banner do aplicativo</h4>
+          <div class="modo-toggle" role="tablist" aria-label="Tamanho do banner do app">
+            <button
+              type="button"
+              role="tab"
+              [class.ativo]="modoBannerApp === 'web'"
+              [attr.aria-selected]="modoBannerApp === 'web'"
+              (click)="modoBannerApp = 'web'"
+              title="Banner mostrado em telas largas (desktop)"
+            >
+              <ion-icon name="desktop-outline"></ion-icon>
+              Web
+            </button>
+            <button
+              type="button"
+              role="tab"
+              [class.ativo]="modoBannerApp === 'mobile'"
+              [attr.aria-selected]="modoBannerApp === 'mobile'"
+              (click)="modoBannerApp = 'mobile'"
+              title="Banner mostrado em celular"
+            >
+              <ion-icon name="phone-portrait-outline"></ion-icon>
+              Mobile
+            </button>
+          </div>
+        </div>
+
+        <!-- Versão WEB (805×453) — landscape pra cards no desktop -->
+        <button
+          *ngIf="modoBannerApp === 'web'"
+          type="button"
+          class="banner-box banner-app clickable"
+          (click)="abrirPicker('bannerApp')"
+          [disabled]="enviandoImagem === 'bannerApp'"
+          aria-label="Trocar banner do aplicativo (web)"
+        >
+          <img *ngIf="form.value.bannerAppUrl; else bAppI" [src]="form.value.bannerAppUrl" alt="Banner app web" />
+          <ng-template #bAppI>
+            <ion-icon name="add-outline"></ion-icon>
+            <span>Adicionar banner web</span>
+            <span class="size">805×453</span>
+          </ng-template>
+          <span class="hover-overlay">
+            <ion-icon name="camera-outline"></ion-icon>
+          </span>
+          <span
+            class="remove-img"
+            *ngIf="form.value.bannerAppUrl"
+            (click)="removerImagem('bannerApp', $event)"
+            aria-label="Remover banner web"
+          >
+            <ion-icon name="close"></ion-icon>
+          </span>
+        </button>
+
+        <!-- Versão MOBILE (1:1) — quadrado pra cards verticais em celular -->
+        <button
+          *ngIf="modoBannerApp === 'mobile'"
+          type="button"
+          class="banner-box banner-app-mobile clickable"
+          (click)="abrirPicker('bannerAppMobile')"
+          [disabled]="enviandoImagem === 'bannerAppMobile'"
+          aria-label="Trocar banner do aplicativo (mobile)"
+        >
+          <img *ngIf="form.value.bannerAppMobileUrl; else bAppMI" [src]="form.value.bannerAppMobileUrl" alt="Banner app mobile" />
+          <ng-template #bAppMI>
+            <ion-icon name="add-outline"></ion-icon>
+            <span>Adicionar banner mobile</span>
+            <span class="size">380×126</span>
+          </ng-template>
+          <span class="hover-overlay">
+            <ion-icon name="camera-outline"></ion-icon>
+          </span>
+          <span
+            class="remove-img"
+            *ngIf="form.value.bannerAppMobileUrl"
+            (click)="removerImagem('bannerAppMobile', $event)"
+            aria-label="Remover banner mobile"
+          >
+            <ion-icon name="close"></ion-icon>
+          </span>
+        </button>
+
+        <p class="modo-hint" *ngIf="modoBannerApp === 'mobile' && !form.value.bannerAppMobileUrl">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          Sem banner mobile, usa o banner web cortado. Suba uma versão 380×126 (formato wide) com texto maior pra ficar legível no celular.
+        </p>
+      </div>
+
+      <!-- Banner dos jogos removido — agora o banner do app é usado também
+           nas seções de Jogos (esteira contínua / marquee). Os campos
+           bannerSiteUrl/bannerSiteMobileUrl continuam no modelo por
+           retrocompat, mas não são editáveis na UI. -->
+
+
+      <!-- Tempo do banner -->
+      <div class="tempo-block">
+        <div class="tempo-label">
+          <span>Tempo do Banner</span>
+          <span class="tempo-valor">{{ form.value.tempoBanner }}s</span>
+        </div>
+        <ion-range
+          min="2"
+          max="15"
+          step="1"
+          snaps="true"
+          pin="true"
+          color="secondary"
+          formControlName="tempoBanner"
+        ></ion-range>
+      </div>
+
+      <!-- Contatos -->
+      <ion-input fill="outline" label="Site" labelPlacement="stacked" placeholder="https://" formControlName="site"></ion-input>
+      <ion-input
+        fill="outline"
+        label="Telefone"
+        labelPlacement="stacked"
+        type="tel"
+        inputmode="numeric"
+        mask="telefone"
+        placeholder="(11) 99999-9999"
+        formControlName="telefone"
+      ></ion-input>
+      <ion-input fill="outline" label="Link clicável (opcional)" labelPlacement="stacked" placeholder="Para onde o logo redireciona" formControlName="link"></ion-input>
+
+      <div class="footer-actions">
+        <ion-button fill="clear" color="medium" (click)="fechar()" [disabled]="salvando">
+          Cancelar
+        </ion-button>
+        <ion-button color="primary" (click)="salvar()" [disabled]="salvando">
+          {{ editandoId ? 'Salvar alterações' : 'Cadastrar' }}
+        </ion-button>
+      </div>
+    </section>
+
+    <!-- ============ Banner de contexto (quando aberto via campeonato) ============ -->
+    <div class="ctx-banner" *ngIf="campeonatoCtxId">
+      <ion-icon name="trophy-outline"></ion-icon>
+      <div class="ctx-banner-txt">
+        <strong>Patrocinadores do campeonato</strong>
+        <span *ngIf="campeonatoCtx">{{ campeonatoCtx.titulo }}</span>
+      </div>
+      <span class="ctx-hint">
+        Mostrando apenas os <strong>vinculados</strong>. Toque no <ion-icon name="link-outline"></ion-icon> de cada cadastro pra vincular/desvincular.
+      </span>
+    </div>
+
+    <!-- ============ Lista ============ -->
+    <ng-container *ngIf="patrocinadores$ | async as lista">
+      <div class="counter" *ngIf="lista.length > 0">{{ lista.length }} cadastrado(s)</div>
+
+      <!-- Grid de cards ricos: banner + logo + nome + ações. Cada card é
+           clicável (abre editor) com botões de ação em overlay no canto. -->
+      <div class="patros-grid" *ngIf="lista.length > 0; else empty">
+        <article
+          *ngFor="let p of lista; trackBy: trackById"
+          class="patro-card"
+          (click)="editar(p)"
+          role="button"
+          tabindex="0"
+        >
+          <!-- Banner do app (805×453) — capa do card. Fallback: gradient
+               com o ícone do tipo. -->
+          <div
+            class="patro-banner"
+            [style.backgroundImage]="p.bannerAppUrl ? 'url(' + p.bannerAppUrl + ')' : null"
+            [class.sem-banner]="!p.bannerAppUrl"
+          >
+            <!-- Tipo pill no canto -->
+            <span class="patro-tipo-pill" [attr.data-tipo]="p.tipo || 'patrocinador'">
+              {{ rotuloTipo(p.tipo) }}
+            </span>
+
+            <!-- Ações no canto direito (overlay) -->
+            <div class="patro-actions">
+              <button
+                *ngIf="campeonatoCtxId"
+                type="button"
+                class="patro-act vinculo"
+                [class.ativo]="vinculadoAoCampeonato(p)"
+                (click)="alternarVinculo(p, $event)"
+                [attr.aria-label]="vinculadoAoCampeonato(p) ? 'Desvincular deste campeonato' : 'Vincular a este campeonato'"
+                [attr.title]="vinculadoAoCampeonato(p) ? 'Vinculado — clique pra desvincular' : 'Não vinculado — clique pra vincular'"
+              >
+                <ion-icon [name]="vinculadoAoCampeonato(p) ? 'link' : 'unlink-outline'"></ion-icon>
+              </button>
+              <button
+                type="button"
+                class="patro-act danger"
+                (click)="remover(p, $event)"
+                aria-label="Remover"
+                title="Remover"
+              >
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
+            </div>
+
+            <!-- Logo "flutuante" sobre o banner (canto inferior esquerdo) -->
+            <div class="patro-logo">
+              <img *ngIf="p.logoUrl; else logoIc" [src]="p.logoUrl" [alt]="p.nome" loading="lazy" />
+              <ng-template #logoIc><ion-icon name="megaphone-outline"></ion-icon></ng-template>
+            </div>
+          </div>
+
+          <!-- Rodapé com nome + contatos -->
+          <div class="patro-body">
+            <div class="patro-nome">{{ p.nome }}</div>
+            <div class="patro-meta">
+              <a
+                *ngIf="p.site"
+                class="patro-link"
+                [href]="p.site"
+                target="_blank"
+                rel="noopener"
+                (click)="$event.stopPropagation()"
+                title="Abrir site"
+              >
+                <ion-icon name="globe-outline"></ion-icon>
+                <span>site</span>
+              </a>
+              <span *ngIf="p.telefone" class="patro-tel">
+                <ion-icon name="call-outline"></ion-icon>
+                {{ p.telefone }}
+              </span>
+            </div>
+            <!-- Indicador "Banner jogos" e preview do bannerSiteUrl
+                 removidos — o campo foi descontinuado da UI de edição
+                 (jogos agora usam a esteira marquee do bannerApp). -->
+          </div>
+        </article>
+      </div>
+
+      <ng-template #empty>
+        <div *ngIf="!abrirForm" class="empty">
+          <ion-icon name="megaphone-outline"></ion-icon>
+          <h2>Nenhum apoio cadastrado</h2>
+          <p>Cadastre patrocinadores com banners do aplicativo e do site para exibir nos seus campeonatos.</p>
+          <button class="empty-cta" type="button" (click)="novo()" aria-label="Novo apoio">
+            <ion-icon name="add"></ion-icon>
+            <span>Novo apoio</span>
+          </button>
+        </div>
+      </ng-template>
+    </ng-container>
+  </div>
+
+  <!-- File pickers invisíveis. Pickers de bannerSite/bannerSiteMobile
+       mantidos pra retrocompat (campos no model ainda existem). -->
+  <input #logoPicker             type="file" accept="image/*" style="display:none" (change)="onArquivoEscolhido($event, 'logo')" />
+  <input #bannerAppPicker        type="file" accept="image/*" style="display:none" (change)="onArquivoEscolhido($event, 'bannerApp')" />
+  <input #bannerAppMobilePicker  type="file" accept="image/*" style="display:none" (change)="onArquivoEscolhido($event, 'bannerAppMobile')" />
+</ion-content>

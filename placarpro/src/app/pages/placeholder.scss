@@ -1,0 +1,30 @@
+// SCSS compartilhado pelas páginas placeholder "Em breve".
+// Importado dentro de cada *.page.scss via @import.
+
+.placeholder-empty {
+  text-align: center;
+  padding: 64px 24px;
+  max-width: 480px;
+  margin: 0 auto;
+
+  ion-icon {
+    font-size: 72px;
+    color: var(--ion-color-medium);
+    margin-bottom: 16px;
+    opacity: 0.6;
+  }
+
+  h2 {
+    margin: 0 0 8px;
+    color: var(--ion-color-primary);
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  p {
+    color: var(--ion-color-medium);
+    font-size: 14.5px;
+    line-height: 1.5;
+    margin: 0 0 24px;
+  }
+}

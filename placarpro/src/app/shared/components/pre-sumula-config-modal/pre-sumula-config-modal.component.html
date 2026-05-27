@@ -1,0 +1,158 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="cancelar()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>Configurar Pré-Súmula</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="psc-content">
+  <p class="psc-intro">
+    Defina o cabeçalho que aparece em todas as pré-súmulas desta categoria. Cada partida gera uma folha por equipe com tabela em branco pra árbitro preencher.
+  </p>
+
+  <div class="psc-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <form *ngIf="!loading" class="psc-form">
+
+    <!-- ═══════════ Título (até 3 linhas) ═══════════ -->
+    <section class="psc-card">
+      <h3>Título do cabeçalho</h3>
+      <p class="psc-hint">
+        Quebra em até 3 linhas como aparece no modelo. Linhas vazias são ignoradas.
+      </p>
+
+      <label class="psc-field"
+             *ngFor="let l of (config.tituloLinhas || ['','','']); let i = index; trackBy: trackByIdx">
+        <span class="psc-label">Linha {{ i + 1 }}</span>
+        <input
+          type="text"
+          class="psc-input"
+          [value]="l"
+          (input)="setLinha(i, $any($event.target).value)"
+          [placeholder]="i === 0 ? 'Ex: 5ª Copa Regional Sport+' :
+                          i === 1 ? 'Ex: De Futebol Society' :
+                                    'Ex: 2026'"
+        />
+      </label>
+    </section>
+
+    <!-- ═══════════ Logos extras ═══════════ -->
+    <section class="psc-card">
+      <div class="psc-card-head">
+        <h3>Logos</h3>
+        <span class="psc-counter">
+          {{ (config.logosExtras?.length ?? 0) }} de {{ MAX_LOGOS }}
+        </span>
+      </div>
+      <p class="psc-hint">
+        O logo principal do campeonato vai à esquerda automaticamente.
+        Adicione logos da federação, patrocinadores ou organização (aparecem à direita do título).
+      </p>
+
+      <div class="psc-logos-grid">
+        <div class="psc-logo-card"
+             *ngFor="let l of (config.logosExtras || []); let i = index; trackBy: trackByIdx">
+          <button type="button" class="psc-logo-rm" (click)="removerLogo(i)" aria-label="Remover">
+            <ion-icon name="close"></ion-icon>
+          </button>
+          <div class="psc-logo-img">
+            <img [src]="l.url" alt="" />
+          </div>
+          <input
+            type="text"
+            class="psc-input small"
+            [value]="l.legenda || ''"
+            (input)="setLegenda(i, $any($event.target).value)"
+            placeholder="Legenda (opcional)"
+          />
+        </div>
+
+        <button
+          type="button"
+          class="psc-logo-add"
+          (click)="acionarUploadLogo()"
+          [disabled]="(config.logosExtras?.length ?? 0) >= MAX_LOGOS"
+        >
+          <ion-icon name="add-circle-outline"></ion-icon>
+          <span>Adicionar logo</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ═══════════ Opções de layout ═══════════ -->
+    <section class="psc-card">
+      <h3>Opções de layout</h3>
+
+      <label class="psc-toggle-row">
+        <div>
+          <div class="psc-toggle-title">Uma equipe por folha</div>
+          <div class="psc-toggle-sub">
+            Gera uma página separada para mandante e visitante (modelo carteirinha).
+            Desligado: ambas as equipes na mesma folha.
+          </div>
+        </div>
+        <ion-toggle
+          [checked]="config.umaTabelaPorEquipe ?? true"
+          (ionChange)="setUmaTabela($any($event).detail.checked)"
+        ></ion-toggle>
+      </label>
+
+      <label class="psc-toggle-row">
+        <div>
+          <div class="psc-toggle-title">Incluir fotos dos jogadores</div>
+          <div class="psc-toggle-sub">Adiciona uma coluna "Foto" na tabela (ocupa mais espaço).</div>
+        </div>
+        <ion-toggle
+          [checked]="!!config.incluirFotosJogadores"
+          (ionChange)="setIncluirFotos($any($event).detail.checked)"
+        ></ion-toggle>
+      </label>
+
+      <label class="psc-field psc-field-row">
+        <span class="psc-label">Linhas em branco para observações</span>
+        <input
+          type="number"
+          class="psc-input psc-input-num"
+          min="0"
+          max="20"
+          [value]="config.linhasObservacoes ?? 0"
+          (input)="setLinhasObs(+$any($event.target).value)"
+        />
+      </label>
+    </section>
+
+    <!-- ═══════════ Ações (estilo carteirinha) ═══════════ -->
+    <div class="psc-actions">
+      <ion-button
+        expand="block"
+        fill="outline"
+        color="primary"
+        [disabled]="salvando"
+        (click)="salvar()"
+      >
+        Salvar
+      </ion-button>
+      <ion-button
+        expand="block"
+        color="primary"
+        [disabled]="salvando"
+        (click)="salvarEImprimir()"
+      >
+        <ion-icon slot="start" name="print-outline"></ion-icon>
+        Salvar e imprimir
+      </ion-button>
+    </div>
+  </form>
+
+  <input
+    #logoPicker
+    type="file"
+    accept="image/*"
+    style="display:none"
+    (change)="onLogoEscolhido($event)"
+  />
+</ion-content>

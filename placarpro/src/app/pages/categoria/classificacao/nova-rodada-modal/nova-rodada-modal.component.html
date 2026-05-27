@@ -1,0 +1,115 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Nova rodada</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="adicionarConfronto()" aria-label="Adicionar confronto">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <div class="wrap" *ngIf="!carregando">
+    <div class="head-card">
+      <div class="fase-tag">{{ fase.nome }}</div>
+      <label class="rodada-input">
+        <span>Rodada</span>
+        <input type="number" min="1" [(ngModel)]="rodada" />
+      </label>
+      <div class="resumo">
+        <strong>{{ totalValidos }}</strong> jogo{{ totalValidos === 1 ? '' : 's' }}
+      </div>
+    </div>
+
+    <div class="confrontos">
+      <div class="confronto" *ngFor="let c of confrontos; let i = index; trackBy: trackByIndex">
+        <div class="line">
+          <select [(ngModel)]="c.mandanteId" class="sel">
+            <option value="">— Mandante —</option>
+            <option *ngFor="let e of equipes" [value]="e.id">{{ e.nome }}</option>
+          </select>
+
+          <button
+            type="button"
+            class="swap"
+            (click)="trocarLados(c)"
+            aria-label="Trocar mando"
+            title="Inverter mando"
+          >
+            <ion-icon name="swap-horizontal-outline"></ion-icon>
+          </button>
+
+          <select [(ngModel)]="c.visitanteId" class="sel">
+            <option value="">— Visitante —</option>
+            <option *ngFor="let e of equipes" [value]="e.id">{{ e.nome }}</option>
+          </select>
+
+          <button
+            type="button"
+            class="del"
+            (click)="removerConfronto(i)"
+            aria-label="Remover"
+          >
+            <ion-icon name="close-circle-outline"></ion-icon>
+          </button>
+        </div>
+
+        <div class="meta">
+          <label>
+            <span>Data/hora</span>
+            <app-date-input
+              label=""
+              mode="date-time"
+              [(ngModel)]="c.dataHora"
+            ></app-date-input>
+          </label>
+          <label>
+            <span>Local</span>
+            <input type="text" [(ngModel)]="c.local" placeholder="Ginásio…" />
+          </label>
+        </div>
+
+        <div
+          class="warn"
+          *ngIf="c.mandanteId && c.visitanteId && c.mandanteId === c.visitanteId"
+        >
+          ⚠ Mandante e visitante são a mesma equipe
+        </div>
+      </div>
+
+      <button type="button" class="btn-add-row" (click)="adicionarConfronto()">
+        <ion-icon name="add-outline"></ion-icon>
+        Adicionar outro confronto
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="carregando" class="loading">
+    <ion-spinner></ion-spinner>
+  </div>
+</ion-content>
+
+<ion-footer *ngIf="!carregando">
+  <ion-toolbar>
+    <div class="footer-actions">
+      <ion-button fill="clear" color="medium" (click)="dismiss()" [disabled]="loading">
+        Cancelar
+      </ion-button>
+      <div class="spacer"></div>
+      <ion-button
+        color="primary"
+        (click)="confirmar()"
+        [disabled]="loading || totalValidos === 0"
+      >
+        <ion-spinner *ngIf="loading" name="dots" slot="start"></ion-spinner>
+        Criar {{ totalValidos }} jogo{{ totalValidos === 1 ? '' : 's' }}
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

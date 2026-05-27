@@ -1,0 +1,89 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Critério de classificação</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <div class="wrap">
+    <p class="hint">
+      Critérios aplicados na ordem de cima pra baixo em <strong>{{ fase.nome }}</strong>.
+      O primeiro decide; em caso de empate, vai pro próximo.
+    </p>
+
+    <section class="card">
+      <h3>Pontuação</h3>
+      <div class="pontos-row">
+        <label class="lbl">
+          Vitória
+          <input type="number" min="0" max="10" [(ngModel)]="pontosVitoria" />
+        </label>
+        <label class="lbl">
+          Empate
+          <input type="number" min="0" max="10" [(ngModel)]="pontosEmpate" />
+        </label>
+        <label class="lbl">
+          Derrota
+          <input type="number" min="0" max="10" [(ngModel)]="pontosDerrota" />
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Critérios ativos</h3>
+      <div class="crit-list">
+        <div class="crit-row" *ngFor="let c of ativos; let i = index; let last = last; trackBy: trackByCriterio">
+          <span class="ord">{{ i + 1 }}.</span>
+          <span class="nome">{{ LABELS[c] }}</span>
+          <div class="acts">
+            <ion-button fill="clear" size="small" [disabled]="i === 0" (click)="mover(c, -1)" aria-label="Subir">
+              <ion-icon slot="icon-only" name="chevron-up-outline"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" size="small" [disabled]="last" (click)="mover(c, 1)" aria-label="Descer">
+              <ion-icon slot="icon-only" name="chevron-down-outline"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" size="small" color="danger" (click)="remover(c)" aria-label="Remover">
+              <ion-icon slot="icon-only" name="close-circle-outline"></ion-icon>
+            </ion-button>
+          </div>
+        </div>
+        <div *ngIf="ativos.length === 0" class="empty">Nenhum critério ativo</div>
+      </div>
+    </section>
+
+    <section class="card" *ngIf="inativos.length > 0">
+      <h3>Disponíveis</h3>
+      <div class="crit-list">
+        <button
+          type="button"
+          class="crit-add"
+          *ngFor="let c of inativos; trackBy: trackByCriterio"
+          (click)="adicionar(c)"
+        >
+          <ion-icon name="add-circle-outline"></ion-icon>
+          {{ LABELS[c] }}
+        </button>
+      </div>
+    </section>
+  </div>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <div class="footer-actions">
+      <ion-button fill="clear" color="medium" (click)="resetar()" [disabled]="loading">
+        Restaurar padrão
+      </ion-button>
+      <div class="spacer"></div>
+      <ion-button color="primary" (click)="salvar()" [disabled]="loading">
+        <ion-spinner *ngIf="loading" name="dots" slot="start"></ion-spinner>
+        Salvar
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

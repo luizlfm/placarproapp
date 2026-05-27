@@ -1,0 +1,63 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>Anexos</ion-title>
+    <ion-buttons slot="end">
+      <ion-button strong="true" [disabled]="salvando" (click)="salvar()">Salvar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="anx-content">
+  <p class="anx-intro">Regulamento, fichas de inscrição e outros documentos que aparecem na página pública.</p>
+
+  <ion-button expand="block" color="secondary" class="anx-add" (click)="acionarUpload()">
+    <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
+    Enviar arquivo(s)
+  </ion-button>
+
+  <div class="anx-lista" *ngIf="anexos.length > 0; else vazio">
+    <div class="anx-item" *ngFor="let a of anexos; let i = index">
+      <span class="anx-icone">
+        <ion-icon [name]="iconeFor(a.mime)"></ion-icon>
+      </span>
+      <div class="anx-info">
+        <input
+          type="text"
+          class="anx-titulo"
+          [value]="a.titulo"
+          (input)="renomear(i, $any($event.target).value)"
+          placeholder="Título do anexo"
+        />
+        <span class="anx-meta">
+          <span *ngIf="a.bytes">{{ formatBytes(a.bytes) }}</span>
+          <a [href]="a.url" target="_blank" rel="noopener" class="anx-link">
+            <ion-icon name="open-outline"></ion-icon>
+            Abrir
+          </a>
+        </span>
+      </div>
+      <button type="button" class="anx-remove" (click)="remover(i)" [attr.aria-label]="'Remover ' + a.titulo">
+        <ion-icon name="trash-outline"></ion-icon>
+      </button>
+    </div>
+  </div>
+
+  <ng-template #vazio>
+    <div class="anx-empty">
+      <ion-icon name="attach-outline"></ion-icon>
+      <p>Nenhum anexo enviado.</p>
+      <span>Toque em "Enviar arquivo(s)" para começar.</span>
+    </div>
+  </ng-template>
+
+  <input
+    #filePicker
+    type="file"
+    multiple
+    style="display:none"
+    (change)="onFilesEscolhidos($event)"
+  />
+</ion-content>

@@ -1,0 +1,145 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start" *ngIf="campeonatoSelecionado">
+      <ion-button (click)="voltarLista()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ campeonatoSelecionado ? campeonatoSelecionado.titulo : 'Inscrições online' }}</ion-title>
+    <ion-buttons slot="end" *ngIf="campeonatoSelecionado">
+      <ion-button
+        (click)="copiarLink(campeonatoSelecionado!)"
+        aria-label="Copiar link público"
+        title="Copiar link de inscrição público"
+      >
+        <ion-icon slot="icon-only" name="link-outline"></ion-icon>
+      </ion-button>
+      <ion-button (click)="novaInscricao()" aria-label="Nova inscrição">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+
+    <!-- ============== Lista de campeonatos ============== -->
+    <ng-container *ngIf="!campeonatoSelecionado">
+      <p class="lead">
+        Escolha um campeonato para gerenciar pedidos de inscrição. Compartilhe o link público
+        para que equipes se cadastrem sozinhas — você aprova depois.
+      </p>
+
+      <ng-container *ngIf="campeonatos$ | async as camps">
+        <div class="empty" *ngIf="camps.length === 0">
+          <ion-icon name="document-text-outline"></ion-icon>
+          <h2>Nenhum campeonato</h2>
+          <p>Crie um campeonato em "Meus campeonatos" pra começar a receber inscrições.</p>
+        </div>
+
+        <div class="grid" *ngIf="camps.length > 0">
+          <article
+            *ngFor="let c of camps; trackBy: trackById"
+            class="card camp-card"
+            (click)="selecionarCampeonato(c)"
+          >
+            <div class="logo">
+              <img *ngIf="c.logoUrl; else iconC" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
+              <ng-template #iconC><ion-icon name="trophy-outline"></ion-icon></ng-template>
+            </div>
+            <div class="info">
+              <h3>{{ c.titulo }}</h3>
+              <p *ngIf="c.subtitulo">{{ c.subtitulo }}</p>
+            </div>
+            <button class="btn-link" type="button" (click)="copiarLink(c, $event)" aria-label="Copiar link">
+              <ion-icon name="link-outline"></ion-icon>
+            </button>
+          </article>
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- ============== Detalhe / pedidos do campeonato ============== -->
+    <ng-container *ngIf="campeonatoSelecionado">
+      <div class="filtros">
+        <button
+          *ngFor="let f of ['pendente', 'aprovada', 'rejeitada', 'todas']"
+          type="button"
+          class="filtro"
+          [class.active]="filtroStatus === f"
+          (click)="setFiltro($any(f))"
+        >
+          {{ f === 'todas' ? 'Todas' : (f.charAt(0).toUpperCase() + f.slice(1) + 's') }}
+        </button>
+      </div>
+
+      <ng-container *ngIf="inscricoes$ | async as lista">
+        <div class="empty" *ngIf="lista.length === 0">
+          <ion-icon name="mail-open-outline"></ion-icon>
+          <h2>Nada por aqui</h2>
+          <p>Quando alguém se inscrever via link público, o pedido aparece aqui.</p>
+          <ion-button color="primary" (click)="novaInscricao()" class="btn-empty">
+            <ion-icon slot="start" name="add-outline"></ion-icon>
+            Adicionar manualmente
+          </ion-button>
+        </div>
+
+        <div class="card lista-card" *ngIf="lista.length > 0">
+          <article *ngFor="let i of lista; trackBy: trackById" class="insc-row">
+            <div class="insc-main">
+              <div class="insc-head">
+                <span class="insc-nome">{{ i.nomeEquipe }}</span>
+                <span
+                  class="insc-badge"
+                  [style.background]="badgeStatus(i.status).color + '22'"
+                  [style.color]="badgeStatus(i.status).color"
+                >
+                  {{ badgeStatus(i.status).label }}
+                </span>
+              </div>
+              <div class="insc-sub">
+                <span><ion-icon name="person-outline"></ion-icon> {{ i.responsavel }}</span>
+                <span *ngIf="i.telefone"><ion-icon name="call-outline"></ion-icon> {{ i.telefone }}</span>
+                <span *ngIf="i.email"><ion-icon name="mail-outline"></ion-icon> {{ i.email }}</span>
+                <span *ngIf="i.cidade"><ion-icon name="location-outline"></ion-icon> {{ i.cidade }}</span>
+              </div>
+              <div class="insc-cat" *ngIf="!i.categoriaId && i.status === 'pendente'">
+                <ion-icon name="alert-circle-outline"></ion-icon>
+                Sem categoria definida —
+                <button type="button" class="link" (click)="designarCategoria(i)">designar</button>
+              </div>
+              <div class="insc-motivo" *ngIf="i.status === 'rejeitada' && i.motivoRejeicao">
+                <strong>Motivo:</strong> {{ i.motivoRejeicao }}
+              </div>
+            </div>
+            <div class="insc-actions">
+              <ion-button
+                *ngIf="i.status === 'pendente'"
+                size="small"
+                color="success"
+                (click)="aprovar(i)"
+              >
+                <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+                Aprovar
+              </ion-button>
+              <ion-button
+                *ngIf="i.status === 'pendente'"
+                size="small"
+                fill="outline"
+                color="danger"
+                (click)="rejeitar(i)"
+              >
+                <ion-icon slot="start" name="close-outline"></ion-icon>
+                Rejeitar
+              </ion-button>
+              <ion-button size="small" fill="clear" color="medium" (click)="remover(i)" aria-label="Remover">
+                <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+              </ion-button>
+            </div>
+          </article>
+        </div>
+      </ng-container>
+    </ng-container>
+  </div>
+</ion-content>

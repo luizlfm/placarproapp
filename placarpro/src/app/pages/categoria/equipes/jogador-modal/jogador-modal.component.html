@@ -1,0 +1,360 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="
+          modo === 'lista' ? dismiss()
+          : modo === 'form' ? voltar()
+          : voltarSubTela()
+        " [attr.aria-label]="modo === 'lista' ? 'Fechar' : 'Voltar'">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>
+      {{
+      modo === 'lista' ? 'Jogadores'
+      : modo === 'stats' ? 'Estatísticas do campeonato'
+      : modo === 'suspensao' ? 'Editar suspensão'
+      : modo === 'transferir' ? 'Transferir jogador'
+      : (jogadorEditando ? 'Editar jogador' : 'Novo jogador')
+      }}
+    </ion-title>
+    <ion-buttons slot="end" *ngIf="modo === 'lista'">
+      <ion-button (click)="importar()" aria-label="Importar de Excel/CSV">
+        <ion-icon slot="icon-only" name="cloud-upload-outline"></ion-icon>
+      </ion-button>
+      <ion-button (click)="exportarCsv()" aria-label="Exportar CSV">
+        <ion-icon slot="icon-only" name="download-outline"></ion-icon>
+      </ion-button>
+      <ion-button (click)="abrirMenu()" aria-label="Mais opções">
+        <ion-icon slot="icon-only" name="ellipsis-vertical"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <!-- LISTA -->
+  <ng-container *ngIf="modo === 'lista'">
+    <div class="lista-wrap">
+      <!-- Card de cadastro rápido -->
+      <section class="add-card">
+        <div class="add-card-head">
+          <ion-icon name="person-add" color="primary"></ion-icon>
+          <div class="add-card-titulo">
+            <strong>Adicionar jogador</strong>
+            <span>Digite o nome e toque em Adicionar (ou Enter)</span>
+          </div>
+        </div>
+        <form class="quick-add" (ngSubmit)="adicionarRapido()">
+          <ion-input #novoNomeInput fill="outline" label="Nome do jogador" labelPlacement="stacked"
+            placeholder="Ex: Ronaldo Nazário" [(ngModel)]="novoNome" name="novoNome" [disabled]="criando"
+            autocapitalize="words" autocomplete="off" enterkeyhint="done" (keyup.enter)="adicionarRapido()"></ion-input>
+          <ion-button color="primary" type="submit"  [disabled]="criando || novoNome.trim().length < 2">
+            <ion-spinner *ngIf="criando" name="dots" slot="start"></ion-spinner>
+            <ion-icon *ngIf="!criando" slot="start" name="add-circle-outline"></ion-icon>
+            Adicionar
+          </ion-button>
+        </form>
+      </section>
+
+      <ng-container *ngIf="jogadores$ | async as lista">
+        <!-- Busca aparece quando há 4+ jogadores -->
+        <div class="busca-wrap" *ngIf="lista.length >= 4 || busca">
+          <ion-icon name="search-outline"></ion-icon>
+          <input type="text" placeholder="Buscar por nome, apelido, posição..." [ngModel]="busca"
+            (ngModelChange)="busca = $event" name="buscaJog" />
+          <button *ngIf="busca" type="button" class="busca-clear" (click)="limparBusca()" aria-label="Limpar busca">
+            <ion-icon name="close-circle"></ion-icon>
+          </button>
+        </div>
+
+        <div class="counter" *ngIf="lista.length > 0 || busca">
+          <span class="badge-total">{{ lista.length }}</span>
+          <strong>{{ lista.length === 1 ? 'jogador' : 'jogadores' }}</strong>
+          <span *ngIf="busca" class="counter-busca">para "{{ busca }}"</span>
+        </div>
+
+        <div class="lista" *ngIf="lista.length > 0; else empty">
+          <button *ngFor="let j of lista; trackBy: trackById" type="button" class="jog-row" (click)="editar(j)">
+            <div class="jog-avatar">
+              <img *ngIf="j.fotoUrl; else avF" [src]="j.fotoUrl" [alt]="j.nome" />
+              <ng-template #avF>{{ inicial(j) }}</ng-template>
+            </div>
+            <div class="jog-info">
+              <div class="jog-nome">
+                {{ j.nome }}
+                <span class="apelido" *ngIf="j.apelido">"{{ j.apelido }}"</span>
+              </div>
+              <div class="jog-meta" *ngIf="j.numeroCamisa || j.posicao">
+                <span *ngIf="j.numeroCamisa" class="camisa">#{{ j.numeroCamisa }}</span>
+                <span *ngIf="j.posicao">{{ j.posicao }}</span>
+              </div>
+            </div>
+            <ion-button fill="clear" color="danger" size="small" class="btn-rem"
+              (click)="$event.stopPropagation(); removerJogador(j)" aria-label="Remover jogador">
+              <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+            </ion-button>
+            <ion-icon class="chev" name="chevron-forward-outline"></ion-icon>
+          </button>
+        </div>
+
+        <ng-template #empty>
+          <div class="empty">
+            <div class="empty-icone">
+              <ion-icon [name]="busca ? 'search-outline' : 'people-outline'"></ion-icon>
+            </div>
+            <h3 *ngIf="!busca">Nenhum jogador cadastrado</h3>
+            <h3 *ngIf="busca">Nenhum resultado</h3>
+            <p *ngIf="!busca">Use o campo acima para adicionar o primeiro jogador da equipe.</p>
+            <p *ngIf="busca">Tente outro termo ou limpe a busca.</p>
+            <ion-button *ngIf="busca" fill="outline" size="small" color="medium" (click)="limparBusca()">
+              Limpar busca
+            </ion-button>
+          </div>
+        </ng-template>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <!-- FORM completo (edição/criação avançada) -->
+  <form *ngIf="modo === 'form'" [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+    <!-- Cabeçalho da equipe -->
+    <div class="eq-header">
+      <div class="eq-logo">
+        <img *ngIf="equipe.logoUrl; else iconF" [src]="equipe.logoUrl" [alt]="equipe.nome" />
+        <ng-template #iconF><ion-icon name="shield-outline"></ion-icon></ng-template>
+      </div>
+      <div class="eq-info">
+        <div class="eq-name">{{ equipe.nome }}</div>
+        <div class="eq-meta" *ngIf="equipe.tecnico">Técnico: {{ equipe.tecnico }}</div>
+      </div>
+    </div>
+
+    <!-- Foto -->
+    <div class="foto-block">
+      <button type="button" class="foto-preview" (click)="selecionarFoto()" [disabled]="enviandoFoto"
+        aria-label="Selecionar foto">
+        <img *ngIf="form.value.fotoUrl; else fotoIcon" [src]="form.value.fotoUrl" alt="Foto" />
+        <ng-template #fotoIcon>
+          <ion-icon name="cloud-upload-outline"></ion-icon>
+        </ng-template>
+        <span *ngIf="enviandoFoto" class="overlay">
+          <ion-spinner color="light"></ion-spinner>
+        </span>
+      </button>
+      <div class="foto-hint">
+        <strong>Foto do jogador</strong>
+        <span>Recortada em 5:6</span>
+        <div class="foto-actions">
+          <ion-button size="small" color="primary" type="button" (click)="selecionarFoto()" [disabled]="enviandoFoto">
+            <ion-icon slot="start" name="camera-outline"></ion-icon>
+            {{ form.value.fotoUrl ? 'Trocar' : 'Enviar' }}
+          </ion-button>
+          <ion-button *ngIf="form.value.fotoUrl"  size="small" class="button-danger" color="danger"
+            type="button" (click)="removerFoto()">
+            <ion-icon slot="start" name="trash-outline"></ion-icon>
+            Remover
+          </ion-button>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <ion-input fill="outline" label="Nome do jogador" labelPlacement="stacked" placeholder="Ex: Ronaldo Nazário"
+        formControlName="nome" required></ion-input>
+      <ion-input fill="outline" label="Apelido" labelPlacement="stacked" placeholder="Ex: Zico"
+        formControlName="apelido"></ion-input>
+      <ion-input fill="outline" label="Posição" labelPlacement="stacked" placeholder="Ex: Goleiro"
+        formControlName="posicao"></ion-input>
+
+      <div class="row-2">
+        <ion-input fill="outline" label="Nº camisa/registro" labelPlacement="stacked" inputmode="numeric"
+          placeholder="Ex: 10" formControlName="numeroCamisa"></ion-input>
+        <ion-input fill="outline" label="Documento (CPF)" labelPlacement="stacked" inputmode="numeric"
+          placeholder="000.000.000-00" mask="cpf" formControlName="documento"></ion-input>
+      </div>
+
+      <div class="row-2">
+        <app-date-input label="Data nascimento" mode="date" formControlName="dataNascimento"></app-date-input>
+        <ion-input fill="outline" label="Telefone" labelPlacement="stacked" type="tel" inputmode="numeric"
+          placeholder="(11) 99999-9999" mask="telefone" formControlName="telefone"></ion-input>
+      </div>
+    </div>
+
+    <!-- Sub-telas / atalhos (só pra jogador já cadastrado) -->
+    <div class="link-rows" *ngIf="jogadorEditando">
+      <button type="button" class="link-row" (click)="abrirEstatisticas()">
+        <ion-icon name="trending-up-outline" color="success"></ion-icon>
+        <span class="link-text">Estatísticas do campeonato</span>
+        <ion-icon class="chev" name="chevron-forward-outline"></ion-icon>
+      </button>
+      <button type="button" class="link-row" (click)="abrirTransferir()">
+        <ion-icon name="swap-horizontal-outline" color="success"></ion-icon>
+        <span class="link-text">Transferir jogador</span>
+        <ion-icon class="chev" name="chevron-forward-outline"></ion-icon>
+      </button>
+
+      <div class="desde-info" *ngIf="jogadorEditando.cadastradoEm">
+        Desde: {{ formatarDataBR(jogadorEditando.cadastradoEm) }}
+      </div>
+    </div>
+
+
+   
+
+        <ion-grid class="ion-no-padding">
+          <ion-row style="width: 100%;">
+            <ion-col size="6" size-md="6" style="padding: 0 10px 0 0;">
+              <ion-button *ngIf="jogadorEditando" class="button-danger" color="danger" type="button"
+                (click)="remover()">
+                <ion-icon slot="start" name="trash-outline"></ion-icon>
+                Remover
+              </ion-button>
+            </ion-col>
+            <ion-col size="6" size-md="6" style="padding: 0  0 0 10px;">
+              <ion-button type="submit" class="button-primary" color="primary" [disabled]="loading || form.invalid">
+                <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+                Salvar
+              </ion-button>
+            </ion-col>
+
+          </ion-row>
+        </ion-grid>
+     
+
+
+
+  </form>
+
+  <!-- ============== SUB-TELA: Estatísticas ============== -->
+  <form *ngIf="modo === 'stats' && jogadorEditando" [formGroup]="statsForm" (ngSubmit)="salvarEstatisticas()"
+    class="stats-wrap" novalidate>
+    <div class="stats-header">
+      <div class="stats-jog">
+        <strong>{{ jogadorEditando.nome }}</strong>
+        <span *ngIf="jogadorEditando.apelido">"{{ jogadorEditando.apelido }}"</span>
+      </div>
+      <div class="stats-eq">{{ equipe.nome }}</div>
+    </div>
+
+    <div class="field-group">
+      <ion-input fill="outline" label="Gols" labelPlacement="stacked" type="number" inputmode="numeric"
+        formControlName="gols"></ion-input>
+      <ion-input fill="outline" label="Jogos" labelPlacement="stacked" type="number" inputmode="numeric"
+        formControlName="jogos"></ion-input>
+      <ion-input fill="outline" label="C. AM. (Cartões Amarelos)" labelPlacement="stacked" type="number"
+        inputmode="numeric" formControlName="cartoesAmarelos"></ion-input>
+      <ion-input fill="outline" label="C. VER. (Cartões Vermelhos)" labelPlacement="stacked" type="number"
+        inputmode="numeric" formControlName="cartoesVermelhos"></ion-input>
+      <ion-input fill="outline" label="C. AZ. (Cartões Azuis)" labelPlacement="stacked" type="number"
+        inputmode="numeric" formControlName="cartoesAzuis"></ion-input>
+      <ion-input fill="outline" label="Faltas" labelPlacement="stacked" type="number" inputmode="numeric"
+        formControlName="faltas"></ion-input>
+      <ion-input fill="outline" label="Assistências" labelPlacement="stacked" type="number" inputmode="numeric"
+        formControlName="assistencias"></ion-input>
+
+      <div class="goleiro-row">
+        <ion-checkbox formControlName="goleiro" labelPlacement="end">Goleiro</ion-checkbox>
+        
+      </div>
+      <ion-input *ngIf="statsForm.value.goleiro" fill="outline" label="Gols tomados" labelPlacement="stacked"
+          type="number" inputmode="numeric" formControlName="golsTomados"></ion-input>
+
+      <ion-input fill="outline" label="Avaliação" labelPlacement="stacked" placeholder="Ex: Excelente atuação"
+        formControlName="avaliacao"></ion-input>
+    </div>
+
+    <!-- Atalho pra suspensão dentro do modal de stats -->
+    <div class="link-rows">
+      <button type="button" class="link-row" (click)="abrirSuspensao()">
+        <ion-icon [name]="jogadorEditando.suspensao ? 'alert-circle-outline' : 'ban-outline'"
+          [color]="jogadorEditando.suspensao ? 'warning' : 'medium'"></ion-icon>
+        <span class="link-text">
+          {{ jogadorEditando.suspensao ? 'Editar suspensão' : 'Editar suspensão' }}
+          <span *ngIf="jogadorEditando.suspensao" class="susp-info">
+            ({{ formatarDataBR(jogadorEditando.suspensao.inicio) }}<ng-container *ngIf="jogadorEditando.suspensao.fim">
+              – {{ formatarDataBR(jogadorEditando.suspensao.fim) }}</ng-container>)
+          </span>
+        </span>
+        <ion-icon class="chev" name="chevron-forward-outline"></ion-icon>
+      </button>
+    </div>
+
+    <div class="footer-actions">
+      <div class="spacer"></div>
+      <ion-button type="submit" class="button-primary" color="primary" [disabled]="loading">
+        <ion-spinner *ngIf="loading" name="dots" slot="start"></ion-spinner>
+        Salvar
+      </ion-button>
+    </div>
+  </form>
+
+  <!-- ============== SUB-TELA: Suspensão ============== -->
+  <form *ngIf="modo === 'suspensao' && jogadorEditando" [formGroup]="suspensaoForm" (ngSubmit)="salvarSuspensao()"
+    class="susp-wrap" novalidate>
+    <div class="stats-header">
+      <div class="stats-jog">
+        <strong>{{ jogadorEditando.nome }}</strong>
+      </div>
+      <div class="stats-eq">Período em que o jogador fica suspenso</div>
+    </div>
+
+    <div class="field-group">
+      <app-date-input label="Data de início" mode="date" formControlName="inicio" [required]="true"></app-date-input>
+      <app-date-input label="Data de término" mode="date" formControlName="fim"></app-date-input>
+      <small class="hint">Deixe o término em branco se a suspensão for por tempo indeterminado.</small>
+    </div>
+
+    <div class="footer-actions">
+      <ion-button *ngIf="jogadorEditando.suspensao" class="button-dager" color="danger" type="button"
+        (click)="removerSuspensao()" [disabled]="loading">
+        Remover
+      </ion-button>
+      <div class="spacer"></div>
+      <ion-button class="button-primary" type="submit" color="primary" [disabled]="loading">
+        <ion-spinner *ngIf="loading" name="dots" slot="start"></ion-spinner>
+        Salvar
+      </ion-button>
+    </div>
+  </form>
+
+  <!-- ============== SUB-TELA: Transferir jogador ============== -->
+  <div *ngIf="modo === 'transferir' && jogadorEditando" class="transf-wrap">
+    <div class="stats-header">
+      <div class="stats-jog">
+        <strong>{{ jogadorEditando.nome }}</strong>
+      </div>
+      <div class="stats-eq">Escolha a nova equipe:</div>
+    </div>
+
+    <div class="transf-lista">
+      <button *ngFor="let e of equipesDisponiveis; trackBy: trackByEquipeId" type="button" class="transf-row"
+        [class.atual]="e.id === jogadorEditando.equipeId" (click)="transferirPara(e)" [disabled]="loading">
+        <div class="transf-logo">
+          <img *ngIf="e.logoUrl; else logoF" [src]="e.logoUrl" [alt]="e.nome" />
+          <ng-template #logoF><ion-icon name="shield-outline"></ion-icon></ng-template>
+        </div>
+        <div class="transf-info">
+          <div class="transf-nome">{{ e.nome }}</div>
+          <div class="transf-meta" *ngIf="e.cidade">{{ e.cidade }}</div>
+        </div>
+        <span *ngIf="e.id === jogadorEditando.equipeId" class="badge-atual">Atual</span>
+      </button>
+
+      <!-- "Equipe Indefinida" — desvincula o jogador da equipe -->
+      <button type="button" class="transf-row indefinida" (click)="transferirPara(null)" [disabled]="loading">
+        <div class="transf-logo">
+          <ion-icon name="help-circle-outline"></ion-icon>
+        </div>
+        <div class="transf-info">
+          <div class="transf-nome">Equipe Indefinida</div>
+          <div class="transf-meta">Remove o vínculo da equipe atual</div>
+        </div>
+      </button>
+
+      <div *ngIf="equipesDisponiveis.length === 0" class="empty">
+        Nenhuma outra equipe disponível.
+      </div>
+    </div>
+  </div>
+</ion-content>

@@ -1,0 +1,281 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Página do organizador</ion-title>
+    <ion-buttons slot="end">
+      <ion-button aria-label="Compartilhar">
+        <ion-icon slot="icon-only" name="share-social-outline"></ion-icon>
+      </ion-button>
+      <ion-button aria-label="Visibilidade">
+        <ion-icon slot="icon-only" name="globe-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+    <div class="wrap">
+
+      <!-- Identidade -->
+      <section class="card">
+        <div class="logo-row">
+          <div
+            class="logo-box clickable"
+            (click)="selecionarImagem('logoUrl', 1, 'Ajustar logo')"
+            title="Clique para alterar"
+          >
+            <img *ngIf="form.value.logoUrl; else logoIc" [src]="form.value.logoUrl" alt="Logo" />
+            <ng-template #logoIc>
+              <ion-icon name="image-outline"></ion-icon>
+              <span class="size">150×150</span>
+            </ng-template>
+            <div class="upload-overlay"><ion-icon name="camera-outline"></ion-icon></div>
+          </div>
+          <div class="logo-fields">
+            <ion-input
+              fill="outline"
+              label="Organização do campeonato"
+              labelPlacement="stacked"
+              placeholder="Ex: Liga Amadora de Futebol"
+              formControlName="nome"
+              required
+            ></ion-input>
+            <ion-input
+              fill="outline"
+              label="URL do logo"
+              labelPlacement="stacked"
+              placeholder="https://..."
+              formControlName="logoUrl"
+            ></ion-input>
+          </div>
+        </div>
+
+        <!-- Banner do app -->
+        <div class="banner-block">
+          <div
+            class="banner-box banner-app clickable"
+            (click)="selecionarImagem('bannerAppUrl', 805/453, 'Ajustar banner do aplicativo')"
+            title="Clique para alterar"
+          >
+            <img *ngIf="form.value.bannerAppUrl; else bAppIc" [src]="form.value.bannerAppUrl" alt="Banner app" />
+            <ng-template #bAppIc>
+              <ion-icon name="add-outline"></ion-icon>
+              <span>Banner do aplicativo</span>
+              <span class="size">805×453</span>
+            </ng-template>
+            <div class="upload-overlay"><ion-icon name="camera-outline"></ion-icon></div>
+          </div>
+          <ion-input
+            fill="outline"
+            label="URL do banner do aplicativo"
+            labelPlacement="stacked"
+            placeholder="https://..."
+            formControlName="bannerAppUrl"
+          ></ion-input>
+        </div>
+
+        <!-- Banner do site -->
+        <div class="banner-block">
+          <div
+            class="banner-box banner-site clickable"
+            (click)="selecionarImagem('bannerSiteUrl', 970/90, 'Ajustar banner do site')"
+            title="Clique para alterar"
+          >
+            <img *ngIf="form.value.bannerSiteUrl; else bSiteIc" [src]="form.value.bannerSiteUrl" alt="Banner jogos" />
+            <ng-template #bSiteIc>
+              <ion-icon name="add-outline"></ion-icon>
+              <span>Banner do jogos</span>
+              <span class="size">970×90</span>
+            </ng-template>
+            <div class="upload-overlay"><ion-icon name="camera-outline"></ion-icon></div>
+          </div>
+          <ion-input
+            fill="outline"
+            label="URL do banner do site"
+            labelPlacement="stacked"
+            placeholder="https://..."
+            formControlName="bannerSiteUrl"
+          ></ion-input>
+        </div>
+
+        <!-- Cor -->
+        <div class="cor-row">
+          <ion-icon name="color-fill-outline"></ion-icon>
+          <span class="label">Cor da página</span>
+          <input type="color" formControlName="corPrimaria" />
+        </div>
+      </section>
+
+      <!-- Textos -->
+      <section class="card">
+        <ion-input
+          fill="outline"
+          label="Texto 1"
+          labelPlacement="stacked"
+          placeholder="Informações do organizador"
+          formControlName="texto1"
+          maxlength="70"
+        ></ion-input>
+        <div class="hint">{{ contador('texto1', 70) }}</div>
+
+        <ion-input
+          fill="outline"
+          label="Texto 2"
+          labelPlacement="stacked"
+          placeholder="Informações adicionais"
+          formControlName="texto2"
+          maxlength="180"
+        ></ion-input>
+        <div class="hint">{{ contador('texto2', 180) }}</div>
+
+        <ion-textarea
+          fill="outline"
+          label="Sobre"
+          labelPlacement="stacked"
+          placeholder="Conte um pouco sobre sua organização, história e modalidades"
+          [autoGrow]="true"
+          rows="4"
+          formControlName="sobre"
+        ></ion-textarea>
+      </section>
+
+      <!-- Link personalizado -->
+      <section class="card">
+        <h3>Definir link do site</h3>
+        <div class="link-row">
+          <span class="link-prefix">{{ linkPrefix }}</span>
+          <ion-input
+            fill="outline"
+            label="Slug"
+            labelPlacement="stacked"
+            placeholder="seu-clube"
+            formControlName="slug"
+          ></ion-input>
+        </div>
+      </section>
+
+      <!-- Quem pode ver -->
+      <section class="card">
+        <h3>Quem pode ver?</h3>
+        <ion-radio-group formControlName="visibilidade">
+          <div
+            class="radio-card"
+            [class.active]="form.value.visibilidade === 'privado'"
+            (click)="form.controls['visibilidade'].setValue('privado')"
+          >
+            <ion-radio value="privado" slot="start" aria-label="Privado"></ion-radio>
+            <div class="r-text">
+              <div class="r-label">Privado</div>
+              <div class="r-desc">Apenas você e participantes convidados.</div>
+            </div>
+          </div>
+          <div
+            class="radio-card"
+            [class.active]="form.value.visibilidade === 'publico'"
+            (click)="form.controls['visibilidade'].setValue('publico')"
+          >
+            <ion-radio value="publico" slot="start" aria-label="Público"></ion-radio>
+            <div class="r-text">
+              <div class="r-label">Público</div>
+              <div class="r-desc">Todos podem pesquisar e ver.</div>
+            </div>
+          </div>
+        </ion-radio-group>
+      </section>
+
+      <!-- Tipo do campeonato -->
+      <section class="card">
+        <h3>Onde os campeonatos acontecem?</h3>
+        <ion-radio-group formControlName="tipoEvento">
+          <div
+            class="radio-card"
+            [class.active]="form.value.tipoEvento === 'presencial'"
+            (click)="form.controls['tipoEvento'].setValue('presencial')"
+          >
+            <ion-radio value="presencial" slot="start" aria-label="Presencial"></ion-radio>
+            <div class="r-text">
+              <div class="r-label">Campeonato disputado presencialmente</div>
+            </div>
+          </div>
+          <div
+            class="radio-card"
+            [class.active]="form.value.tipoEvento === 'internet'"
+            (click)="form.controls['tipoEvento'].setValue('internet')"
+          >
+            <ion-radio value="internet" slot="start" aria-label="Internet"></ion-radio>
+            <div class="r-text">
+              <div class="r-label">Campeonato disputado na internet</div>
+            </div>
+          </div>
+        </ion-radio-group>
+      </section>
+
+      <!-- Idioma -->
+      <section class="card">
+        <h3>Idioma</h3>
+        <ion-select fill="outline" formControlName="idioma" interface="popover" label="Idioma" labelPlacement="stacked">
+          <ion-select-option value="pt-BR">Português (Brasil)</ion-select-option>
+          <ion-select-option value="en-US">English</ion-select-option>
+          <ion-select-option value="es-ES">Español</ion-select-option>
+        </ion-select>
+      </section>
+
+      <!-- Sede -->
+      <section class="card">
+        <h3>Local da Sede</h3>
+        <ion-select fill="outline" formControlName="sede" interface="popover" label="País" labelPlacement="stacked">
+          <ion-select-option value="Brasil">Brasil</ion-select-option>
+          <ion-select-option value="Portugal">Portugal</ion-select-option>
+          <ion-select-option value="EUA">EUA</ion-select-option>
+          <ion-select-option value="Outro">Outro</ion-select-option>
+        </ion-select>
+
+        <ion-input fill="outline" label="Região / UF" labelPlacement="stacked" placeholder="Ex: MG" formControlName="regiao"></ion-input>
+        <ion-input fill="outline" label="Localização" labelPlacement="stacked" placeholder="Cidade / bairro" formControlName="localizacao"></ion-input>
+      </section>
+
+      <!-- Redes sociais -->
+      <section class="card">
+        <h3>Redes sociais e contatos</h3>
+        <ion-input fill="outline" label="Facebook" labelPlacement="stacked" placeholder="Cole o link aqui" formControlName="facebook"></ion-input>
+        <ion-input fill="outline" label="Instagram" labelPlacement="stacked" placeholder="Cole o link aqui" formControlName="instagram"></ion-input>
+        <ion-input fill="outline" label="YouTube" labelPlacement="stacked" placeholder="Cole o link aqui" formControlName="youtube"></ion-input>
+        <ion-input fill="outline" label="Twitch" labelPlacement="stacked" placeholder="Cole o link aqui" formControlName="twitch"></ion-input>
+        <ion-input fill="outline" label="X / Twitter" labelPlacement="stacked" placeholder="Cole o link aqui" formControlName="twitter"></ion-input>
+        <ion-input fill="outline" label="WhatsApp" labelPlacement="stacked" placeholder="Cole o link aqui" formControlName="whatsapp"></ion-input>
+        <ion-input fill="outline" label="Telegram" labelPlacement="stacked" placeholder="Cole o link aqui" formControlName="telegram"></ion-input>
+        <ion-input fill="outline" label="Site" labelPlacement="stacked" placeholder="https://" formControlName="site"></ion-input>
+        <ion-input fill="outline" label="E-mail" labelPlacement="stacked" type="email" inputmode="email" mask="email" placeholder="nome@email.com" formControlName="email"></ion-input>
+        <ion-input
+          fill="outline"
+          label="Telefone"
+          labelPlacement="stacked"
+          type="tel"
+          inputmode="numeric"
+          placeholder="(11) 99999-9999"
+          mask="telefone"
+          formControlName="telefone"
+        ></ion-input>
+
+        <ion-item lines="none" class="toggle-item">
+          <ion-checkbox slot="start" formControlName="chatAtivo"></ion-checkbox>
+          <ion-label>
+            <div class="toggle-title">Chat do Aplicativo</div>
+            <div class="toggle-sub">Permite que participantes te chamem pelo chat do PlacarPro.</div>
+          </ion-label>
+        </ion-item>
+      </section>
+
+
+      <ion-button
+        expand="block"
+        type="submit"
+        color="primary"
+        class="btn-save"
+        [disabled]="salvando"
+      >
+        Salvar alterações
+      </ion-button>
+    </div>
+  </form>
+</ion-content>

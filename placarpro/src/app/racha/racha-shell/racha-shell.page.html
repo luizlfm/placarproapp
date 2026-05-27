@@ -1,0 +1,92 @@
+<ion-content class="rs-content">
+  <!-- ═══════════ Loading ═══════════ -->
+  <div class="rs-state" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <!-- ═══════════ Shell estilo /app (sidebar fixa + outlet) ═══════════ -->
+  <div class="shell" *ngIf="!loading && racha">
+    <!-- ─── Sidebar ─── -->
+    <aside class="shell-aside" [class.aberta]="sidebarAberta">
+      <!-- Marca PlacarPro no topo (clica pra voltar pra lista de rachas) -->
+      <a class="brand-link" (click)="voltarHome()" role="button" tabindex="0">
+        <img
+          src="assets/images/logo3.png"
+          alt="PlacarPro"
+          class="brand-logo"
+          onerror="this.style.display='none'"
+        />
+      </a>
+
+      <!-- Header do contexto: nome do racha + logo (igual /app modo campeonato) -->
+      <button class="ctx-header" type="button" (click)="voltarHome()">
+        <div class="ctx-logo">
+          <img *ngIf="racha.logoUrl; else iconR" [src]="racha.logoUrl" [alt]="racha.nome" />
+          <ng-template #iconR><ion-icon name="football-outline"></ion-icon></ng-template>
+        </div>
+        <div class="ctx-title">{{ racha.nome }}</div>
+      </button>
+
+      <!-- Nav (flat, sem section headers — igual /app) -->
+      <nav class="sidebar-nav">
+        <ng-container *ngFor="let item of menu; trackBy: trackByLabel">
+          <!-- Pula os headers de seção que tinha antes — visual fica mais clean -->
+          <a
+            *ngIf="!item.header"
+            class="nav-item"
+            [class.active]="isActive(item)"
+            (click)="onItemClick(item)"
+            role="button"
+            tabindex="0"
+          >
+            <ion-icon [name]="item.icon"></ion-icon>
+            <span>{{ item.label }}</span>
+            <span class="nav-badge" *ngIf="item.badge">{{ item.badge }}</span>
+          </a>
+        </ng-container>
+      </nav>
+
+      <!-- User no rodapé (igual /app modo campeonato) -->
+      <div class="ctx-user">
+        <div class="user-avatar">
+          <img
+            *ngIf="fotoUsuario; else uiR"
+            [src]="fotoUsuario"
+            referrerpolicy="no-referrer"
+            [alt]="nomeUsuario"
+          />
+          <ng-template #uiR><span>{{ inicialUsuario }}</span></ng-template>
+        </div>
+        <div class="user-info">
+          <div class="user-name">{{ nomeUsuario }}</div>
+          <button class="user-logout" (click)="onItemClick({ label: 'Sair', icon: 'log-out', action: 'sair' })" type="button">
+            Sair
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Backdrop (fecha sidebar mobile ao clicar fora) -->
+    <div
+      class="shell-backdrop"
+      *ngIf="sidebarAberta"
+      (click)="toggleSidebar()"
+      aria-hidden="true"
+    ></div>
+
+    <!-- ─── Botão hamburger flutuante (mobile) ─── -->
+    <button
+      type="button"
+      class="shell-hamburger"
+      (click)="toggleSidebar()"
+      aria-label="Abrir menu"
+    >
+      <ion-icon [name]="sidebarAberta ? 'close-outline' : 'menu-outline'"></ion-icon>
+    </button>
+
+    <!-- ─── Conteúdo da página filha ─── -->
+    <main class="shell-main">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</ion-content>

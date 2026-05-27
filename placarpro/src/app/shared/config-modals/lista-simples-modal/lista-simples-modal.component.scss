@@ -1,0 +1,161 @@
+.ls-content {
+  --background: var(--placar-bg, #f5f5f7);
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 18px;
+  --padding-bottom: 28px;
+}
+
+.add-box {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 20px;
+
+  ion-input { flex: 1; --background: #fff; --border-radius: 12px; }
+  ion-button { --border-radius: 12px; height: 48px; --padding-start: 18px; --padding-end: 18px; }
+
+  @media (max-width: 540px) {
+    flex-direction: column;
+    align-items: stretch;
+    ion-button { width: 100%; }
+  }
+}
+
+/* ============ Header da lista (contador + dica) ============ */
+.ls-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 4px 10px;
+  font-size: 12px;
+
+  .ls-total {
+    font-weight: 800;
+    color: var(--ion-color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .ls-hint {
+    color: var(--ion-color-medium);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-style: italic;
+
+    ion-icon { font-size: 14px; }
+
+    @media (max-width: 480px) { display: none; }
+  }
+}
+
+.ls-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ls-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: background 150ms ease, box-shadow 150ms ease;
+
+  &.editando {
+    background: rgba(28, 46, 61, 0.04);
+    box-shadow: 0 0 0 2px var(--ion-color-primary, #1C2E3D), 0 2px 6px rgba(28, 46, 61, 0.12);
+  }
+
+  .ls-icone {
+    font-size: 22px;
+    color: var(--ion-color-primary);
+    flex: 0 0 auto;
+  }
+
+  .ls-nome {
+    flex: 1;
+    font-size: 15px;
+    color: var(--placar-text);
+    font-weight: 500;
+    word-break: break-word;
+  }
+
+  .ls-input-edit {
+    flex: 1;
+    --background: #fff;
+    --border-radius: 8px;
+    --min-height: 38px;
+    --padding-start: 12px;
+    --padding-end: 12px;
+    font-size: 14.5px;
+  }
+}
+
+/* ============ Botões de ação da linha ============ */
+.ls-edit,
+.ls-remove,
+.ls-confirm,
+.ls-cancel {
+  background: transparent;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, transform 120ms ease;
+  flex: 0 0 auto;
+
+  ion-icon { font-size: 18px; }
+
+  &:active { transform: scale(0.92); }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.ls-edit {
+  color: var(--ion-color-medium);
+  &:hover { background: rgba(77, 171, 247, 0.14); color: var(--ion-color-tertiary, #4DABF7); }
+}
+
+.ls-remove {
+  color: var(--ion-color-medium);
+  &:hover { background: rgba(235, 68, 90, 0.1); color: var(--ion-color-danger); }
+}
+
+.ls-confirm {
+  color: #fff;
+  background: var(--ion-color-success, #7CC61D);
+
+  &:hover:not(:disabled) {
+    background: var(--ion-color-success-shade, #6dae1a);
+    transform: translateY(-1px);
+  }
+}
+
+.ls-cancel {
+  color: var(--ion-color-medium);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  &:hover { background: rgba(0, 0, 0, 0.05); color: var(--ion-color-dark); }
+}
+
+.ls-empty {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--ion-color-medium);
+
+  > ion-icon { font-size: 56px; opacity: 0.35; margin-bottom: 10px; }
+  p { margin: 0 0 4px; font-weight: 600; color: var(--ion-color-primary); }
+  span { font-size: 13px; }
+}

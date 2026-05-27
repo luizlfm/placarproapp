@@ -1,0 +1,52 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="success">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="../config"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Enquetes</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="novaEnquete()" aria-label="Nova enquete">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="enq-content">
+  <ng-container *ngIf="enquetes$ | async as lista">
+    <div class="empty" *ngIf="lista.length === 0">
+      <ion-icon name="chatbubbles-outline"></ion-icon>
+      <h2>Nenhuma enquete</h2>
+      <p>Crie enquetes pra interagir com os seguidores e participantes.</p>
+      <ion-button color="success" (click)="novaEnquete()">
+        <ion-icon slot="start" name="add-outline"></ion-icon>
+        Criar enquete
+      </ion-button>
+    </div>
+
+    <div class="lista" *ngIf="lista.length > 0">
+      <article
+        *ngFor="let e of lista; trackBy: trackById"
+        class="enq-row"
+        (click)="abrir(e)"
+      >
+        <div class="enq-main">
+          <h3 class="enq-pergunta">{{ e.pergunta || '—' }}</h3>
+          <div class="enq-meta">
+            <span class="enq-status" [class.off]="!e.visivel">
+              <ion-icon [name]="e.visivel ? 'eye-outline' : 'eye-off-outline'"></ion-icon>
+              {{ e.visivel ? 'Visível' : 'Oculta' }}
+            </span>
+            <span class="dot">·</span>
+            <span>{{ e.alternativas.length }} alternativa(s)</span>
+            <span class="dot" *ngIf="(e.totalVotos ?? 0) > 0">·</span>
+            <span *ngIf="(e.totalVotos ?? 0) > 0">
+              {{ e.totalVotos }} voto<ng-container *ngIf="(e.totalVotos ?? 0) !== 1">s</ng-container>
+            </span>
+          </div>
+        </div>
+        <ion-icon class="chev" name="chevron-forward-outline"></ion-icon>
+      </article>
+    </div>
+  </ng-container>
+</ion-content>

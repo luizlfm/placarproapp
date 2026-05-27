@@ -1,0 +1,199 @@
+<div class="ri-page" *ngIf="racha">
+  <!-- Toolbar fixa navy -->
+  <header class="r-toolbar">
+    <span class="r-toolbar-title">Início</span>
+  </header>
+
+  <!-- ═══════════ Welcome card (BEM-VINDO + stats + CTAs) ═══════════ -->
+  <section class="ri-welcome-card">
+    <!-- Header do card: badge + status -->
+    <div class="ri-wc-row-top">
+      <span class="ri-wc-tag">BEM-VINDO</span>
+      <span class="ri-wc-status" [class.ativo]="racha.ativado">
+        <span class="ri-wc-dot"></span>
+        {{ racha.ativado ? 'Ativo' : 'Em ativação' }}
+      </span>
+    </div>
+
+    <!-- Título + descrição -->
+    <h1 class="ri-wc-titulo">{{ racha.nome }}</h1>
+    <p class="ri-wc-desc">
+      Acompanhe rankings, convide amigos e gerencie o racha sem perder o ritmo.
+    </p>
+
+    <!-- Quick stats: dados reais do racha -->
+    <div class="ri-wc-stats">
+      <div class="ri-wc-stat">
+        <ion-icon name="shield-outline"></ion-icon>
+        <strong>{{ racha.qtdTimes || 0 }}</strong>
+        <span>Times</span>
+      </div>
+      <div class="ri-wc-stat">
+        <ion-icon name="people-outline"></ion-icon>
+        <strong>{{ racha.capacidadeTotal || 0 }}</strong>
+        <span>Vagas</span>
+      </div>
+      <div class="ri-wc-stat">
+        <ion-icon name="flag-outline"></ion-icon>
+        <strong>0</strong>
+        <span>Partidas</span>
+      </div>
+      <div class="ri-wc-stat" *ngIf="racha.seguidores !== undefined">
+        <ion-icon name="heart-outline"></ion-icon>
+        <strong>{{ racha.seguidores || 0 }}</strong>
+        <span>Seguidores</span>
+      </div>
+    </div>
+
+    <!-- CTAs principais (3 ações que realmente funcionam) -->
+    <div class="ri-wc-cta-row">
+      <button type="button" class="ri-wc-cta primario" (click)="verRankings()">
+        <ion-icon name="bar-chart-outline"></ion-icon>
+        Ver Rankings
+      </button>
+      <button type="button" class="ri-wc-cta secundario" (click)="convidarAmigos()">
+        <ion-icon name="person-add-outline"></ion-icon>
+        Convidar Amigos
+      </button>
+      <button type="button" class="ri-wc-cta secundario" (click)="gerenciarRacha()">
+        <ion-icon name="settings-outline"></ion-icon>
+        Gerenciar
+      </button>
+    </div>
+
+    <!-- Código do convite (se existir) — mostra inline pra usuário copiar/compartilhar -->
+    <div class="ri-wc-convite" *ngIf="racha.codigoConvite || racha.conviteToken">
+      <ion-icon name="link-outline"></ion-icon>
+      <span class="ri-wc-conv-label">Código do convite</span>
+      <code class="ri-wc-conv-codigo">{{ racha.codigoConvite || racha.conviteToken }}</code>
+      <button type="button" class="ri-wc-conv-btn" (click)="copiarConvite()" aria-label="Copiar link do convite">
+        <ion-icon name="copy-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Features em breve — preview do que vem por aí -->
+    <div class="ri-wc-em-breve">
+      <span class="ri-wc-eb-label">Em breve:</span>
+      <span class="ri-wc-eb-chip" (click)="avisoEmBreve('Ranking Mundial')">
+        <ion-icon name="earth-outline"></ion-icon>
+        Ranking Mundial
+      </span>
+      <span class="ri-wc-eb-chip" (click)="avisoEmBreve('Bot do WhatsApp')">
+        <ion-icon name="logo-whatsapp"></ion-icon>
+        Bot WhatsApp
+      </span>
+      <span class="ri-wc-eb-chip" (click)="avisoEmBreve('Ao Vivo')">
+        <ion-icon name="radio-outline"></ion-icon>
+        Ao Vivo
+      </span>
+    </div>
+  </section>
+
+  <!-- ═══════════ Card "Ative seu racha em 4 passos" ═══════════
+       Aparece quando: tem pendência (não ativado OU < 4 passos) E o usuário
+       não dispensou recentemente (snooze de 7 dias via localStorage). -->
+  <section
+    class="ri-ativacao"
+    *ngIf="(!racha.ativado || passosConcluidos < 4) && !ativacaoDispensada"
+  >
+    <div class="ri-ativacao-head">
+      <ion-icon name="hourglass-outline" class="ri-ativ-icon"></ion-icon>
+      <div class="ri-ativ-titulo">
+        <h2>Ative seu racha em 4 passos</h2>
+        <p>Depois você pode ajustar os detalhes com calma</p>
+      </div>
+      <span class="ri-ativ-badge">{{ passosConcluidos }}/4 concluídos</span>
+    </div>
+
+    <div class="ri-progresso">
+      <div class="ri-progresso-bar" [style.width.%]="progressoPct"></div>
+      <span class="ri-progresso-pct">{{ progressoPct }}%</span>
+    </div>
+
+    <ul class="ri-passos">
+      <li
+        *ngFor="let p of passos; trackBy: trackByPasso"
+        class="ri-passo"
+        [class.concluido]="p.concluido"
+        [class.bloqueado]="p.bloqueado && !p.concluido"
+      >
+        <ion-icon
+          [name]="p.concluido ? 'checkmark-circle' : (p.bloqueado ? 'lock-closed' : 'ellipse-outline')"
+          class="ri-passo-status"
+        ></ion-icon>
+        <div class="ri-passo-info">
+          <span class="ri-passo-label">{{ p.label }}</span>
+          <div class="ri-passo-sub" *ngIf="p.subItens && p.subItens.length > 0">
+            <span *ngFor="let s of p.subItens" class="ri-passo-subitem">
+              <ion-icon name="chevron-forward"></ion-icon>{{ s }}
+            </span>
+          </div>
+        </div>
+        <span class="ri-passo-meta">{{ p.meta }}</span>
+      </li>
+    </ul>
+
+    <div class="ri-ativ-acoes">
+      <button type="button" class="ri-btn-amarelo solido" (click)="completarAgora()">
+        <ion-icon name="create-outline"></ion-icon>
+        COMPLETAR AGORA
+      </button>
+      <button type="button" class="ri-btn-amarelo outline" (click)="deixarParaDepois()">
+        <ion-icon name="time-outline"></ion-icon>
+        DEIXAR PARA DEPOIS
+      </button>
+    </div>
+  </section>
+
+  <!-- ═══════════ Grid de atalhos ═══════════ -->
+  <section class="ri-atalhos">
+    <button
+      type="button"
+      class="ri-atalho"
+      *ngFor="let a of atalhos; trackBy: trackByAtalho"
+      (click)="irParaAtalho(a)"
+    >
+      <span class="ri-atalho-icone">
+        <ion-icon [name]="a.icon" [color]="a.iconColor"></ion-icon>
+      </span>
+      <span class="ri-atalho-label">{{ a.label }}</span>
+      <span class="ri-atalho-badge" *ngIf="a.badge">{{ a.badge }}</span>
+    </button>
+  </section>
+
+  <!-- ═══════════ Card "Planos por Racha" ═══════════ -->
+  <section class="ri-planos">
+    <div class="ri-planos-head">
+      <span class="ri-planos-tag">⚡ PLANOS POR RACHA</span>
+      <span class="ri-planos-count">2 planos disponíveis</span>
+    </div>
+    <h2 class="ri-planos-titulo">Desbloqueie tudo no seu racha</h2>
+
+    <ul class="ri-planos-features">
+      <li><ion-icon name="mic-outline"></ion-icon>Voz e IA ilimitadas</li>
+      <li><ion-icon name="wallet-outline"></ion-icon>Financeiro completo</li>
+      <li><ion-icon name="trophy-outline"></ion-icon>Conquistas &amp; Níveis <small>(PRO)</small></li>
+      <li><ion-icon name="people-outline"></ion-icon>Lista de presença sem limite</li>
+      <li><ion-icon name="logo-whatsapp"></ion-icon>WhatsApp do Racha <small>(PRO)</small></li>
+    </ul>
+
+    <div class="ri-planos-precos">
+      <div class="ri-plano-card">
+        <span class="ri-plano-nome">PREMIUM</span>
+        <span class="ri-plano-valor"><strong>R$ 19,90</strong><small>/mês</small></span>
+      </div>
+      <span class="ri-planos-ou">ou</span>
+      <div class="ri-plano-card destaque">
+        <span class="ri-plano-nome">PRO</span>
+        <span class="ri-plano-valor"><strong>R$ 24,90</strong><small>/mês</small></span>
+        <span class="ri-plano-extra">+ WhatsApp ilimitado</span>
+      </div>
+    </div>
+
+    <button type="button" class="ri-planos-cta" (click)="irParaUpgrade()">
+      <ion-icon name="star"></ion-icon>
+      ESCOLHER MEU PLANO
+    </button>
+    <p class="ri-planos-foot">Cancele quando quiser. Sem fidelidade.</p>
+  </section>
+</div>

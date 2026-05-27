@@ -1,0 +1,107 @@
+<div class="r-page mc-page">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">Mercado de Notas</span>
+  </header>
+
+  <header class="r-page-head">
+    <span class="r-page-tag">📈 Mercado</span>
+    <h1>Cotação dos jogadores</h1>
+    <p>
+      Valor calculado das estatísticas: gols, assistências, presença
+      e disciplina. Quem joga mais, vale mais.
+    </p>
+  </header>
+
+  <!-- Market cap (resumo geral) -->
+  <section class="mc-cap" *ngIf="!loading && linhas.length > 0">
+    <div class="mc-cap-row">
+      <ion-icon name="trending-up"></ion-icon>
+      <div class="mc-cap-info">
+        <span class="mc-cap-label">Market cap do racha</span>
+        <strong class="mc-cap-valor">{{ totalCap | number:'1.0-0' }}</strong>
+      </div>
+      <div class="mc-cap-info">
+        <span class="mc-cap-label">Jogadores listados</span>
+        <strong class="mc-cap-valor">{{ linhas.length }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- Loading -->
+  <div class="mc-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <!-- Empty -->
+  <section class="r-empty" *ngIf="!loading && linhas.length === 0">
+    <div class="r-empty-icone"><ion-icon name="trending-up-outline"></ion-icon></div>
+    <h2>Mercado vazio</h2>
+    <p>Cadastre jogadores no racha pra começar a precificar.</p>
+  </section>
+
+  <!-- Tabela do mercado -->
+  <section class="mc-tabela" *ngIf="!loading && linhas.length > 0">
+    <div class="mc-thead">
+      <span class="mc-th pos">#</span>
+      <span class="mc-th nome">Jogador</span>
+      <span class="mc-th valor">Valor</span>
+      <span class="mc-th var">Var.</span>
+    </div>
+
+    <article
+      *ngFor="let l of linhas; let i = index; trackBy: trackByLinha"
+      class="mc-row"
+    >
+      <span class="mc-pos">{{ i + 1 }}</span>
+
+      <div class="mc-nome-col">
+        <div class="mc-avatar">
+          <img *ngIf="l.jogador.fotoUrl; else iconJ" [src]="l.jogador.fotoUrl" [alt]="l.jogador.nome" />
+          <ng-template #iconJ><ion-icon name="person"></ion-icon></ng-template>
+        </div>
+        <div class="mc-nome-info">
+          <strong>{{ l.jogador.nome }}</strong>
+          <div class="mc-stats">
+            <span><ion-icon name="football"></ion-icon> {{ l.gols }}</span>
+            <span><ion-icon name="sparkles"></ion-icon> {{ l.assists }}</span>
+            <span><ion-icon name="flag-outline"></ion-icon> {{ l.jogos }}</span>
+            <span *ngIf="l.cartoes > 0" class="mc-stat-warn">
+              <ion-icon name="warning"></ion-icon> {{ l.cartoes }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <span class="mc-valor">{{ l.valor | number:'1.0-0' }}</span>
+
+      <span class="mc-var" [ngClass]="classeVariacao(l.variacao)">
+        <ion-icon [name]="l.variacao >= 0 ? 'caret-up' : 'caret-down'"></ion-icon>
+        {{ l.variacao | number:'1.0-1' }}%
+      </span>
+    </article>
+  </section>
+
+  <!-- Footer explicando o cálculo -->
+  <section class="mc-formula" *ngIf="!loading && linhas.length > 0">
+    <details>
+      <summary>
+        <ion-icon name="calculator-outline"></ion-icon>
+        Como o valor é calculado?
+      </summary>
+      <p>
+        Valor = <strong>100 base</strong>
+        + (<strong>gols × 10</strong>)
+        + (<strong>assists × 5</strong>)
+        + (<strong>jogos × 2</strong>)
+        - (<strong>cartões × 3</strong>)
+      </p>
+      <p class="mc-formula-nota">
+        Variação % é simulada pra demonstração — quando o sistema de
+        eventos por partida estiver disponível, vai refletir mudanças reais
+        de uma sessão pra outra.
+      </p>
+    </details>
+  </section>
+</div>

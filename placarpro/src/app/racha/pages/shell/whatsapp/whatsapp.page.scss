@@ -1,0 +1,365 @@
+@import '../../../styles/racha-shared';
+
+/* ============================================================
+   WhatsApp do Racha — integração via wa.me deep links.
+   Layout: card "grupo conectado" + grid de 4 ações + configs +
+   "em breve". Cores fortes (verde WhatsApp, azul, amarelo, roxo)
+   pra cada ação ficar visualmente distinta.
+   ============================================================ */
+
+.rw-page {
+  padding-bottom: 40px;
+}
+
+/* ============ Grupo card (estado da conexão) ============ */
+.rw-grupo-card {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, #fafffa 0%, #f0fdf4 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.08);
+
+  &.configurado {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-color: #86efac;
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 48px 1fr;
+    gap: 10px;
+    padding: 14px;
+  }
+}
+
+.rw-grupo-icone {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #25d366;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+
+  ion-icon { font-size: 32px; }
+
+  @media (max-width: 600px) {
+    width: 48px;
+    height: 48px;
+    ion-icon { font-size: 28px; }
+  }
+}
+
+.rw-grupo-info {
+  min-width: 0;
+
+  .rw-grupo-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 800;
+    color: #166534;
+    margin-bottom: 2px;
+  }
+  .rw-grupo-sub {
+    font-size: 12.5px;
+    color: #4d7c0f;
+    line-height: 1.4;
+  }
+  .rw-grupo-link {
+    font-size: 12px;
+    color: #16a34a;
+    text-decoration: none;
+    word-break: break-all;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover { text-decoration: underline; }
+  }
+}
+
+.rw-grupo-acoes {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.rw-grupo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+
+  ion-icon { font-size: 16px; }
+
+  &.primario {
+    background: #25d366;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);
+
+    &:hover {
+      background: #1ebe57;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.42);
+    }
+  }
+  &.ghost {
+    background: rgba(255, 255, 255, 0.7);
+    color: #166534;
+    border: 1px solid #bbf7d0;
+    &:hover { background: #fff; }
+  }
+}
+
+/* ============ Seções genéricas (head + grid) ============ */
+.rw-secao-head {
+  margin: 26px 0 12px;
+  padding: 0 4px;
+
+  h2 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--rp-navy, #1C2E3D);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--rp-text-muted, #6b7280);
+    line-height: 1.45;
+  }
+}
+
+/* ============ Grid de ações (cards coloridos) ============ */
+.rw-acoes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  @media (max-width: 500px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rw-acao {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  grid-template-areas:
+    'icone titulo'
+    'icone desc'
+    'cta   cta';
+  gap: 4px 12px;
+  padding: 14px 14px 10px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(28, 46, 61, 0.1);
+  }
+
+  .rw-acao-icone {
+    grid-area: icone;
+    grid-row: span 2;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    ion-icon { font-size: 22px; color: #fff; }
+  }
+  .rw-acao-titulo {
+    grid-area: titulo;
+    font-size: 14.5px;
+    font-weight: 800;
+    color: var(--rp-navy, #1C2E3D);
+    line-height: 1.2;
+  }
+  .rw-acao-desc {
+    grid-area: desc;
+    font-size: 12px;
+    color: var(--rp-text-muted, #6b7280);
+    line-height: 1.4;
+    strong { color: #1C2E3D; font-weight: 700; }
+  }
+  .rw-acao-cta {
+    grid-area: cta;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #25d366;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    transition: background 150ms ease;
+
+    ion-icon { font-size: 14px; }
+  }
+
+  /* Variantes — cor só do ícone, CTA sempre verde WhatsApp */
+  &.verde   .rw-acao-icone { background: linear-gradient(135deg, #16a34a, #15803d); }
+  &.azul    .rw-acao-icone { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+  &.amarelo .rw-acao-icone { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  &.roxo    .rw-acao-icone { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+  &:hover .rw-acao-cta { background: #1ebe57; }
+}
+
+/* ============ Lista de configurações (PIX, grupo) ============ */
+.rw-config-list {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.rw-config-item {
+  display: grid;
+  grid-template-columns: 28px 1fr 16px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #f3f4f6;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 150ms ease;
+  width: 100%;
+
+  &:last-child { border-bottom: 0; }
+  &:hover { background: #fafafa; }
+
+  .rw-config-ico {
+    font-size: 22px;
+    color: #25d366;
+  }
+  .rw-config-info {
+    min-width: 0;
+    strong {
+      display: block;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--rp-navy, #1C2E3D);
+    }
+    span {
+      font-size: 12px;
+      color: var(--rp-text-muted, #6b7280);
+      display: block;
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .rw-config-link {
+      color: #16a34a;
+      font-weight: 600;
+    }
+  }
+  .rw-config-chev {
+    font-size: 16px;
+    color: #cbd5e1;
+  }
+}
+
+/* ============ "Em breve" (placeholders pra bot real) ============ */
+.rw-em-breve-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rw-em-breve-item {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fafbfc;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+
+  > ion-icon {
+    font-size: 22px;
+    color: #94a3b8;
+  }
+  strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+    line-height: 1.2;
+  }
+  span:not(.rw-eb-pill) {
+    display: block;
+    font-size: 11.5px;
+    color: #94a3b8;
+    margin-top: 2px;
+  }
+  .rw-eb-pill {
+    padding: 3px 9px;
+    background: rgba(245, 197, 24, 0.18);
+    color: #8a6a08;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+}
+
+/* ============ Disclaimer ============ */
+.rw-disclaimer {
+  margin: 24px 4px 0;
+  padding: 12px 14px;
+  background: rgba(28, 46, 61, 0.03);
+  border-left: 3px solid #94a3b8;
+  border-radius: 0 8px 8px 0;
+  font-size: 12px;
+  color: var(--rp-text-muted, #6b7280);
+  line-height: 1.5;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+
+  ion-icon {
+    font-size: 16px;
+    color: #94a3b8;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  strong { color: var(--rp-navy, #1C2E3D); font-weight: 700; }
+}

@@ -1,0 +1,212 @@
+@import '../../../styles/racha-shared';
+
+.co-page { padding-bottom: 40px; }
+
+.co-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 30vh;
+}
+
+/* ============ Catálogo (badges disponíveis) ============ */
+.co-catalogo {
+  margin-bottom: 24px;
+
+  h2 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #1C2E3D;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.co-catalogo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.co-cat-card {
+  background: #fff;
+  border: 1px solid var(--rp-border, #e5e7eb);
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+  transition: transform 150ms ease, border-color 150ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: var(--badge-cor);
+  }
+
+  .co-cat-icone {
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 8px;
+    border-radius: 50%;
+    background: var(--badge-cor);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--badge-cor) 40%, transparent);
+
+    ion-icon { font-size: 22px; color: #fff; }
+  }
+
+  strong {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #1C2E3D;
+    margin-bottom: 2px;
+  }
+  span {
+    font-size: 10.5px;
+    color: var(--rp-text-muted, #6b7280);
+    line-height: 1.35;
+  }
+}
+
+/* ============ Lista de jogadores ============ */
+.co-jogadores {
+  > h2 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #1C2E3D;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.co-card {
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.co-card-head {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 12px;
+
+  .co-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(124, 198, 29, 0.16), rgba(124, 198, 29, 0.06));
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+    ion-icon { font-size: 24px; color: var(--rp-lime-shade, #5fa118); }
+  }
+
+  .co-nome {
+    min-width: 0;
+    strong {
+      display: block;
+      font-size: 14.5px;
+      font-weight: 800;
+      color: #1C2E3D;
+    }
+    .co-posicao {
+      font-size: 11px;
+      color: var(--rp-text-muted, #6b7280);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      font-weight: 600;
+    }
+  }
+
+  .co-total {
+    text-align: center;
+    .co-total-num {
+      display: block;
+      font-size: 22px;
+      font-weight: 800;
+      color: #f5c518;
+      line-height: 1;
+    }
+    .co-total-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--rp-text-muted, #6b7280);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+}
+
+.co-badges-conquistados,
+.co-badges-pendentes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.co-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+
+  ion-icon { font-size: 13px; }
+
+  &.desbloqueado {
+    background: color-mix(in srgb, var(--badge-cor) 14%, transparent);
+    color: var(--badge-cor);
+    border: 1px solid color-mix(in srgb, var(--badge-cor) 35%, transparent);
+  }
+
+  &.bloqueado {
+    background: rgba(148, 163, 184, 0.10);
+    color: #94a3b8;
+    border: 1px dashed #cbd5e1;
+    opacity: 0.85;
+  }
+}
+
+.co-vazio {
+  margin: 0;
+  padding: 8px 0;
+  font-size: 12px;
+  color: var(--rp-text-muted, #6b7280);
+  font-style: italic;
+}
+
+.co-pendentes {
+  border-top: 1px dashed rgba(28, 46, 61, 0.08);
+  padding-top: 10px;
+
+  summary {
+    cursor: pointer;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--rp-text-muted, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+    list-style: none;
+    margin-bottom: 8px;
+
+    ion-icon { font-size: 14px; }
+
+    &::-webkit-details-marker { display: none; }
+  }
+}

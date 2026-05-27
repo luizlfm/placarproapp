@@ -1,0 +1,3368 @@
+/* ════════════════════════════════════════════════════════════════════
+   FAB "TRANSMITIR AO VIVO" — só visível em mobile
+   ════════════════════════════════════════════════════════════════════
+   Botão flutuante grande no canto inferior direito da viewport, em
+   vermelho destacado pra ser óbvio pro broadcaster mobile. Em desktop
+   o header já tem o botão radio-outline, então o FAB é redundante. */
+.fab-transmitir-mobile {
+  /* Default: ESCONDIDO em desktop (header já tem botão radio).
+     Em mobile (≤768px) vira display: inline-flex via media query abaixo. */
+  display: none;
+  position: fixed;
+  bottom: 14px;
+  right: 14px;
+  z-index: 999;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 13px;
+  background: linear-gradient(135deg, #d32f2f, #b71c1c);
+  border: none;
+  border-radius: 22px;
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.5);
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  animation: fabTransmitirPulse 2.4s ease-in-out infinite;
+
+  ion-icon { font-size: 15px; }
+
+  &:active {
+    transform: scale(0.94);
+    box-shadow: 0 2px 8px rgba(211, 47, 47, 0.4);
+  }
+
+  /* Mostra em qualquer telefone/tablet pequeno (≤768px). */
+  @media (max-width: 768px) {
+    display: inline-flex !important;
+  }
+
+  /* Em telas estreitas, ainda menor. */
+  @media (max-width: 380px) {
+    bottom: 10px;
+    right: 10px;
+    padding: 7px 11px;
+    font-size: 10.5px;
+    ion-icon { font-size: 13px; }
+  }
+
+  /* Em LANDSCAPE mobile (telefone deitado, altura baixa), encolhe
+     ainda mais pra não tomar muito espaço vertical preciso. */
+  @media (orientation: landscape) and (max-height: 500px) {
+    bottom: 8px;
+    right: 8px;
+    padding: 8px 12px;
+    font-size: 11px;
+    border-radius: 22px;
+    ion-icon { font-size: 16px; }
+    gap: 5px;
+    /* Pode esconder o texto se ainda atrapalhar — comentado por padrão.
+       Descomente se em algum dispositivo o "TRANSMITIR" continuar
+       espremido contra a borda ou estourar:
+       span { display: none; }
+    */
+  }
+}
+
+@keyframes fabTransmitirPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+ion-content {
+  --background: var(--placar-bg);
+  --padding-start: 24px;
+  --padding-end: 24px;
+  --padding-top: 18px;
+  --padding-bottom: 32px;
+
+  @media (max-width: 767px) {
+    --padding-start: 14px;
+    --padding-end: 14px;
+    --padding-top: 12px;
+  }
+}
+
+.page-title {
+  margin: 0 0 4px;
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--placar-text);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.1;
+
+  @media (max-width: 767px) { font-size: 22px; }
+  @media (max-width: 420px) { font-size: 19px; }
+}
+
+.page-sub {
+  margin: 0 0 22px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--placar-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+
+  @media (max-width: 767px) { margin-bottom: 14px; font-size: 12px; }
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 22px;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+
+/* ── Placar grande ─────────────────────────────────── */
+.placar-card {
+  background: var(--placar-card-bg);
+  border-radius: var(--placar-card-radius);
+  box-shadow: var(--placar-shadow);
+  padding: 22px 22px 18px;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   SCOREBOARD ESTILO OVERLAY TV (vertical empilhado)
+   ────────────────────────────────────────────────────────────────────
+   Cada equipe ocupa uma linha horizontal sobre fundo navy:
+     [logo circular] [nome MAIÚSCULAS] [gols em chip escuro]
+   Mandante em cima, visitante embaixo, separados por divisor sutil.
+   Estados:
+     • em-andamento → halo vermelho + barrinha luminosa topo
+     • encerrado    → barrinha verde lateral no time vencedor
+   ════════════════════════════════════════════════════════════════════ */
+.scoreboard {
+  /* Container limpo — o destaque visual fica todo no .sb-teams */
+  padding: 18px 18px 16px;
+
+  @media (max-width: 640px) {
+    padding: 12px 10px 14px;
+  }
+}
+
+/* Faixa superior: cronômetro/status pré-jogo */
+.sb-top {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+
+  .sb-top-tempo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(231, 76, 60, 0.08);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.25);
+    font-variant-numeric: tabular-nums;
+
+    &.agendado {
+      background: rgba(28, 46, 61, 0.05);
+      color: var(--placar-text-muted);
+      border-color: var(--placar-divider);
+
+      ion-icon { font-size: 14px; }
+    }
+
+    ion-icon { font-size: 14px; }
+  }
+
+  .sb-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #e74c3c;
+    box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.6);
+    animation: sb-live-pulse 1.4s ease-out infinite;
+  }
+
+  .sb-acrescimo {
+    margin-left: 4px;
+    padding: 2px 8px;
+    background: #e74c3c;
+    color: #fff;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 800;
+  }
+}
+
+@keyframes sb-live-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.55); }
+  70%  { box-shadow: 0 0 0 8px rgba(231, 76, 60, 0);  }
+  100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);    }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   STACK estilo "overlay TV" — 2 linhas empilhadas em fundo navy.
+   Cada linha: [logo] [nome] [gols]. Time vencedor (encerrado) ganha
+   barrinha verde lateral. Em ao-vivo, halo vermelho sutil.
+   ════════════════════════════════════════════════════════════════════ */
+.sb-teams {
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #1C2E3D 0%, #142331 100%);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.10);
+  position: relative;
+
+  &.sb-ao-vivo {
+    box-shadow:
+      0 8px 22px rgba(231, 76, 60, 0.22),
+      0 0 0 2px rgba(231, 76, 60, 0.18);
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 70%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #e74c3c, transparent);
+      z-index: 3;
+    }
+  }
+
+  &.sb-encerrado {
+    box-shadow:
+      0 6px 18px rgba(124, 198, 29, 0.18),
+      0 0 0 2px rgba(124, 198, 29, 0.18);
+  }
+}
+
+.sb-team {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  color: #fff;
+  position: relative;
+  min-height: 76px;
+
+  & + .sb-team {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* Barrinha verde lateral pro time vencedor */
+  &.sb-vence::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 4px;
+    border-radius: 0 4px 4px 0;
+    background: var(--ion-color-secondary, #7CC61D);
+    box-shadow: 0 0 12px rgba(124, 198, 29, 0.55);
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+    gap: 11px;
+    padding: 11px 14px;
+    min-height: 62px;
+  }
+  @media (max-width: 400px) {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 9px;
+    padding: 9px 12px;
+    min-height: 54px;
+  }
+}
+
+/* Logo circular branco — escudo da equipe */
+.sb-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #fff;
+  overflow: hidden;
+  color: var(--ion-color-primary, #1C2E3D);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 5px;
+    box-sizing: border-box;
+    display: block;
+  }
+  ion-icon { font-size: 30px; }
+
+  @media (max-width: 640px) {
+    width: 46px; height: 46px;
+    ion-icon { font-size: 24px; }
+    img { padding: 4px; }
+  }
+  @media (max-width: 400px) {
+    width: 38px; height: 38px;
+    ion-icon { font-size: 20px; }
+    img { padding: 3px; }
+  }
+}
+
+/* Nome da equipe — branco em caixa alta, alinhado à esquerda
+   (estilo placar TV onde a info do time fica do lado do escudo). */
+.sb-nome {
+  font-size: 17px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  line-height: 1.1;
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+    letter-spacing: 0.3px;
+  }
+  @media (max-width: 400px) {
+    font-size: 12.5px;
+    letter-spacing: 0.2px;
+  }
+}
+
+/* Gols à direita — número grande em destaque, fundo escuro */
+.sb-gols {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  height: 56px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.30);
+  font-size: 38px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+
+  .sb-gols-vazio {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 24px;
+  }
+
+  .sb-team.sb-vence & {
+    background: rgba(124, 198, 29, 0.22);
+    box-shadow: inset 0 0 0 1px rgba(124, 198, 29, 0.4);
+  }
+
+  .sb-teams.sb-ao-vivo & {
+    background: rgba(231, 76, 60, 0.18);
+  }
+
+  @media (max-width: 640px) {
+    min-width: 44px;
+    height: 44px;
+    padding: 0 10px;
+    font-size: 30px;
+    .sb-gols-vazio { font-size: 20px; }
+  }
+  @media (max-width: 400px) {
+    min-width: 38px;
+    height: 38px;
+    padding: 0 8px;
+    font-size: 24px;
+    border-radius: 8px;
+    .sb-gols-vazio { font-size: 16px; }
+  }
+}
+
+/* Barra de pênaltis — aparece embaixo quando houve decisão */
+.sb-pen-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 8px;
+  padding: 8px 18px;
+  background: rgba(255, 196, 9, 0.10);
+  border: 1px solid rgba(255, 196, 9, 0.35);
+  border-radius: 8px;
+
+  .sb-pen-lbl {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #b88d00;
+  }
+
+  .sb-pen-placar {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--placar-text, #1C2E3D);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+  }
+}
+
+/* Footer: status chip + meta */
+.sb-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--placar-divider);
+  flex-wrap: wrap;
+
+  .sb-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    ion-icon { font-size: 13px; }
+
+    &[data-st="em-andamento"] {
+      background: rgba(231, 76, 60, 0.12);
+      color: #c0392b;
+      border: 1px solid rgba(231, 76, 60, 0.30);
+    }
+    &[data-st="encerrado"] {
+      background: rgba(124, 198, 29, 0.14);
+      color: #5a8e15;
+      border: 1px solid rgba(124, 198, 29, 0.35);
+    }
+    &[data-st="agendado"] {
+      background: rgba(28, 46, 61, 0.06);
+      color: var(--placar-text-muted, #6b6b70);
+      border: 1px solid var(--placar-divider, #e5e7eb);
+    }
+    &[data-st="cancelado"],
+    &[data-st="wo"] {
+      background: rgba(0, 0, 0, 0.06);
+      color: var(--placar-text-muted, #6b6b70);
+      border: 1px solid var(--placar-divider, #e5e7eb);
+    }
+  }
+
+  .sb-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #e74c3c;
+    animation: sb-live-pulse 1.4s ease-out infinite;
+  }
+
+  .sb-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    font-size: 12px;
+    color: var(--placar-text-muted, #6b6b70);
+
+    .sb-meta-fase {
+      font-weight: 800;
+      color: var(--placar-text, #1C2E3D);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .sb-meta-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+
+      ion-icon { font-size: 13px; }
+
+      &::before {
+        content: '•';
+        color: var(--placar-divider, #e5e7eb);
+        margin-right: 6px;
+      }
+      &:first-child::before { content: none; margin: 0; }
+    }
+  }
+
+  @media (max-width: 480px) {
+    justify-content: center;
+    .sb-meta { justify-content: center; font-size: 11px; }
+  }
+}
+
+/* ── Seções (Escalação / Lances) ───────────────────── */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--placar-text);
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  ion-button {
+    --padding-start: 8px;
+    --padding-end: 8px;
+    font-weight: 600;
+    text-transform: none;
+  }
+}
+
+/* ── Linha de escudos ABAIXO do título "Lances da Partida" ──
+   Mandante 🛡 vs 🛡 Visitante. User pediu pra ficar embaixo (e não
+   ladeando o título) pra não disputar espaço com o botão Adicionar. */
+.lances-escudos-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 6px 0 14px;
+  padding: 8px 10px;
+  background: var(--surface-2, rgba(0, 0, 0, 0.03));
+  border-radius: 10px;
+}
+
+.lances-escudo {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--placar-card-bg, #fff);
+  border: 1px solid var(--placar-border, rgba(0, 0, 0, 0.08));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
+  overflow: hidden;
+  padding: 3px;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  ion-icon {
+    font-size: 20px;
+    color: var(--ion-color-medium, #92949c);
+  }
+
+  @media (max-width: 480px) {
+    width: 30px;
+    height: 30px;
+    padding: 2px;
+    ion-icon { font-size: 16px; }
+  }
+}
+
+.lances-escudos-vs {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--placar-text-muted, rgba(0, 0, 0, 0.5));
+}
+
+/* ── Escalação ─────────────────────────────────────── */
+.escala-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
+
+  /* `esc-mono` aplicado quando o segment mandante/visitante está
+     controlando a exibição — sempre 1 coluna porque só renderiza 1 time
+     de cada vez (o ngIf esconde o outro). */
+  &.esc-mono {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Segment Mandante / Visitante na escalação ──
+   Mesmo design do segment do publico-categoria pra UX consistente. */
+.esc-seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 10px 0 14px;
+  padding: 4px;
+  background: var(--placar-card-bg, #fff);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.esc-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  color: var(--placar-text-muted, rgba(0, 0, 0, 0.6));
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+  min-width: 0;
+  touch-action: manipulation;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--placar-text, #1C2E3D);
+  }
+
+  &.active {
+    background: var(--ion-color-primary, #1C2E3D);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  }
+
+  .esc-seg-logo {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 1px;
+    img { width: 100%; height: 100%; object-fit: contain; }
+    ion-icon { font-size: 14px; color: #92949c; }
+  }
+
+  .esc-seg-nome {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 10px;
+    font-size: 11.5px;
+    .esc-seg-logo { width: 20px; height: 20px; }
+  }
+}
+
+.escala-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.escala-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--placar-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  gap: 8px;
+  padding: 0 4px;
+
+  ion-button {
+    --padding-start: 4px;
+    --padding-end: 4px;
+    text-transform: none;
+    font-weight: 600;
+    font-size: 11px;
+  }
+}
+
+.escala-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.jog-card {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--placar-card-bg);
+  border-radius: 10px;
+  border: 1px solid var(--placar-divider);
+  box-shadow: var(--placar-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.04));
+
+  .foto {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(28, 46, 61, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ion-color-primary);
+    border: 2px solid rgba(28, 46, 61, 0.15);
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+    ion-icon { font-size: 26px; }
+  }
+
+  .nome {
+    font-size: 13px;
+    color: var(--placar-text);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    .num {
+      font-weight: 700;
+      color: var(--ion-color-primary);
+      margin-right: 4px;
+    }
+  }
+
+  .badges {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+
+    .b-gol { font-size: 16px; }
+    .b-am {
+      display: inline-block;
+      width: 14px;
+      height: 18px;
+      background: #f5c518;
+      border-radius: 2px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    }
+    .b-vm {
+      display: inline-block;
+      width: 14px;
+      height: 18px;
+      background: var(--ion-color-danger);
+      border-radius: 2px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    }
+  }
+}
+
+.escala-vazia {
+  background: none;
+  border: 1px dashed var(--placar-border-strong);
+  color: var(--placar-text-muted);
+  border-radius: 10px;
+  padding: 16px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+
+  ion-icon { font-size: 18px; }
+
+  &:hover {
+    border-color: var(--ion-color-secondary);
+    color: var(--ion-color-secondary);
+  }
+  /* Variante read-only: leitor sem editarResultados — fica como info
+     estática, sem cursor pointer, sem hover destacado. */
+  &.leitor {
+    cursor: default;
+    &:hover {
+      border-color: var(--placar-border-strong);
+      color: var(--placar-text-muted);
+    }
+  }
+}
+
+/* ── Lances ────────────────────────────────────────── */
+/* ── Ações de status (iniciar/encerrar) ── */
+.acoes-status {
+  margin-top: 14px;
+  ion-button {
+    --border-radius: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+/* ════════ BARRA DE AÇÕES DE TRANSMISSÃO (dentro do scoreboard) ════════
+   Garante que os botões de transmissão fiquem SEMPRE visíveis, mesmo
+   se o header do ion-toolbar esconder por falta de espaço no mobile. */
+.sb-tx-actions {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--placar-divider, #ececef);
+}
+
+/* Versão standalone (sem o card de placar em volta) — usada depois que
+   o scoreboard foi retirado a pedido. Mesmas dimensões dos botões. */
+.tx-quick {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+
+  @media (max-width: 480px) {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+}
+
+.sb-tx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1 1 0;            /* proporção igual entre os dois principais */
+  min-width: 0;
+  height: 36px;           /* altura fixa pra consistência visual */
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 140ms ease;
+  white-space: nowrap;
+  line-height: 1;
+
+  ion-icon { font-size: 15px; flex-shrink: 0; }
+  span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+  &:hover { transform: translateY(-1px); }
+  &:active { transform: translateY(0); }
+
+  /* YouTube — vermelho */
+  &.sb-tx-yt {
+    background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+    color: #fff;
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 6px rgba(225, 29, 72, 0.25);
+    &:hover { box-shadow: 0 3px 10px rgba(225, 29, 72, 0.40); }
+  }
+
+  /* LiveKit / câmera — verde */
+  &.sb-tx-live {
+    background: linear-gradient(135deg, var(--ion-color-secondary, #7CC61D) 0%, #5a9912 100%);
+    color: #fff;
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 6px rgba(124, 198, 29, 0.25);
+    &:hover { box-shadow: 0 3px 10px rgba(124, 198, 29, 0.40); }
+  }
+
+  /* Menu ⋮ — quadrado, mesma altura, discreto */
+  &.sb-tx-menu {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: var(--placar-bg-soft, #f5f5f7);
+    color: var(--placar-text, #1c1c1f);
+    border-color: var(--placar-divider, #ececef);
+    &:hover { background: #ececef; }
+    span { display: none; }
+  }
+}
+
+/* Por padrão: mostra texto "Abrir transmissão" cheio, esconde o mini.
+   Mobile inverte. */
+.sb-tx-txt-full { display: inline; }
+.sb-tx-txt-mini { display: none; }
+
+@media (max-width: 600px) {
+  .sb-tx-actions { gap: 6px; padding-top: 10px; }
+  .sb-tx-btn {
+    height: 34px;
+    padding: 0 8px;
+    font-size: 10.5px;
+    letter-spacing: 0.2px;
+    gap: 5px;
+    ion-icon { font-size: 14px; }
+    &.sb-tx-menu { flex: 0 0 34px; width: 34px; height: 34px; }
+  }
+  /* Inverte: mostra texto curto, esconde longo */
+  .sb-tx-txt-full { display: none; }
+  .sb-tx-txt-mini { display: inline; }
+}
+
+@media (max-width: 380px) {
+  .sb-tx-btn {
+    height: 32px;
+    padding: 0 6px;
+    font-size: 10px;
+    ion-icon { font-size: 13px; }
+    &.sb-tx-menu { flex: 0 0 32px; width: 32px; height: 32px; }
+  }
+}
+
+/* ── Segments Escalação | Lances ── */
+.seg-detalhe {
+  /* Margem TOP grande pra separar visualmente do `.quick-actions`
+     acima — antes os botões GOL/AMARELO etc ficavam tão colados ao
+     segment que toques na borda superior do segment disparavam por
+     engano o `adicionarLance()` do `.qa-btn` (o usuário clicava em
+     "Lances da Partida" e abria o modal "Adicionar lance"). */
+  margin: 28px 0 14px;
+  background: var(--placar-card-bg, #fff);
+  border-radius: 12px;
+  padding: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  position: relative;
+  z-index: 5; /* fica acima da timeline/qa-buttons → captura toque corretamente */
+  /* Bloqueia gestos pan/zoom no segment — só toque vale, sem propagar
+     pra elementos vizinhos. */
+  touch-action: manipulation;
+
+  ion-segment-button {
+    --color: var(--placar-text-muted);
+    --color-checked: #fff;
+    --background-checked: var(--ion-color-primary);
+    --indicator-color: transparent;
+    --border-radius: 8px;
+    --padding-top: 8px;
+    --padding-bottom: 8px;
+    font-weight: 600;
+    text-transform: none;
+    min-height: 40px;
+    /* Cada botão também isola seu próprio toque. */
+    touch-action: manipulation;
+  }
+}
+
+/* Em mobile a separação precisa ser AINDA maior porque o `.qa-btn`
+   é grande e ocupa altura significativa. Sem o gap extra, scroll
+   momentum + toque rápido na segment fazia o navegador interpretar
+   o tap como hit no qa-btn antes do segment. */
+@media (max-width: 600px) {
+  .seg-detalhe {
+    margin: 36px 0 14px;
+  }
+  /* Garante que os qa-btn NÃO interceptem cliques fora do seu
+     bounding box exato — em alguns mobiles a margem de tolerância
+     padrão estava roubando taps que deveriam ir pro segment abaixo. */
+  .qa-btn {
+    touch-action: manipulation;
+  }
+}
+
+/* ── Aviso quando não está em-andamento ── */
+.lance-trava {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--placar-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+
+  ion-icon { font-size: 14px; }
+}
+
+.aviso-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 176, 32, 0.1);
+  color: #a06200;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 12px;
+
+  ion-icon { font-size: 18px; flex: 0 0 auto; }
+}
+
+/* ── LANCES (novo design, bolhas por equipe) ── */
+.lances-coluna {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lance-row {
+  display: flex;
+  width: 100%;
+
+  &.lado-mandante { justify-content: flex-start; }
+  &.lado-visitante { justify-content: flex-end; }
+}
+
+.lance-bubble {
+  position: relative;
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  max-width: 460px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--placar-card-bg, #fff);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  /* Leitor puro (moderador sem editarResultados): bubble vira só visual —
+     sem cursor pointer, sem hover lift. */
+  &.read-only {
+    cursor: default;
+    &:hover { transform: none; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+  }
+
+  /* Mobile: bolha ocupa ~78% da linha (estilo copafacil) — espaço suficiente
+     pro nome inteiro caber em 2 linhas sem cortar. Os ~22% vazios do lado
+     oposto deixam claro o time a que pertence o lance. */
+  @media (max-width: 767px) {
+    max-width: 78%;
+    grid-template-columns: 38px minmax(0, 1fr) 30px;
+    gap: 10px;
+    padding: 10px 12px;
+    align-items: center;
+    .lance-avatar { width: 38px; height: 38px; ion-icon { font-size: 26px; } }
+    .lance-icone { width: 30px; height: 30px; ion-icon { font-size: 24px; } .cartao { width: 16px; height: 22px; } }
+    .lance-tipo {
+      font-size: 16px;
+      white-space: normal;
+      line-height: 1.1;
+    }
+    .lance-nome {
+      font-size: 12px;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      word-break: break-word;
+      line-height: 1.25;
+    }
+  }
+  @media (max-width: 380px) {
+    max-width: 82%;
+    grid-template-columns: 34px minmax(0, 1fr) 28px;
+    gap: 8px;
+    padding: 9px 10px;
+    .lance-avatar { width: 34px; height: 34px; ion-icon { font-size: 22px; } }
+    .lance-icone { width: 28px; height: 28px; ion-icon { font-size: 22px; } }
+    .lance-tipo { font-size: 14px; }
+    .lance-nome { font-size: 11.5px; }
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .lance-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(28, 46, 61, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--placar-text-muted);
+    flex: 0 0 auto;
+
+    ion-icon { font-size: 28px; }
+  }
+
+  .lance-corpo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .lance-tipo {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    line-height: 1;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+
+    .lance-qtd {
+      background: rgba(0, 0, 0, 0.12);
+      color: inherit;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+  }
+
+  .lance-nome {
+    font-size: 13px;
+    color: var(--placar-text);
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    .lance-min {
+      color: var(--placar-text-muted);
+      font-weight: 500;
+    }
+    /* Tag compacta do período (1ºT / 2ºT / PEN). Fica antes do minuto. */
+    .lance-tempo-tag {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 6px;
+      background: rgba(28, 46, 61, 0.08);
+      border: 1px solid rgba(28, 46, 61, 0.12);
+      color: var(--placar-text-muted);
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      vertical-align: middle;
+    }
+  }
+
+  .lance-icone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+
+    ion-icon { font-size: 26px; }
+
+    .cartao {
+      display: inline-block;
+      width: 18px;
+      height: 24px;
+      border-radius: 2px;
+      transform: rotate(-12deg);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+
+      &.am { background: #f5c518; }
+      &.vm { background: #eb445a; }
+      &.az { background: #2563eb; }
+    }
+  }
+
+  /* Cores por tipo */
+  &.tipo-gol {
+    background: linear-gradient(90deg, rgba(124, 198, 29, 0.18) 0%, rgba(124, 198, 29, 0.05) 100%);
+    border-color: rgba(124, 198, 29, 0.3);
+    .lance-tipo { color: #4a7e0e; }
+    .lance-icone ion-icon { color: var(--ion-color-secondary); }
+  }
+  &.tipo-gol-contra {
+    background: linear-gradient(90deg, rgba(124, 198, 29, 0.12) 0%, rgba(124, 198, 29, 0.03) 100%);
+    .lance-tipo { color: #4a7e0e; }
+    .lance-icone ion-icon { color: var(--ion-color-secondary); }
+    .lance-nome { font-style: italic; }
+  }
+  &.tipo-amarelo {
+    background: linear-gradient(90deg, rgba(245, 197, 24, 0.22) 0%, rgba(245, 197, 24, 0.06) 100%);
+    border-color: rgba(245, 197, 24, 0.4);
+    .lance-tipo { color: #b88a00; }
+  }
+  &.tipo-vermelho {
+    background: linear-gradient(90deg, rgba(235, 68, 90, 0.18) 0%, rgba(235, 68, 90, 0.05) 100%);
+    border-color: rgba(235, 68, 90, 0.35);
+    .lance-tipo { color: var(--ion-color-danger); }
+  }
+  &.tipo-azul {
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.15) 0%, rgba(37, 99, 235, 0.03) 100%);
+    border-color: rgba(37, 99, 235, 0.3);
+    .lance-tipo { color: #2563eb; }
+  }
+  &.tipo-sub {
+    background: linear-gradient(90deg, rgba(112, 68, 255, 0.13) 0%, rgba(112, 68, 255, 0.03) 100%);
+    .lance-tipo { color: var(--ion-color-tertiary); }
+    .lance-icone ion-icon { color: var(--ion-color-tertiary); }
+  }
+  &.tipo-falta {
+    background: var(--placar-surface);
+    .lance-tipo { color: var(--placar-text-muted); }
+    .lance-icone ion-icon { color: #94a3b8; }
+  }
+  &.tipo-defesa {
+    background: linear-gradient(90deg, rgba(14, 165, 233, 0.13) 0%, rgba(14, 165, 233, 0.03) 100%);
+    .lance-tipo { color: #0ea5e9; }
+    .lance-icone ion-icon { color: #0ea5e9; }
+  }
+}
+
+/* Visitante: inverte ordem (avatar à direita, ícone à esquerda) */
+.lado-visitante .lance-bubble {
+  grid-template-columns: auto 1fr 40px;
+  text-align: right;
+
+  @media (max-width: 767px) { grid-template-columns: 30px minmax(0, 1fr) 38px; }
+  @media (max-width: 380px) { grid-template-columns: 28px minmax(0, 1fr) 34px; }
+
+  .lance-icone { order: -1; }
+  .lance-avatar { order: 2; }
+  .lance-corpo { align-items: flex-end; }
+  .lance-tipo {
+    flex-direction: row-reverse;
+  }
+  .lance-nome { text-align: right; }
+  /* Gradiente espelhado */
+  &.tipo-gol,
+  &.tipo-gol-contra,
+  &.tipo-amarelo,
+  &.tipo-vermelho,
+  &.tipo-azul,
+  &.tipo-sub,
+  &.tipo-defesa {
+    background: linear-gradient(270deg, var(--lance-cor-start, transparent) 0%, transparent 100%);
+  }
+  &.tipo-gol { --lance-cor-start: rgba(124, 198, 29, 0.18); }
+  &.tipo-gol-contra { --lance-cor-start: rgba(124, 198, 29, 0.12); }
+  &.tipo-amarelo { --lance-cor-start: rgba(245, 197, 24, 0.22); }
+  &.tipo-vermelho { --lance-cor-start: rgba(235, 68, 90, 0.18); }
+  &.tipo-azul { --lance-cor-start: rgba(37, 99, 235, 0.15); }
+  &.tipo-sub { --lance-cor-start: rgba(112, 68, 255, 0.13); }
+  &.tipo-defesa { --lance-cor-start: rgba(14, 165, 233, 0.13); }
+}
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 12px;
+  text-align: center;
+  color: var(--placar-text-muted);
+  gap: 10px;
+  background: var(--placar-card-bg);
+  border-radius: 12px;
+  border: 1px dashed var(--placar-border-strong);
+
+  ion-icon {
+    font-size: 38px;
+    color: var(--placar-text-muted);
+    opacity: 0.55;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+  }
+}
+
+/* ── Sidebar de jogos ──────────────────────────────── */
+.jogos-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-self: start;
+  position: sticky;
+  top: 16px;
+
+  /* Em mobile, a aside fica empilhada embaixo dos Lances e atrapalha a leitura.
+     Escondemos toda a sidebar — o usuário acessa outros jogos pelo menu "Jogos". */
+  @media (max-width: 1100px) {
+    display: none;
+  }
+}
+
+.aside-header {
+  background: var(--ion-color-primary);
+  color: #fff;
+  padding: 14px 16px;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 0;
+
+  h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+  }
+}
+
+.aside-filtros {
+  display: inline-flex;
+  gap: 6px;
+
+  .filtro {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    padding: 5px 24px 5px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg fill='white' viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'><path d='M4 6l4 4 4-4'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    background-size: 12px;
+    font-weight: 600;
+
+    &:focus { outline: none; border-color: rgba(255, 255, 255, 0.5); }
+
+    option {
+      color: var(--placar-text);
+      background: var(--placar-card-bg);
+    }
+  }
+}
+
+/* Botão "+" central que liga o header à lista */
+.aside-add {
+  align-self: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--ion-color-primary);
+  color: #fff;
+  border: 4px solid var(--placar-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-top: -22px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  transition: transform 120ms ease, background 120ms ease;
+  position: relative;
+  z-index: 1;
+
+  ion-icon { font-size: 22px; }
+
+  &:hover {
+    background: var(--ion-color-secondary);
+    transform: scale(1.06);
+  }
+}
+
+.jogos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: var(--placar-card-bg);
+  border-radius: 0 0 12px 12px;
+  margin-top: -8px;
+  padding-top: 8px;
+  box-shadow: var(--placar-shadow);
+}
+
+.jogo-card {
+  background: transparent;
+  padding: 14px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--placar-divider);
+  transition: background 120ms ease;
+
+  &:last-child { border-bottom: none; }
+
+  &:hover {
+    background: var(--placar-surface);
+  }
+
+  &.atual {
+    background: rgba(124, 198, 29, 0.10);
+    border-left: 4px solid var(--ion-color-secondary);
+    padding-left: 10px;
+  }
+
+  .jogo-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .jt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+
+    .t-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(28, 46, 61, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      color: var(--ion-color-primary);
+
+      img { width: 100%; height: 100%; object-fit: cover; }
+      ion-icon { font-size: 24px; }
+    }
+
+    .t-nome {
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      color: var(--placar-text);
+      line-height: 1.2;
+      text-transform: uppercase;
+      max-width: 110px;
+      max-height: 28px;
+      overflow: hidden;
+    }
+  }
+
+  .placar-mini {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 12px;
+    border: 1px solid var(--placar-border);
+    border-radius: 8px;
+    background: var(--placar-surface);
+    min-width: 64px;
+
+    .num {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--placar-text);
+      display: inline-flex;
+      gap: 5px;
+      line-height: 1;
+
+      .dp { color: var(--placar-text-muted); }
+    }
+
+    .vs {
+      font-size: 13px;
+      color: var(--placar-text-muted);
+    }
+
+    .st {
+      font-size: 9px;
+      text-transform: capitalize;
+      letter-spacing: 0.3px;
+      color: var(--placar-text-muted);
+      font-weight: 600;
+    }
+
+    &.encerrado {
+      background: rgba(124, 198, 29, 0.1);
+      border-color: rgba(124, 198, 29, 0.3);
+    }
+  }
+
+  .jogo-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--placar-text-muted);
+    text-align: center;
+
+    .meta-fase-mini {
+      font-weight: 700;
+      color: var(--placar-text);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+  }
+}
+
+.empty-small {
+  padding: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--placar-text-muted);
+  background: var(--placar-card-bg);
+  border-radius: 10px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   PAINEL "AO VIVO" — aparece só com status=em-andamento e quem
+   pode editar resultados. Layout: cabeçalho (badge + cronômetro),
+   embed YouTube opcional, quick-actions de 2 colunas (mandante/
+   visitante) × 5 botões, e mini-timeline horizontal dos lances.
+   ════════════════════════════════════════════════════════════════ */
+.live-panel {
+  margin-top: 18px;
+  background: linear-gradient(180deg, #0f1e2d 0%, #1c2e3d 100%);
+  color: #fff;
+  border-radius: 16px;
+  padding: 16px 18px 18px;
+  box-shadow: 0 10px 28px rgba(15, 30, 45, 0.25);
+  position: relative;
+  overflow: hidden;
+
+  /* Banda diagonal sutil pra ter "personalidade" sem distrair. */
+  &::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(
+      ellipse 60% 50% at 20% 0%,
+      rgba(229, 83, 83, 0.18) 0%,
+      transparent 70%
+    );
+    pointer-events: none;
+  }
+
+  @media (max-width: 767px) {
+    padding: 12px 12px 14px;
+    border-radius: 14px;
+    margin-top: 12px;
+  }
+}
+
+.live-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+  flex-wrap: wrap;
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #e55353;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(229, 83, 83, 0.4);
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    animation: livePulse 1.2s ease-in-out infinite;
+  }
+
+  /* Variante pre-jogo (agendado): cor neutra azulada, sem pulsar. */
+  &.pre {
+    background: #4dabf7;
+    box-shadow: 0 2px 8px rgba(77, 171, 247, 0.4);
+    ion-icon { font-size: 14px; }
+  }
+}
+
+/* Nome do tempo atual (1º Tempo, Intervalo etc) — entre badge e relógio. */
+.live-tempo-atual {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.5px;
+  opacity: 0.85;
+  text-transform: uppercase;
+
+  @media (max-width: 480px) {
+    flex-basis: 100%;
+    order: 3;
+    text-align: center;
+    font-size: 12px;
+  }
+}
+
+/* Acréscimo "+N" ao lado do relógio. */
+.live-acrescimo {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #f1b500;
+  color: #1c2e3d;
+  font-size: 13px;
+  font-weight: 800;
+}
+@keyframes livePulse {
+  0%,100% { opacity: 1;   transform: scale(1); }
+  50%     { opacity: 0.5; transform: scale(1.3); }
+}
+
+.live-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'SF Mono', 'Roboto Mono', Menlo, monospace;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px 12px;
+  border-radius: 8px;
+
+  ion-icon { font-size: 18px; opacity: 0.8; }
+
+  /* Estado PAUSADO: borda amarela + ícone destacado. Não pisca como
+     "AO VIVO" pra deixar claro que está parado. */
+  &.pausado {
+    background: rgba(255, 196, 9, 0.18);
+    border: 1px solid rgba(255, 196, 9, 0.55);
+    color: #ffc409;
+    ion-icon { opacity: 1; color: #ffc409; }
+  }
+
+  @media (max-width: 420px) { font-size: 18px; padding: 3px 10px; }
+}
+
+/* Chip "PAUSADO" ao lado do cronômetro — texto compacto pra avisar
+   ao live audience que o tempo está parado. */
+.live-pausa-chip {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #ffc409;
+  color: #1C2E3D;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-left: 4px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Pré-jogo (status=agendado) ─────────────────────────────── */
+.live-prejogo {
+  position: relative;
+  z-index: 1;
+  padding: 14px 4px 4px;
+  text-align: center;
+
+  .prej-msg {
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0 0 16px;
+    small {
+      display: block;
+      margin-top: 4px;
+      font-weight: 500;
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+  }
+  .prej-info {
+    margin-bottom: 14px;
+  }
+  .prej-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease;
+
+    strong { font-weight: 800; }
+    ion-icon { font-size: 16px; opacity: 0.85; }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+  }
+  .prej-iniciar {
+    --background: #16a34a;
+    --background-hover: #15803d;
+    --background-activated: #166534;
+    --color: #fff;
+    --border-radius: 10px;
+    --padding-top: 18px;
+    --padding-bottom: 18px;
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin: 0;
+  }
+}
+
+/* ── Tempos / fases (segmented horizontal) ──────────────────── */
+.live-tempos {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.lt-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  padding: 8px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: all 150ms ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+  }
+  &.atual {
+    background: #e55353;
+    border-color: #e55353;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(229, 83, 83, 0.4);
+  }
+  &.lt-fim {
+    background: rgba(229, 83, 83, 0.15);
+    border-color: rgba(229, 83, 83, 0.3);
+    color: #fca5a5;
+    &:hover {
+      background: rgba(229, 83, 83, 0.25);
+      color: #fff;
+    }
+  }
+}
+
+/* ── Opções: duração + acréscimo ────────────────────────────── */
+.live-opcoes {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.lo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+  font-family: inherit;
+
+  ion-icon { font-size: 15px; opacity: 0.8; }
+
+  &:hover { background: rgba(255, 255, 255, 0.12); }
+}
+
+/* Botão Pausar — laranja sutil pra chamar atenção sem competir com FIM.
+   Quando ATIVO (pausado), inverte pra fundo amarelo + ícone Retomar. */
+.lo-pausa {
+  border-color: rgba(255, 196, 9, 0.35);
+  color: #ffc409;
+
+  &:hover {
+    background: rgba(255, 196, 9, 0.18);
+    border-color: rgba(255, 196, 9, 0.55);
+  }
+
+  &.ativo {
+    background: #ffc409;
+    border-color: #ffc409;
+    color: #1C2E3D;
+
+    &:hover {
+      background: #ffd84a;
+      border-color: #ffd84a;
+    }
+    ion-icon { opacity: 1; }
+  }
+}
+
+.lo-acrescimo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 4px 6px;
+
+  .lo-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 0 4px;
+  }
+  .lo-step {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border: 0;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 150ms ease;
+
+    &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.16); }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+  }
+  .lo-val {
+    font-family: 'SF Mono', 'Roboto Mono', Menlo, monospace;
+    font-weight: 800;
+    font-size: 13px;
+    color: #f1b500;
+    min-width: 28px;
+    text-align: center;
+  }
+}
+
+/* Embed YouTube — 16:9 responsivo. */
+.live-youtube {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+  z-index: 1;
+
+  iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Override: `.tp-card.modo-fullscreen` DENTRO de `.live-youtube`
+   ════════════════════════════════════════════════════════════════════
+   O player LiveKit em `modo="fullscreen"` quer altura 73-100vh (pra
+   quando ocupa a viewport inteira). DENTRO do `.live-youtube` (que
+   tem aspect-ratio 16:9), isso fazia o card transbordar pra fora do
+   container — e o `overflow:hidden` do `.live-youtube` cortava a
+   parte de BAIXO do card, sumindo com o banner do patrocinador e
+   o footer com viewers. Forçamos `height: 100% do .live-youtube`
+   pra o card caber exatamente. */
+:host ::ng-deep .live-youtube .tp-card.modo-fullscreen,
+.live-youtube ::ng-deep .tp-card.modo-fullscreen {
+  height: 100% !important;
+}
+:host ::ng-deep .live-youtube .tp-card.modo-fullscreen .tp-video-wrap,
+.live-youtube ::ng-deep .tp-card.modo-fullscreen .tp-video-wrap {
+  height: auto !important;
+  min-height: 0 !important;
+  flex: 1 !important;
+}
+:host ::ng-deep .live-youtube .tp-card.modo-fullscreen .tp-footer,
+.live-youtube ::ng-deep .tp-card.modo-fullscreen .tp-footer {
+  flex-shrink: 0 !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SCOREBOARD BROADCAST sobre o YouTube embed (jogo-detalhe).
+   Replicado da tela /transmissao pra UX consistente: o editor vê o
+   placar visual exatamente como o público vê na transmissão.
+   Prefixo `ld-` (live-detail) pra não conflitar com `tr-` da tela
+   de transmissão (estilos paralelos).
+   ════════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════
+   .ld-scoreboard — overlay broadcast mini sobre o iframe do YouTube.
+   Mesma estrutura visual da transmissao.page (versão mini):
+     • Faixa fina topo: CAMP · CAT centralizados
+     • Barra navy com logos circulares grandes nas pontas
+     • Placar central branco com números navy
+     • Período + cronômetro embaixo
+   ════════════════════════════════════════════════════════════════ */
+.ld-scoreboard {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 3;
+  max-width: 520px;
+  margin: 0 auto;
+  /* Sem bg/blur no container — cada elemento (camp-bar / main bar)
+     tem seu próprio bg navy translúcido. Sem overflow:hidden — os
+     logos circulares precisam estourar pra fora. */
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: #fff;
+  pointer-events: none;
+}
+
+/* Faixa CAMP · CATEGORIA centralizada (sem badge AO VIVO) */
+.ld-sb-camp-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 56px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, rgba(28, 46, 61, 0.94) 0%, rgba(20, 33, 44, 0.96) 100%);
+  border-radius: 6px 6px 0 0;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-bottom: none;
+  font-size: 9.5px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.30);
+
+  .ld-sb-camp-nome {
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+  .ld-sb-camp-sep {
+    color: rgba(255, 255, 255, 0.40);
+    font-size: 12px;
+    line-height: 1;
+  }
+  .ld-sb-camp-cat {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+  }
+  /* "AO VIVO" badge escondido — a cor verde do cronômetro indica live */
+  .ld-sb-status { display: none; }
+}
+
+/* Barra principal navy com logos circulares absolutos nas pontas */
+.ld-sb-main {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 4px;
+  height: 38px;
+  padding: 3px;
+  background: linear-gradient(180deg,
+    var(--ion-color-primary-shade, #192836) 0%,
+    var(--ion-color-primary, #1C2E3D) 50%,
+    var(--ion-color-primary-shade, #192836) 100%);
+  border-radius: 0 0 5px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.50);
+
+  /* Linha fina verde PlacarPro no rodapé */
+  &::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    bottom: 0;
+    height: 2px;
+    border-radius: 0 0 4px 4px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      var(--ion-color-secondary, #7CC61D) 50%,
+      transparent 100%);
+    opacity: 0.6;
+  }
+}
+
+.ld-sb-team {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+
+  &.mandante {
+    padding: 0 8px 0 36px;
+    justify-content: flex-start;
+    flex-direction: row;   /* nome após o logo (logo absoluto na esquerda) */
+    .ld-sb-nome { text-align: left; }
+    .ld-sb-escudo { left: -24px; }
+  }
+  &.visitante {
+    padding: 0 36px 0 8px;
+    justify-content: flex-end;
+    flex-direction: row-reverse;
+    .ld-sb-nome { text-align: right; }
+    .ld-sb-escudo { right: -24px; }
+  }
+
+  /* Logo CIRCULAR — sobressai pra fora da barra */
+  .ld-sb-escudo {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 2px;
+    z-index: 3;
+    box-shadow:
+      0 0 0 2px #fff,
+      0 0 0 3px rgba(0, 0, 0, 0.20),
+      0 4px 12px rgba(0, 0, 0, 0.55);
+
+    img { width: 100%; height: 100%; object-fit: contain; }
+    ion-icon { font-size: 22px; color: var(--ion-color-medium, #92949c); }
+  }
+
+  .ld-sb-nome {
+    flex: 1;
+    min-width: 0;
+    font-size: 11.5px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.50);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.1;
+  }
+}
+
+/* Mobile (≤ 600px): scoreboard MINI ABSOLUTO — virou um badge pequeno
+   estilo "ESPN bug" no topo do vídeo. Antes ocupava metade do espaço
+   do player. Agora é uma pílula compacta com tudo essencial:
+   logos pequenos + nomes + placar em UMA LINHA SÓ.
+   `!important` em alguns valores pra furar especificidade alta de
+   regras anteriores que vinham do desktop. */
+@media (max-width: 600px) {
+  .ld-scoreboard {
+    top: 4px !important;
+    left: 4px !important;
+    right: 4px !important;
+    max-width: calc(100% - 80px) !important;
+  }
+  
+  .ld-sb-camp-bar {
+    padding: 1px 18px !important;
+    font-size: 6.5px !important;
+    .ld-sb-camp-nome { max-width: 90px; font-size: 6.5px !important; }
+    .ld-sb-camp-cat { max-width: 60px; font-size: 6.5px !important; }
+    .ld-sb-camp-sep { font-size: 7px !important; }
+    img { width: 8px !important; height: 8px !important; }
+  }
+  .ld-sb-main {
+    height: 26px !important;
+    min-height: 0 !important;
+    padding: 2px !important;
+  }
+  .ld-sb-team {
+    &.mandante {
+      padding: 2px 3px 2px 18px !important;
+      .ld-sb-escudo {
+        left: -12px !important;
+        width: 22px !important;
+        height: 22px !important;
+        padding: 1px !important;
+      }
+    }
+    &.visitante {
+      padding: 2px 18px 2px 3px !important;
+      .ld-sb-escudo {
+        right: -12px !important;
+        width: 22px !important;
+        height: 22px !important;
+        padding: 1px !important;
+      }
+    }
+    .ld-sb-nome {
+      font-size: 7.5px !important;
+      letter-spacing: 0 !important;
+      line-height: 1.0 !important;
+      /* Trunca single-line — economiza altura. */
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      display: block !important;
+    }
+    .ld-sb-escudo ion-icon { font-size: 11px !important; }
+  }
+  .ld-sb-placar {
+    padding: 0 4px !important;
+    min-width: 28px !important;
+    .ld-sb-gols {
+      font-size: 11px !important;
+      min-width: 10px !important;
+    }
+    .ld-sb-x { font-size: 7px !important; }
+  }
+}
+
+/* Telas BEM pequenas (≤ 380px — iPhone SE / Android compact):
+   reduz mais 1 nível pra caber super confortável. */
+@media (max-width: 380px) {
+  .ld-sb-main { height: 22px !important; }
+  .ld-sb-team {
+    &.mandante .ld-sb-escudo,
+    &.visitante .ld-sb-escudo {
+      width: 18px !important;
+      height: 18px !important;
+    }
+    .ld-sb-nome { font-size: 6.5px !important; }
+    .ld-sb-escudo ion-icon { font-size: 9px !important; }
+  }
+  .ld-sb-placar {
+    min-width: 24px !important;
+    .ld-sb-gols { font-size: 9px !important; }
+  }
+  .ld-sb-camp-bar { font-size: 5.5px !important; padding: 0 14px !important; }
+}
+
+/* Placar BRANCO com números navy (sistema) — não verde */
+.ld-sb-placar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 10px;
+  min-width: 56px;
+  background: linear-gradient(180deg,
+    var(--placar-surface, #fff) 0%,
+    var(--ion-color-light, #F6F7F9) 100%);
+  border-radius: 3px;
+  border: 1px solid var(--placar-border, #E5E7EB);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+    0 2px 5px rgba(0, 0, 0, 0.30);
+  flex-shrink: 0;
+  align-self: stretch;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+
+  .ld-sb-gols {
+    font-size: 18px;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--ion-color-primary, #1C2E3D);
+    font-family: 'SF Mono', 'Roboto Mono', 'Menlo', 'Consolas', monospace;
+    min-width: 16px;
+    text-align: center;
+    letter-spacing: -0.5px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+  .ld-sb-x {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--placar-text-muted, #6B7280);
+    font-family: 'SF Mono', 'Roboto Mono', monospace;
+    line-height: 1;
+  }
+  .ld-sb-pen-bola {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    box-shadow:
+      0 2px 5px rgba(225, 29, 72, 0.55),
+      0 0 0 1.5px var(--placar-surface, #fff);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+}
+
+/* Cronômetro VERDE PlacarPro embaixo (igual transmissao.page).
+   `display: flex` (block-level) + `margin: 0 auto` + `width: fit-content`
+   centraliza horizontalmente abaixo da barra principal. Antes era
+   `inline-flex` que ignora `margin: auto` e ficava colado à esquerda. */
+.ld-sb-tempo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 5px auto 0;
+  padding: 4px 14px;
+  width: fit-content;
+  max-width: fit-content;
+  background: linear-gradient(180deg,
+    var(--ion-color-secondary-tint, #8ccf33) 0%,
+    var(--ion-color-secondary, #7CC61D) 50%,
+    var(--ion-color-secondary-shade, #6dae1a) 100%);
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.40);
+  box-shadow:
+    0 4px 12px rgba(124, 198, 29, 0.40),
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.30);
+  color: #fff;
+  font-family: 'SF Mono', 'Roboto Mono', Menlo, monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+
+  .ld-sb-tempo-nome {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    color: rgba(255, 255, 255, 0.92);
+  }
+  .ld-sb-tempo-sep {
+    color: rgba(255, 255, 255, 0.50);
+    font-size: 11px;
+  }
+
+  .ld-sb-tempo-relogio {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'SF Mono', 'Roboto Mono', Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    color: #fff;
+
+    .ld-tempo-dot {
+      width: 5px;
+      height: 5px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.80);
+      animation: ldTempoPulse 1.2s ease-in-out infinite;
+    }
+    &.pausado {
+      color: rgba(255, 255, 255, 0.70);
+      ion-icon { font-size: 11px; color: var(--ion-color-warning, #ffc409); }
+    }
+  }
+
+  .ld-sb-tempo-acrescimo {
+    background: var(--ion-color-warning, #ffc409);
+    color: var(--ion-color-primary, #1C2E3D);
+    border-radius: 4px;
+    padding: 0 5px;
+    font-size: 9.5px;
+    font-weight: 900;
+    letter-spacing: 0.2px;
+  }
+}
+
+@keyframes ldTempoPulse {
+  0%,100% { opacity: 1;   transform: scale(1); }
+  50%     { opacity: 0.5; transform: scale(1.3); }
+}
+
+@media (max-width: 600px) {
+  /* Posicionamento mais junto das bordas (4px) + `max-width: calc(100% - 95px)`
+     pra deixar espaço lateral pros controles do player do YouTube no mobile
+     (logo PlacarPro + badge "AO VIVO" geralmente ocupam ~95px à direita). */
+  .ld-scoreboard {
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    max-width: calc(100% - 95px);
+  }
+  .ld-sb-camp-bar { padding: 3px 40px; font-size: 8.5px; }
+  .ld-sb-main { height: 32px; padding: 2px; }
+  .ld-sb-team.mandante  { padding-left: 30px; padding-right: 6px; }
+  .ld-sb-team.visitante { padding-right: 30px; padding-left: 6px; }
+  .ld-sb-team .ld-sb-escudo {
+    width: 40px; height: 40px;
+    box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px rgba(0,0,0,0.20), 0 3px 8px rgba(0,0,0,0.50);
+    ion-icon { font-size: 18px; }
+  }
+  .ld-sb-team.mandante  .ld-sb-escudo { left: -20px; }
+  .ld-sb-team.visitante .ld-sb-escudo { right: -20px; }
+  .ld-sb-team .ld-sb-nome { font-size: 10px; letter-spacing: 0.3px; }
+
+  .ld-sb-placar {
+    padding: 0 8px; min-width: 46px; gap: 4px;
+    .ld-sb-gols { font-size: 14px; min-width: 13px; }
+    .ld-sb-x { font-size: 9px; }
+    .ld-sb-pen-bola { min-width: 15px; height: 15px; font-size: 8.5px; }
+  }
+  .ld-sb-tempo {
+    padding: 3px 10px;
+    font-size: 9.5px;
+    gap: 4px;
+    .ld-sb-tempo-relogio { font-size: 10.5px; }
+  }
+}
+
+/* ── Quick actions: 2 colunas (uma por time) ────────────────── */
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.qa-col {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.qa-col-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 10px;
+
+  .qa-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex: 0 0 auto;
+    img { width: 100%; height: 100%; object-fit: contain; }
+    ion-icon { font-size: 20px; color: #1c2e3d; }
+  }
+  .qa-time-nome {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.qa-buttons {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+
+  @media (max-width: 420px) {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+  }
+}
+
+.qa-btn {
+  --qa-cor: #16a34a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 4px 8px;
+  cursor: pointer;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: transform 100ms ease, background 150ms ease,
+              border-color 150ms ease, box-shadow 150ms ease;
+
+  ion-icon {
+    font-size: 22px;
+    color: var(--qa-cor);
+  }
+
+  /* Cartões: ícone vira "retângulo colorido" pra parecer cartão real. */
+  &.qa-amarelo ion-icon,
+  &.qa-vermelho ion-icon,
+  &.qa-azul ion-icon {
+    color: var(--qa-cor);
+    transform: scale(0.85, 1.15);
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--qa-cor);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  &:active:not(:disabled) { transform: translateY(0); }
+
+  @media (max-width: 420px) {
+    padding: 8px 2px 6px;
+    font-size: 9.5px;
+    ion-icon { font-size: 18px; }
+    span { font-size: 9px; }
+  }
+}
+
+/* ── Timeline horizontal ─────────────────────────────────────── */
+.timeline {
+  position: relative;
+  height: 44px;
+  margin-top: 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  z-index: 1;
+}
+
+.tl-rule {
+  position: absolute;
+  top: 50%;
+  left: 0; right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-50%);
+
+  .tl-marker {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 9px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.6);
+    background: #1c2e3d;
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+  .tl-zero { left: 0; transform: translate(0, -50%); }
+  .tl-meio { left: 50%; }
+  .tl-now {
+    color: #fff;
+    background: #e55353;
+    box-shadow: 0 0 0 2px #1c2e3d, 0 0 8px rgba(229, 83, 83, 0.6);
+  }
+}
+
+.tl-dot {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border: 2px solid #1c2e3d;
+  cursor: pointer;
+
+  &.tl-mand { top: 25%; }
+  &.tl-vis  { top: 75%; }
+  &.tl-gol, &.tl-gol-contra { background: #16a34a; }
+  &.tl-amarelo  { background: #f1b500; }
+  &.tl-vermelho { background: #e55353; }
+  &.tl-azul     { background: #4dabf7; }
+  &.tl-falta    { background: #94a3b8; }
+  &.tl-defesa   { background: #4dabf7; }
+  &.tl-sub-entrou, &.tl-sub-saiu { background: #c084fc; }
+}
+
+/* =========================================================================
+   PAINEL DE PÊNALTIS (decisão por penalidades)
+   -------------------------------------------------------------------------
+   Aparece dentro do `.live-card` quando `j.tempoAtual === 'penaltis'`.
+   Layout: placar grande + histórico de cobranças (bolinhas) + botões
+   por lado (CONVERTIDO/PERDIDO/DEFENDIDO) + desfazer.
+   ========================================================================= */
+.pen-painel {
+  margin-top: 14px;
+  padding: 14px;
+  border: 2px solid var(--ion-color-warning, #ffc409);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 196, 9, 0.06) 0%, transparent 100%);
+}
+
+/* ─── Placar grande ─── */
+.pen-placar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+
+  .pen-lado {
+    text-align: center;
+
+    .pen-lado-nome {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: var(--placar-text-muted, #6b6b70);
+      margin-bottom: 4px;
+    }
+    .pen-lado-num {
+      font-size: 44px;
+      font-weight: 800;
+      color: var(--placar-text, #1C2E3D);
+      line-height: 1;
+    }
+  }
+
+  .pen-meio {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--ion-color-warning-shade, #b88d00);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 0 10px;
+  }
+}
+
+/* ─── Histórico (linhas com bolinhas) ─── */
+.pen-historico {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+  margin-bottom: 12px;
+
+  .pen-hist-linha {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 22px;
+  }
+
+  .pen-hist-lbl {
+    flex: 0 0 110px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--placar-text-muted, #6b6b70);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pen-hist-bolas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    flex: 1;
+  }
+}
+
+/* Bolinha individual de cada cobrança */
+.pen-bola {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  background: #fff;
+  transition: transform 100ms ease;
+
+  &.c {
+    background: var(--ion-color-success, #2dd55b);
+    border-color: var(--ion-color-success-shade, #28b94f);
+  }
+  &.p {
+    background: var(--ion-color-danger, #eb4747);
+    border-color: var(--ion-color-danger-shade, #cf3e3e);
+  }
+  &.d {
+    /* DEFENDIDO: laranja pra distinguir de "perdido pela barreira" */
+    background: #ff9f43;
+    border-color: #e88a2c;
+  }
+}
+
+/* ─── Vez de cobrar ─── */
+.pen-vez {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--placar-text, #2d2d2d);
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  background: rgba(124, 198, 29, 0.1);
+  border-radius: 6px;
+
+  ion-icon {
+    color: var(--ion-color-secondary, #7CC61D);
+    font-size: 16px;
+  }
+
+  strong {
+    color: var(--ion-color-primary, #1C2E3D);
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+}
+
+/* ─── Botões de ação por lado ─── */
+.pen-acoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+
+  @media (max-width: 540px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pen-acoes-lado {
+  padding: 10px;
+  border: 1px solid var(--placar-divider, #ececef);
+  border-radius: 10px;
+  background: var(--placar-surface, #fff);
+  transition: all 220ms ease;
+  position: relative;
+
+  /* Lado ATIVO (vez de cobrar) — destaque verde com glow pulsante */
+  &.ativo {
+    border-color: var(--ion-color-secondary, #7CC61D);
+    box-shadow:
+      0 0 0 2px rgba(124, 198, 29, 0.25),
+      0 4px 14px rgba(124, 198, 29, 0.18);
+    background: linear-gradient(180deg, rgba(124, 198, 29, 0.06) 0%, var(--placar-surface, #fff) 60%);
+    animation: penAtivoPulse 1.8s ease-in-out infinite;
+  }
+
+  /* Lado INATIVO — esmaecido, dessaturado, sem interação */
+  &.inativo {
+    opacity: 0.42;
+    filter: grayscale(0.6);
+    background: var(--placar-bg-soft, #f5f5f7);
+
+    .pen-acoes-titulo { color: var(--placar-text-muted, #9b9ba0); }
+    .pen-btn {
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .pen-jogador-select {
+      cursor: not-allowed;
+      background: var(--placar-bg-soft, #f0f0f3);
+    }
+  }
+}
+
+@keyframes penAtivoPulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(124, 198, 29, 0.25), 0 4px 14px rgba(124, 198, 29, 0.18); }
+  50%      { box-shadow: 0 0 0 3px rgba(124, 198, 29, 0.42), 0 6px 18px rgba(124, 198, 29, 0.32); }
+}
+
+.pen-acoes-titulo {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--placar-text-muted, #6b6b70);
+  text-align: center;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Badge "SUA VEZ" — aparece ao lado do nome do time ativo */
+.pen-vez-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  background: var(--ion-color-secondary, #7CC61D);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(124, 198, 29, 0.4);
+  animation: penBadgeBlink 1.4s ease-in-out infinite;
+
+  ion-icon { font-size: 11px; }
+}
+
+@keyframes penBadgeBlink {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(2px); }
+}
+
+/* ════════ Configurador da SÉRIE (cobranças por lado) ════════
+   Chip clicável que abre o prompt pra mudar entre 3/5/7/10 cobranças. */
+.pen-config {
+  display: flex;
+  justify-content: center;
+  margin: 6px 0 0;
+}
+
+.pen-config-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: var(--placar-surface, #fff);
+  color: var(--placar-text, #1c1c1f);
+  border: 1px solid var(--placar-divider, #ececef);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 140ms ease;
+
+  &:hover {
+    background: var(--placar-bg-soft, #f5f5f7);
+    border-color: var(--ion-color-secondary, #7CC61D);
+    transform: translateY(-1px);
+  }
+  ion-icon { font-size: 14px; color: var(--placar-text-muted, #6b6b70); }
+  strong {
+    color: var(--ion-color-secondary, #5a9e10);
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ════════ BANNER DE FIM DA DECISÃO POR PÊNALTIS ════════
+   Aparece quando a disputa acabou matematicamente. Substitui os cards
+   de cobrança com um destaque do vencedor e botão pra encerrar. */
+.pen-fim-banner {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124, 198, 29, 0.15) 0%, rgba(124, 198, 29, 0.04) 100%);
+  border: 2px solid var(--ion-color-secondary, #7CC61D);
+  box-shadow: 0 6px 22px rgba(124, 198, 29, 0.25);
+  margin-top: 12px;
+  animation: penFimAparece 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Variantes mantêm a paleta verde — vitória é sempre celebração.
+     Lado serve só pra animação direcional se quisermos no futuro. */
+  &.lado-m { border-left-width: 6px; }
+  &.lado-v { border-right-width: 6px; }
+
+  .pen-fim-trofeu {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--ion-color-secondary, #7CC61D) 0%, #5a9e10 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(124, 198, 29, 0.5);
+    animation: penTrofeuPulse 1.6s ease-in-out infinite;
+
+    ion-icon {
+      font-size: 30px;
+      color: #fff;
+    }
+  }
+
+  .pen-fim-texto { min-width: 0; }
+
+  .pen-fim-titulo {
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ion-color-secondary, #5a9e10);
+    margin-bottom: 4px;
+  }
+  .pen-fim-vencedor {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--placar-text, #1c1c1f);
+    line-height: 1.2;
+    strong {
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+  }
+  .pen-fim-placar {
+    font-size: 12px;
+    color: var(--placar-text-muted, #6b6b70);
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pen-fim-btn {
+    margin: 0;
+    --border-radius: 10px;
+    --box-shadow: 0 4px 12px rgba(124, 198, 29, 0.4);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    text-align: center;
+    .pen-fim-trofeu { margin: 0 auto; }
+    .pen-fim-btn { margin-top: 8px; }
+  }
+}
+
+@keyframes penFimAparece {
+  0%   { opacity: 0; transform: translateY(-12px) scale(0.96); }
+  60%  { opacity: 1; transform: translateY(4px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes penTrofeuPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(124, 198, 29, 0.5); }
+  50%      { transform: scale(1.08); box-shadow: 0 6px 22px rgba(124, 198, 29, 0.75); }
+}
+
+/* ════════ HISTÓRICO DE COBRANÇAS — chips detalhados ════════
+   Cada cobrança vira um chip com número da rodada, ícone de resultado
+   e nome do jogador (quando informado). Mais legível que bolinhas. */
+.pen-hist-linha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+
+  & + .pen-hist-linha {
+    border-top: 1px dashed var(--placar-divider, #ececef);
+  }
+}
+
+.pen-hist-lbl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 130px;
+  max-width: 180px;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--placar-text-muted, #6b6b70);
+  flex-shrink: 0;
+
+  img {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #fff;
+    border: 1px solid var(--placar-divider, #ececef);
+    flex-shrink: 0;
+  }
+}
+
+.pen-hist-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pen-hist-vazio {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--placar-text-muted, #9b9ba0);
+  padding: 4px 8px;
+}
+
+.pen-hist-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px 3px 4px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  transition: transform 120ms ease;
+
+  &:hover { transform: translateY(-1px); }
+
+  .pen-hist-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.15);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+
+  ion-icon { font-size: 14px; }
+
+  .pen-hist-jogador {
+    max-width: 110px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 600;
+  }
+
+  &.c {
+    background: rgba(124, 198, 29, 0.14);
+    color: #4a7d11;
+    border-color: rgba(124, 198, 29, 0.32);
+    ion-icon { color: var(--ion-color-secondary, #7CC61D); }
+  }
+  &.p {
+    background: rgba(235, 68, 90, 0.12);
+    color: #b62436;
+    border-color: rgba(235, 68, 90, 0.28);
+    ion-icon { color: #eb445a; }
+  }
+  &.d {
+    background: rgba(77, 171, 247, 0.14);
+    color: #1862a8;
+    border-color: rgba(77, 171, 247, 0.3);
+    ion-icon { color: #4DABF7; }
+  }
+}
+
+/* Select de jogador cobrador — fica entre o título do card e os botões.
+   Opcional: o user pode cobrar sem identificar o jogador (cobrança fica
+   no histórico igual, só sem nome). */
+.pen-jogador-select {
+  width: 100%;
+  padding: 7px 10px;
+  margin-bottom: 8px;
+  border: 1.5px solid var(--placar-divider, #d4d8de);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--placar-text, #2d2d2d);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: var(--ion-color-primary, #1C2E3D);
+  }
+
+  option {
+    background: #fff;
+    color: var(--placar-text, #2d2d2d);
+    font-weight: 500;
+  }
+}
+
+.pen-acoes-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+
+  @media (max-width: 380px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pen-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 6px;
+  border: 1.5px solid;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  transition: background 120ms ease, color 120ms ease, transform 100ms ease;
+
+  ion-icon { font-size: 18px; }
+
+  &:active { transform: scale(0.95); }
+
+  &.pen-btn-c {
+    border-color: var(--ion-color-success, #2dd55b);
+    color: var(--ion-color-success-shade, #28b94f);
+    &:hover {
+      background: var(--ion-color-success, #2dd55b);
+      color: #fff;
+    }
+  }
+  &.pen-btn-p {
+    border-color: var(--ion-color-danger, #eb4747);
+    color: var(--ion-color-danger, #eb4747);
+    &:hover {
+      background: var(--ion-color-danger, #eb4747);
+      color: #fff;
+    }
+  }
+  &.pen-btn-d {
+    border-color: #ff9f43;
+    color: #e88a2c;
+    &:hover {
+      background: #ff9f43;
+      color: #fff;
+    }
+  }
+}
+
+/* ─── Desfazer ─── */
+.pen-rodape {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.pen-desfazer {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  background: transparent;
+  color: var(--placar-text-muted, #6b6b70);
+  border: 1px solid var(--placar-divider, #ececef);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+
+  ion-icon { font-size: 14px; }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--placar-text, #2d2d2d);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   PATROCINADORES DA PARTIDA — seção dentro de jogo-detalhe
+   ════════════════════════════════════════════════════════════════════
+   Cards com preview real: mesmo aspect-ratio (16:9) e largura (180px)
+   do `.tr-pat-stage` na tela de transmissão. Assim o admin vê
+   exatamente como vai aparecer no stream. */
+.patjogo-section {
+  margin: 0 0 20px;
+
+  .section-head {
+    h3.section-title ion-icon {
+      font-size: 16px;
+      vertical-align: -2px;
+      margin-right: 4px;
+      color: var(--ion-color-secondary, #7CC61D);
+    }
+  }
+}
+
+.patjogo-hint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  line-height: 1.4;
+}
+
+/* Lista de cards em UMA linha só com scroll horizontal.
+   Antes: `flex-wrap: wrap` — quebrava pra próxima linha qd
+   passava do limite.
+   Agora: `flex-wrap: nowrap` + `overflow-x: auto` — fica em
+   linha única, com scroll horizontal pro lado quando precisar.
+   `scroll-snap-type` ajuda a "encaixar" os cards no scroll. */
+.patjogo-grid {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Padding-bottom dá respiro pra scrollbar não cobrir os nomes */
+  padding-bottom: 8px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 198, 29, 0.55) rgba(0, 0, 0, 0.06);
+
+  /* Scrollbar customizada (Chrome/Edge/Safari) — verde PlacarPro */
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 999px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(124, 198, 29, 0.55);
+    border-radius: 999px;
+
+    &:hover {
+      background: rgba(124, 198, 29, 0.8);
+    }
+  }
+}
+
+/* Card individual — preview idêntico ao da transmissão.
+   `flex-shrink: 0` impede que o card "encolha" quando a linha
+   estiver cheia — assim ele mantém o tamanho e a lista scrolla. */
+.patjogo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 180px;          /* igual .tr-pat-stage desktop */
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  cursor: pointer;
+
+  &:hover .patjogo-preview {
+    border-color: var(--ion-color-secondary, #7cc61d);
+    box-shadow: 0 3px 12px rgba(124, 198, 29, 0.22);
+  }
+}
+
+/* Área de imagem — aspect 16:9, fundo branco + borda, igual .tr-pat-stage */
+.patjogo-preview {
+  position: relative;
+  width: 180px;
+  aspect-ratio: 16 / 9;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #d4d4d4;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+  transition: border-color 120ms, box-shadow 120ms;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .patjogo-sem-logo {
+    font-size: 36px;
+    color: #bbb;
+  }
+}
+
+/* Botão "×" flutuante sobre o preview */
+.patjogo-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  z-index: 2;
+  padding: 0;
+  transition: background 120ms;
+
+  ion-icon { font-size: 16px; }
+
+  &:hover { background: rgba(220, 38, 38, 0.85); }
+}
+
+/* Linha inferior: nome + ícone de editar */
+.patjogo-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.patjogo-nome {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--placar-text, #1a1a1a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.patjogo-edit-icon {
+  flex-shrink: 0;
+  font-size: 14px;
+  color: #9ea3ae;
+}
+
+/* Card "+" para adicionar mais — também não encolhe na lista scroll */
+.patjogo-add-card {
+  width: 180px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(124, 198, 29, 0.06);
+  border: 2px dashed rgba(124, 198, 29, 0.4);
+  border-radius: 4px;
+  color: var(--ion-color-secondary, #7CC61D);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 150ms ease;
+
+  ion-icon { font-size: 22px; }
+
+  &:hover {
+    background: rgba(124, 198, 29, 0.12);
+    border-color: rgba(124, 198, 29, 0.7);
+  }
+}
+
+/* Estado vazio */
+.patjogo-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.4);
+
+  ion-icon { font-size: 36px; opacity: 0.45; }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    max-width: 240px;
+  }
+}
+
+/* Mobile: cards menores (mesmo tamanho mobile da transmissão: 120×40px) */
+@media (max-width: 480px) {
+  .patjogo-card    { width: 140px; }
+  .patjogo-preview { width: 140px; }
+  .patjogo-add-card { width: 140px; }
+}

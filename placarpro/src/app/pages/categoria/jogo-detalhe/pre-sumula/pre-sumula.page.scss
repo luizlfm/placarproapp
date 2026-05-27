@@ -1,0 +1,632 @@
+/* =========================================================
+   PRÉ-SÚMULA — Layout estilo "carteirinha" (modelo do usuário):
+   logos topo + título 3 linhas grande + Equipe/Data + tabela
+   Número/Nome em branco.
+   1 folha A4 por equipe (mandante depois visitante).
+   ========================================================= */
+
+ion-content { --background: #f3f4f6; }
+
+.ps-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+/* =========================================================
+   LAYOUT (painel lateral + preview à direita)
+   Inspirado no carteirinhas-preview.
+   ========================================================= */
+.cp-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 0;
+  min-height: 100%;
+  transition: grid-template-columns 200ms ease;
+
+  &.painel-fechado {
+    grid-template-columns: 0 1fr;
+
+    .cp-painel { transform: translateX(-100%); }
+  }
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+
+    .cp-painel {
+      position: fixed;
+      top: 56px;
+      left: 0;
+      bottom: 0;
+      width: 320px;
+      z-index: 20;
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.18);
+    }
+    &.painel-fechado .cp-painel { transform: translateX(-100%); }
+  }
+}
+
+/* ─── Painel lateral ─── */
+.cp-painel {
+  background: #fff;
+  border-right: 1px solid var(--placar-divider, #e5e7eb);
+  overflow-y: auto;
+  transition: transform 200ms ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.cp-painel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--placar-divider, #e5e7eb);
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+
+  h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--ion-color-primary);
+  }
+}
+
+.cp-painel-toggle {
+  background: transparent;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ion-color-medium);
+
+  &:hover { background: rgba(28, 46, 61, 0.06); color: var(--ion-color-primary); }
+  ion-icon { font-size: 20px; }
+}
+
+.cp-painel-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* ─── Grupos de campos ─── */
+.campo-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.grupo-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.grupo-titulo {
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ion-color-primary);
+}
+
+.grupo-counter {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ion-color-medium);
+  background: var(--placar-surface-2, #f0f0f3);
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+
+.grupo-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  line-height: 1.4;
+}
+
+/* ─── Campo (label + input) ─── */
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.campo-num {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+
+  .campo-label { flex: 1; margin: 0; }
+  .campo-input { max-width: 80px; text-align: center; }
+}
+
+.campo-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--ion-color-medium);
+}
+
+.campo-input {
+  border: 1px solid var(--placar-divider, #ececec);
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--placar-text);
+  outline: none;
+  width: 100%;
+  font-family: inherit;
+  transition: border-color 120ms ease;
+
+  &:focus { border-color: var(--ion-color-primary); }
+  &.small { font-size: 11px; padding: 5px 8px; }
+}
+
+/* ─── Toggle (uma equipe por folha, etc) ─── */
+.campo-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--placar-divider, #e5e7eb);
+
+  &:last-of-type { border-bottom: none; }
+
+  > div:first-child { flex: 1; min-width: 0; }
+
+  .toggle-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--placar-text);
+    line-height: 1.2;
+  }
+  .toggle-sub {
+    font-size: 11px;
+    color: var(--ion-color-medium);
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+}
+
+/* ─── Grid de logos ─── */
+.logos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.logo-card {
+  position: relative;
+  background: var(--placar-surface-2, #f5f5f7);
+  border: 1px solid var(--placar-divider, #e5e7eb);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.logo-img {
+  width: 70px;
+  height: 70px;
+  border-radius: 6px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+
+  img { max-width: 100%; max-height: 100%; object-fit: contain; }
+}
+
+.logo-rm {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(235, 68, 90, 0.9);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon { font-size: 12px; }
+  &:hover { background: var(--ion-color-danger); }
+}
+
+.logo-add {
+  border: 2px dashed rgba(28, 46, 61, 0.25);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ion-color-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 18px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  transition: background 120ms ease, border-color 120ms ease;
+  min-height: 110px;
+
+  ion-icon { font-size: 26px; }
+
+  &:hover:not(:disabled) {
+    background: rgba(28, 46, 61, 0.04);
+    border-color: var(--ion-color-primary);
+  }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+/* ─── Área de preview ─── */
+.cp-preview {
+  overflow-y: auto;
+  padding-bottom: 24px;
+
+  /* Garante centralização da folha A4 dentro do espaço disponível */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.presu-folha {
+  background: #fff;
+  margin: 12px auto;
+  padding: 12mm 12mm;
+  width: 210mm;
+  max-width: 100%;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  color: #1a1a1a;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  font-size: 12px;
+  line-height: 1.3;
+
+  &.page-break {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  &.dupla .dupla-tabelas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+  }
+}
+
+/* ════════════════ HEADER ════════════════ */
+.ps-header {
+  display: grid;
+  grid-template-columns: 90px 1fr auto;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+  .logo-principal {
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+
+    img {
+      max-width: 90px;
+      max-height: 90px;
+      object-fit: contain;
+    }
+    &.vazio { background: transparent; }
+  }
+}
+
+.ps-titulo {
+  margin: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+
+  .t-linha {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1a1a;
+    text-transform: uppercase;
+    line-height: 1.15;
+    letter-spacing: 0.3px;
+  }
+}
+
+.logos-extras {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.logo-extra {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+
+  img {
+    max-width: 72px;
+    max-height: 72px;
+    object-fit: contain;
+  }
+
+  .logo-legenda {
+    font-size: 8px;
+    color: #6b7280;
+    text-align: center;
+    max-width: 80px;
+    line-height: 1.1;
+  }
+}
+
+/* ════════════════ CONFRONTO BAR — linha horizontal simples ════════════════
+   MANDANTE (CIDADE/UF)  |  X  |  VISITANTE (CIDADE/UF)
+   3 colunas: time, X (estreito) e time. Borda preta fina. */
+.ps-confronto-bar {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 12px;
+  table-layout: fixed;
+
+  tr td {
+    border: 1px solid #1a1a1a;
+    padding: 8px 12px;
+    vertical-align: middle;
+    text-align: center;
+    height: 36px;
+  }
+
+  /* Nomes das equipes ocupam 1fr cada lado */
+  .time {
+    font-weight: 700;
+    color: #1a1a1a;
+    font-size: 13px;
+    letter-spacing: 0.2px;
+
+    .t-nome {
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+    .t-cidade {
+      font-weight: 500;
+      color: #1a1a1a;
+    }
+  }
+
+  /* X bem estreito no meio */
+  .x-cell {
+    width: 40px;
+    font-weight: 800;
+    font-size: 15px;
+    color: #1a1a1a;
+  }
+}
+
+/* ════════════════ EQUIPE: X + DATA: ___ ════════════════ */
+.ps-equipe-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0 12px;
+  margin-bottom: 0;
+  font-size: 14px;
+
+  .eq-info, .eq-data {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .eq-label {
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+  .eq-nome {
+    font-weight: 800;
+    color: #1a1a1a;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .eq-traco {
+    font-family: ui-monospace, monospace;
+    letter-spacing: -1px;
+    color: #1a1a1a;
+  }
+
+  /* Data já preenchida (vem do `jogo.dataHora`) — destaca igual o nome da equipe. */
+  .eq-valor {
+    font-weight: 800;
+    color: #1a1a1a;
+    letter-spacing: 0.3px;
+  }
+}
+
+/* ════════════════ TABELA (2 colunas: Número + Nome) ════════════════ */
+.ps-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+
+  th, td {
+    border: 1px solid #1a1a1a;
+    padding: 7px 10px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  thead th {
+    background: #f1f5f9;
+    color: #1a1a1a;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 9px 10px;
+  }
+
+  td.nome {
+    text-align: center;
+    font-weight: 700;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+  }
+
+  .w-num {
+    width: 80px;
+    text-align: center;
+  }
+
+  /* Quando inclui fotos */
+  &.com-foto {
+    .w-foto { width: 50px; padding: 2px; }
+    .foto-box {
+      width: 36px;
+      height: 36px;
+      border-radius: 4px;
+      background: #f1f5f9;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+
+      img { width: 100%; height: 100%; object-fit: cover; }
+    }
+    td { padding: 4px 8px; }
+  }
+
+  /* Linhas vazias têm altura fixa pro árbitro preencher a mão */
+  tbody td { height: 22px; }
+}
+
+/* Modo "ambas equipes na mesma folha" — tabela menor */
+.presu-folha.dupla .ps-tabela {
+  th, td { font-size: 10px; padding: 4px 6px; }
+  .w-num { width: 50px; }
+}
+
+/* ════════════════ OBSERVAÇÕES ════════════════ */
+.ps-bloco-titulo {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #fff;
+  background: #1C2E3D;
+  padding: 5px 12px;
+}
+
+.ps-obs {
+  margin-top: 16px;
+
+  .obs-linha {
+    height: 20px;
+    border-bottom: 1px solid #1a1a1a;
+    margin-bottom: 2px;
+
+    &:last-child { margin-bottom: 0; }
+  }
+}
+
+/* ════════════════ ASSINATURAS ════════════════ */
+.ps-assinaturas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-top: 30px;
+
+  .assinatura {
+    text-align: center;
+
+    .linha-assin {
+      border-bottom: 1px solid #1a1a1a;
+      height: 24px;
+    }
+    .ass-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #1a1a1a;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-top: 4px;
+    }
+  }
+}
+
+/* =========================================================
+   PRINT (impressão real / save as PDF)
+   ========================================================= */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+  .no-print, .cp-painel { display: none !important; }
+
+  ion-content { --background: #fff; }
+
+  /* Cancela o grid de layout — só folha A4 ocupa a página inteira. */
+  .cp-layout {
+    display: block !important;
+    grid-template-columns: 1fr !important;
+  }
+  .cp-preview {
+    padding: 0 !important;
+    display: block !important;
+  }
+
+  .presu-folha {
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+  .ps-bloco-titulo,
+  .ps-tabela thead th {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .presu-folha.page-break {
+    page-break-before: always;
+    break-before: page;
+  }
+}

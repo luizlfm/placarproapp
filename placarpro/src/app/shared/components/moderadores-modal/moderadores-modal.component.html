@@ -1,0 +1,116 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Moderadores</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="adicionar()" aria-label="Adicionar moderador" [disabled]="salvando">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <!-- Lista de moderadores -->
+  <div class="lista" *ngIf="moderadores.length > 0; else vazio">
+    <button
+      type="button"
+      class="mod-row"
+      *ngFor="let m of moderadores; trackBy: trackById"
+      (click)="abrirAcoes(m)"
+      [disabled]="salvando"
+    >
+      <div class="foto">
+        <img *ngIf="m.fotoUrl; else iconF" [src]="m.fotoUrl" [alt]="m.nome" />
+        <ng-template #iconF><ion-icon name="person-circle-outline"></ion-icon></ng-template>
+      </div>
+      <div class="info">
+        <div class="nome">{{ m.nome }}</div>
+        <div class="meta">
+          <span class="perm-badge" [class.lances]="m.permissoes === 'apenas-lances'">
+            {{ rotuloPermissoes(m.permissoes) }}
+          </span>
+          <span class="email" *ngIf="m.email">· {{ m.email }}</span>
+        </div>
+      </div>
+      <ion-icon class="chev" name="ellipsis-vertical-outline"></ion-icon>
+    </button>
+  </div>
+
+  <!-- Empty state -->
+  <ng-template #vazio>
+    <div class="empty">
+      <ion-icon name="shield-checkmark-outline"></ion-icon>
+      <h3>Nenhum moderador cadastrado</h3>
+      <p>
+        Adicione moderadores para que outras pessoas possam ajudar a gerenciar
+        equipes, jogos e resultados desta categoria.
+      </p>
+      <ion-button color="primary" (click)="adicionar()">
+        <ion-icon slot="start" name="add-outline"></ion-icon>
+        Adicionar moderador
+      </ion-button>
+    </div>
+  </ng-template>
+
+  <!-- ────────── Painel de permissões (overlay) ────────── -->
+  <div *ngIf="modPermissoes" class="perm-backdrop" (click)="fecharPermissoes()"></div>
+
+  <div *ngIf="modPermissoes" class="perm-card">
+    <div class="perm-title">Permissões — <strong>{{ modPermissoes.nome }}</strong></div>
+
+    <label class="perm-row" (click)="togglePerm('editarCampeonato')">
+      <div class="perm-text">
+        <div class="perm-nome">Editar o campeonato</div>
+        <div class="perm-sub">Editar as equipes, resultados e informações do campeonato</div>
+      </div>
+      <span class="perm-check" [class.ativo]="formPermissoes.editarCampeonato">
+        <ion-icon *ngIf="formPermissoes.editarCampeonato" name="checkmark"></ion-icon>
+      </span>
+    </label>
+
+    <label class="perm-row" (click)="togglePerm('editarResultados')">
+      <div class="perm-text">
+        <div class="perm-nome">Editar resultados</div>
+        <div class="perm-sub">Editar todos os resultados das partidas não concluídas</div>
+      </div>
+      <span class="perm-check" [class.ativo]="formPermissoes.editarResultados">
+        <ion-icon *ngIf="formPermissoes.editarResultados" name="checkmark"></ion-icon>
+      </span>
+    </label>
+
+    <label class="perm-row" (click)="togglePerm('enviarMidias')">
+      <div class="perm-text">
+        <div class="perm-nome">Enviar mídias</div>
+        <div class="perm-sub">Adicionar e remover mídias ao campeonato</div>
+      </div>
+      <span class="perm-check" [class.ativo]="formPermissoes.enviarMidias">
+        <ion-icon *ngIf="formPermissoes.enviarMidias" name="checkmark"></ion-icon>
+      </span>
+    </label>
+
+    <button type="button" class="perm-filtro" (click)="filtrarCategoria()">
+      <ion-icon name="filter-outline"></ion-icon>
+      <span>
+        Filtrar por categoria
+        <small *ngIf="(formPermissoes.categoriasPermitidas?.length ?? 0) > 0">
+          ({{ formPermissoes.categoriasPermitidas!.length }})
+        </small>
+      </span>
+    </button>
+
+    <div class="perm-actions">
+      <button type="button" class="perm-btn perm-rem" (click)="removerAtual()">
+        Remover
+      </button>
+      <div class="spacer"></div>
+      <button type="button" class="perm-btn perm-ok" (click)="salvarPermissoes()">
+        Salvar
+      </button>
+    </div>
+  </div>
+</ion-content>

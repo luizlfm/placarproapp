@@ -1,0 +1,30 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Selecione a modalidade</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="picker-content">
+  <button
+    *ngFor="let m of modalidades"
+    class="modalidade-row"
+    [class.selected]="m.id === atual"
+    type="button"
+    (click)="selecionar(m)"
+  >
+    <div class="badge" [style.background]="m.color">
+      <ion-icon [name]="m.icon"></ion-icon>
+    </div>
+    <span class="nome">{{ m.label }}</span>
+    <ion-icon
+      *ngIf="m.id === atual"
+      name="checkmark-outline"
+      class="check"
+    ></ion-icon>
+  </button>
+</ion-content>

@@ -1,0 +1,161 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <!-- Botão "Voltar" — principal valor em mobile, onde a sidebar
+         contextual é off-canvas. Volta pra Início da categoria. -->
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/app/campeonato/{{ campeonatoId }}/categoria/{{ categoriaId }}/inicio"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Equipes</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <!-- Quick add -->
+    <form class="quick-add" (ngSubmit)="adicionarRapido()" #f="ngForm">
+      <ion-grid>
+      <ion-row>
+        <ion-col size="12" size-md="8" size-lg="8">
+          <ion-input
+            fill="outline"
+            label="Nome da equipe"
+            labelPlacement="stacked"
+            placeholder="Ex: Atlético Centenário"
+            [(ngModel)]="novoNome"
+            name="novoNome"
+            [disabled]="criando"
+          ></ion-input>
+        </ion-col>
+        <ion-col size="12" size-md="4" size-lg="4" class="col-btn">
+          <ion-button
+            color="primary"
+            type="submit"
+            class="btn-add"       [disabled]="criando || !novoNome.trim()"       >      <ion-spinner *ngIf="criando" name="dots" slot="start"></ion-spinner>  
+            <ion-icon *ngIf="!criando" slot="start" name="add-outline"></ion-icon>
+            Adicionar
+          </ion-button>
+        </ion-col>
+      </ion-row>
+      </ion-grid>
+    </form>
+
+    <!-- Busca -->
+    <div class="busca">
+      <ion-searchbar
+        [value]="busca"
+        (ionInput)="busca = $any($event).detail.value || ''"
+        placeholder="Buscar por nome, cidade, técnico ou grupo"
+        showCancelButton="never"
+        debounce="120"
+        animated="true"
+      ></ion-searchbar>
+    </div>
+
+    <!-- Mensagem de erro -->
+    <div class="erro-banner" *ngIf="erro">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <span>{{ erro }}</span>
+    </div>
+
+    <ng-container *ngIf="equipes$ | async as lista">
+      <div class="counter">
+        <span>{{ lista.length }} equipe{{ lista.length === 1 ? '' : 's' }}</span>
+        <ion-button
+          *ngIf="busca"
+          fill="clear"
+          size="small"
+          color="medium"
+          (click)="limparBusca()"
+        >
+          Limpar busca
+        </ion-button>
+      </div>
+
+      <div class="lista-card" *ngIf="lista.length > 0; else empty">
+        <div
+          *ngFor="let eq of lista; trackBy: trackById"
+          class="equipe-row"
+          (click)="abrirEditarEquipe(eq)"
+        >
+          <div class="row-logo">
+            <img *ngIf="eq.logoUrl; else iconF" [src]="eq.logoUrl" [alt]="eq.nome" />
+            <ng-template #iconF>
+              <ion-icon name="shield-outline"></ion-icon>
+            </ng-template>
+          </div>
+
+          <div class="row-info">
+            <div class="row-name">
+              {{ eq.nome }}
+              <span class="row-cidade" *ngIf="eq.cidade">({{ eq.cidade }})</span>
+            </div>
+            <div class="row-meta">
+              <span *ngIf="eq.grupoNome" class="badge-grupo">{{ eq.grupoNome }}</span>
+              <span *ngIf="eq.tecnico">Téc: {{ eq.tecnico }}</span>
+              <span *ngIf="eq.totalJogadores">{{ eq.totalJogadores }} jogador{{ eq.totalJogadores === 1 ? '' : 'es' }}</span>
+              <span *ngIf="!eq.grupoNome && !eq.tecnico && !eq.totalJogadores" class="muted">
+                Toque para completar o cadastro
+              </span>
+            </div>
+          </div>
+
+          <div class="row-actions" (click)="$event.stopPropagation()">
+            <ion-button
+              fill="clear"
+              color="medium"
+              size="small"
+              (click)="abrirJogadores(eq)"
+              aria-label="Ver jogadores"
+            >
+              <ion-icon slot="icon-only" name="people-outline"></ion-icon>
+            </ion-button>
+            <ion-button
+              fill="clear"
+              color="medium"
+              size="small"
+              (click)="abrirEditarEquipe(eq)"
+              aria-label="Editar equipe"
+            >
+              <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+            </ion-button>
+            <ion-button
+              fill="clear"
+              color="secondary"
+              size="small"
+              (click)="gerarLinkInscricao(eq)"
+              aria-label="Gerar link de inscrição"
+              title="Gerar link para o dono preencher os atletas"
+            >
+              <ion-icon slot="icon-only" name="link-outline"></ion-icon>
+            </ion-button>
+            <ion-button
+              fill="clear"
+              color="danger"
+              size="small"
+              (click)="confirmarRemover(eq)"
+              aria-label="Remover equipe"
+            >
+              <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+            </ion-button>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #empty>
+        <div class="empty" *ngIf="!busca">
+          <ion-icon name="shield-outline"></ion-icon>
+          <h2>Nenhuma equipe cadastrada</h2>
+          <p>Use o campo acima para adicionar sua primeira equipe.</p>
+        </div>
+        <div class="empty" *ngIf="busca">
+          <ion-icon name="search-outline"></ion-icon>
+          <h2>Nada encontrado</h2>
+          <p>Nenhuma equipe corresponde a "{{ busca }}".</p>
+          <ion-button fill="outline" color="primary" (click)="limparBusca()">
+            Limpar busca
+          </ion-button>
+        </div>
+      </ng-template>
+    </ng-container>
+  </div>
+</ion-content>

@@ -1,0 +1,124 @@
+<div class="r-page rv-page" *ngIf="!loading && racha">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">Visão Geral</span>
+  </header>
+
+  <!-- ═══════════ Page header ═══════════ -->
+  <header class="r-page-head">
+    <span class="r-page-tag">VISÃO GERAL</span>
+    <h1>{{ racha.nome }}</h1>
+    <p>Gerencie convites, eventos e ranking do seu time.</p>
+  </header>
+
+  <!-- Faixa verde com CTAs principais -->
+  <div class="r-hero-strip" *ngIf="codigoConvite !== '—'">
+    <button type="button" class="r-hero-strip-btn" (click)="copiarConvite()">
+      <ion-icon name="copy-outline"></ion-icon>
+      COPIAR LINK
+    </button>
+    <button type="button" class="r-hero-strip-btn alt" (click)="publicarRacha()">
+      <ion-icon name="earth-outline"></ion-icon>
+      {{ racha.visibilidade === 'publico' ? 'TORNAR PRIVADO' : 'PUBLICAR' }}
+    </button>
+  </div>
+
+  <!-- Chips de métricas -->
+  <div class="r-metricas-row">
+    <span class="r-metric-chip" *ngIf="codigoConvite !== '—'">
+      <ion-icon name="link-outline"></ion-icon>
+      Código: <strong>{{ codigoConvite }}</strong>
+    </span>
+    <span class="r-metric-chip">
+      <ion-icon name="people"></ion-icon>
+      Usuários: <strong>{{ totalUsuarios }}</strong>
+    </span>
+    <span class="r-metric-chip">
+      <ion-icon name="mail-outline"></ion-icon>
+      Solicitações: <strong>{{ totalSolicitacoes }}</strong>
+    </span>
+  </div>
+
+  <!-- ═══════════ Tabs ═══════════ -->
+  <nav class="rv-tabs" aria-label="Visão geral — tabs">
+    <button
+      type="button"
+      class="rv-tab"
+      [class.ativa]="tabAtiva === 'solicitacoes'"
+      (click)="selecionarTab('solicitacoes')"
+    >SOLICITAÇÕES <span class="rv-tab-count">({{ totalSolicitacoes }})</span></button>
+    <button
+      type="button"
+      class="rv-tab"
+      [class.ativa]="tabAtiva === 'usuarios'"
+      (click)="selecionarTab('usuarios')"
+    >USUÁRIOS</button>
+    <button
+      type="button"
+      class="rv-tab"
+      [class.ativa]="tabAtiva === 'eventos'"
+      (click)="selecionarTab('eventos')"
+    >EVENTOS</button>
+  </nav>
+
+  <!-- ═══════════ Tab: Usuários ═══════════ -->
+  <section class="r-card rv-tab-body" *ngIf="tabAtiva === 'usuarios'">
+    <h3>Usuários</h3>
+    <div class="rv-busca">
+      <ion-icon name="search-outline"></ion-icon>
+      <input type="text" [(ngModel)]="busca" placeholder="Procurar" />
+    </div>
+
+    <div class="rv-usuarios-grid" *ngIf="usuariosFiltrados.length > 0">
+      <article
+        *ngFor="let j of usuariosFiltrados; trackBy: trackByJogador"
+        class="rv-usuario-card"
+      >
+        <div class="rv-usuario-avatar">
+          <img *ngIf="j.fotoUrl; else iniUs" [src]="j.fotoUrl" [alt]="j.nome" />
+          <ng-template #iniUs>{{ inicial(j) }}</ng-template>
+        </div>
+        <div class="rv-usuario-info">
+          <strong>{{ j.nome }}</strong>
+          <span *ngIf="j.apelido">{{ j.apelido }}</span>
+        </div>
+        <span class="rv-usuario-nota" *ngIf="j.notaGeral !== undefined">{{ j.notaGeral }}</span>
+      </article>
+    </div>
+
+    <div class="rv-empty-inline" *ngIf="usuariosFiltrados.length === 0">
+      <ion-icon name="people-outline"></ion-icon>
+      <p *ngIf="busca">Nada encontrado para "{{ busca }}".</p>
+      <p *ngIf="!busca">Nenhum jogador cadastrado ainda.</p>
+      <button type="button" class="r-btn r-btn-lime" (click)="irParaJogadores()" *ngIf="!busca">
+        <ion-icon name="person-add"></ion-icon>
+        ADICIONAR JOGADORES
+      </button>
+    </div>
+  </section>
+
+  <!-- ═══════════ Tab: Solicitações ═══════════ -->
+  <section class="r-card rv-tab-body" *ngIf="tabAtiva === 'solicitacoes'">
+    <h3>Solicitações pendentes</h3>
+    <div class="rv-empty-inline">
+      <ion-icon name="mail-outline"></ion-icon>
+      <p>Nenhuma solicitação no momento.</p>
+      <small>Quando alguém pedir pra entrar no racha pelo link de convite, aparece aqui pra você aprovar ou recusar.</small>
+    </div>
+  </section>
+
+  <!-- ═══════════ Tab: Eventos ═══════════ -->
+  <section class="r-card rv-tab-body" *ngIf="tabAtiva === 'eventos'">
+    <h3>Próximos eventos</h3>
+    <div class="rv-empty-inline">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <p>Nenhum evento agendado.</p>
+      <small>Configure o dia e horário do racha em <strong>Meu Racha</strong> pra eventos aparecerem aqui automaticamente.</small>
+    </div>
+  </section>
+</div>
+
+<div class="rv-loading" *ngIf="loading">
+  <ion-spinner name="dots"></ion-spinner>
+</div>

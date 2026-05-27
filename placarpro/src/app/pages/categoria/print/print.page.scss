@@ -1,0 +1,1075 @@
+/* =========================================================
+   Relatórios imprimíveis (Equipes / Jogadores / Partidas /
+   Classificação / Rankings) — layout A4 retrato
+   ========================================================= */
+
+ion-content { --background: #f3f4f6; }
+
+/* =========================================================
+   Barra de controles em tela (não imprime) — toggles de coluna,
+   fase, e atalhos Excel/Imprimir.
+   ========================================================= */
+.ctrl-bar {
+  background: #ffffff;
+  margin: 12px auto 8px;
+  padding: 12px 16px;
+  width: 210mm;
+  max-width: 100%;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+  border: 1px solid #e5e7eb;
+}
+
+.ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 6px 0;
+
+  &.ctrl-row-2 {
+    border-top: 1px dashed #e5e7eb;
+    margin-top: 6px;
+    padding-top: 12px;
+  }
+}
+
+.ctrl-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #5a6470;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  min-width: 76px;
+  flex: 0 0 auto;
+
+  ion-icon { font-size: 16px; color: #1C2E3D; }
+}
+
+.ctrl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ctrl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  ion-icon {
+    font-size: 14px;
+    color: #9ca3af;
+  }
+
+  &:hover {
+    background: #e9eef5;
+    border-color: #cbd5e0;
+  }
+
+  &.on {
+    background: #4DABF7;
+    border-color: #4DABF7;
+    color: #ffffff;
+
+    ion-icon { color: #ffffff; }
+  }
+}
+
+/* Variante do chip com escudo de equipe + contador */
+.ctrl-chip-equipe {
+  padding-right: 6px;
+
+  .cce-shield {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 2px;
+    border: 1px solid #e5e7eb;
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+    ion-icon { font-size: 11px; color: #94a3b8; }
+  }
+
+  .cce-qtd {
+    background: rgba(0, 0, 0, 0.08);
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    margin-left: 2px;
+  }
+
+  &.on {
+    .cce-shield { border-color: rgba(255, 255, 255, 0.35); }
+    .cce-qtd {
+      background: rgba(255, 255, 255, 0.22);
+      color: #fff;
+    }
+  }
+}
+
+.ctrl-empty {
+  font-size: 11.5px;
+  color: #9ca3af;
+  font-style: italic;
+  padding: 4px 8px;
+}
+
+.ctrl-chip-fase {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #e9eef5;
+  }
+
+  &.on {
+    background: #1C2E3D;
+    border-color: #1C2E3D;
+    color: #ffffff;
+  }
+}
+
+.ctrl-actions {
+  display: inline-flex;
+  gap: 6px;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+
+  &.push-right {
+    margin-left: auto;
+  }
+}
+
+.ctrl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  ion-icon { font-size: 14px; }
+
+  &:hover {
+    background: #f3f4f6;
+  }
+
+  &.ghost {
+    background: transparent;
+    border-color: transparent;
+    color: #6b7280;
+
+    &:hover { background: #f3f4f6; }
+  }
+
+  &.primary {
+    color: #1C2E3D;
+    border-color: #1C2E3D;
+
+    &:hover { background: rgba(28, 46, 61, 0.06); }
+
+    &.solid {
+      background: #1C2E3D;
+      color: #ffffff;
+
+      &:hover {
+        background: #102433;
+      }
+    }
+  }
+}
+
+/* =========================================================
+   Mobile — barra de controles compacta e empilhada
+   ========================================================= */
+@media (max-width: 760px) {
+  .ctrl-bar {
+    margin: 8px 8px;
+    padding: 10px 12px;
+    width: auto;
+    border-radius: 8px;
+  }
+
+  .ctrl-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 0;
+  }
+
+  .ctrl-label {
+    min-width: auto;
+    flex: 0 0 auto;
+    font-size: 11px;
+  }
+
+  .ctrl-chips {
+    width: 100%;
+    gap: 5px;
+    /* Permite scroll horizontal das chips quando estourar a tela */
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+
+    &::-webkit-scrollbar { height: 4px; }
+    &::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 2px; }
+  }
+
+  .ctrl-chip,
+  .ctrl-chip-fase,
+  .ctrl-chip-equipe {
+    flex-shrink: 0;
+    font-size: 11.5px;
+    padding: 5px 10px;
+  }
+
+  .ctrl-actions {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 4px;
+
+    &.push-right { margin-left: 0; }
+  }
+
+  .ctrl-btn {
+    padding: 6px 12px;
+    font-size: 11.5px;
+  }
+}
+
+.print-folha {
+  background: #fff;
+  margin: 12px auto;
+  padding: 12mm 10mm;
+  width: 210mm;
+  max-width: 100%;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  color: #1a1a1a;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+/* ============ Cabeçalho ============ */
+.ph-cabec {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  border-bottom: 2px solid #1C2E3D;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+
+  .ph-logo {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    img {
+      max-width: 64px;
+      max-height: 64px;
+      object-fit: contain;
+    }
+  }
+
+  .ph-titulo-bloco {
+    min-width: 0;
+  }
+  .ph-camp {
+    font-size: 17px;
+    font-weight: 800;
+    color: #1C2E3D;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    line-height: 1.1;
+  }
+  .ph-cat {
+    font-size: 12px;
+    font-weight: 600;
+    color: #5a6470;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .ph-sub {
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #4DABF7;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .ph-data {
+    text-align: right;
+    .ph-data-label {
+      font-size: 9.5px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .ph-data-val {
+      font-size: 11px;
+      font-weight: 700;
+      color: #1C2E3D;
+    }
+  }
+}
+
+/* ============ Faixa de filtro de fase (Equipes) ============ */
+.filtro-fase {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #eef3f7;
+  border-left: 3px solid #4DABF7;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #1C2E3D;
+  margin-bottom: 10px;
+
+  strong { font-weight: 700; }
+  .ph-grupo-meta { color: #6b7280; font-weight: 500; }
+  ion-icon { font-size: 14px; }
+}
+
+/* ============ Aviso de nenhuma coluna selecionada ============ */
+.aviso-colunas {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  background: #fff5e6;
+  border-left: 3px solid #f59e0b;
+  color: #9a3412;
+  font-size: 12px;
+  border-radius: 4px;
+  margin-top: 12px;
+
+  ion-icon { font-size: 18px; flex: 0 0 auto; }
+}
+
+/* ============ Equipes: escudo + coluna link ============ */
+.sec-equipes {
+  .ph-tabela.equipes {
+    .w-esc { width: 44px; text-align: center; }
+    .cel-esc { text-align: center; }
+    .cel-link a {
+      color: #4DABF7;
+      text-decoration: none;
+      word-break: break-all;
+      font-size: 10px;
+    }
+    td.bold { font-weight: 700; }
+  }
+}
+
+/* ============ Tabela genérica ============ */
+.ph-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 12px;
+
+  th, td {
+    border: 1px solid #c9cdd4;
+    padding: 5px 8px;
+    text-align: left;
+    vertical-align: middle;
+  }
+  thead th {
+    background: #1C2E3D;
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  tbody tr:nth-child(even) td {
+    background: #f7f8fa;
+  }
+  td.bold { font-weight: 700; }
+  td.vazio { text-align: center; color: #a0a4ab; font-style: italic; padding: 14px; }
+
+  .w-pos { width: 32px; text-align: center; font-weight: 700; }
+  .w-num { width: 70px; text-align: center; }
+  .w-cidade { width: 160px; }
+  .w-placar { width: 80px; text-align: center; font-size: 12px; }
+
+  &.classif {
+    th:not(:first-child):not(:nth-child(2)),
+    td:not(:first-child):not(:nth-child(2)) {
+      text-align: center;
+      width: 7%;
+    }
+  }
+  &.ranking {
+    th:nth-child(3), td:nth-child(3) { width: 38%; }
+  }
+}
+
+.ph-eq-cel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Foto miniatura nas linhas de jogadores (quando coluna Foto está marcada). */
+.foto-mini {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+.ph-tabela .w-foto { width: 44px; text-align: center; padding: 2px; }
+.ph-eq-logo {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #eef0f3;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  img { width: 100%; height: 100%; object-fit: cover; }
+
+  &.small { width: 18px; height: 18px; }
+}
+
+/* ============ Grupos (jogadores por equipe / grupos de classificação) ============ */
+.ph-grupo {
+  margin-bottom: 16px;
+  page-break-inside: avoid;
+}
+.ph-grupo-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #1C2E3D;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 4px 8px;
+  background: #eef3f7;
+  border-left: 3px solid #4DABF7;
+}
+.ph-grupo-meta {
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: none;
+}
+
+/* ============ Rankings — grid adaptativo ============
+   Auto-fit em cards de no mínimo 320px. Com 1 ranking ocupa
+   linha inteira; com 2 fica lado a lado; com 4 distribui em
+   2x2 conforme largura disponível. */
+.rankings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+
+  .ph-rk {
+    min-width: 0;
+    page-break-inside: avoid;
+
+    .ph-grupo-titulo {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      ion-icon {
+        font-size: 14px;
+        color: #4DABF7;
+      }
+    }
+  }
+
+  /* Aviso amigável quando nenhum ranking marcado */
+  .aviso-colunas {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .rankings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   PARTIDAS — layout em CARDS de partida (sem tabela)
+   Cada partida = card individual com:
+     - Meta (data/hora + local + status)
+     - Confronto: mandante × placar × visitante
+   ========================================================= */
+.partidas-section {
+  /* Esconde o título antigo (.ph-grupo-titulo) — substituído pelo .p-banner */
+  .ph-grupo-titulo { display: none; }
+}
+
+.p-grupo {
+  margin-bottom: 22px;
+  page-break-inside: avoid;
+  &:last-child { margin-bottom: 0; }
+}
+
+/* ----- Banner do grupo (fase + rodada + qtd) — navy gradient ----- */
+.p-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  background: linear-gradient(90deg, #1C2E3D 0%, #2d4a63 100%);
+  color: #fff;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.10);
+
+  ion-icon {
+    font-size: 16px;
+    color: #7CC61D;
+    flex-shrink: 0;
+  }
+
+  .p-banner-titulo {
+    font-size: 12.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .p-banner-qtd {
+    margin-left: auto;
+    font-size: 10.5px;
+    opacity: 0.88;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    background: rgba(255, 255, 255, 0.12);
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+}
+
+/* ----- Lista de cards ----- */
+.p-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.p-card {
+  background: #fff;
+  border: 1px solid #e2e6eb;
+  border-radius: 8px;
+  overflow: hidden;
+  page-break-inside: avoid;
+  transition: border-color 0.15s ease;
+
+  &.alt { background: #fafbfc; }
+}
+
+/* ----- Header meta do card ----- */
+.p-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 12px;
+  background: rgba(28, 46, 61, 0.04);
+  border-bottom: 1px solid #e8ebef;
+  min-height: 26px;
+}
+
+.p-meta-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.p-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #5a6470;
+  letter-spacing: 0.2px;
+  min-width: 0;
+
+  ion-icon {
+    font-size: 12px;
+    color: #1C2E3D;
+    flex-shrink: 0;
+  }
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &.sem {
+    color: #9ca3af;
+    font-style: italic;
+    ion-icon { color: #9ca3af; }
+  }
+}
+
+.p-hora {
+  color: #1C2E3D;
+  font-weight: 700;
+}
+
+.p-status {
+  flex-shrink: 0;
+}
+
+/* ----- Corpo: confronto (mandante × placar × visitante) ----- */
+.p-confronto {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+}
+
+.p-time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.p-mand {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.p-vis {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.p-time-txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.p-time-nome {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1C2E3D;
+  text-transform: uppercase;
+  letter-spacing: 0.25px;
+  line-height: 1.2;
+  /* Permite quebra de linha em vez de truncar */
+  word-break: break-word;
+  white-space: normal;
+}
+
+.p-shield {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid #d1d5db;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 16px; color: #94a3b8; }
+}
+
+.p-placar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  background: #1C2E3D;
+  color: #fff;
+  border-radius: 6px;
+  min-width: 84px;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(28, 46, 61, 0.18);
+}
+
+.p-placar-num {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  min-width: 16px;
+  text-align: center;
+}
+
+.p-placar-x {
+  font-size: 13px;
+  opacity: 0.5;
+  margin: 0 2px;
+}
+
+.p-placar-vs {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #fff;
+  opacity: 0.85;
+}
+
+/* ----- Mobile: empilha confronto em coluna ----- */
+@media (max-width: 640px) {
+  .p-banner {
+    flex-wrap: wrap;
+    .p-banner-qtd { width: 100%; margin-left: 0; margin-top: 4px; }
+  }
+
+  .p-meta { flex-wrap: wrap; }
+
+  .p-confronto {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 8px;
+  }
+
+  .p-mand, .p-vis {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .p-placar { margin: 0 auto; }
+}
+
+/* ----- Print: garante cores e compactação ----- */
+@media print {
+  .p-banner {
+    box-shadow: none !important;
+    background: #1C2E3D !important;
+    color: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .p-meta {
+    background: #eef0f3 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .p-card {
+    box-shadow: none !important;
+    border-color: #cbd5e0 !important;
+
+    &.alt {
+      background: #f7f8fa !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+
+  .p-placar {
+    background: #1C2E3D !important;
+    color: #fff !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .p-shield { box-shadow: none !important; }
+
+  /* Compacta pra caber mais por página */
+  .p-confronto { padding: 7px 12px; }
+  .p-meta { padding: 3px 10px; }
+  .p-time-nome { font-size: 11.5px; }
+  .p-shield { width: 28px; height: 28px; }
+  .p-placar-num { font-size: 17px; }
+  .p-placar { min-width: 72px; padding: 4px 11px; }
+  .p-banner { padding: 7px 12px; margin-bottom: 7px; }
+}
+
+/* Badge de status (Encerrado / Em andamento / Agendado / Cancelado / W.O.) */
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  border: 1px solid transparent;
+
+  &.st-encerrado {
+    background: #e8f5d6;
+    color: #4a7e0e;
+    border-color: #c0e0a0;
+  }
+  &.st-andamento {
+    background: #fde4e4;
+    color: #c41e1e;
+    border-color: #f0b8b8;
+  }
+  &.st-agendado {
+    background: #dfeefd;
+    color: #1976d2;
+    border-color: #b5d8f5;
+  }
+  &.st-cancelado {
+    background: #ececec;
+    color: #6b7280;
+    border-color: #d6d6d6;
+  }
+  &.st-wo {
+    background: #fff1d6;
+    color: #b46500;
+    border-color: #f1d8a3;
+  }
+}
+
+/* ============ Vazios e loading ============ */
+.vazio-bloco {
+  padding: 24px;
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+}
+.ph-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+/* ============ Rodapé ============ */
+.ph-rodape {
+  margin-top: 18px;
+  padding-top: 8px;
+  border-top: 1px solid #c9cdd4;
+  text-align: center;
+  font-size: 9.5px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* =========================================================
+   PRINT
+   ========================================================= */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+  .no-print { display: none !important; }
+
+  ion-content { --background: #fff; }
+  .print-folha {
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+  .ph-tabela thead th {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .ph-grupo-titulo {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Garante que badges coloridos saiam corretos na impressão. */
+  .status-badge {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .ph-grupo { page-break-inside: avoid; }
+  tr { page-break-inside: avoid; }
+}
+
+/* =========================================================
+   AJUSTES GERAIS DE MOBILE — aplica sobre TODAS as seções
+   da página unificada (Equipes, Jogadores, Partidas,
+   Classificação, Rankings).
+   ========================================================= */
+@media (max-width: 760px) {
+  .print-folha {
+    width: auto;
+    margin: 8px 8px;
+    padding: 14px 12px;
+    font-size: 11px;
+    border-radius: 8px;
+  }
+
+  /* Cabeçalho: vira coluna empilhada */
+  .ph-cabec {
+    grid-template-columns: 48px 1fr;
+    gap: 10px;
+
+    .ph-logo {
+      width: 48px;
+      height: 48px;
+      img { max-width: 48px; max-height: 48px; }
+    }
+
+    .ph-camp { font-size: 14px; }
+    .ph-cat  { font-size: 11px; }
+    .ph-sub  { font-size: 11px; margin-top: 4px; }
+
+    .ph-data {
+      grid-column: 1 / -1;
+      text-align: left;
+      border-top: 1px dashed #e5e7eb;
+      padding-top: 6px;
+      margin-top: 2px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+
+      .ph-data-label { font-size: 9px; }
+      .ph-data-val   { font-size: 10.5px; }
+    }
+  }
+
+  .ph-grupo-titulo {
+    font-size: 11.5px;
+    flex-wrap: wrap;
+    .ph-grupo-meta { width: 100%; margin-left: 0; margin-top: 2px; }
+  }
+
+  /* Tabelas: scroll horizontal quando passar da largura */
+  .ph-tabela {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    font-size: 10.5px;
+
+    thead, tbody, tr { /* mantém estrutura de tabela ao rolar */
+      display: table;
+      width: 100%;
+      table-layout: auto;
+    }
+
+    th, td {
+      padding: 4px 6px;
+      font-size: 10.5px;
+    }
+
+    .w-foto {
+      .foto-mini {
+        width: 24px;
+        height: 24px;
+      }
+    }
+  }
+
+  /* Wrapper de tabela quando existe */
+  .ph-tabela-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Faixa de filtro de fase (Equipes) */
+  .filtro-fase {
+    flex-wrap: wrap;
+    font-size: 10.5px;
+    .ph-grupo-meta { width: 100%; }
+  }
+
+  /* Aviso de "nenhuma coluna" */
+  .aviso-colunas {
+    padding: 10px 12px;
+    font-size: 11px;
+    ion-icon { font-size: 16px; }
+  }
+
+  /* Rodapé */
+  .ph-rodape {
+    font-size: 9.5px;
+    padding: 8px 10px;
+  }
+
+  /* Toolbar com "Colunas" + "Imprimir" não quebra texto */
+  ion-toolbar ion-buttons[slot="end"] ion-button {
+    --padding-start: 6px;
+    --padding-end: 6px;
+    font-size: 11.5px;
+  }
+}
+
+/* Esconde o texto do botão da toolbar em mobile, deixando só o ícone */
+@media (max-width: 520px) {
+  .tb-label { display: none; }
+}
+
+/* ====== Telas ainda menores (375px e abaixo) ====== */
+@media (max-width: 400px) {
+  .print-folha {
+    padding: 12px 10px;
+  }
+
+  .ph-cabec .ph-camp { font-size: 13px; }
+
+  .ph-tabela {
+    th, td { padding: 3px 5px; font-size: 9.5px; }
+  }
+
+  .ctrl-bar { padding: 8px 10px; }
+  .ctrl-chip,
+  .ctrl-chip-fase,
+  .ctrl-chip-equipe { font-size: 11px; padding: 4px 8px; }
+}

@@ -1,0 +1,45 @@
+<div class="card">
+  <h2 class="card-title">Editar fase</h2>
+
+  <label class="lbl-titulo">
+    <span class="lbl-text">Título</span>
+    <input class="ipt-titulo" type="text" [(ngModel)]="titulo" maxlength="40" />
+  </label>
+
+  <!-- Linha condicional: "Classificação" pra eliminatórias OU "Destacar posições" pra pontos corridos -->
+  <ng-container *ngIf="isEliminatoria; else linhaDestacar">
+    <label class="row check-row">
+      <span class="row-text">Classificação</span>
+      <input type="checkbox" [(ngModel)]="classificacaoAtiva" />
+    </label>
+  </ng-container>
+  <ng-template #linhaDestacar>
+    <button type="button" class="row" (click)="editarDestaques()">
+      <ion-icon class="row-icon" name="color-palette-outline"></ion-icon>
+      <span class="row-text">Destacar posições</span>
+      <span class="row-link">Editar</span>
+    </button>
+  </ng-template>
+
+  <button type="button" class="row" (click)="editarEquipes()">
+    <ion-icon class="row-icon" name="filter-outline"></ion-icon>
+    <span class="row-text">Selecionar equipes</span>
+    <span class="row-link">Editar</span>
+  </button>
+
+  <button type="button" class="row" (click)="editarContinuar()">
+    <ion-icon class="row-icon" name="copy-outline"></ion-icon>
+    <span class="row-text">Continuar tabela</span>
+    <span class="row-link">Editar</span>
+  </button>
+
+  <div class="actions">
+    <button type="button" class="btn-text danger" (click)="remover()" [disabled]="loading">
+      Remover
+    </button>
+    <div class="spacer"></div>
+    <button type="button" class="btn-text primary" (click)="salvar()" [disabled]="loading">
+      Salvar
+    </button>
+  </div>
+</div>

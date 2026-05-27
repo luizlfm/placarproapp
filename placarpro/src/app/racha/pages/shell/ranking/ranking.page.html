@@ -1,0 +1,116 @@
+<div class="r-page rr-page">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">Ranking</span>
+  </header>
+
+  <!-- ═══════════ Page header ═══════════ -->
+  <header class="r-page-head">
+    <span class="r-page-tag">RESUMO GERAL</span>
+    <h1>Ranking do racha</h1>
+    <p>9 categorias pra você medir seu desempenho — artilheiros, assistência, goleiro, xerifão e mais.</p>
+  </header>
+
+  <!-- Faixa verde com CTAs -->
+  <div class="r-hero-strip">
+    <button type="button" class="r-hero-strip-btn" (click)="compartilhar()">
+      <ion-icon name="share-social-outline"></ion-icon>
+      COMPARTILHAR
+    </button>
+    <button type="button" class="r-hero-strip-btn alt" (click)="irParaRankingMundial()">
+      <ion-icon name="earth-outline"></ion-icon>
+      RANKING MUNDIAL
+    </button>
+  </div>
+
+  <!-- Chips -->
+  <div class="r-metricas-row">
+    <span class="r-metric-chip">
+      <ion-icon name="people"></ion-icon>
+      <strong>{{ qtdJogadores }}</strong> jogador(es)
+    </span>
+  </div>
+
+  <!-- Pill de filtro -->
+  <button type="button" class="rr-filtro" (click)="toggleFiltro()">
+    <ion-icon name="options-outline"></ion-icon>
+    <span>{{ filtroAno }} · Todo Ano · Todos</span>
+    <ion-icon [name]="filtroAberto ? 'chevron-up' : 'chevron-down'"></ion-icon>
+  </button>
+  <div class="rr-filtro-body" *ngIf="filtroAberto">
+    Em breve: filtros por ano, período e jogador.
+  </div>
+
+  <!-- ═══════════ Loading ═══════════ -->
+  <div class="rr-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <!-- ═══════════ Conteúdo (sidebar + main) ═══════════ -->
+  <div class="rr-shell" *ngIf="!loading">
+    <!-- Sidebar de categorias -->
+    <aside class="rr-categorias" aria-label="Categorias de ranking">
+      <button
+        type="button"
+        *ngFor="let c of categorias; trackBy: trackByCategoria"
+        class="rr-categoria"
+        [class.ativa]="categoriaAtiva.id === c.id"
+        (click)="selecionarCategoria(c)"
+      >
+        <span class="rr-cat-icone" [style.background]="c.cor + '22'" [style.color]="c.cor">
+          <ion-icon [name]="c.icon"></ion-icon>
+        </span>
+        <span class="rr-cat-label">{{ c.label }}</span>
+      </button>
+    </aside>
+
+    <!-- Conteúdo do ranking -->
+    <main class="rr-main">
+      <header class="rr-main-head">
+        <ion-icon name="star" class="rr-main-icone"></ion-icon>
+        <div>
+          <span class="rr-main-tag">
+            RANKING {{ categoriaAtiva.tipo === 'time' ? 'POR TIME' : 'INDIVIDUAL' }}
+          </span>
+          <h2>{{ categoriaAtiva.subtitulo }}</h2>
+        </div>
+        <span class="rr-main-count">{{ qtdJogadores }} jogadores</span>
+      </header>
+
+      <!-- Lista do ranking -->
+      <table class="rr-tabela" *ngIf="jogadoresRanking.length > 0">
+        <thead>
+          <tr>
+            <th class="pos">#</th>
+            <th>Jogador</th>
+            <th class="num">Pontos</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let j of jogadoresRanking; let i = index; trackBy: trackByJogador">
+            <td class="pos">
+              <span class="rr-medalha" [attr.data-pos]="i + 1">{{ i + 1 }}</span>
+            </td>
+            <td>
+              <div class="rr-jog">
+                <span class="rr-jog-avatar">{{ inicial(j) }}</span>
+                <span class="rr-jog-nome">{{ j.apelido || j.nome }}</span>
+              </div>
+            </td>
+            <td class="num">
+              <span class="rr-pontos">{{ j.notaGeral ?? '—' }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Empty state -->
+      <div class="rr-empty" *ngIf="jogadoresRanking.length === 0">
+        <ion-icon name="trophy-outline"></ion-icon>
+        <h3>Sem dados ainda</h3>
+        <p>Cadastre jogadores e termine partidas pra ver o ranking aqui.</p>
+      </div>
+    </main>
+  </div>
+</div>

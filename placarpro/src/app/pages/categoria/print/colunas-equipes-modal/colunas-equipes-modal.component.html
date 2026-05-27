@@ -1,0 +1,33 @@
+<ion-header class="cem-header">
+  <ion-toolbar>
+    <ion-title>Lista das equipes</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="cem-content">
+  <ul class="cem-list">
+    <li
+      *ngFor="let c of colunas; trackBy: trackByColuna"
+      class="cem-item"
+      (click)="toggle(c)"
+    >
+      <span class="cem-label">{{ c.label }}</span>
+      <span class="cem-check" [class.on]="c.selecionado">
+        <ion-icon *ngIf="c.selecionado" name="checkmark-outline"></ion-icon>
+      </span>
+    </li>
+  </ul>
+</ion-content>
+
+<ion-footer class="cem-footer">
+  <ion-toolbar>
+    <ion-buttons slot="end">
+      <ion-button color="primary" (click)="salvar()">Salvar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-footer>

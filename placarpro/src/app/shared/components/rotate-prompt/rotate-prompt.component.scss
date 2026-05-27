@@ -1,0 +1,101 @@
+/* Overlay fullscreen "Gire o telefone" — só em mobile portrait. */
+
+.rp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999; /* acima de tudo: header Ionic, FAB, ion-modal, etc */
+  background: linear-gradient(180deg, #0e1a26 0%, #1c2e3d 60%, #0e1a26 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  /* Bloqueia rolagem por baixo do overlay */
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+
+.rp-card {
+  width: 100%;
+  max-width: 360px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 32px 24px;
+  text-align: center;
+  color: #fff;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Animação do ícone do celular — rotaciona 90° pra dar a dica visual */
+.rp-icon-wrap {
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(124, 198, 29, 0.15);
+  border: 2px solid rgba(124, 198, 29, 0.45);
+}
+
+.rp-phone {
+  font-size: 56px;
+  color: #7CC61D;
+  animation: rp-rotate 2.4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes rp-rotate {
+  0%, 30%   { transform: rotate(0deg); }
+  60%, 100% { transform: rotate(-90deg); }
+}
+
+.rp-titulo {
+  margin: 0 0 10px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  color: #fff;
+}
+
+.rp-texto {
+  margin: 0 0 24px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.78);
+
+  strong {
+    color: #7CC61D;
+    font-weight: 700;
+  }
+}
+
+.rp-btn-voltar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border-radius: 24px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+
+  ion-icon {
+    font-size: 16px;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  &:active {
+    transform: scale(0.97);
+  }
+}

@@ -1,0 +1,247 @@
+<ion-header class="ie-header-app">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Editar ficha</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ie-content">
+  <!-- Loading -->
+  <div class="ie-state" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+    <p>Carregando convite...</p>
+  </div>
+
+  <!-- Erro -->
+  <div class="ie-state ie-erro" *ngIf="!loading && erro">
+    <ion-icon name="alert-circle-outline"></ion-icon>
+    <h2>{{ erro }}</h2>
+  </div>
+
+  <!-- Convite já preenchido -->
+  <div class="ie-state ie-usado" *ngIf="!loading && convite?.usado">
+    <ion-icon name="checkmark-circle-outline"></ion-icon>
+    <h2>Convite já utilizado</h2>
+    <p>Esta ficha de inscrição já foi enviada. Entre em contato com o organizador caso precise alterar.</p>
+  </div>
+
+  <!-- ============ LOGIN WALL ============
+       Bloqueia acesso ao form até o usuário entrar. Mantém o header
+       com logo do campeonato pra dar contexto. -->
+  <div class="ie-loginwall" *ngIf="!loading && !erro && convite && !convite.usado && !(user$ | async)">
+    <div class="ie-lw-header">
+      <div class="ie-lw-logo">
+        <img *ngIf="campeonato?.logoUrl" [src]="campeonato!.logoUrl" alt="" />
+      </div>
+      <div class="ie-lw-titulo">{{ convite!.tituloCampeonato || campeonato?.titulo || 'CAMPEONATO' }}</div>
+      <div class="ie-lw-equipe" *ngIf="convite!.nomeEquipe">{{ convite!.nomeEquipe }}</div>
+    </div>
+    <ion-icon name="lock-closed-outline" class="ie-lw-icone"></ion-icon>
+    <h2>Faça login para continuar</h2>
+    <p>
+      Para preencher ou editar a ficha de inscrição da equipe, você precisa
+      entrar com sua conta. É rápido e gratuito.
+    </p>
+    <button class="ie-btn primary ie-lw-btn" type="button" (click)="abrirLogin()">
+      <ion-icon name="log-in-outline"></ion-icon>
+      Entrar / Criar conta
+    </button>
+    <p class="ie-lw-foot">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      Quem tem o link consegue acessar — mas precisa de uma conta pra enviar os dados.
+    </p>
+  </div>
+
+  <!-- Formulário (só pra logados) -->
+  <div class="ie-folha" *ngIf="!loading && !erro && convite && !convite.usado && (user$ | async)">
+    <!-- Banner de modo edição (dados já existentes da equipe) -->
+    <div class="ie-rascunho edicao" *ngIf="modoEdicao && !rascunhoRestaurado">
+      <ion-icon name="create-outline"></ion-icon>
+      <div class="ie-rascunho-txt">
+        <strong>Modo edição.</strong>
+        Os atletas já cadastrados estão preenchidos. Edite, adicione novos ou
+        confirme pra atualizar.
+      </div>
+    </div>
+
+    <!-- Banner de rascunho restaurado -->
+    <div class="ie-rascunho" *ngIf="rascunhoRestaurado">
+      <ion-icon name="save-outline"></ion-icon>
+      <div class="ie-rascunho-txt">
+        <strong>Rascunho restaurado.</strong>
+        Recuperamos os dados que você tinha digitado antes. Continue de onde parou.
+      </div>
+      <button type="button" class="ie-rascunho-clear" (click)="descartarRascunho()">
+        Começar do zero
+      </button>
+    </div>
+
+    <!-- ============ HEADER ============ -->
+    <header class="ie-cabec">
+      <div class="ie-logo-camp">
+        <img *ngIf="campeonato?.logoUrl" [src]="campeonato!.logoUrl" alt="" />
+      </div>
+      <div class="ie-titulo-bloco">
+        <div class="ie-titulo">{{ convite.tituloCampeonato || campeonato?.titulo || 'CAMPEONATO' }}</div>
+        <div class="ie-sub" *ngIf="convite.subtituloCampeonato || campeonato?.subtitulo">
+          {{ convite.subtituloCampeonato || campeonato?.subtitulo }}
+        </div>
+        <div class="ie-doc">FICHA DE INSCRIÇÃO — ATLETAS</div>
+      </div>
+    </header>
+
+    <!-- ============ EQUIPE + CONTATO ============ -->
+    <div class="ie-bloco-equipe">
+      <div class="ie-campo equipe">
+        <label>Equipe:</label>
+        <input type="text" [value]="convite.nomeEquipe || ''" disabled />
+      </div>
+      <div class="ie-campo">
+        <label>Contato:</label>
+        <input
+          type="text"
+          [(ngModel)]="contato"
+          (ngModelChange)="salvarRascunho()"
+          placeholder="Telefone ou e-mail"
+        />
+      </div>
+    </div>
+
+    <!-- ============ TABELA DE ATLETAS (20 linhas) ============ -->
+    <table class="ie-tabela">
+      <thead>
+        <tr>
+          <th class="w-ordem">Nº<br>Ordem</th>
+          <th>Nome Completo do Atleta</th>
+          <th class="w-doc">Número do<br>Documento</th>
+          <th class="w-nasc">Data<br>Nascimento</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let a of atletas; trackBy: trackByOrdem">
+          <td class="w-ordem cel-ordem">{{ a.ordem | number:'2.0-0' }}</td>
+          <td data-label="Nome">
+            <input
+              type="text"
+              [(ngModel)]="a.nome"
+              (ngModelChange)="salvarRascunho()"
+              placeholder="Nome completo"
+            />
+          </td>
+          <td class="w-doc" data-label="Documento">
+            <input
+              type="text"
+              [(ngModel)]="a.documento"
+              (ngModelChange)="salvarRascunho()"
+              placeholder="RG/CPF"
+            />
+          </td>
+          <td class="w-nasc" data-label="Nascimento">
+            <input
+              type="date"
+              [(ngModel)]="a.dataNascimento"
+              (ngModelChange)="salvarRascunho()"
+            />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ============ COMISSÃO TÉCNICA ============ -->
+    <div class="ie-secao-titulo">COMISSÃO TÉCNICA</div>
+    <table class="ie-tabela comissao">
+      <thead>
+        <tr>
+          <th class="w-funcao">Função</th>
+          <th>Nome</th>
+          <th class="w-doc-com">Documento</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of comissao; trackBy: trackByFuncao">
+          <td class="cel-funcao">{{ m.funcaoLabel }}:</td>
+          <td data-label="Nome">
+            <input
+              type="text"
+              [(ngModel)]="m.nome"
+              (ngModelChange)="salvarRascunho()"
+              placeholder="Nome completo"
+            />
+          </td>
+          <td data-label="Documento">
+            <input
+              type="text"
+              [(ngModel)]="m.documento"
+              (ngModelChange)="salvarRascunho()"
+              placeholder="RG/CPF"
+            />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ============ TERMO ============ -->
+    <div class="ie-termo">
+      <p>
+        Declaro para os devidos fins que as informações acima citadas são
+        verídicas e com a autorização da empresa na qual está sendo feita a
+        organização da competição amadora sem vínculos quaisquer. Os atletas
+        menores de idade precisam preencher um termo de responsabilidade do
+        responsável imediato.
+      </p>
+      <label class="ie-check">
+        <input
+          type="checkbox"
+          [(ngModel)]="termoAceito"
+          (ngModelChange)="salvarRascunho()"
+        />
+        <span>Li e aceito o termo acima</span>
+      </label>
+    </div>
+
+    <!-- ============ REPRESENTANTE ============ -->
+    <div class="ie-bloco-rep">
+      <div class="ie-campo">
+        <label>Nome do representante da equipe</label>
+        <input
+          type="text"
+          [(ngModel)]="representanteNome"
+          (ngModelChange)="salvarRascunho()"
+          placeholder="Nome completo"
+        />
+      </div>
+      <div class="ie-campo">
+        <label>RG do representante</label>
+        <input
+          type="text"
+          [(ngModel)]="representanteRg"
+          (ngModelChange)="salvarRascunho()"
+          placeholder="RG/CPF"
+        />
+      </div>
+    </div>
+
+    <!-- ============ AÇÕES ============ -->
+    <div class="ie-actions">
+      <div class="ie-contador">
+        {{ qtdAtletasPreenchidos() }} de {{ atletas.length }} atletas preenchidos
+      </div>
+      <button
+        class="ie-btn primary"
+        type="button"
+        [disabled]="enviando || !termoAceito"
+        (click)="confirmar()"
+      >
+        <ion-icon name="checkmark-outline"></ion-icon>
+        {{
+          enviando ? 'Enviando...' :
+          (modoEdicao ? 'Atualizar Cadastro' : 'Confirmar Inscrição')
+        }}
+      </button>
+    </div>
+  </div>
+</ion-content>

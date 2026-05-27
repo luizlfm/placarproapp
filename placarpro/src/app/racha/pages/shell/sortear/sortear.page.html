@@ -1,0 +1,170 @@
+<div class="r-page">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">Sortear Times</span>
+  </header>
+
+  <!-- ═══════════ Page header ═══════════ -->
+  <header class="r-page-head">
+    <span class="r-page-tag">PAINEL DE SORTEIO</span>
+    <h1>Sortear Times</h1>
+    <p>Configure quantidades, escolha critérios e deixe o sistema equilibrar o seu racha.</p>
+  </header>
+
+  <!-- Faixa verde com CTA principal -->
+  <div class="r-hero-strip">
+    <button type="button" class="r-hero-strip-btn" (click)="sortear()">
+      <ion-icon name="shuffle"></ion-icon>
+      SORTEAR AGORA
+    </button>
+    <button type="button" class="r-hero-strip-btn alt" (click)="compartilhar()">
+      <ion-icon name="share-social-outline"></ion-icon>
+      COMPARTILHAR
+    </button>
+  </div>
+
+  <!-- Métricas em chips -->
+  <div class="r-metricas-row">
+    <span class="r-metric-chip">
+      <ion-icon name="shield-outline"></ion-icon>
+      Times: <strong>{{ qtdTimes }}</strong>
+    </span>
+    <span class="r-metric-chip">
+      <ion-icon name="people-outline"></ion-icon>
+      Por time: <strong>{{ jogadoresPorTime }}</strong>
+    </span>
+    <span class="r-metric-chip">
+      <ion-icon name="options-outline"></ion-icon>
+      Critério: <strong>{{ labelCriterio(criterio).toLowerCase() }}</strong>
+    </span>
+  </div>
+
+  <!-- ═══════════ Botões 3 colunas ═══════════ -->
+  <section class="rs-acoes-grid">
+    <button type="button" class="rs-acao-btn yellow" (click)="limparJogadores()">
+      <ion-icon name="person-remove-outline"></ion-icon>
+      <span>Limpar Jog.</span>
+    </button>
+    <button type="button" class="rs-acao-btn yellow" (click)="limparSorteio()">
+      <ion-icon name="refresh-outline"></ion-icon>
+      <span>Limpar Sor.</span>
+    </button>
+    <button type="button" class="rs-acao-btn lime" (click)="sortear()">
+      <ion-icon name="shuffle"></ion-icon>
+      <span>Sortear</span>
+    </button>
+  </section>
+
+  <!-- ═══════════ Sorteio com IA ═══════════ -->
+  <button type="button" class="rs-ia-btn" (click)="sorteioComIA()">
+    <ion-icon name="sparkles"></ion-icon>
+    <span>Sorteio com IA</span>
+  </button>
+
+  <!-- ═══════════ Configuração ═══════════ -->
+  <section class="r-card rs-config">
+    <div class="rs-config-row">
+      <div class="rs-field">
+        <label>Qtd. Times</label>
+        <input type="number" [(ngModel)]="qtdTimes" min="2" max="8" />
+      </div>
+      <div class="rs-field">
+        <label>Jogadores por time</label>
+        <input type="number" [(ngModel)]="jogadoresPorTime" min="3" max="11" />
+      </div>
+    </div>
+
+    <div class="rs-radios">
+      <label class="rs-radio">
+        <input type="radio" name="criterio" value="notas" [(ngModel)]="criterio" />
+        <span class="rs-radio-dot"></span>
+        <span>Notas</span>
+        <ion-icon name="information-circle-outline" class="rs-radio-info" title="Distribui em snake-draft pela nota geral"></ion-icon>
+      </label>
+      <label class="rs-radio">
+        <input type="radio" name="criterio" value="aleatorio" [(ngModel)]="criterio" />
+        <span class="rs-radio-dot"></span>
+        <span>Aleatório</span>
+        <ion-icon name="information-circle-outline" class="rs-radio-info" title="Embaralhamento puro"></ion-icon>
+      </label>
+      <label class="rs-radio">
+        <input type="radio" name="criterio" value="posicoes" [(ngModel)]="criterio" />
+        <span class="rs-radio-dot"></span>
+        <span>Posições</span>
+        <ion-icon name="information-circle-outline" class="rs-radio-info" title="Goleiros primeiro, depois linha"></ion-icon>
+      </label>
+      <label class="rs-radio">
+        <input type="radio" name="criterio" value="mercado" [(ngModel)]="criterio" />
+        <span class="rs-radio-dot"></span>
+        <span>Mercado de Notas</span>
+        <ion-icon name="information-circle-outline" class="rs-radio-info" title="Em breve — usa avaliação peer-to-peer"></ion-icon>
+      </label>
+    </div>
+  </section>
+
+  <!-- ═══════════ Loading ═══════════ -->
+  <div class="rs-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <!-- ═══════════ Resultado do sorteio ═══════════ -->
+  <section class="rs-resultado" *ngIf="!loading && resultado.length > 0">
+    <h2 class="rs-resultado-titulo">Times sorteados</h2>
+    <div class="rs-times-grid">
+      <article
+        *ngFor="let r of resultado; trackBy: trackByTimeSorteado"
+        class="rs-time-card"
+      >
+        <header class="rs-time-head" [style.borderTopColor]="r.time.cor || '#7CC61D'">
+          <div class="rs-time-escudo" [style.background]="r.time.cor || '#7CC61D'">
+            <ion-icon name="shield"></ion-icon>
+          </div>
+          <div class="rs-time-info">
+            <strong>{{ r.time.nome }}</strong>
+            <small>Média nota: {{ r.mediaNota }}</small>
+          </div>
+        </header>
+        <ul class="rs-time-lista">
+          <li *ngFor="let j of r.jogadores; trackBy: trackByJogador">
+            <span class="rs-time-avatar">{{ inicial(j) }}</span>
+            <span class="rs-time-nome">{{ j.apelido || j.nome }}</span>
+            <span class="rs-time-nota" *ngIf="j.notaGeral !== undefined">{{ j.notaGeral }}</span>
+          </li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="rs-banco" *ngIf="banco.length > 0">
+      <h3>Banco</h3>
+      <div class="rs-banco-chips">
+        <span class="rs-banco-chip" *ngFor="let j of banco; trackBy: trackByJogador">
+          {{ j.apelido || j.nome }}
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ Empty state (sem jogadores ainda) ═══════════ -->
+  <section class="r-empty" *ngIf="!loading && jogadores.length === 0">
+    <div class="r-empty-icone">
+      <ion-icon name="people-outline"></ion-icon>
+    </div>
+    <h2>Nenhum jogador disponível</h2>
+    <p>Cadastre jogadores no Elenco antes de sortear os times.</p>
+    <button type="button" class="r-btn r-btn-lime r-btn-big" (click)="cadastrarJogadores()">
+      <ion-icon name="person-add"></ion-icon>
+      CADASTRAR JOGADORES
+    </button>
+  </section>
+
+  <!-- Estado: tem jogador mas não sorteou ainda -->
+  <section class="rs-pendente" *ngIf="!loading && jogadores.length > 0 && resultado.length === 0">
+    <p>
+      <ion-icon name="information-circle"></ion-icon>
+      <strong>{{ jogadores.length }} jogadores</strong> disponíveis.
+      Capacidade: <strong>{{ capacidade }}</strong> ({{ totalDentro }} entram, {{ sobraNoBanco }} no banco).
+      Clique em <strong>Sortear</strong> pra gerar os times.
+    </p>
+  </section>
+</div>

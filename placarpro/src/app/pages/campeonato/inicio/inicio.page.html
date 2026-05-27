@@ -1,0 +1,131 @@
+<!-- Header desktop padrão. Em mobile, o `ShellPage` desenha um header
+     navy com brand + segments no topo da tela (visível em todas as
+     telas admin de campeonato e categoria), então escondemos este
+     ion-header em ≤767px via classe `cmh-desktop-only` (regra
+     definida globalmente no shell.page.scss). -->
+<ion-header class="cmh-desktop-only">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/app/meus-campeonatos"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ (campeonato$ | async)?.titulo || 'Campeonato' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Pull-to-refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="onRefresh($event)">
+    <ion-refresher-content
+      pullingIcon="chevron-down-circle-outline"
+      refreshingSpinner="circles"
+      refreshingText="Atualizando...">
+    </ion-refresher-content>
+  </ion-refresher>
+
+  <ng-container *ngIf="campeonato$ | async as camp">
+    <div class="wrap">
+      <h1 class="page-title">{{ camp.titulo }}</h1>
+
+      <!-- HERO CARD: imagem real + overlay compacto (mesmo padrão
+           das telas públicas). -->
+      <article class="hero-card">
+        <img
+          *ngIf="capaCamp(camp) as cap"
+          class="hero-img"
+          [src]="cap"
+          [alt]="camp.titulo"
+        />
+        <div class="hero-info">
+          <div class="hero-meta">
+            <span class="hero-meta-label">Organizador</span>
+            <span class="hero-meta-value">PlacarPro</span>
+          </div>
+          <div class="hero-actions">
+            <span class="hero-status">
+              {{ camp.publico ? 'Público' : 'Privado' }} · {{ camp.seguidores ?? 0 }} Seguidores
+            </span>
+            <ng-container *ngIf="{ v: (segue$ | async) } as s">
+              <button
+                type="button"
+                class="hero-btn-seguir"
+                [class.ativo]="s.v"
+                (click)="toggleSeguir(!!s.v)"
+                aria-label="Seguir campeonato"
+              >
+                <ion-icon [name]="s.v ? 'checkmark-outline' : 'add-outline'"></ion-icon>
+                {{ s.v ? 'SEGUINDO' : 'SEGUIR' }}
+              </button>
+            </ng-container>
+            <button class="hero-share" type="button" (click)="compartilhar(camp)" aria-label="Compartilhar">
+              <ion-icon name="share-social-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <!-- Categorias -->
+      <section class="section">
+        <h2 class="section-title">Categorias</h2>
+
+        <div class="card categorias-card">
+          <ion-button expand="block" class="btn-nova-cat" (click)="novaCategoria()">
+            <ion-icon slot="start" name="add-outline"></ion-icon>
+            Nova categoria
+          </ion-button>
+
+          <div
+            *ngFor="let c of (categorias$ | async); trackBy: trackById"
+            class="categoria-row"
+          >
+            <!-- O link cobre logo + título; ações ficam fora do link pra não navegar. -->
+            <a
+              class="cat-link"
+              [routerLink]="['/app/campeonato', campeonatoId, 'categoria', c.id]"
+            >
+              <div
+                class="cat-logo"
+                [style.background]="modalidadeOf(c)?.color ? modalidadeOf(c)!.color + '26' : null"
+                [style.color]="modalidadeOf(c)?.color || null"
+              >
+                <img *ngIf="c.logoUrl; else catFallback" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
+                <ng-template #catFallback>
+                  <ion-icon [name]="modalidadeOf(c)?.icon || 'grid-outline'"></ion-icon>
+                </ng-template>
+              </div>
+              <div class="cat-title">{{ c.titulo }}</div>
+            </a>
+
+            <div class="cat-actions">
+              <button
+                type="button"
+                class="cat-action-btn"
+                (click)="duplicarCategoria(c); $event.stopPropagation()"
+                aria-label="Duplicar categoria"
+                title="Duplicar"
+              >
+                <ion-icon name="copy-outline"></ion-icon>
+              </button>
+              <button
+                type="button"
+                class="cat-action-btn"
+                (click)="abrirMenu(c, $event); $event.stopPropagation()"
+                aria-label="Mais opções"
+                title="Mover ou excluir"
+              >
+                <ion-icon name="reorder-three-outline"></ion-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mensagens (placeholder) -->
+      <section class="section">
+        <h2 class="section-title">Mensagens</h2>
+        <div class="card msg-empty">
+          <p>Nenhuma mensagem ainda. Envie avisos para participantes e seguidores.</p>
+        </div>
+      </section>
+    </div>
+  </ng-container>
+</ion-content>

@@ -1,0 +1,116 @@
+<div class="camp-layout">
+  <!-- ============ Header MOBILE (≤ 767px) ============
+       Padrão idêntico ao .mobile-header da publico-categoria: brand row
+       (back + logo + título + sair) + segments row (ícones de navegação).
+       Aparece só em mobile — em desktop a sidebar lateral (.camp-aside)
+       segue como nav principal. -->
+  <header class="camp-mobile-header">
+    <div class="cmh-brand">
+      <!-- Voltar — usa NavBackService (histórico ou fallback /meus-campeonatos). -->
+      <button
+        class="cmh-back"
+        type="button"
+        (click)="voltar()"
+        aria-label="Voltar"
+      >
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </button>
+
+      <ng-container *ngIf="campeonato$ | async as camp; else cmhLoading">
+        <div class="cmh-logo">
+          <img *ngIf="camp.logoUrl; else cmhLogoIc" [src]="camp.logoUrl" [alt]="camp.titulo" />
+          <ng-template #cmhLogoIc>
+            <ion-icon name="trophy-outline"></ion-icon>
+          </ng-template>
+        </div>
+        <div class="cmh-title">{{ camp.titulo }}</div>
+      </ng-container>
+      <ng-template #cmhLoading>
+        <div class="cmh-logo"><ion-spinner color="light" name="dots"></ion-spinner></div>
+        <div class="cmh-title">Carregando...</div>
+      </ng-template>
+
+      <!-- Sair — ícone vermelho na ponta direita. -->
+      <button
+        class="cmh-logout"
+        type="button"
+        (click)="confirmLogout()"
+        aria-label="Sair"
+      >
+        <ion-icon name="log-out-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Segments — espelha o `menu` (Início / Mídia / Config) em ícones
+         grandes. No mobile mostra só o ícone (texto fica escondido) pra
+         caber bem em 360px. -->
+    <nav class="cmh-segments" aria-label="Navegação do campeonato">
+      <a
+        *ngFor="let item of menu"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        class="cmh-seg"
+      >
+        <ion-icon [name]="item.icon"></ion-icon>
+        <span>{{ item.label }}</span>
+      </a>
+    </nav>
+  </header>
+
+  <!-- Sidebar contextual do campeonato (DESKTOP) -->
+  <aside class="camp-aside">
+    <!-- Cabeçalho com logo+nome -->
+    <button class="camp-header" type="button" (click)="voltar()">
+      <ng-container *ngIf="campeonato$ | async as camp; else headerLoading">
+        <div class="camp-logo">
+          <img *ngIf="camp.logoUrl; else iconFallback" [src]="camp.logoUrl" [alt]="camp.titulo" />
+          <ng-template #iconFallback>
+            <ion-icon name="trophy-outline"></ion-icon>
+          </ng-template>
+        </div>
+        <div class="camp-title">{{ camp.titulo }}</div>
+      </ng-container>
+      <ng-template #headerLoading>
+        <div class="camp-logo"><ion-spinner color="light" name="dots"></ion-spinner></div>
+        <div class="camp-title">Carregando...</div>
+      </ng-template>
+    </button>
+
+    <!-- Menu contextual -->
+    <nav class="camp-nav">
+      <a
+        *ngFor="let item of menu"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        class="nav-item"
+      >
+        <ion-icon [name]="item.icon"></ion-icon>
+        <span>{{ item.label }}</span>
+      </a>
+    </nav>
+
+    <!-- Rodapé com usuário -->
+    <div class="camp-user" *ngIf="user$ | async as user">
+      <div class="user-avatar">
+        <img
+          *ngIf="user.photoURL; else userInit"
+          [src]="user.photoURL"
+          [alt]="user.displayName || user.email"
+          referrerpolicy="no-referrer"
+        />
+        <ng-template #userInit>
+          <span>{{ initials(user) }}</span>
+        </ng-template>
+      </div>
+      <div class="user-info">
+        <div class="user-name">{{ user.displayName || (user.email | slice:0:20) }}</div>
+        <button class="user-logout" (click)="confirmLogout()" type="button">Sair</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Conteúdo (sub-rota: inicio / midia / config) -->
+  <div class="camp-main">
+    <ion-router-outlet></ion-router-outlet>
+  </div>
+</div>

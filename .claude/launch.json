@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "placarpro-dev",
+      "runtimeExecutable": "cmd.exe",
+      "runtimeArgs": ["/c", "cd placarpro && npx ng serve --port=4200 --host=0.0.0.0 --disable-host-check --ssl --ssl-cert=certs/dev-cert.pem --ssl-key=certs/dev-key.pem"],
+      "port": 4200
+    }
+  ]
+}

@@ -1,0 +1,253 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title class="title-status">
+      <button type="button" class="status-pill" (click)="trocarStatus()">
+        {{ STATUS_LABEL[(jogo$ | async)?.status || 'agendado'] }}
+        <ion-icon name="chevron-down-outline"></ion-icon>
+      </button>
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="abrirMenu()" aria-label="Mais opções">
+        <ion-icon slot="icon-only" name="ellipsis-vertical-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <ng-container *ngIf="jogo$ | async as j; else carregando">
+    <!-- Banner: partida não está em andamento → edição bloqueada -->
+    <div class="aviso-bloqueado" *ngIf="j.status !== 'em-andamento'">
+      <ion-icon name="lock-closed-outline"></ion-icon>
+      <div class="aviso-texto">
+        <strong>Edição bloqueada</strong>
+        <p>
+          Para registrar gols, cartões e outros lances, mude o status para
+          <strong>Em andamento</strong> no topo da tela.
+        </p>
+      </div>
+      <ion-button size="small" color="secondary" (click)="iniciarPartida()">
+        Iniciar partida
+      </ion-button>
+    </div>
+
+    <!-- ─── MANDANTE ─────────────────────────────────────── -->
+    <div class="team-bar mandante-bar">
+      <div class="t-logo">
+        <img *ngIf="j.logoMandante; else iconM" [src]="j.logoMandante" alt="" />
+        <ng-template #iconM><ion-icon name="shield-outline"></ion-icon></ng-template>
+      </div>
+      <span class="t-nome">{{ j.nomeMandante }}</span>
+      <span class="t-lado">MANDANTE</span>
+    </div>
+
+    <div class="painel-wrap">
+      <button type="button" class="seta esq" (click)="antPainel()" aria-label="Anterior">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </button>
+
+      <div class="painel-viewport">
+        <div
+          class="painel-track"
+          [style.transform]="'translateX(calc(-' + painelIdx + ' * var(--painel-largura)))'"
+        >
+          <ng-container *ngIf="mapaEventos$ | async as mapa">
+            <div class="painel" *ngFor="let p of paineis; let i = index">
+              <div class="painel-head">{{ p.label }}</div>
+              <div class="painel-body">
+                <button
+                  type="button"
+                  *ngFor="let e of (mapa[j.mandanteId]?.[p.tipo] || []); trackBy: trackByEvento"
+                  class="ev-row"
+                  [class.disabled]="j.status !== 'em-andamento'"
+                  [disabled]="j.status !== 'em-andamento'"
+                  (click)="editarEvento(e)"
+                >
+                  <span class="ev-nome">{{ nomeEvento(e) }}</span>
+                  <span class="ev-min" *ngIf="e.minuto != null">{{ e.minuto }}'</span>
+                </button>
+                <div *ngIf="(mapa[j.mandanteId]?.[p.tipo]?.length || 0) === 0" class="ev-empty">
+                  <ion-icon name="information-circle-outline"></ion-icon>
+                  <span>Nenhum {{ p.label.toLowerCase() }} registrado</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="btn-add"
+                [disabled]="j.status !== 'em-andamento'"
+                (click)="adicionarEventoEm('mandante', p.tipo)"
+              >
+                <ion-icon name="lock-closed-outline" *ngIf="j.status !== 'em-andamento'"></ion-icon>
+                {{ j.status === 'em-andamento' ? 'Adicionar' : 'Bloqueado' }}
+              </button>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+
+      <button type="button" class="seta dir" (click)="proxPainel()" aria-label="Próximo">
+        <ion-icon name="chevron-forward-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- ─── PLACAR SEPARADOR (navy) ─────────────────────── -->
+    <div class="placar-bar">
+      <div class="placar-time mand">
+        <div class="placar-logo">
+          <img *ngIf="j.logoMandante; else pIcM" [src]="j.logoMandante" [alt]="j.nomeMandante" />
+          <ng-template #pIcM><ion-icon name="shield-outline"></ion-icon></ng-template>
+        </div>
+        <span class="lbl-eq">{{ j.nomeMandante }}</span>
+      </div>
+      <span class="placar">
+        <strong>{{ j.golsMandante ?? 0 }}</strong>
+        <span class="x">x</span>
+        <strong>{{ j.golsVisitante ?? 0 }}</strong>
+      </span>
+      <div class="placar-time vis">
+        <span class="lbl-eq right">{{ j.nomeVisitante }}</span>
+        <div class="placar-logo">
+          <img *ngIf="j.logoVisitante; else pIcV" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
+          <ng-template #pIcV><ion-icon name="shield-outline"></ion-icon></ng-template>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── CRONÔMETRO DO JOGO ──────────────────────────── -->
+    <!-- Aparece se a partida está em andamento OU já foi encerrada (mostra
+         duração final fixa). Atualiza a cada 1s baseado em `iniciadoEm`. -->
+    <div class="crono-wrap"
+         *ngIf="j.status === 'em-andamento' || j.status === 'encerrado'"
+         [class.ao-vivo]="j.status === 'em-andamento'">
+      <div class="crono-meta">
+        <span class="crono-status">
+          <span class="dot" *ngIf="j.status === 'em-andamento'"></span>
+          {{ j.status === 'em-andamento' ? 'TEMPO DE JOGO' : 'TEMPO FINAL' }}
+        </span>
+        <span class="crono-min" *ngIf="minutoAtual && j.status === 'em-andamento'">
+          ≈ {{ minutoAtual }}ª minuto
+        </span>
+      </div>
+      <div class="crono-display">{{ formatarCrono(tempoDecorridoSeg) }}</div>
+      <div class="crono-acoes" *ngIf="j.status === 'em-andamento'">
+        <button type="button" class="crono-btn encerrar" (click)="encerrarPartida()">
+          <ion-icon name="stop-circle-outline"></ion-icon>
+          Encerrar partida
+        </button>
+      </div>
+    </div>
+
+    <!-- ─── VISITANTE ────────────────────────────────────── -->
+    <div class="team-bar visitante-bar">
+      <div class="t-logo">
+        <img *ngIf="j.logoVisitante; else iconV" [src]="j.logoVisitante" alt="" />
+        <ng-template #iconV><ion-icon name="shield-outline"></ion-icon></ng-template>
+      </div>
+      <span class="t-nome">{{ j.nomeVisitante }}</span>
+      <span class="t-lado">VISITANTE</span>
+    </div>
+
+    <div class="painel-wrap">
+      <button type="button" class="seta esq" (click)="antPainel()" aria-label="Anterior">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </button>
+
+      <div class="painel-viewport">
+        <div
+          class="painel-track"
+          [style.transform]="'translateX(calc(-' + painelIdx + ' * var(--painel-largura)))'"
+        >
+          <ng-container *ngIf="mapaEventos$ | async as mapa">
+            <div class="painel" *ngFor="let p of paineis; let i = index">
+              <div class="painel-head">{{ p.label }}</div>
+              <div class="painel-body">
+                <button
+                  type="button"
+                  *ngFor="let e of (mapa[j.visitanteId]?.[p.tipo] || []); trackBy: trackByEvento"
+                  class="ev-row"
+                  [class.disabled]="j.status !== 'em-andamento'"
+                  [disabled]="j.status !== 'em-andamento'"
+                  (click)="editarEvento(e)"
+                >
+                  <span class="ev-nome">{{ nomeEvento(e) }}</span>
+                  <span class="ev-min" *ngIf="e.minuto != null">{{ e.minuto }}'</span>
+                </button>
+                <div *ngIf="(mapa[j.visitanteId]?.[p.tipo]?.length || 0) === 0" class="ev-empty">
+                  <ion-icon name="information-circle-outline"></ion-icon>
+                  <span>Nenhum {{ p.label.toLowerCase() }} registrado</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="btn-add"
+                [disabled]="j.status !== 'em-andamento'"
+                (click)="adicionarEventoEm('visitante', p.tipo)"
+              >
+                <ion-icon name="lock-closed-outline" *ngIf="j.status !== 'em-andamento'"></ion-icon>
+                {{ j.status === 'em-andamento' ? 'Adicionar' : 'Bloqueado' }}
+              </button>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+
+      <button type="button" class="seta dir" (click)="proxPainel()" aria-label="Próximo">
+        <ion-icon name="chevron-forward-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Tabs (atalho rápido pra qualquer painel) -->
+    <div class="tabs">
+      <button
+        type="button"
+        *ngFor="let p of paineis; let i = index"
+        class="tab"
+        [class.atual]="i === painelIdx"
+        (click)="irPainel(i)"
+      >{{ p.label }}</button>
+    </div>
+  </ng-container>
+
+  <ng-template #carregando>
+    <ng-container *ngIf="erroCarregamento; else loadingSpinner">
+      <div class="erro-box">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        <h3>Não foi possível carregar a partida</h3>
+        <p>{{ erroCarregamento }}</p>
+
+        <!-- Diagnóstico visível direto na tela (sem precisar do console) -->
+        <div class="debug-box">
+          <div class="debug-row">
+            <strong>campeonatoId:</strong>
+            <code [class.vazio]="!campeonatoId">{{ campeonatoId || '(VAZIO)' }}</code>
+          </div>
+          <div class="debug-row">
+            <strong>categoriaId:</strong>
+            <code [class.vazio]="!categoriaId">{{ categoriaId || '(VAZIO)' }}</code>
+          </div>
+          <div class="debug-row">
+            <strong>jogoId:</strong>
+            <code [class.vazio]="!jogoId">{{ jogoId || '(VAZIO)' }}</code>
+          </div>
+          <div class="debug-row">
+            <strong>jogoEmitiu:</strong>
+            <code>{{ jogoEmitiu ? 'sim' : 'não (Firestore não respondeu)' }}</code>
+          </div>
+        </div>
+
+        <ion-button color="primary" (click)="voltar()">
+          <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
+          Voltar
+        </ion-button>
+      </div>
+    </ng-container>
+    <ng-template #loadingSpinner>
+      <div class="loading"><ion-spinner name="dots"></ion-spinner></div>
+    </ng-template>
+  </ng-template>
+</ion-content>

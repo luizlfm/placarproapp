@@ -1,0 +1,131 @@
+.modal-bg {
+  --background: var(--placar-bg, #f6f7f9);
+}
+
+.dup-form {
+  padding: 16px 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dup-hint {
+  margin: 0 0 4px;
+  font-size: 13.5px;
+  color: var(--placar-text-muted, #6b6b70);
+  line-height: 1.4;
+
+  strong { color: var(--placar-text, #1c2e3d); }
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-error {
+  font-size: 12px;
+  color: var(--ion-color-danger, #eb4747);
+  padding-left: 4px;
+}
+
+/* ─── Bloco de checkboxes ─── */
+.opcoes-block {
+  display: flex;
+  flex-direction: column;
+  background: var(--placar-surface, #fff);
+  border: 1px solid var(--placar-border, #e5e7eb);
+  border-radius: 10px;
+  padding: 4px 14px;
+  margin-top: 4px;
+}
+
+.opcao-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--placar-divider, #eef0f3);
+  cursor: pointer;
+  transition: opacity 120ms ease;
+
+  &:last-child { border-bottom: none; }
+
+  .opcao-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--placar-text, #1c2e3d);
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Hint inline (ex.: "sem placar") */
+  .dep-hint {
+    font-size: 11.5px;
+    font-weight: 400;
+    color: var(--placar-text-muted, #6b6b70);
+    margin-left: 4px;
+  }
+
+  /* Linhas dependentes (filhos) — recolhem visualmente quando desabilitadas */
+  &.dep {
+    padding-left: 18px;
+    .opcao-text { font-size: 13.5px; color: var(--placar-text-muted, #6b6b70); }
+  }
+
+  &.disabled {
+    opacity: 0.45;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+
+  ion-checkbox {
+    --size: 20px;
+    --checkbox-background-checked: var(--ion-color-secondary, #7cc61d);
+    --border-color-checked: var(--ion-color-secondary, #7cc61d);
+    --border-color: var(--placar-border-strong, #d1d5db);
+    --border-radius: 4px;
+    --checkmark-color: #fff;
+    margin: 0;
+    flex-shrink: 0;
+  }
+}
+
+/* ─── Ações ─── */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.btn-novo {
+  background: none;
+  border: 0;
+  color: var(--ion-color-tertiary, #4dabf7);
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 8px;
+  text-transform: none;
+  transition: background 120ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+
+  ion-spinner { --color: var(--ion-color-tertiary, #4dabf7); width: 20px; height: 20px; }
+
+  &:hover:not(:disabled) {
+    background: rgba(77, 171, 247, 0.10);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}

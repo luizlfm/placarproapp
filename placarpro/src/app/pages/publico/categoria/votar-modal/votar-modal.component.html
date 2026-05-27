@@ -1,0 +1,57 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>Votar</ion-title>
+    <ion-buttons slot="end">
+      <ion-button
+        strong="true"
+        [disabled]="votando || selecionadas.length === 0 || !enquete.votacaoAberta"
+        (click)="confirmar()"
+      >
+        {{ votando ? 'Enviando...' : 'Confirmar' }}
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="vm-content">
+  <h2 class="pergunta">{{ enquete.pergunta || '—' }}</h2>
+
+  <p class="hint" *ngIf="enquete?.multiplaEscolha">
+    <ion-icon name="checkbox-outline"></ion-icon>
+    Você pode escolher mais de uma alternativa.
+  </p>
+  <p class="hint" *ngIf="!enquete?.multiplaEscolha">
+    <ion-icon name="radio-button-on-outline"></ion-icon>
+    Escolha uma alternativa.
+  </p>
+
+  <div class="alternativas" *ngIf="(enquete?.alternativas?.length ?? 0) > 0; else vazio">
+    <button
+      *ngFor="let a of enquete.alternativas; trackBy: trackByAlt"
+      type="button"
+      class="alt-btn"
+      [class.selecionada]="isSelecionada(a.id)"
+      [disabled]="votando"
+      (click)="toggle(a.id)"
+    >
+      <span class="alt-radio">
+        <ion-icon
+          [name]="isSelecionada(a.id)
+                  ? (enquete.multiplaEscolha ? 'checkbox' : 'radio-button-on')
+                  : (enquete.multiplaEscolha ? 'square-outline' : 'radio-button-off')"
+        ></ion-icon>
+      </span>
+      <span class="alt-texto">{{ a.texto }}</span>
+    </button>
+  </div>
+
+  <ng-template #vazio>
+    <div class="vm-vazio">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <p>Esta enquete ainda não tem alternativas cadastradas.</p>
+    </div>
+  </ng-template>
+</ion-content>

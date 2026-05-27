@@ -1,0 +1,124 @@
+<ion-header class="no-print">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Imprimir classificação</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="imprimir()" aria-label="Imprimir">
+        <ion-icon slot="start" name="print-outline"></ion-icon>
+        <span class="tb-label">Imprimir</span>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="folha" *ngIf="view$ | async as v; else carregando">
+    <!-- Cabeçalho -->
+    <header class="ic-head">
+      <div class="ph-logo">
+        <img *ngIf="v.campeonato?.logoUrl; else iconC" [src]="v.campeonato!.logoUrl" [alt]="v.campeonato?.titulo" />
+        <ng-template #iconC><ion-icon name="trophy-outline"></ion-icon></ng-template>
+      </div>
+      <div class="ph-titulo-bloco">
+        <h1>{{ v.campeonato?.titulo || 'Campeonato' }}</h1>
+        <h2>{{ v.categoria?.titulo || '' }}</h2>
+        <p class="ph-sub">Classificação</p>
+      </div>
+      <div class="ic-resumo ph-resumo">
+        <div class="r-item">
+          <span class="r-num">{{ v.totalEquipes }}</span>
+          <span class="r-lbl">Equipes</span>
+        </div>
+        <div class="r-item">
+          <span class="r-num">{{ v.totalJogos }}</span>
+          <span class="r-lbl">Jogos</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Empty -->
+    <div class="empty" *ngIf="v.grupos.length === 0 || v.totalEquipes === 0">
+      <ion-icon name="podium-outline"></ion-icon>
+      <p>Nenhuma equipe classificada ainda.</p>
+    </div>
+
+    <!-- Grupos -->
+    <section class="grupo print-section" *ngFor="let g of v.grupos; trackBy: trackByGrupo">
+      <h3 class="g-titulo">
+        <span>{{ g.grupo?.nome || 'CLASSIFICAÇÃO GERAL' }}</span>
+        <span class="g-qtd meta-right">{{ g.linhas.length }} {{ g.linhas.length === 1 ? 'equipe' : 'equipes' }}</span>
+      </h3>
+
+      <table class="tabela classif">
+        <thead>
+          <tr>
+            <th class="th-pos">#</th>
+            <th class="th-eq">Equipe</th>
+            <th>P</th>
+            <th>J</th>
+            <th>V</th>
+            <th>E</th>
+            <th>D</th>
+            <th>GP</th>
+            <th>GC</th>
+            <th>SG</th>
+            <th>%</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let l of g.linhas; trackBy: trackByLinha" [class.podio]="l.pos <= 3">
+            <td class="td-pos">
+              <span class="pos-bola" [class.medalha]="l.pos <= 3">{{ l.pos }}</span>
+            </td>
+            <td class="td-eq">
+              <div class="t-cell">
+                <div class="pe-logo">
+                  <img *ngIf="l.equipe.logoUrl; else iconE" [src]="l.equipe.logoUrl" [alt]="l.equipe.nome" />
+                  <ng-template #iconE><ion-icon name="shield-outline"></ion-icon></ng-template>
+                </div>
+                <span class="pe-nome">{{ l.equipe.nome }}</span>
+              </div>
+            </td>
+            <td class="td-num td-pontos"><strong>{{ l.pontos }}</strong></td>
+            <td class="td-num">{{ l.jogos }}</td>
+            <td class="td-num">{{ l.vitorias }}</td>
+            <td class="td-num">{{ l.empates }}</td>
+            <td class="td-num">{{ l.derrotas }}</td>
+            <td class="td-num">{{ l.golsPro }}</td>
+            <td class="td-num">{{ l.golsContra }}</td>
+            <td class="td-num" [class.pos]="l.saldoGols > 0" [class.neg]="l.saldoGols < 0">
+              {{ l.saldoGols > 0 ? '+' : '' }}{{ l.saldoGols }}
+            </td>
+            <td class="td-num">{{ l.aproveitamento }}%</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Legenda -->
+    <section class="legenda" *ngIf="v.totalEquipes > 0">
+      <strong>P</strong> Pontos ·
+      <strong>J</strong> Jogos ·
+      <strong>V</strong> Vitórias ·
+      <strong>E</strong> Empates ·
+      <strong>D</strong> Derrotas ·
+      <strong>GP</strong> Gols Pró ·
+      <strong>GC</strong> Gols Contra ·
+      <strong>SG</strong> Saldo de Gols ·
+      <strong>%</strong> Aproveitamento
+    </section>
+
+    <footer class="ic-foot">
+      <span class="marca">Gerado por <span class="marca-acento">PlacarPro</span></span>
+      <span>Atualizado em {{ today() }}</span>
+    </footer>
+  </div>
+
+  <ng-template #carregando>
+    <div class="loading"><ion-spinner name="dots"></ion-spinner></div>
+  </ng-template>
+</ion-content>

@@ -1,0 +1,50 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Cadastro de equipes</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <div class="info-banner">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      <span>
+        Visão consolidada de todas as equipes inscritas nos seus campeonatos.
+        Para adicionar ou editar, entre na categoria correspondente.
+      </span>
+    </div>
+
+    <ng-container *ngIf="equipes$ | async as lista">
+      <div class="counter" *ngIf="lista.length > 0">{{ lista.length }} equipe(s) no total</div>
+
+      <div class="lista-card" *ngIf="lista.length > 0; else empty">
+        <div *ngFor="let e of lista; trackBy: trackById" class="equipe-row">
+          <div class="ic">
+            <img *ngIf="e.logoUrl; else iconF" [src]="e.logoUrl" [alt]="e.nome" loading="lazy" />
+            <ng-template #iconF><ion-icon name="shield-outline"></ion-icon></ng-template>
+          </div>
+          <div class="info">
+            <div class="nome">{{ e.nome }}</div>
+            <div class="meta">
+              <span class="tag">{{ e.campeonatoTitulo }}</span>
+              <span class="tag">{{ e.categoriaTitulo }}</span>
+              <span *ngIf="e.cidade" class="cidade">{{ e.cidade }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #empty>
+        <div class="empty">
+          <ion-icon name="shield-outline"></ion-icon>
+          <h2>Nenhuma equipe cadastrada</h2>
+          <p>Quando você cadastrar equipes em alguma categoria, elas aparecerão aqui.</p>
+          <a class="empty-cta" routerLink="/app/meus-campeonatos" aria-label="Meus campeonatos">
+            <ion-icon name="trophy-outline"></ion-icon>
+            <span>Meus campeonatos</span>
+          </a>
+        </div>
+      </ng-template>
+    </ng-container>
+  </div>
+</ion-content>

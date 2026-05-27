@@ -1,0 +1,583 @@
+<ion-header class="no-print">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ tituloTipo() }}</ion-title>
+    <ion-buttons slot="end">
+      <!-- Tipo equipes: botão "Exportar" abre popover com opções
+           Tipo jogadores: botão "Colunas" abre modal de seleção + Imprimir
+           Demais tipos: só Imprimir direto -->
+      <ng-container *ngIf="tipo === 'equipes'; else outrosTipos">
+        <ion-button (click)="abrirPopoverExportar($event)" aria-label="Exportar">
+          <ion-icon slot="start" name="download-outline"></ion-icon>
+          <span class="tb-label">Exportar</span>
+        </ion-button>
+      </ng-container>
+      <ng-template #outrosTipos>
+        <ion-button
+          *ngIf="tipo === 'jogadores'"
+          (click)="abrirModalColunasJogadores()"
+          aria-label="Colunas"
+        >
+          <ion-icon slot="start" name="options-outline"></ion-icon>
+          <span class="tb-label">Colunas</span>
+        </ion-button>
+        <ion-button (click)="imprimir()" aria-label="Imprimir">
+          <ion-icon slot="start" name="print-outline"></ion-icon>
+          <span class="tb-label">Imprimir</span>
+        </ion-button>
+      </ng-template>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- ============================================
+       BARRA DE CONTROLES (apenas tipo='equipes')
+       Permite ativar/desativar colunas direto na tela — não aparece na impressão.
+       ============================================ -->
+  <!-- ============================================
+       BARRA DE CONTROLES (apenas tipo='jogadores')
+       Toggles para colunas + filtro de equipes.
+       Renderiza só quando view$ já tem dados (precisa
+       da lista de equipes pra montar os chips).
+       ============================================ -->
+  <ng-container *ngIf="tipo === 'jogadores' && (view$ | async) as v2">
+    <div
+      class="ctrl-bar no-print"
+      *ngIf="inicializarEquipesJog(v2.gruposJogadores)"
+    >
+      <!-- Linha 1 — colunas -->
+      <div class="ctrl-row">
+        <div class="ctrl-label">
+          <ion-icon name="options-outline"></ion-icon>
+          <span>Colunas:</span>
+        </div>
+        <div class="ctrl-chips">
+          <button
+            *ngFor="let c of colunasJogadores; trackBy: trackByColunaJog"
+            class="ctrl-chip"
+            type="button"
+            [class.on]="c.selecionado"
+            (click)="alternarColunaJogador(c)"
+          >
+            <ion-icon [name]="c.selecionado ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+            <span>{{ c.label }}</span>
+          </button>
+        </div>
+        <div class="ctrl-actions">
+          <button class="ctrl-btn ghost" type="button" (click)="marcarTodasColunasJogadores(true)">Marcar todas</button>
+          <button class="ctrl-btn ghost" type="button" (click)="marcarTodasColunasJogadores(false)">Limpar</button>
+        </div>
+      </div>
+
+      <!-- Linha 2 — equipes -->
+      <div class="ctrl-row ctrl-row-2">
+        <div class="ctrl-label">
+          <ion-icon name="shield-outline"></ion-icon>
+          <span>Equipes:</span>
+        </div>
+        <div class="ctrl-chips">
+          <button
+            *ngFor="let g of v2.gruposJogadores; trackBy: trackByEquipeId"
+            class="ctrl-chip ctrl-chip-equipe"
+            type="button"
+            [class.on]="equipeJogAtiva(g.equipe.id)"
+            (click)="alternarEquipeJog(g.equipe.id)"
+          >
+            <span class="cce-shield">
+              <img *ngIf="g.equipe.logoUrl; else cceIcon" [src]="g.equipe.logoUrl" alt="" />
+              <ng-template #cceIcon><ion-icon name="shield-outline"></ion-icon></ng-template>
+            </span>
+            <span>{{ g.equipe.nome }}</span>
+            <span class="cce-qtd">{{ g.jogadores.length }}</span>
+          </button>
+          <div class="ctrl-empty" *ngIf="v2.gruposJogadores.length === 0">
+            Nenhuma equipe cadastrada.
+          </div>
+        </div>
+        <div class="ctrl-actions">
+          <button class="ctrl-btn ghost" type="button" (click)="marcarTodasEquipesJog(v2.gruposJogadores, true)">Marcar todas</button>
+          <button class="ctrl-btn ghost" type="button" (click)="marcarTodasEquipesJog(v2.gruposJogadores, false)">Limpar</button>
+        </div>
+      </div>
+
+      <!-- Linha 3 — atalho Imprimir -->
+      <div class="ctrl-row ctrl-row-2">
+        <div class="ctrl-actions push-right">
+          <button class="ctrl-btn primary solid" type="button" (click)="imprimir()">
+            <ion-icon name="print-outline"></ion-icon>
+            Imprimir
+          </button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ============================================
+       BARRA DE CONTROLES (apenas tipo='rankings')
+       Toggles para escolher quais rankings imprimir.
+       ============================================ -->
+  <div class="ctrl-bar no-print" *ngIf="tipo === 'rankings'">
+    <div class="ctrl-row">
+      <div class="ctrl-label">
+        <ion-icon name="trophy-outline"></ion-icon>
+        <span>Rankings:</span>
+      </div>
+      <div class="ctrl-chips">
+        <button
+          *ngFor="let r of rankings; trackBy: trackByRanking"
+          class="ctrl-chip"
+          type="button"
+          [class.on]="r.selecionado"
+          (click)="alternarRanking(r)"
+        >
+          <ion-icon [name]="r.selecionado ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+          <span>{{ r.label }}</span>
+        </button>
+      </div>
+      <div class="ctrl-actions">
+        <button class="ctrl-btn ghost" type="button" (click)="marcarTodosRankings(true)">Marcar todos</button>
+        <button class="ctrl-btn ghost" type="button" (click)="marcarTodosRankings(false)">Limpar</button>
+      </div>
+    </div>
+
+    <div class="ctrl-row ctrl-row-2">
+      <div class="ctrl-actions push-right">
+        <button class="ctrl-btn primary solid" type="button" (click)="imprimir()">
+          <ion-icon name="print-outline"></ion-icon>
+          Imprimir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ctrl-bar no-print" *ngIf="tipo === 'equipes'">
+    <div class="ctrl-row">
+      <div class="ctrl-label">
+        <ion-icon name="options-outline"></ion-icon>
+        <span>Colunas:</span>
+      </div>
+      <div class="ctrl-chips">
+        <button
+          *ngFor="let c of colunas; trackBy: trackByColuna"
+          class="ctrl-chip"
+          type="button"
+          [class.on]="c.selecionado"
+          (click)="alternarColuna(c)"
+        >
+          <ion-icon
+            [name]="c.selecionado ? 'checkmark-circle' : 'ellipse-outline'"
+          ></ion-icon>
+          <span>{{ c.label }}</span>
+        </button>
+      </div>
+      <div class="ctrl-actions">
+        <button class="ctrl-btn ghost" type="button" (click)="marcarTodasColunas(true)">
+          Marcar todas
+        </button>
+        <button class="ctrl-btn ghost" type="button" (click)="marcarTodasColunas(false)">
+          Limpar
+        </button>
+      </div>
+    </div>
+
+    <div class="ctrl-row ctrl-row-2">
+      <div class="ctrl-label">
+        <ion-icon name="layers-outline"></ion-icon>
+        <span>Fase:</span>
+      </div>
+      <button
+        class="ctrl-chip-fase"
+        type="button"
+        [class.on]="!faseAtual"
+        (click)="filtrarFase(null)"
+      >
+        Todas
+      </button>
+      <button
+        *ngFor="let f of fasesDisponiveis"
+        class="ctrl-chip-fase"
+        type="button"
+        [class.on]="faseAtual?.id === f.id"
+        (click)="filtrarFase(f)"
+      >
+        {{ f.nome }}
+      </button>
+
+      <div class="ctrl-actions push-right">
+        <button class="ctrl-btn primary" type="button" (click)="exportarCsvPublico()">
+          <ion-icon name="grid-outline"></ion-icon>
+          Excel
+        </button>
+        <button class="ctrl-btn primary solid" type="button" (click)="imprimir()">
+          <ion-icon name="print-outline"></ion-icon>
+          Imprimir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="print-folha" *ngIf="view$ | async as v; else carregando">
+    <!-- ============ Cabeçalho da folha ============ -->
+    <header class="ph-cabec">
+      <div class="ph-logo">
+        <img *ngIf="v.campeonato?.logoUrl" [src]="v.campeonato!.logoUrl" alt="logo" />
+      </div>
+      <div class="ph-titulo-bloco">
+        <div class="ph-camp">{{ v.campeonato?.titulo || 'Campeonato' }}</div>
+        <div class="ph-cat" *ngIf="v.categoria?.titulo">{{ v.categoria!.titulo }}</div>
+        <div class="ph-sub">{{ tituloTipo() }}</div>
+      </div>
+      <div class="ph-data">
+        <div class="ph-data-label">Emitido em</div>
+        <div class="ph-data-val">{{ hojeBr() }}</div>
+        <div class="ph-data-label" *ngIf="tipo === 'equipes' && faseAtual" style="margin-top:4px;">Fase</div>
+        <div class="ph-data-val" *ngIf="tipo === 'equipes' && faseAtual">{{ faseAtual.nome }}</div>
+      </div>
+    </header>
+
+    <!-- ============================================
+         EQUIPES — colunas configuráveis via popover Exportar
+         ============================================ -->
+    <section *ngIf="tipo === 'equipes'" class="sec-equipes">
+      <!-- Faixa de "Fase atual" — mostrada apenas quando o usuário filtrou -->
+      <div class="filtro-fase" *ngIf="faseAtual">
+        <ion-icon name="layers-outline"></ion-icon>
+        <span>Fase: <strong>{{ faseAtual.nome }}</strong></span>
+        <span class="ph-grupo-meta">(estatísticas calculadas a partir dos jogos dessa fase)</span>
+      </div>
+
+      <table class="ph-tabela equipes">
+        <thead>
+          <tr>
+            <th class="w-pos">#</th>
+            <th *ngIf="colunaAtiva('escudo')" class="w-esc">Escudo</th>
+            <th *ngIf="colunaAtiva('nome')">Nome</th>
+            <th *ngIf="colunaAtiva('tecnico')">Técnico</th>
+            <th *ngIf="colunaAtiva('link')">Link de Edição</th>
+            <th *ngIf="colunaAtiva('pontos')" class="w-num">P</th>
+            <th *ngIf="colunaAtiva('jogos')" class="w-num">J</th>
+            <th *ngIf="colunaAtiva('vitorias')" class="w-num">V</th>
+            <th *ngIf="colunaAtiva('empates')" class="w-num">E</th>
+            <th *ngIf="colunaAtiva('derrotas')" class="w-num">D</th>
+            <th *ngIf="colunaAtiva('golsPro')" class="w-num">GP</th>
+            <th *ngIf="colunaAtiva('golsContra')" class="w-num">GC</th>
+            <th *ngIf="colunaAtiva('saldoGols')" class="w-num">SG</th>
+            <th *ngIf="colunaAtiva('golsAverage')" class="w-num">Avg</th>
+            <th *ngIf="colunaAtiva('aproveitamento')" class="w-num">%</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of v.equipes; let i = index; trackBy: trackByEquipe">
+            <td class="w-pos">{{ i + 1 }}</td>
+            <td *ngIf="colunaAtiva('escudo')" class="w-esc cel-esc">
+              <span class="ph-eq-logo">
+                <img *ngIf="e.logoUrl" [src]="e.logoUrl" alt="" />
+                <ion-icon *ngIf="!e.logoUrl" name="shield-outline"></ion-icon>
+              </span>
+            </td>
+            <td *ngIf="colunaAtiva('nome')">{{ e.nome }}</td>
+            <td *ngIf="colunaAtiva('tecnico')">{{ e.tecnico || '—' }}</td>
+            <td *ngIf="colunaAtiva('link')" class="cel-link">
+              <a [href]="linkEditarEquipe(e)" target="_blank" rel="noopener">
+                {{ linkEditarEquipe(e) }}
+              </a>
+            </td>
+            <td *ngIf="colunaAtiva('pontos')" class="w-num bold">{{ e.stats?.pontos ?? '—' }}</td>
+            <td *ngIf="colunaAtiva('jogos')" class="w-num">{{ e.stats?.jogos ?? '—' }}</td>
+            <td *ngIf="colunaAtiva('vitorias')" class="w-num">{{ e.stats?.vitorias ?? '—' }}</td>
+            <td *ngIf="colunaAtiva('empates')" class="w-num">{{ e.stats?.empates ?? '—' }}</td>
+            <td *ngIf="colunaAtiva('derrotas')" class="w-num">{{ e.stats?.derrotas ?? '—' }}</td>
+            <td *ngIf="colunaAtiva('golsPro')" class="w-num">{{ e.stats?.golsPro ?? '—' }}</td>
+            <td *ngIf="colunaAtiva('golsContra')" class="w-num">{{ e.stats?.golsContra ?? '—' }}</td>
+            <td *ngIf="colunaAtiva('saldoGols')" class="w-num">{{ e.stats?.saldoGols ?? '—' }}</td>
+            <td *ngIf="colunaAtiva('golsAverage')" class="w-num">{{ golsAverage(e.stats) }}</td>
+            <td *ngIf="colunaAtiva('aproveitamento')" class="w-num">
+              {{ e.stats != null ? (e.stats.aproveitamento | number:'1.0-0') + '%' : '—' }}
+            </td>
+          </tr>
+          <tr *ngIf="v.equipes.length === 0">
+            <td [attr.colspan]="totalColunasVisiveis() + 1" class="vazio">
+              Nenhuma equipe cadastrada.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Aviso quando nenhuma coluna está marcada -->
+      <div class="aviso-colunas" *ngIf="totalColunasVisiveis() <= 0">
+        <ion-icon name="warning-outline"></ion-icon>
+        Selecione ao menos uma coluna no menu "Exportar → Selecionar colunas".
+      </div>
+    </section>
+
+    <!-- ============================================
+         JOGADORES (por equipe)
+         ============================================ -->
+    <section *ngIf="tipo === 'jogadores'">
+      <!-- Aviso se nenhuma equipe estiver marcada -->
+      <div class="aviso-colunas" *ngIf="totalEquipesJogSelecionadas === 0">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        <span>
+          Nenhuma equipe selecionada. Use a barra acima para escolher
+          quais equipes incluir no relatório.
+        </span>
+      </div>
+
+      <ng-container *ngFor="let g of v.gruposJogadores; trackBy: trackByGrupo">
+        <div class="ph-grupo" *ngIf="equipeJogAtiva(g.equipe.id)">
+        <h3 class="ph-grupo-titulo">
+          <span class="ph-eq-logo small">
+            <img *ngIf="g.equipe.logoUrl" [src]="g.equipe.logoUrl" alt="" />
+          </span>
+          {{ g.equipe.nome }}
+          <span class="ph-grupo-meta" *ngIf="g.equipe.cidade">
+            — {{ g.equipe.cidade }}
+          </span>
+        </h3>
+        <!-- Colunas condicionais via `colunaJogAtiva()` — config do modal "Colunas". -->
+        <table class="ph-tabela">
+          <thead>
+            <tr>
+              <th class="w-pos">#</th>
+              <th *ngIf="colunaJogAtiva('foto')" class="w-foto">Foto</th>
+              <th *ngIf="colunaJogAtiva('camisa')" class="w-num">Camisa</th>
+              <th *ngIf="colunaJogAtiva('nome')">Nome</th>
+              <th *ngIf="colunaJogAtiva('apelido')">Apelido</th>
+              <th *ngIf="colunaJogAtiva('posicao')">Posição</th>
+              <th *ngIf="colunaJogAtiva('nascimento')">Nascimento</th>
+              <th *ngIf="colunaJogAtiva('documento')">Documento</th>
+              <th *ngIf="colunaJogAtiva('telefone')">Telefone</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let j of g.jogadores; let i = index; trackBy: trackByJogador">
+              <td class="w-pos">{{ i + 1 }}</td>
+              <td *ngIf="colunaJogAtiva('foto')" class="w-foto">
+                <div class="foto-mini">
+                  <img *ngIf="j.fotoUrl" [src]="j.fotoUrl" alt="" />
+                </div>
+              </td>
+              <td *ngIf="colunaJogAtiva('camisa')" class="w-num">{{ j.numeroCamisa ?? '' }}</td>
+              <td *ngIf="colunaJogAtiva('nome')">{{ j.nome }}</td>
+              <td *ngIf="colunaJogAtiva('apelido')">{{ j.apelido ?? '' }}</td>
+              <td *ngIf="colunaJogAtiva('posicao')">{{ j.posicao ?? '' }}</td>
+              <td *ngIf="colunaJogAtiva('nascimento')">{{ formatarData(j.dataNascimento) }}</td>
+              <td *ngIf="colunaJogAtiva('documento')">{{ j.documento ?? '' }}</td>
+              <td *ngIf="colunaJogAtiva('telefone')">{{ j.telefone ?? '' }}</td>
+            </tr>
+            <tr *ngIf="g.jogadores.length === 0">
+              <td [attr.colspan]="totalColunasJogVisiveis()" class="vazio">Sem jogadores cadastrados.</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+      </ng-container>
+      <div *ngIf="v.gruposJogadores.length === 0" class="vazio-bloco">
+        Nenhuma equipe cadastrada nesta categoria.
+      </div>
+    </section>
+
+    <!-- ============================================
+         PARTIDAS — agrupadas por Fase + Rodada
+         (Layout em cards de partida — full width, sem truncamento)
+         ============================================ -->
+    <section *ngIf="tipo === 'partidas'" class="partidas-section">
+      <div class="vazio-bloco" *ngIf="v.gruposPartidas.length === 0">
+        Nenhuma partida cadastrada.
+      </div>
+
+      <div class="ph-grupo p-grupo" *ngFor="let g of v.gruposPartidas; trackBy: trackByGrupoPartidas">
+        <!-- Banner do grupo: fase + rodada + qtd (navy gradient) -->
+        <div class="p-banner">
+          <ion-icon name="football-outline"></ion-icon>
+          <span class="p-banner-titulo">{{ rotuloGrupoPartidas(g) }}</span>
+          <span class="p-banner-qtd">
+            {{ g.partidas.length }} {{ g.partidas.length === 1 ? 'partida' : 'partidas' }}
+          </span>
+        </div>
+
+        <!-- Lista de cards -->
+        <div class="p-cards">
+          <article
+            class="p-card"
+            *ngFor="let j of g.partidas; trackBy: trackByJogo; let i = index"
+            [class.alt]="i % 2 === 1"
+          >
+            <!-- Meta: data/hora + local + status -->
+            <header class="p-meta">
+              <div class="p-meta-info">
+                <span class="p-meta-item p-data" *ngIf="formatarData(j.dataHora); else semData">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  <span>{{ formatarData(j.dataHora) }}</span>
+                  <span class="p-hora" *ngIf="formatarHora(j.dataHora)">{{ formatarHora(j.dataHora) }}</span>
+                </span>
+                <ng-template #semData>
+                  <span class="p-meta-item p-data sem">
+                    <ion-icon name="calendar-outline"></ion-icon>
+                    <span>A definir</span>
+                  </span>
+                </ng-template>
+                <span class="p-meta-item p-local" *ngIf="j.local">
+                  <ion-icon name="location-outline"></ion-icon>
+                  <span>{{ j.local }}</span>
+                </span>
+              </div>
+              <span class="p-status status-badge" [ngClass]="classeStatus(j.status)">
+                {{ rotuloStatus(j.status) }}
+              </span>
+            </header>
+
+            <!-- Corpo: time mandante | placar | time visitante -->
+            <div class="p-confronto">
+              <div class="p-time p-mand">
+                <div class="p-time-txt">
+                  <span class="p-time-nome">{{ j.nomeMandante }}</span>
+                </div>
+                <div class="p-shield">
+                  <img *ngIf="j.logoMandante; else iconM2" [src]="j.logoMandante" [alt]="j.nomeMandante" />
+                  <ng-template #iconM2><ion-icon name="shield-outline"></ion-icon></ng-template>
+                </div>
+              </div>
+
+              <div class="p-placar">
+                <ng-container *ngIf="j.golsMandante != null && j.golsVisitante != null; else vsTpl2">
+                  <span class="p-placar-num">{{ j.golsMandante }}</span>
+                  <span class="p-placar-x">×</span>
+                  <span class="p-placar-num">{{ j.golsVisitante }}</span>
+                </ng-container>
+                <ng-template #vsTpl2><span class="p-placar-vs">VS</span></ng-template>
+              </div>
+
+              <div class="p-time p-vis">
+                <div class="p-shield">
+                  <img *ngIf="j.logoVisitante; else iconV2" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
+                  <ng-template #iconV2><ion-icon name="shield-outline"></ion-icon></ng-template>
+                </div>
+                <div class="p-time-txt">
+                  <span class="p-time-nome">{{ j.nomeVisitante }}</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         CLASSIFICAÇÃO
+         ============================================ -->
+    <section *ngIf="tipo === 'classificacao'">
+      <div class="ph-grupo" *ngFor="let g of v.classificacao">
+        <h3 class="ph-grupo-titulo" *ngIf="g.grupo?.nome">{{ g.grupo!.nome }}</h3>
+        <table class="ph-tabela classif">
+          <thead>
+            <tr>
+              <th class="w-pos">Pos</th>
+              <th>Equipe</th>
+              <th>P</th>
+              <th>J</th>
+              <th>V</th>
+              <th>E</th>
+              <th>D</th>
+              <th>GP</th>
+              <th>GC</th>
+              <th>SG</th>
+              <th>%</th>
+              <th>PE</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let l of g.linhas">
+              <td class="w-pos">{{ l.pos }}</td>
+              <td>
+                <span class="ph-eq-cel">
+                  <span class="ph-eq-logo">
+                    <img *ngIf="l.equipe.logoUrl" [src]="l.equipe.logoUrl" alt="" />
+                  </span>
+                  <span>{{ l.equipe.nome }}</span>
+                </span>
+              </td>
+              <td class="bold">{{ l.pontos }}</td>
+              <td>{{ l.jogos }}</td>
+              <td>{{ l.vitorias }}</td>
+              <td>{{ l.empates }}</td>
+              <td>{{ l.derrotas }}</td>
+              <td>{{ l.golsPro }}</td>
+              <td>{{ l.golsContra }}</td>
+              <td>{{ l.saldoGols }}</td>
+              <td>{{ l.aproveitamento | number:'1.0-0' }}</td>
+              <td>{{ l.penalizacao }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="v.classificacao.length === 0" class="vazio-bloco">
+        Sem dados de classificação.
+      </div>
+    </section>
+
+    <!-- ============================================
+         RANKINGS (dinâmico — renderiza só os marcados na barra)
+         ============================================ -->
+    <section *ngIf="tipo === 'rankings'" class="rankings-grid">
+      <!-- Aviso se nenhum ranking estiver marcado -->
+      <div class="aviso-colunas" *ngIf="totalRankingsSelecionados === 0">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        <span>
+          Nenhum ranking selecionado. Use a barra acima para escolher quais
+          rankings imprimir.
+        </span>
+      </div>
+
+      <ng-container *ngFor="let r of rankings; trackBy: trackByRanking">
+        <div class="ph-rk" *ngIf="r.selecionado">
+          <h3 class="ph-grupo-titulo">
+            <ion-icon [name]="r.icone"></ion-icon>
+            {{ r.label }}
+            <span class="ph-grupo-meta">
+              — {{ dadosRanking(v, r.id).length }}
+              {{ dadosRanking(v, r.id).length === 1 ? 'jogador' : 'jogadores' }}
+            </span>
+          </h3>
+          <table class="ph-tabela ranking">
+            <thead>
+              <tr>
+                <th class="w-pos">#</th>
+                <th>Jogador</th>
+                <th>Equipe</th>
+                <th class="w-num">{{ r.colunaTotal }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let l of dadosRanking(v, r.id); trackBy: trackByLinhaRanking">
+                <td class="w-pos">{{ l.pos }}</td>
+                <td>{{ l.jogador.nome }}</td>
+                <td>{{ l.equipe?.nome ?? '' }}</td>
+                <td class="w-num bold">{{ l.total }}</td>
+              </tr>
+              <tr *ngIf="dadosRanking(v, r.id).length === 0">
+                <td colspan="4" class="vazio">Sem dados.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </section>
+
+    <!-- ============ Rodapé ============ -->
+    <footer class="ph-rodape">
+      PlacarPro · {{ v.campeonato?.titulo }} · {{ v.categoria?.titulo }}
+    </footer>
+  </div>
+
+  <ng-template #carregando>
+    <div class="ph-loading">
+      <ion-spinner name="dots"></ion-spinner>
+    </div>
+  </ng-template>
+</ion-content>

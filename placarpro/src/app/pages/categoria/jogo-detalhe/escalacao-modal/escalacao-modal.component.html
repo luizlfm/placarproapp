@@ -1,0 +1,105 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Escalação</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <!-- Cabeçalho da equipe -->
+  <div class="eq-header">
+    <div class="eq-logo">
+      <img *ngIf="equipeLogoUrl; else iconE" [src]="equipeLogoUrl" [alt]="equipeNome" />
+      <ng-template #iconE><ion-icon name="shield-outline"></ion-icon></ng-template>
+    </div>
+    <div class="eq-info">
+      <div class="eq-nome">{{ equipeNome || 'Equipe' }}</div>
+      <div class="eq-meta">
+        <strong>{{ selecionados.size }}</strong> de {{ jogadores.length }} jogador(es) selecionado(s)
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar: busca + ações em lote -->
+  <div class="toolbar">
+    <div class="busca-wrap">
+      <ion-icon name="search-outline"></ion-icon>
+      <input
+        type="text"
+        class="busca-input"
+        placeholder="Buscar jogador..."
+        [(ngModel)]="filtro"
+      />
+      <button type="button" class="busca-clear" *ngIf="filtro" (click)="filtro = ''" aria-label="Limpar busca">
+        <ion-icon name="close-circle"></ion-icon>
+      </button>
+    </div>
+    <div class="acoes-lote">
+      <button type="button" class="link-btn" (click)="limpar()" [disabled]="selecionados.size === 0">
+        Limpar
+      </button>
+      <button type="button" class="link-btn primary" (click)="selecionarTodos()">
+        Selecionar todos
+      </button>
+    </div>
+  </div>
+
+  <!-- Lista de jogadores -->
+  <div class="lista" *ngIf="!carregando; else loading">
+    <button
+      type="button"
+      *ngFor="let j of jogadoresFiltrados; trackBy: trackById"
+      class="jog-row"
+      [class.sel]="estaSelecionado(j.id!)"
+      (click)="toggle(j.id!)"
+    >
+      <div class="check" [class.checked]="estaSelecionado(j.id!)">
+        <ion-icon *ngIf="estaSelecionado(j.id!)" name="checkmark"></ion-icon>
+      </div>
+      <div class="foto">
+        <img *ngIf="j.fotoUrl; else iconF" [src]="j.fotoUrl" [alt]="j.nome" />
+        <ng-template #iconF><ion-icon name="person-circle-outline"></ion-icon></ng-template>
+      </div>
+      <div class="info">
+        <span class="nome">
+          <span *ngIf="j.numeroCamisa" class="numero">#{{ j.numeroCamisa }}</span>
+          {{ j.nome }}
+        </span>
+        <span class="posicao" *ngIf="j.posicao">{{ j.posicao }}</span>
+      </div>
+    </button>
+
+    <div *ngIf="jogadores.length === 0" class="empty">
+      <ion-icon name="people-outline"></ion-icon>
+      <p>Nenhum jogador no plantel desta equipe.</p>
+    </div>
+
+    <div *ngIf="jogadores.length > 0 && jogadoresFiltrados.length === 0" class="empty">
+      <ion-icon name="search-outline"></ion-icon>
+      <p>Nenhum jogador encontrado para "{{ filtro }}".</p>
+    </div>
+  </div>
+
+  <ng-template #loading>
+    <div class="loading"><ion-spinner name="dots"></ion-spinner></div>
+  </ng-template>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <div class="footer-actions">
+      <ion-button fill="clear" color="medium" (click)="dismiss()" [disabled]="salvando">
+        Cancelar
+      </ion-button>
+      <div class="spacer"></div>
+      <ion-button color="primary" (click)="salvar()" [disabled]="salvando">
+        <ion-spinner *ngIf="salvando" name="dots" slot="start"></ion-spinner>
+        Salvar ({{ selecionados.size }})
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

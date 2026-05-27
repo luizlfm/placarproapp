@@ -1,0 +1,224 @@
+@import '../../styles/racha-shared';
+
+/* ============================================================
+   Criar Racha — form rápido. Padrão page-head + card.
+   ============================================================ */
+
+/* Page-head dentro do shell centralizado — ajusta padding lateral */
+.cr-shell .r-page-head {
+  padding: 0 4px;
+  margin-bottom: 14px;
+  max-width: 640px;
+  width: 100%;
+}
+
+.cr-content {
+  --background: #f3f4f6;
+}
+
+.cr-shell {
+  min-height: 100%;
+  display: flex;
+  /* Empilha page-head em cima e card embaixo — antes era row default,
+     o que colocava o header ao lado do form (quebrava layout). */
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 32px 16px;
+  gap: 0;
+}
+
+.cr-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 40px 36px;
+  box-shadow: 0 12px 32px rgba(28, 46, 61, 0.08);
+  width: 100%;
+  max-width: 640px;
+
+  @media (max-width: 480px) {
+    padding: 28px 20px;
+    border-radius: 14px;
+  }
+}
+
+.cr-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto 8px;
+  color: #4b5563;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: 100%;
+  justify-content: center;
+
+  ion-icon { font-size: 22px; color: #7CC61D; }
+}
+
+.cr-titulo {
+  margin: 0 0 6px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 900;
+  color: #1d4ed8;
+  letter-spacing: -0.3px;
+
+  @media (max-width: 480px) { font-size: 22px; }
+}
+.cr-sub {
+  margin: 0 0 28px;
+  text-align: center;
+  font-size: 13.5px;
+  color: #6b7280;
+}
+
+/* ============ Form fields ============ */
+.cr-field {
+  margin-bottom: 16px;
+
+  ion-input {
+    --background: #fff;
+    --border-radius: 8px;
+    --padding-start: 12px;
+    --padding-end: 12px;
+    --highlight-color-focused: #1d4ed8;
+  }
+
+  .cr-field-foot {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    padding: 0 4px;
+    font-size: 11.5px;
+    color: #9ca3af;
+
+    .cr-hint { flex: 1; }
+    .cr-counter {
+      flex: 0 0 auto;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+    strong { color: #1d4ed8; font-weight: 800; }
+  }
+}
+
+/* Linha com 2 colunas (Times + Jogadores por time) */
+.cr-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+/* ============ Toggle "Personalizar regras" ============ */
+.cr-toggle {
+  width: 100%;
+  margin: 16px 0 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  color: #7c3aed;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: 8px;
+  transition: background 150ms ease;
+
+  ion-icon { font-size: 18px; }
+  .cr-toggle-chev { font-size: 14px; margin-left: 4px; }
+
+  &:hover { background: rgba(124, 58, 237, 0.08); }
+}
+
+.cr-opcionais {
+  background: #fafafa;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 8px;
+  border: 1px dashed #e5e7eb;
+
+  .cr-field { margin-bottom: 12px; &:last-child { margin-bottom: 0; } }
+}
+
+/* ============ Divider antes do footer ============ */
+.cr-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 20px 0 18px;
+}
+
+/* ============ Footer com botões ============ */
+.cr-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    .cr-btn { width: 100%; }
+  }
+}
+
+.cr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 180ms ease;
+  line-height: 1.2;
+
+  ion-icon { font-size: 14px; }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.cr-btn-cancel {
+  background: transparent;
+  color: #4b5563;
+
+  &:hover { background: #f3f4f6; }
+}
+
+.cr-btn-submit {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(34, 197, 94, 0.35);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(34, 197, 94, 0.5);
+  }
+}
+
+.cr-foot-hint {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: #9ca3af;
+}

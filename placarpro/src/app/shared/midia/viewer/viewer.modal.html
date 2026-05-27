@@ -1,0 +1,56 @@
+<ion-content class="viewer-content" (click)="dismiss()">
+  <button class="viewer-close" type="button" (click)="dismiss()" aria-label="Fechar">
+    <ion-icon name="close"></ion-icon>
+  </button>
+
+  <div class="viewer-stage" (click)="$event.stopPropagation()">
+    <ng-container [ngSwitch]="midia.tipo">
+
+      <img *ngSwitchCase="'foto'" [src]="midia.arquivoUrl" [alt]="midia.titulo" class="viewer-image" />
+
+      <video
+        *ngSwitchCase="'video'"
+        [src]="midia.arquivoUrl"
+        controls
+        autoplay
+        class="viewer-video"
+      ></video>
+
+      <div *ngSwitchCase="'youtube'" class="viewer-youtube">
+        <iframe [src]="youtubeEmbed" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+      </div>
+
+      <!-- Notícia: capa (se houver) + título + descrição + corpo -->
+      <article *ngSwitchCase="'noticia'" class="viewer-noticia">
+        <img *ngIf="midia.capaUrl" [src]="midia.capaUrl" [alt]="midia.titulo" class="noticia-capa" />
+        <div class="noticia-corpo">
+          <h2 *ngIf="midia.titulo">{{ midia.titulo }}</h2>
+          <p class="noticia-desc" *ngIf="midia.descricao">{{ midia.descricao }}</p>
+          <div class="noticia-texto" *ngIf="midia.corpo">{{ midia.corpo }}</div>
+        </div>
+      </article>
+
+      <!-- Link externo: card central com botão "Abrir" -->
+      <div *ngSwitchCase="'link'" class="viewer-link">
+        <ion-icon name="globe-outline"></ion-icon>
+        <h2 *ngIf="midia.titulo">{{ midia.titulo }}</h2>
+        <p class="link-url" *ngIf="midia.url">{{ midia.url }}</p>
+        <p class="link-desc" *ngIf="midia.descricao">{{ midia.descricao }}</p>
+        <ion-button color="primary" (click)="abrirLinkExterno()" *ngIf="midia.url">
+          <ion-icon slot="start" name="open-outline"></ion-icon>
+          Abrir em nova aba
+        </ion-button>
+      </div>
+
+    </ng-container>
+
+    <!-- Legenda inferior (foto/vídeo/youtube). Notícia já mostra título no corpo. -->
+    <div
+      class="viewer-caption"
+      *ngIf="(midia.titulo || midia.descricao) && midia.tipo !== 'noticia' && midia.tipo !== 'link'"
+    >
+      <h3 *ngIf="midia.titulo">{{ midia.titulo }}</h3>
+      <p *ngIf="midia.descricao">{{ midia.descricao }}</p>
+    </div>
+  </div>
+</ion-content>

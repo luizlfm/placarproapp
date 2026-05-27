@@ -1,0 +1,52 @@
+/* Logo no ion-title — altura limitada à toolbar */
+.hdr-logo {
+  height: 32px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.home-welcome {
+  max-width: 560px;
+  margin: 40px auto 0;
+  padding: 24px 20px;
+  text-align: center;
+
+  h1 {
+    margin: 12px 0 4px;
+    font-size: 24px;
+    color: #2d2d2d;
+  }
+
+  .welcome-sub {
+    color: #6b6b70;
+    margin: 0 0 24px;
+  }
+}
+
+.welcome-avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  margin: 0 auto;
+  overflow: hidden;
+  background: var(--ion-color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 32px;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(28, 46, 61, 0.35);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.welcome-card {
+  text-align: left;
+  border-radius: 12px;
+}

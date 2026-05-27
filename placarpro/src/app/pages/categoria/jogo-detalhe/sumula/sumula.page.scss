@@ -1,0 +1,527 @@
+/* =========================================================
+   Súmula imprimível — layout modelo CBF / futebol society
+   A4 paisagem, tabelas com borda preta densa
+   ========================================================= */
+
+ion-content {
+  --background: #f3f4f6;
+}
+
+.sumula-folha {
+  background: #fff;
+  margin: 12px auto;
+  padding: 6mm;
+  width: 290mm;
+  max-width: 100%;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  color: #000;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  font-size: 10px;
+  line-height: 1.15;
+}
+
+/* ================ Faixa do título com logos ================ */
+.sm-titulo-faixa {
+  display: grid;
+  grid-template-columns: 56px 1fr 96px;
+  align-items: stretch;
+  border: 1px solid #000;
+  border-bottom: 0;
+  margin-bottom: 0;
+
+  .sm-logo-camp {
+    border-right: 1px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px;
+
+    img {
+      max-width: 100%;
+      max-height: 44px;
+      object-fit: contain;
+    }
+  }
+
+  .sm-titulo-bloco {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .sm-titulo {
+    font-size: 16px;
+    font-weight: 800;
+    text-align: center;
+    padding: 3px 6px;
+    text-transform: uppercase;
+    border-bottom: 1px solid #000;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+  }
+
+  .sm-confronto {
+    display: grid;
+    grid-template-columns: 1fr 72px 22px 72px 1fr;
+    align-items: stretch;
+    min-height: 22px;
+
+    .sm-time-nome {
+      font-weight: 800;
+      padding: 3px 8px;
+      font-size: 11px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sm-placar-boxes {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      align-items: stretch;
+      border-left: 1px solid #000;
+      border-right: 0;
+
+      &.lado-v {
+        border-left: 0;
+        border-right: 1px solid #000;
+      }
+
+      .cx-pl {
+        border-right: 1px solid #000;
+        background: #fff;
+        min-height: 22px;
+
+        &:last-child {
+          border-right: none;
+        }
+      }
+    }
+
+    .sm-vs {
+      text-align: center;
+      font-weight: 800;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  .sm-logos-times {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-left: 1px solid #000;
+
+    .sm-logo-time {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px;
+
+      &+.sm-logo-time {
+        border-left: 1px solid #000;
+      }
+
+      img {
+        max-width: 100%;
+        max-height: 44px;
+        object-fit: contain;
+      }
+    }
+  }
+}
+
+/* ================ Grid de meta-dados ================ */
+.sm-meta-grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin-bottom: 0;
+  border: 1px solid #000;
+  border-top: 0;
+
+  td {
+    border: 1px solid #000;
+    padding: 2px 6px;
+    font-size: 9.5px;
+    height: 19px;
+    overflow: hidden;
+    line-height: 1.1;
+    background: #fff;
+  }
+
+  td.lbl {
+    font-weight: 700;
+    text-align: left;
+    font-size: 9px;
+    letter-spacing: 0.2px;
+  }
+
+  td.val {
+    font-weight: 700;
+  }
+
+  td.val.center {
+    text-align: center;
+  }
+
+  td.lbl.serie {
+    text-align: center;
+  }
+
+  td.lbl.arbitro {
+    text-align: center;
+    vertical-align: middle;
+    font-weight: 700;
+  }
+
+  td.val.arb-nome {
+    font-weight: 600;
+    vertical-align: middle;
+  }
+
+  td.check-box {
+    text-align: center;
+    font-weight: 700;
+    font-size: 11px;
+  }
+}
+
+/* ================ Corpo: 2 blocos lado a lado ================ */
+.sm-corpo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 0;
+  align-items: stretch;
+}
+
+.sm-equipe-bloco {
+  border-top: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Cabeçalho do bloco (EQUIPE A | nome | INICIANTES | caixas) */
+.sm-equipe-cabecalho {
+  margin-top: 5px;
+  display: grid;
+  grid-template-columns: 56px 1fr 60px 110px;
+  border: 1px solid #000;
+  margin-bottom: 5px;
+
+  .celula {
+    padding: 3px 4px;
+    font-weight: 700;
+    font-size: 9.5px;
+    text-align: center;
+    border-right: 1px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:last-child {
+      border-right: none;
+    }
+  }
+
+  .nome-equipe {
+    font-size: 11.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .iniciantes-boxes {
+    gap: 0;
+    padding: 0;
+
+    .box-mini {
+      display: inline-block;
+      flex: 1;
+      height: 100%;
+      border-right: 1px solid #000;
+      min-height: 16px;
+
+      &:last-child {
+        border-right: none;
+      }
+    }
+  }
+}
+
+/* ================ Tabela de jogadores ================ */
+.sm-jogadores {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-weight: 100;
+}
+
+.sm-jogadores th,
+.sm-jogadores td {
+  border: 1px solid #000;
+  padding: 0;
+  text-align: center;
+  vertical-align: middle;
+  font-weight: 100;
+}
+
+.sm-jogadores th {
+  font-size: 8.5px;
+  height: 14px;
+  background: #fff;
+  letter-spacing: 0.2px;
+}
+
+.sm-jogadores td {
+  height: 15px;
+  font-size: 8.5px;
+}
+
+.th-registro,
+.td-registro {
+  width: 7%;
+}
+
+.th-jogador,
+.td-jogador {
+  width: 38%;
+}
+
+.td-jogador {
+  text-align: center;
+  padding: 0 2px;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.th-num,
+.td-num {
+  width: 4%;
+}
+
+.th-faltas,
+.th-acum {
+  font-size: 8.5px;
+}
+
+.td-falta,
+.td-acum {
+  width: 3%;
+}
+
+.th-am,
+.th-vm,
+.td-am,
+.td-vm {
+  width: 3.5%;
+  background: #fff;
+}
+
+.mini-head {
+  font-size: 8px;
+  color: #555;
+  font-weight: 600;
+}
+
+/* PEDIDO DE TEMPO embutido nas linhas 3-4 do body (sobre as ACUMULATIVAS) */
+.td-pedido-header {
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  background: #fff;
+  letter-spacing: 0.3px;
+}
+
+.td-pedido-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  background: #fff;
+}
+
+.td-pedido-box {
+  background: #fff;
+}
+
+/* Células vazias da área ACUMULATIVAS (linhas 5+) */
+.td-acum-vazio {
+  background: #fff;
+}
+
+/* ===== Linhas da Comissão Técnica DENTRO da tabela de jogadores =====
+   Cada linha tem: label (colspan=3, REGISTRO+JOGADORES+Nº) | área FALTAS em branco
+   (colspan=5, sem sub-bordas) | AM | VM | área ACUM em branco (colspan=7). */
+.sm-jogadores tbody tr.comissao-row td {
+  height: 16px;
+  background: #fff;
+  font-weight: 100;
+}
+
+.td-comissao-lbl {
+  font-size: 9px;
+  text-align: left;
+  padding: 2px 6px;
+  background: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.td-comissao-area {
+  background: #fff;
+  /* Espaço em branco pra preenchimento manual — sem bordas internas */
+}
+
+/* Coluna TÉCNICO / CAPITÃO (rowspan, vertical) */
+.vertical-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  width: 3.5%;
+  min-width: 50px;
+  font-size: 10px;
+  font-weight: bold;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+/* Linha vazia (sem jogador): mantém estrutura mas com fonte mais clara */
+.sm-jogadores tbody tr.vazia td {
+  color: #999;
+  font-weight: 100;
+}
+
+/* ================ Comissão técnica ================ */
+/* Label width = REGISTRO (7%), assim a borda esquerda alinha com a coluna
+   REGISTRO do player table e o valor ocupa o restante (93%). */
+.sm-comissao {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  td {
+    border: 1px solid #000;
+    padding: 2px 6px;
+    height: 15px;
+    font-size: 9px;
+    background: #fff;
+  }
+
+  td.lbl {
+    font-weight: 700;
+    width: 7%;
+    text-align: left;
+    padding: 2px 4px;
+    font-size: 8.5px;
+  }
+
+  td.val {
+    font-weight: 600;
+  }
+}
+
+/* ================ Grade numerada 1-26 ================ */
+/* Border de todas as células consistente — top + right + bottom em todas,
+   left só na primeira. Garante grade limpa de 2x13. */
+.sm-grade-numerada {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  width: 100%;
+  max-width: 523px;
+  background: #fff;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  border: 1px solid #000;
+}
+
+/* Bloco unificado abaixo em .num-box, .empty-box */
+
+
+/* remove borda direita da última coluna (vale pra num-box E empty-box) */
+.sm-grade-numerada > :nth-child(13n) {
+  border-right: none;
+}
+
+/* remove borda inferior da última linha (vale pra num-box E empty-box) */
+.sm-grade-numerada > :nth-last-child(-n + 13) {
+  border-bottom: none;
+}
+
+.sm-grade-numerada {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+
+  width: 100%;
+  max-width: 520px;
+
+
+
+  background: #fff;
+}
+
+.num-box,
+.empty-box {
+  height: 22px;
+
+  border-bottom: 1px solid #000;
+  border-right: 1px solid #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  box-sizing: border-box;
+}
+
+.empty-box {
+  background: #fff;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+}
+
+/* ================ PRINT (paisagem A4) ================ */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 5mm;
+  }
+
+  ion-header,
+  .no-print {
+    display: none !important;
+  }
+
+  ion-content {
+    --background: #fff;
+  }
+
+  .sumula-folha {
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    width: 100%;
+  }
+
+  /* Cores e bordas saem na impressão */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+}

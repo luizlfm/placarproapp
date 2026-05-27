@@ -1,0 +1,202 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ titulo }}</ion-title>
+    <ion-buttons slot="end" *ngIf="eventoExistente">
+      <!-- Confirmação inline: 1º clique arma (vira "Confirmar?"), 2º efetiva.
+           Evita problemas de z-index com alert dialog sobre o modal. -->
+      <ion-button (click)="confirmarRemover()" color="danger" [disabled]="salvando"
+        [attr.aria-label]="confirmandoRemover ? 'Confirmar remoção' : 'Remover'" class="btn-remover"
+        [class.armado]="confirmandoRemover">
+        <ion-icon *ngIf="!confirmandoRemover" slot="icon-only" name="trash-outline"></ion-icon>
+        <span *ngIf="confirmandoRemover" class="btn-confirma-txt">Confirmar?</span>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <form [formGroup]="form" (ngSubmit)="salvar()" class="wrap" novalidate>
+    <!-- TIPO -->
+    <section class="bloco">
+      <h3>Tipo de lance</h3>
+      <div class="chips">
+        <ion-grid>
+          <ion-row class="bt-lance ion-no-padding">
+            <ion-col size="4" sizeLg="3" *ngFor="let t of tipos; trackBy: trackByTipo">
+              <button type="button" class="chip" [class.ativo]="form.value.tipo === t.value"
+                [class.amarelo]="t.value === 'amarelo'" [class.vermelho]="t.value === 'vermelho'"
+                [class.azul]="t.value === 'azul'" (click)="selecionarTipo(t.value)">
+                <ion-icon [name]="t.icon"></ion-icon>
+                {{ t.label }}
+              </button>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+
+      </div>
+    </section>
+
+    <!-- EQUIPE -->
+    <section class="bloco">
+      <h3>Equipe</h3>
+      <div class="equipes">
+        <button type="button" class="eq-btn" [class.ativa]="equipeSelecionada(mandante.id)"
+          (click)="selecionarEquipe(mandante.id)">
+          <div class="eq-logo">
+            <img *ngIf="mandante.logoUrl; else iconM" [src]="mandante.logoUrl" [alt]="mandante.nome" />
+            <ng-template #iconM><ion-icon name="shield-outline"></ion-icon></ng-template>
+          </div>
+          <div class="eq-info">
+            <span class="eq-nome">{{ mandante.nome }}</span>
+            <span class="eq-lado">Mandante</span>
+          </div>
+        </button>
+
+        <button type="button" class="eq-btn" [class.ativa]="equipeSelecionada(visitante.id)"
+          (click)="selecionarEquipe(visitante.id)">
+          <div class="eq-logo">
+            <img *ngIf="visitante.logoUrl; else iconV" [src]="visitante.logoUrl" [alt]="visitante.nome" />
+            <ng-template #iconV><ion-icon name="shield-outline"></ion-icon></ng-template>
+          </div>
+          <div class="eq-info">
+            <span class="eq-nome">{{ visitante.nome }}</span>
+            <span class="eq-lado">Visitante</span>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <!-- JOGADOR + ASSISTÊNCIA + QUANTIDADE -->
+    <section class="bloco" *ngIf="form.value.equipeId">
+      <h3>
+        {{ mostraAssistencia ? 'Gol do jogador' : 'Jogador' }}
+        <span class="opcional">(opcional)</span>
+      </h3>
+      <ng-container *ngIf="jogadores$ | async as lista">
+        <div *ngIf="lista.length === 0" class="empty-jog">
+          <ion-icon name="people-outline"></ion-icon>
+          <span>Esta equipe ainda não tem jogadores cadastrados.</span>
+        </div>
+        <select *ngIf="lista.length > 0" class="sel-jog" formControlName="jogadorId">
+          <option value="">— Sem jogador específico —</option>
+          <option *ngFor="let j of lista; trackBy: trackById" [value]="j.id">
+            {{ j.numeroCamisa ? '#' + j.numeroCamisa + ' · ' : '' }}{{ j.nome }}
+          </option>
+        </select>
+
+        <!-- Assistência (só para gol) -->
+        <ng-container *ngIf="mostraAssistencia && lista.length > 0">
+          <h3 class="sub-h3">Assistência do jogador <span class="opcional">(opcional)</span></h3>
+          <select class="sel-jog" formControlName="assistenteId">
+            <option value="">— Sem assistência —</option>
+            <option *ngFor="let j of lista; trackBy: trackById" [value]="j.id"
+              [disabled]="j.id === form.value.jogadorId">
+              {{ j.numeroCamisa ? '#' + j.numeroCamisa + ' · ' : '' }}{{ j.nome }}
+              {{ j.id === form.value.jogadorId ? ' (já é o autor)' : '' }}
+            </option>
+          </select>
+        </ng-container>
+      </ng-container>
+
+      <!-- Quantidade (só gol/gol-contra) -->
+      <ng-container *ngIf="mostraQuantidade">
+        <h3 class="sub-h3">
+          Quantidade
+          <span class="opcional">({{ form.value.quantidade }}x)</span>
+        </h3>
+        <div class="qtds">
+          <button type="button" *ngFor="let q of quantidades" class="qtd-chip"
+            [class.ativo]="form.value.quantidade === q" (click)="selecionarQuantidade(q)">
+            {{ q }}x
+          </button>
+        </div>
+      </ng-container>
+    </section>
+
+    <!-- TEMPO -->
+    <section class="bloco">
+      <label class="check-row" (click)="toggleTempo()">
+        <span class="check-box" [class.ativo]="definirTempo">
+          <ion-icon *ngIf="definirTempo" name="checkmark"></ion-icon>
+        </span>
+        <span class="check-text">Definir tempo</span>
+      </label>
+      <div class="minuto-wrap" *ngIf="definirTempo">
+        <label class="lbl">
+          <span>Minuto</span>
+          <input type="number" min="0" max="200" formControlName="minuto" placeholder="0" />
+        </label>
+      </div>
+    </section>
+
+    <!-- DESCRIÇÃO -->
+    <section class="bloco">
+      <h3>Descrição <span class="opcional">(opcional)</span></h3>
+      <textarea formControlName="observacao" class="desc" placeholder="Detalhes do lance..." rows="2"></textarea>
+    </section>
+
+    <!-- MÍDIA -->
+    <section class="bloco">
+      <h3>
+        Mídia <span class="opcional">(fotos/vídeos)</span>
+      </h3>
+
+      <div class="midia-grid">
+        <!-- Mídias já salvas -->
+        <div class="midia-item" *ngFor="let m of midiasSalvas; let i = index; trackBy: trackByIndex">
+          <img *ngIf="!m.isVideo" [src]="m.url" alt="mídia" />
+          <video *ngIf="m.isVideo" [src]="m.url" muted></video>
+          <button type="button" class="midia-del" (click)="removerMidiaSalva(i)">
+            <ion-icon name="close"></ion-icon>
+          </button>
+        </div>
+
+        <!-- Pendentes -->
+        <div class="midia-item pendente" *ngFor="let m of midiasPendentes; let i = index; trackBy: trackByIndex">
+          <img *ngIf="!m.isVideo" [src]="m.preview" alt="prévia" />
+          <video *ngIf="m.isVideo" [src]="m.preview" muted></video>
+          <button type="button" class="midia-del" (click)="removerMidiaPendente(i)">
+            <ion-icon name="close"></ion-icon>
+          </button>
+          <span class="midia-tag">pendente</span>
+        </div>
+
+        <!-- Botão adicionar -->
+        <button type="button" class="midia-add" (click)="selecionarMidia()">
+          <ion-icon name="add-outline"></ion-icon>
+          <span>Adicionar</span>
+        </button>
+      </div>
+
+      <p class="midia-hint" *ngIf="totalMidias === 0">
+        Adicione fotos ou vídeos do lance. Limite de 20MB por arquivo.
+      </p>
+    </section>
+  </form>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-grid>
+      <ion-row>
+        <ion-col size="6">
+          <ion-button class="buttons" color="danger" (click)="dismiss()" [disabled]="salvando">
+            Cancelar
+          </ion-button>
+       
+        </ion-col>
+        <ion-col size="6">
+          <ion-button class="buttons" color="secondary" (click)="salvar()" [disabled]="salvando || form.invalid">
+          <ion-spinner *ngIf="salvando" name="dots" slot="start"></ion-spinner>
+          Salvar
+        </ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </ion-toolbar>
+</ion-footer>

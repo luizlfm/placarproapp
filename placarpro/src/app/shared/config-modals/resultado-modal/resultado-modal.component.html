@@ -1,0 +1,81 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>Resultado do campeonato</ion-title>
+    <ion-buttons slot="end">
+      <ion-button strong="true" [disabled]="salvando || linhas.length === 0" (click)="salvar()">Salvar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="res-content">
+  <p class="res-intro">Defina a classificação final do campeonato. Use as setas ↑/↓ pra ordenar — as 3 primeiras ganham medalhas automaticamente.</p>
+
+  <div class="res-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <div class="res-empty" *ngIf="!loading && linhas.length === 0">
+    <ion-icon name="trophy-outline"></ion-icon>
+    <p>Nenhuma equipe cadastrada.</p>
+    <span>Cadastre as equipes da categoria antes de definir o resultado.</span>
+  </div>
+
+  <div class="res-lista" *ngIf="!loading && linhas.length > 0">
+    <div
+      class="res-linha"
+      *ngFor="let l of linhas; let i = index; trackBy: trackByEquipe"
+      [class.podio]="l.posicao <= 3"
+      [ngClass]="classePosicao(l.posicao)"
+    >
+      <!-- Posição (badge grande, com medalha pro pódio) -->
+      <div class="res-pos">
+        <span class="medalha" *ngIf="l.posicao <= 3">{{ medalhaEmoji(l.posicao) }}</span>
+        <span class="num">{{ l.posicao }}º</span>
+      </div>
+
+      <!-- Logo + nome da equipe -->
+      <div class="res-equipe">
+        <div class="eq-logo">
+          <img *ngIf="l.equipe.logoUrl; else iE" [src]="l.equipe.logoUrl" [alt]="l.equipe.nome" />
+          <ng-template #iE><ion-icon name="shield-outline"></ion-icon></ng-template>
+        </div>
+        <div class="eq-info">
+          <div class="eq-nome">{{ l.equipe.nome }}</div>
+          <input
+            type="text"
+            class="eq-titulo-input"
+            [value]="l.titulo || ''"
+            (input)="setTitulo(i, $any($event.target).value)"
+            placeholder="Título (opcional): Campeão, Vice, Bronze, ..."
+          />
+        </div>
+      </div>
+
+      <!-- Botões de mover -->
+      <div class="res-acoes">
+        <button type="button" class="ico-btn"
+                (click)="subir(i)"
+                [disabled]="i === 0"
+                aria-label="Subir">
+          <ion-icon name="chevron-up-outline"></ion-icon>
+        </button>
+        <button type="button" class="ico-btn"
+                (click)="descer(i)"
+                [disabled]="i === linhas.length - 1"
+                aria-label="Descer">
+          <ion-icon name="chevron-down-outline"></ion-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="res-rodape" *ngIf="!loading && linhas.length > 0">
+    <button type="button" class="btn-link-danger" (click)="limparTudo()">
+      <ion-icon name="trash-outline"></ion-icon>
+      Limpar resultado
+    </button>
+  </div>
+</ion-content>

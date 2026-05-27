@@ -1,0 +1,552 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/app/meus-campeonatos"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Configurações</ion-title>
+    <ion-buttons slot="end">
+      <ion-button aria-label="Ajuda">
+        <ion-icon slot="icon-only" name="help-circle-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap" *ngIf="categoria$ | async as cat">
+    <ng-container *ngIf="counters$ | async as ctr">
+
+      <!-- ============ Link do site ============ -->
+      <section class="card">
+        <h3 class="card-title">Definir link do site</h3>
+
+        <div class="link-input-row">
+          <span class="link-prefix">{{ linkPrefix }}</span>
+          <input
+            type="text"
+            class="link-input"
+            [value]="cat.linkExterno ?? ''"
+            placeholder="meu-campeonato"
+            (click)="editarLinkExterno(cat)"
+            readonly
+          />
+        </div>
+        <div class="row-actions" *ngIf="cat.linkExterno">
+          <button class="btn-danger" type="button" (click)="removerLinkExterno()">
+            Remover
+          </button>
+        </div>
+      </section>
+
+      <!-- ============ Dados básicos ============ -->
+      <section class="card">
+        <h3 class="card-title">Dados básicos</h3>
+
+        <div class="logo-row">
+          <div class="logo-col">
+            <!-- Toggle Web/Mobile do logo da categoria. O `logoMobileUrl` é
+                 opcional — quando vazio, o front cai no `logoUrl` em qualquer
+                 viewport. Mesma lógica do campeonato/config. -->
+            <div class="modo-toggle" role="tablist" aria-label="Modo de exibição do logo">
+              <button
+                type="button"
+                class="modo-btn"
+                [class.ativo]="modoLogo === 'web'"
+                (click)="modoLogo = 'web'"
+              >
+                <ion-icon name="desktop-outline"></ion-icon>
+                <span>Web</span>
+              </button>
+              <button
+                type="button"
+                class="modo-btn"
+                [class.ativo]="modoLogo === 'mobile'"
+                (click)="modoLogo = 'mobile'"
+              >
+                <ion-icon name="phone-portrait-outline"></ion-icon>
+                <span>Mobile</span>
+              </button>
+            </div>
+
+            <!-- Variante WEB do logo (200×240, aspect 5/6) -->
+            <div
+              *ngIf="modoLogo === 'web'"
+              class="logo-box clickable"
+              (click)="selecionarImagem('logoUrl', 200/240, 'Ajustar logo (web)')"
+            >
+              <img *ngIf="cat.logoUrl; else logoIc" [src]="cat.logoUrl" alt="Logo web" />
+              <ng-template #logoIc>
+                <ion-icon name="add-outline"></ion-icon>
+                <span class="size">200×240</span>
+              </ng-template>
+            </div>
+
+            <!-- Variante MOBILE do logo (200×240 — mesmo aspect, mas pode
+                 ser uma versão mais limpa do logo, sem detalhes pequenos) -->
+            <div
+              *ngIf="modoLogo === 'mobile'"
+              class="logo-box logo-box-mobile clickable"
+              (click)="selecionarImagem('logoMobileUrl', 200/240, 'Ajustar logo (mobile)')"
+            >
+              <img *ngIf="cat.logoMobileUrl; else logoMobIc" [src]="cat.logoMobileUrl" alt="Logo mobile" />
+              <ng-template #logoMobIc>
+                <ion-icon name="add-outline"></ion-icon>
+                <span class="size">200×240</span>
+                <span class="hint">(opcional)</span>
+              </ng-template>
+            </div>
+          </div>
+
+          <div class="logo-fields">
+            <label class="field-stack">
+              <span class="field-label">Título</span>
+              <input
+                type="text"
+                class="field-input"
+                [value]="cat.titulo"
+                (click)="editarTitulo(cat)"
+                readonly
+              />
+            </label>
+            <label class="field-stack">
+              <span class="field-label">Subtítulo</span>
+              <input
+                type="text"
+                class="field-input"
+                [value]="cat.subtitulo ?? ''"
+                placeholder="—"
+                (click)="editarTitulo(cat)"
+                readonly
+              />
+            </label>
+          </div>
+        </div>
+
+        <!-- ===== Capa (banner hero da categoria) com toggle Web/Mobile =====
+             Igual ao campeonato/config: WEB 1600×400 (4:1), MOBILE 1600×533 (3:1).
+             O `capaMobileUrl` é opcional — quando vazio o front cai no
+             `capaUrl` em qualquer viewport. -->
+        <div class="modo-toggle" role="tablist" aria-label="Modo de exibição da capa">
+          <button
+            type="button"
+            class="modo-btn"
+            [class.ativo]="modoCapa === 'web'"
+            (click)="modoCapa = 'web'"
+          >
+            <ion-icon name="desktop-outline"></ion-icon>
+            <span>Web</span>
+          </button>
+          <button
+            type="button"
+            class="modo-btn"
+            [class.ativo]="modoCapa === 'mobile'"
+            (click)="modoCapa = 'mobile'"
+          >
+            <ion-icon name="phone-portrait-outline"></ion-icon>
+            <span>Mobile</span>
+          </button>
+        </div>
+
+        <!-- Variante WEB da capa (1600×400 — 4:1) -->
+        <div
+          *ngIf="modoCapa === 'web'"
+          class="capa-box clickable"
+          (click)="selecionarImagem('capaUrl', 1600/400, 'Ajustar imagem de capa (web)')"
+        >
+          <img
+            *ngIf="(cat.capaUrl || cat.bannerUrl) as capa; else capaIc"
+            [src]="capa"
+            alt="Capa web"
+          />
+          <ng-template #capaIc>
+            <ion-icon name="add-outline"></ion-icon>
+            <span>Imagem de capa</span>
+            <span class="size">1600×400</span>
+          </ng-template>
+        </div>
+
+        <!-- Variante MOBILE da capa (1600×533 — 3:1) -->
+        <div
+          *ngIf="modoCapa === 'mobile'"
+          class="capa-box capa-box-mobile clickable"
+          (click)="selecionarImagem('capaMobileUrl', 1600/533, 'Ajustar imagem de capa (mobile)')"
+        >
+          <img *ngIf="cat.capaMobileUrl; else capaMobIc" [src]="cat.capaMobileUrl" alt="Capa mobile" />
+          <ng-template #capaMobIc>
+            <ion-icon name="add-outline"></ion-icon>
+            <span>Imagem de capa (mobile)</span>
+            <span class="size">1600×533</span>
+            <span class="hint">(opcional — usa a web se vazio)</span>
+          </ng-template>
+        </div>
+
+        <!-- Descrição -->
+        <label class="field-stack big" (click)="editarDescricao(cat)">
+          <span class="field-label">Descrição</span>
+          <div class="field-input-area" [class.empty]="!cat.descricao">
+            {{ cat.descricao || 'Toque para adicionar uma descrição' }}
+          </div>
+        </label>
+
+        <!-- Datas -->
+        <div class="dates-row">
+          <button type="button" class="date-btn" (click)="editarDataInicio(cat)">
+            <ion-icon name="calendar-clear-outline"></ion-icon>
+            <div class="date-content">
+              <span class="date-label">Data de início</span>
+              <span class="date-value" [class.empty]="!cat.dataInicio">{{ cat.dataInicio || '—' }}</span>
+            </div>
+          </button>
+          <button type="button" class="date-btn" (click)="editarDataFim(cat)">
+            <ion-icon name="calendar-clear-outline"></ion-icon>
+            <div class="date-content">
+              <span class="date-label">Data de término</span>
+              <span class="date-value" [class.empty]="!cat.dataFim">{{ cat.dataFim || '—' }}</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Link rows -->
+        <button class="link-row" type="button" (click)="editarContatos(cat)">
+          <ion-icon name="call-outline"></ion-icon>
+          <span class="link-text">Contatos</span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="editarCor(cat)">
+          <ion-icon name="color-fill-outline"></ion-icon>
+          <span class="link-text">Cor</span>
+          <span class="cor-amostra" [style.background]="cat.cor || '#1C2E3D'"></span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="editarRegras(cat)">
+          <ion-icon name="reader-outline"></ion-icon>
+          <span class="link-text">Regras do campeonato</span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="editarPremiacoes(cat)">
+          <ion-icon name="trophy-outline"></ion-icon>
+          <span class="link-text">Premiações</span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="abrirAnexoPicker()">
+          <ion-icon name="attach-outline"></ion-icon>
+          <span class="link-text">Anexos</span>
+          <span class="link-edit">{{ (cat.anexosUrls?.length ?? 0) > 0 ? cat.anexosUrls!.length + ' arquivo(s)' : 'Editar' }}</span>
+        </button>
+
+        <!-- Lista de anexos -->
+        <div *ngIf="(cat.anexosUrls?.length ?? 0) > 0" class="anexos-list">
+          <div class="anexo-item" *ngFor="let url of cat.anexosUrls; let i = index; trackBy: trackByIndex">
+            <ion-icon name="document-attach-outline"></ion-icon>
+            <a class="anexo-link" [href]="url" target="_blank" rel="noopener">
+              Anexo {{ i + 1 }}
+            </a>
+            <button type="button" class="anexo-rem" (click)="removerAnexo(cat, i)" aria-label="Remover">
+              <ion-icon name="close-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Localização -->
+        <div class="loc-block">
+          <span class="loc-title">Localização</span>
+          <label class="radio-row">
+            <input
+              type="radio"
+              name="loc-tipo"
+              value="online"
+              [checked]="cat.localizacaoTipo === 'online'"
+              (change)="alterarLocalizacaoTipo('online')"
+            />
+            <span>Campeonato disputado na internet</span>
+          </label>
+          <label class="radio-row">
+            <input
+              type="radio"
+              name="loc-tipo"
+              value="presencial"
+              [checked]="cat.localizacaoTipo === 'presencial' || !cat.localizacaoTipo"
+              (change)="alterarLocalizacaoTipo('presencial')"
+            />
+            <span>Campeonato disputado presencialmente</span>
+          </label>
+          <button
+            *ngIf="(cat.localizacaoTipo ?? 'presencial') === 'presencial'"
+            type="button"
+            class="loc-link"
+            (click)="editarLocalizacao(cat)"
+          >
+            <ion-icon name="location-outline"></ion-icon>
+            {{ cat.localizacao || 'Definir localização' }}
+          </button>
+        </div>
+      </section>
+
+      <!-- ============ Campeonato ============ -->
+      <section class="card">
+        <h3 class="card-title">Campeonato</h3>
+
+        <a
+          class="link-row"
+          [routerLink]="['/app/campeonato', campeonatoId, 'categoria', categoriaId, 'equipes']"
+        >
+          <ion-icon name="list-outline"></ion-icon>
+          <span class="link-text">Equipes <span class="counter">({{ ctr.equipes }})</span></span>
+          <span class="link-edit">Editar</span>
+        </a>
+
+        <button class="link-row" type="button" (click)="irParaJogadoresGlobal()">
+          <ion-icon name="person-outline"></ion-icon>
+          <span class="link-text">Jogadores <span class="counter">({{ ctr.jogadores }})</span></span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="abrirGrupos()">
+          <ion-icon name="apps-outline"></ion-icon>
+          <span class="link-text">Grupos <span class="counter" *ngIf="ctr.grupos > 0">({{ ctr.grupos }})</span></span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="irPara('classificacao', { abrir: 'fases' })">
+          <ion-icon name="copy-outline"></ion-icon>
+          <span class="link-text">Fases <span class="counter" *ngIf="ctr.fases > 0">({{ ctr.fases }})</span></span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="irParaArbitragem()">
+          <ion-icon name="person-outline"></ion-icon>
+          <span class="link-text">Arbitragem</span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="irParaLocais()">
+          <ion-icon name="location-outline"></ion-icon>
+          <span class="link-text">Locais</span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="irPara('classificacao', { abrir: 'criterios' })">
+          <ion-icon name="list-outline"></ion-icon>
+          <span class="link-text">Critério de classificação</span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="irPara('inscricoes')">
+          <ion-icon name="checkbox-outline"></ion-icon>
+          <span class="link-text">Editar inscrições</span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="irPara('rankings')">
+          <ion-icon name="stats-chart-outline"></ion-icon>
+          <span class="link-text">Ranking de jogadores</span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="irPara('enquetes')">
+          <ion-icon name="newspaper-outline"></ion-icon>
+          <span class="link-text">Enquetes</span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="editarResultado()">
+          <ion-icon name="trophy-outline"></ion-icon>
+          <span class="link-text">Resultado do campeonato</span>
+          <span class="link-edit">Editar</span>
+        </button>
+      </section>
+
+      <!-- ============ Divulgação ============ -->
+      <section class="card">
+        <h3 class="card-title">Divulgação</h3>
+
+        <div class="toggle-row" (click)="togglePublico(cat)">
+          <ion-icon [name]="(cat.publico ?? true) ? 'globe-outline' : 'lock-closed-outline'"></ion-icon>
+          <div class="t-text">
+            <div class="t-title">
+              {{ (cat.publico ?? true) ? 'Campeonato Público' : 'Campeonato Privado' }}
+            </div>
+            <div class="t-sub">
+              {{ (cat.publico ?? true)
+                  ? 'Todos podem pesquisar e ver'
+                  : 'Não aparece na busca — só quem tem o link direto consegue ver' }}
+            </div>
+          </div>
+          <ion-toggle
+            [checked]="cat.publico ?? true"
+            (click)="$event.stopPropagation()"
+            (ionChange)="togglePublico(cat)"
+          ></ion-toggle>
+        </div>
+
+        <div class="toggle-row" (click)="toggleMidiasUsuarios(cat)">
+          <ion-icon name="images-outline"></ion-icon>
+          <div class="t-text">
+            <div class="t-title">Mídias dos usuários</div>
+            <div class="t-sub">Visitantes podem enviar mídias (Publicadas após moderação)</div>
+          </div>
+          <ion-toggle
+            [checked]="cat.permiteMidiasUsuarios ?? false"
+            (click)="$event.stopPropagation()"
+            (ionChange)="toggleMidiasUsuarios(cat)"
+          ></ion-toggle>
+        </div>
+
+        <div class="toggle-row" (click)="toggleComentarios(cat)">
+          <ion-icon name="chatbubble-outline"></ion-icon>
+          <div class="t-text">
+            <div class="t-title">Permitir que os usuários enviem comentários</div>
+          </div>
+          <ion-toggle
+            [checked]="cat.permiteComentarios ?? true"
+            (click)="$event.stopPropagation()"
+            (ionChange)="toggleComentarios(cat)"
+          ></ion-toggle>
+        </div>
+
+        <button class="link-row" type="button" (click)="irParaPatrocinadores()">
+          <ion-icon name="megaphone-outline"></ion-icon>
+          <span class="link-text">Apoios e Patrocinadores</span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <button class="link-row" type="button">
+          <ion-icon name="analytics-outline"></ion-icon>
+          <span class="link-text">Visualizações</span>
+          <span class="link-edit">{{ cat.visualizacoes ?? 0 }}</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="abrirSeguidores(cat)">
+          <ion-icon name="people-outline"></ion-icon>
+          <span class="link-text">Seguidores</span>
+          <span class="link-edit">{{ seguidoresCount$ | async }}</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="editarModeradores(cat)">
+          <ion-icon name="shield-checkmark-outline"></ion-icon>
+          <span class="link-text">Moderadores <span class="counter" *ngIf="qtdModeradores(cat) > 0">({{ qtdModeradores(cat) }})</span></span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <div class="sub-toggles">
+          <span class="sub-titulo">Exibição de nomes e datas</span>
+          <label class="check-line">
+            <input type="checkbox" [checked]="cat.exibirNomes ?? true" (change)="toggleExibirNomes(cat)" />
+            <span>Exibir nomes dos jogadores</span>
+          </label>
+          <label class="check-line">
+            <input type="checkbox" [checked]="cat.exibirDatas ?? true" (change)="toggleExibirDatas(cat)" />
+            <span>Exibir datas e horários</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- ============ Configurações do esporte ============ -->
+      <section class="card">
+        <h3 class="card-title">Configurações do esporte</h3>
+
+        <ng-container *ngIf="configAtual(cat) as cfg">
+          <label class="select-field">
+            <span class="select-label">Pontos por Vitória</span>
+            <select
+              [value]="cfg.pontosVitoria"
+              (change)="alterarPontos('pontosVitoria', +$any($event.target).value, cat)"
+            >
+              <option *ngFor="let p of pontosOpcoes" [value]="p">{{ p }}</option>
+            </select>
+          </label>
+
+          <label class="select-field">
+            <span class="select-label">Pontos por empate</span>
+            <select
+              [value]="cfg.pontosEmpate"
+              (change)="alterarPontos('pontosEmpate', +$any($event.target).value, cat)"
+            >
+              <option *ngFor="let p of pontosOpcoes" [value]="p">{{ p }}</option>
+            </select>
+          </label>
+
+          <label class="select-field">
+            <span class="select-label">Pontos por derrota</span>
+            <select
+              [value]="cfg.pontosDerrota"
+              (change)="alterarPontos('pontosDerrota', +$any($event.target).value, cat)"
+            >
+              <option *ngFor="let p of pontosOpcoes" [value]="p">{{ p }}</option>
+            </select>
+          </label>
+
+          <label class="select-field">
+            <span class="select-label">Suspensão automática (cartões amarelos)</span>
+            <select
+              [value]="suspensaoValor(cfg.suspensaoAmarelos)"
+              (change)="alterarSuspensao('amarelo', $any($event.target).value, cat)"
+            >
+              <option *ngFor="let v of suspensaoOpcoes" [value]="v">{{ v }}</option>
+            </select>
+          </label>
+
+          <label class="select-field">
+            <span class="select-label">Suspensão automática (cartões vermelhos)</span>
+            <select
+              [value]="suspensaoValor(cfg.suspensaoVermelhos)"
+              (change)="alterarSuspensao('vermelho', $any($event.target).value, cat)"
+            >
+              <option *ngFor="let v of suspensaoOpcoes" [value]="v">{{ v }}</option>
+            </select>
+          </label>
+
+          <label class="select-field">
+            <span class="select-label">Suspensão automática (cartões azuis)</span>
+            <select
+              [value]="suspensaoValor(cfg.suspensaoAzuis)"
+              (change)="alterarSuspensao('azul', $any($event.target).value, cat)"
+            >
+              <option *ngFor="let v of suspensaoOpcoes" [value]="v">{{ v }}</option>
+            </select>
+          </label>
+
+          <label class="select-field">
+            <span class="select-label">Separar cartões</span>
+            <select
+              [value]="cfg.separarCartoesPorFase ? 'fase' : 'geral'"
+              (change)="alterarSepararCartoes($any($event.target).value === 'fase', cat)"
+            >
+              <option value="fase">Separar cartões de cada fase</option>
+              <option value="geral">Contagem geral (todo o campeonato)</option>
+            </select>
+          </label>
+
+          <label class="select-field">
+            <span class="select-label">Contagem de Jogos</span>
+            <select
+              [value]="cfg.contagemJogos"
+              (change)="alterarContagemJogos($any($event.target).value, cat)"
+            >
+              <option *ngFor="let o of contagemJogosOpcoes" [value]="o.value">{{ o.label }}</option>
+            </select>
+          </label>
+
+          <label class="check-row-big" (click)="toggleIncluirAzuis(cat)">
+            <input
+              type="checkbox"
+              [checked]="cfg.incluirCartoesAzuis"
+              (click)="$event.stopPropagation(); toggleIncluirAzuis(cat)"
+            />
+            <span>Incluir Cartões Azuis</span>
+          </label>
+        </ng-container>
+      </section>
+
+    </ng-container>
+  </div>
+
+  <!-- File picker invisível pros anexos. Os pickers de logo/capa agora
+       são criados dinamicamente em `selecionarImagem()` (mesmo padrão do
+       campeonato/config), então não precisam de elementos estáticos. -->
+  <input #anexoPicker type="file" accept="application/pdf,image/*" style="display:none" (change)="onAnexoEscolhido($event)" />
+</ion-content>

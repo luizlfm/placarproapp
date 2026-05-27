@@ -1,0 +1,173 @@
+<ion-content class="bg">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="modal-card">
+
+    <!-- ════════ HEADER ════════
+         Title bar fixo no topo: título + X. Padronizado com modais
+         modernos (Linear, Notion). Substitui o hero navy pesado por
+         um header bar limpo. -->
+    <header class="modal-header">
+      <h2>{{ equipeExistente ? 'Editar equipe' : 'Nova equipe' }}</h2>
+      <div class="header-actions">
+        <button *ngIf="equipeExistente" type="button" class="header-btn" (click)="compartilhar()"
+          aria-label="Compartilhar" title="Compartilhar">
+          <ion-icon name="share-social-outline"></ion-icon>
+        </button>
+        <button type="button" class="header-btn" (click)="dismiss()" aria-label="Fechar">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+    </header>
+
+    <!-- ════════ BODY ════════ -->
+    <div class="modal-body">
+
+      <!-- Escudo + nome do time (centralizado, identidade visual) -->
+      <section class="team-identity">
+        <button type="button" class="logo-circle" (click)="selecionarLogo()" [disabled]="enviandoLogo"
+          aria-label="Selecionar escudo">
+          <img *ngIf="form.value.logoUrl; else iconF" [src]="form.value.logoUrl" alt="Logo" />
+          <ng-template #iconF>
+            <ion-icon name="shield-outline"></ion-icon>
+          </ng-template>
+          <span *ngIf="enviandoLogo" class="overlay">
+            <ion-spinner color="light"></ion-spinner>
+          </span>
+
+        </button>
+      </section>
+
+      <!-- Formulário identificação -->
+      <div class="divider">
+        <ion-item lines="none">
+          <h3 class="divider-label">Informações básicas</h3>
+        </ion-item>
+        <ion-input
+          fill="outline"
+          label="Nome da equipe"
+          labelPlacement="stacked"
+          placeholder="Ex: Sport Club Recife"
+          formControlName="nome"
+          required
+        ></ion-input>
+
+        <ion-input
+          fill="outline"
+          label="Técnico"
+          labelPlacement="stacked"
+          placeholder="Ex: Tite"
+          formControlName="tecnico"
+        ></ion-input>
+
+        <ion-input
+          fill="outline"
+          label="Cidade/UF"
+          labelPlacement="stacked"
+          placeholder="Ex: Formiga/MG"
+          formControlName="cidade"
+        ></ion-input>
+
+        <ion-select
+          fill="outline"
+          label="Grupo"
+          labelPlacement="stacked"
+          formControlName="grupoId"
+          interface="popover"
+          placeholder="Sem grupo"
+        >
+          <ion-select-option value="">Sem grupo</ion-select-option>
+          <ion-select-option *ngFor="let g of grupos$ | async" [value]="g.id">
+            {{ g.nome }}
+          </ion-select-option>
+        </ion-select>
+
+        <!-- <details class="extra">
+          <summary>
+            <ion-icon name="add-circle-outline" class="ic-open"></ion-icon>
+            <ion-icon name="remove-circle-outline" class="ic-close"></ion-icon>
+            Mais opções (cidade, cor)
+          </summary>
+          <div class="extra-body">
+            <div class="cor-picker">
+              <div class="cor-label">Cor primária</div>
+              <div class="cor-grid">
+                <button *ngFor="let c of coresPreset" type="button" class="cor-swatch"
+                  [class.sel]="form.value.cor === c" [style.background]="c" (click)="selecionarCor(c)"
+                  [attr.aria-label]="'Selecionar cor ' + c">
+                  <ion-icon *ngIf="form.value.cor === c" name="checkmark-outline"></ion-icon>
+                </button>
+                <label class="cor-swatch custom"
+                  [class.sel]="form.value.cor && coresPreset.indexOf(form.value.cor) === -1">
+                  <input type="color" [value]="form.value.cor || '#7CC61D'"
+                    (input)="selecionarCor($any($event.target).value)" aria-label="Cor personalizada" />
+                  <ion-icon name="color-palette-outline"></ion-icon>
+                </label>
+              </div>
+              <div class="cor-hex" *ngIf="form.value.cor">
+                <span [style.background]="form.value.cor"></span>
+                {{ form.value.cor }}
+                <button type="button" class="cor-clear" (click)="selecionarCor('')" aria-label="Limpar cor">
+                  <ion-icon name="close-outline"></ion-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </details> -->
+      </div>
+
+      <!-- Gerenciar (nav cards) -->
+      <div>
+        <ion-item lines="none">
+          <h3 class="divider-label">Gerenciar</h3>
+        </ion-item> 
+        
+        <button type="button" class="nav-card" (click)="abrirJogadores()">
+          <span class="nav-ic">
+            <ion-icon name="people-outline"></ion-icon>
+          </span>
+          <span class="nav-text">
+            <span class="nav-title">Jogadores</span>
+            <span class="nav-sub">Elenco e numerações</span>
+          </span>
+          <ion-icon class="nav-chev" name="chevron-forward-outline"></ion-icon>
+        </button>
+
+        <button type="button" class="nav-card" (click)="abrirEquipeTecnica()">
+          <span class="nav-ic">
+            <ion-icon name="people-circle-outline"></ion-icon>
+          </span>
+          <span class="nav-text">
+            <span class="nav-title">Equipe Técnica</span>
+            <span class="nav-sub">Treinador, auxiliar, preparador</span>
+          </span>
+          <ion-icon class="nav-chev" name="chevron-forward-outline"></ion-icon>
+        </button>
+
+        <button *ngIf="equipeExistente?.inscricaoToken" type="button" class="nav-card nav-card--warning"
+          (click)="reabrirFichaInscricao()">
+          <span class="nav-ic">
+            <ion-icon name="lock-open-outline"></ion-icon>
+          </span>
+          <span class="nav-text">
+            <span class="nav-title">Reabrir ficha</span>
+            <span class="nav-sub">Permitir representante editar de novo</span>
+          </span>
+          <ion-icon class="nav-chev" name="chevron-forward-outline"></ion-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- ════════ FOOTER ════════ -->
+    <footer class="modal-footer">
+      <button *ngIf="equipeExistente" type="button" class="btn btn-danger" (click)="remover()">
+        <ion-icon name="trash-outline"></ion-icon>
+        <span>Remover</span>
+      </button>
+      <div class="spacer"></div>
+      <button type="submit" class="btn btn-primary" [disabled]="loading || form.invalid">
+        <ion-spinner *ngIf="loading" name="dots"></ion-spinner>
+        <ion-icon *ngIf="!loading" name="checkmark-outline"></ion-icon>
+        <span>{{ equipeExistente ? 'Salvar' : 'Criar equipe' }}</span>
+      </button>
+    </footer>
+  </form>
+</ion-content>

@@ -1,0 +1,274 @@
+/* ============ Modal de Transmissão ao Vivo ============
+   Tema escuro (igual interface de streaming clássica). Preview ocupa
+   maior parte da tela; controles abaixo (botões maiores em mobile). */
+
+.tx-content {
+  --background: #0a0a0a;
+}
+
+/* Badge AO VIVO no header — fundo vermelho pulsante */
+.badge-ao-vivo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #d32f2f;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-right: 8px;
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fff;
+    animation: tx-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes tx-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* ============ Estados ============ */
+.tx-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+  color: rgba(255, 255, 255, 0.85);
+  min-height: 70vh;
+
+  ion-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.7; }
+  h2 { margin: 0 0 8px; color: #fff; font-size: 22px; font-weight: 700; }
+  p { margin: 0 0 22px; font-size: 14px; line-height: 1.5; max-width: 340px; }
+}
+
+.tx-erro ion-icon {
+  color: #ff6b6b;
+}
+
+/* ============ Corpo principal — video + controles ============ */
+.tx-corpo {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Container do preview de vídeo — ocupa flex-1 pra ficar grande */
+.tx-video-wrap {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  max-height: 60vh;
+  overflow: hidden;
+}
+
+.tx-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* Inverte horizontal — preview pareça espelho como aplicativos de
+     selfie. Não afeta o que os viewers veem (é só CSS local). */
+  transform: scaleX(-1);
+}
+
+.tx-cam-off {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  gap: 8px;
+  z-index: 2;
+
+  ion-icon { font-size: 48px; }
+  span { font-size: 13px; }
+}
+
+.tx-overlay-loading {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.95);
+  z-index: 3;
+
+  ion-spinner { transform: scale(1.4); }
+  span { font-size: 14px; font-weight: 500; }
+}
+
+/* Stats sobrepostas (canto superior do vídeo) — duração + viewers */
+.tx-stats {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+  z-index: 2;
+}
+
+.tx-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  border-radius: 14px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+
+  ion-icon { font-size: 14px; }
+}
+
+/* ============ Controles abaixo do vídeo ============ */
+.tx-controles {
+  padding: 20px 16px 32px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.6) 100%);
+}
+
+.tx-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0 0 16px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.4;
+
+  ion-icon {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.5);
+    flex: 0 0 auto;
+    margin-top: 1px;
+  }
+}
+
+.tx-btn-iniciar {
+  --background: #d32f2f;
+  --background-hover: #b71c1c;
+  --background-activated: #b71c1c;
+  --color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  height: 52px;
+  font-size: 15px;
+}
+
+.tx-btn-parar {
+  --color: rgba(255, 255, 255, 0.85);
+  --border-color: rgba(255, 255, 255, 0.35);
+  font-weight: 600;
+  margin-top: 12px;
+}
+
+/* Ações rápidas: botões redondos pra mute/cam */
+.tx-acoes-rapidas {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.tx-btn-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, transform 100ms ease;
+
+  ion-icon { font-size: 26px; }
+
+  &:active { transform: scale(0.95); }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.16);
+  }
+
+  /* "Ativo" significa que o mute/camera-off está LIGADO — vermelho de aviso */
+  &.ativo {
+    background: rgba(211, 47, 47, 0.85);
+    border-color: rgba(211, 47, 47, 0.95);
+  }
+}
+
+.tx-pico {
+  text-align: center;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 12px 0 0;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   AJUSTES MOBILE — modal de broadcaster em telas pequenas
+   ════════════════════════════════════════════════════════════════════
+   Em mobile, o modal ocupa a tela toda (default do Ionic). Ajustes:
+    - Preview maior (60vh de altura) pra usuário ver bem a câmera
+    - Padding reduzido nos controles
+    - Botões de ação rápida (mic/cam) levemente menores pra caber */
+@media (max-width: 520px) {
+  .tx-video-wrap {
+    /* Em mobile o preview pode ficar mais alto pra dominar a tela. */
+    max-height: 55vh;
+    min-height: 220px;
+  }
+
+  .tx-controles {
+    padding: 14px 12px 24px;
+  }
+
+  .tx-btn-iniciar {
+    height: 50px;
+    font-size: 14px;
+  }
+
+  .tx-acoes-rapidas {
+    gap: 14px;
+    margin-bottom: 12px;
+  }
+
+  .tx-btn-icon {
+    width: 50px;
+    height: 50px;
+    ion-icon { font-size: 22px; }
+  }
+
+  .tx-hint {
+    font-size: 11.5px;
+  }
+
+  /* Stats sobrepostas (duração + viewers) ficam um pouco menores. */
+  .tx-stat {
+    font-size: 11px;
+    padding: 4px 8px;
+    ion-icon { font-size: 12px; }
+  }
+}

@@ -1,0 +1,49 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="cancel()" aria-label="Cancelar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ title }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="confirm()" [disabled]="!croppedBlob || loading" color="light">
+        <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+        Concluir
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <image-cropper
+    *ngIf="file"
+    [imageFile]="file"
+    [maintainAspectRatio]="maintainAspectRatio"
+    [aspectRatio]="aspectRatio"
+    [roundCropper]="roundCropper"
+    [imageQuality]="92"
+    format="png"
+    output="blob"
+    backgroundColor="transparent"
+    [transform]="{}"
+    (imageCropped)="imageCropped($event)"
+    (imageLoaded)="imageLoaded()"
+    (loadImageFailed)="loadImageFailed()"
+  ></image-cropper>
+
+  <div *ngIf="!file" class="empty">
+    <ion-icon name="image-outline"></ion-icon>
+    <p>Nenhuma imagem selecionada.</p>
+  </div>
+</ion-content>
+
+<ion-footer>
+  <div class="footer-actions">
+    <ion-button fill="outline" color="medium" (click)="cancel()">Cancelar</ion-button>
+    <ion-button color="primary" (click)="confirm()" [disabled]="!croppedBlob || loading">
+      <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+      Usar esta imagem
+    </ion-button>
+  </div>
+</ion-footer>

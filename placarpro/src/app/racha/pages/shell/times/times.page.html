@@ -1,0 +1,108 @@
+<div class="rt-page">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">Times</span>
+  </header>
+
+  <!-- ═══════════ Page header ═══════════ -->
+  <header class="r-page-head">
+    <span class="r-page-tag">PAINEL DE TIMES</span>
+    <h1>Times</h1>
+    <p>Cadastre novas equipes, mantenha o histórico atualizado e personalize as cores do racha.</p>
+  </header>
+
+  <!-- Faixa verde com CTA principal -->
+  <div class="r-hero-strip">
+    <button type="button" class="r-hero-strip-btn" (click)="novoTime()">
+      <ion-icon name="add-outline"></ion-icon>
+      NOVO TIME
+    </button>
+  </div>
+
+  <!-- Métricas em chips -->
+  <div class="r-metricas-row">
+    <span class="r-metric-chip">
+      <ion-icon name="checkmark-circle"></ion-icon>
+      Ativos: <strong>{{ totalAtivos }}</strong>
+    </span>
+    <span class="r-metric-chip">
+      <ion-icon name="shield-outline"></ion-icon>
+      Total: <strong>{{ times.length }}</strong>
+    </span>
+  </div>
+
+  <!-- ═══════════ Card de filtros ═══════════ -->
+  <section class="rt-filtros">
+    <div class="rt-filtro-input">
+      <label>Filtrar pelo nome</label>
+      <div class="rt-filtro-input-wrap">
+        <ion-icon name="search-outline"></ion-icon>
+        <input type="text" [(ngModel)]="busca" placeholder="" />
+      </div>
+    </div>
+    <div class="rt-filtro-acoes">
+      <button type="button" class="rt-btn-verde-escuro" (click)="busca = busca">FILTRAR</button>
+      <button type="button" class="rt-btn-amarelo-out" (click)="limparFiltros()">LIMPAR</button>
+    </div>
+    <label class="rt-checkbox">
+      <input type="checkbox" [(ngModel)]="apenasAtivos" />
+      <span class="rt-checkbox-box"></span>
+      <span>Mostrando apenas ativos</span>
+    </label>
+  </section>
+
+  <!-- ═══════════ Loading ═══════════ -->
+  <div class="rt-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <!-- ═══════════ Grid de cards ═══════════ -->
+  <section class="rt-grid" *ngIf="!loading && timesFiltrados.length > 0">
+    <article
+      *ngFor="let t of timesFiltrados; trackBy: trackById"
+      class="rt-card"
+      [class.arquivado]="t.ativo === false"
+    >
+      <!-- Escudo SVG colorido -->
+      <div class="rt-escudo" [style.color]="t.cor || '#22c55e'">
+        <svg viewBox="0 0 60 70" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path
+            d="M30 2 L55 12 L55 38 Q55 55 30 68 Q5 55 5 38 L5 12 Z"
+            fill="currentColor"
+            stroke="#1C2E3D"
+            stroke-width="2"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+
+      <h3 class="rt-card-nome">{{ t.nome }}</h3>
+
+      <div class="rt-card-foot">
+        <span class="rt-badge" [class.inativo]="t.ativo === false">
+          {{ t.ativo === false ? 'Arquivado' : 'Ativo' }}
+        </span>
+        <button type="button" class="rt-btn-editar" (click)="editar(t)">
+          <ion-icon name="create-outline"></ion-icon>
+          EDITAR
+        </button>
+      </div>
+    </article>
+  </section>
+
+  <!-- ═══════════ Empty state ═══════════ -->
+  <section class="rt-empty" *ngIf="!loading && timesFiltrados.length === 0">
+    <div class="rt-empty-icone">
+      <ion-icon name="shield-outline"></ion-icon>
+    </div>
+    <h2 *ngIf="busca || apenasAtivos">Nada encontrado</h2>
+    <h2 *ngIf="!busca && !apenasAtivos">Nenhum time cadastrado</h2>
+    <p *ngIf="busca || apenasAtivos">Tente ajustar os filtros acima.</p>
+    <p *ngIf="!busca && !apenasAtivos">Crie o primeiro time pra começar.</p>
+    <button type="button" class="rt-btn-amarelo" (click)="novoTime()" *ngIf="!busca && !apenasAtivos">
+      <ion-icon name="add-circle"></ion-icon>
+      CRIAR PRIMEIRO TIME
+    </button>
+  </section>
+</div>

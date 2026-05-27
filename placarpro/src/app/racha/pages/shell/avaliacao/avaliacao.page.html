@@ -1,0 +1,71 @@
+<div class="r-page av-page">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">Avaliação dos jogadores</span>
+  </header>
+
+  <header class="r-page-head">
+    <span class="r-page-tag">⭐ Peer-to-peer</span>
+    <h1>Avalie a galera</h1>
+    <p>
+      Dá uma nota de 1 a 5 pra cada parça do racha. A média aparece
+      pra todo mundo — quem joga melhor sobe no ranking.
+    </p>
+  </header>
+
+  <!-- Loading -->
+  <div class="av-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <!-- Empty -->
+  <section class="r-empty" *ngIf="!loading && linhas.length === 0">
+    <div class="r-empty-icone"><ion-icon name="star-outline"></ion-icon></div>
+    <h2>Nenhum jogador cadastrado ainda</h2>
+    <p>Cadastre o elenco do seu racha pra começar a avaliar.</p>
+  </section>
+
+  <!-- Lista de jogadores pra avaliar -->
+  <section class="av-lista" *ngIf="!loading && linhas.length > 0">
+    <article
+      *ngFor="let l of linhas; trackBy: trackByLinha"
+      class="r-card av-card"
+    >
+      <div class="av-info">
+        <div class="av-avatar">
+          <img *ngIf="l.jogador.fotoUrl; else iconJ" [src]="l.jogador.fotoUrl" [alt]="l.jogador.nome" />
+          <ng-template #iconJ><ion-icon name="person"></ion-icon></ng-template>
+        </div>
+        <div class="av-nomes">
+          <strong>{{ l.jogador.nome }}</strong>
+          <span class="av-apelido" *ngIf="l.jogador.apelido">"{{ l.jogador.apelido }}"</span>
+        </div>
+        <div class="av-media">
+          <span class="av-media-num">{{ l.media | number:'1.1-1' }}</span>
+          <div class="av-media-estrelas">
+            <ion-icon
+              *ngFor="let e of estrelas"
+              [name]="iconeMedia(e, l.media)"
+            ></ion-icon>
+          </div>
+          <span class="av-media-votos">{{ l.totalVotos }} voto(s)</span>
+        </div>
+      </div>
+
+      <div class="av-rate">
+        <span class="av-rate-label">Minha nota:</span>
+        <button
+          *ngFor="let e of estrelas"
+          type="button"
+          class="av-star-btn"
+          [class.ativa]="l.minhaNota >= e"
+          (click)="avaliar(l, e)"
+          [attr.aria-label]="'Dar ' + e + ' estrelas'"
+        >
+          <ion-icon [name]="l.minhaNota >= e ? 'star' : 'star-outline'"></ion-icon>
+        </button>
+      </div>
+    </article>
+  </section>
+</div>

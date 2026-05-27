@@ -1,0 +1,243 @@
+<ion-content class="bg">
+  <!-- Pull-to-refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="onRefresh($event)">
+    <ion-refresher-content
+      pullingIcon="chevron-down-circle-outline"
+      refreshingSpinner="circles"
+      refreshingText="Atualizando...">
+    </ion-refresher-content>
+  </ion-refresher>
+
+  <div class="pub-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <div class="pub-erro" *ngIf="!loading && erro">
+    <ion-icon name="search-outline"></ion-icon>
+    <h2>Partida não encontrada</h2>
+    <ion-button color="primary" (click)="voltar()">Voltar</ion-button>
+  </div>
+
+  <ng-container *ngIf="!loading && !erro && (jogo$ | async) as j">
+    <!-- ════════ WRAPPER FULLSCREEN ════════
+         Engloba o hero (com placar grande dos times) + o player de
+         transmissão. Ao clicar expand no player, TUDO ISSO vai pro
+         fullscreen junto — placar continua visível sobre o vídeo. -->
+    <div class="js-tx-fs-root">
+    <!-- Header com placar grande sobre cover do campeonato -->
+    <div
+      class="hero"
+      [style.backgroundImage]="capaCamp(campeonato) ? 'url(' + capaCamp(campeonato) + ')' : null"
+    >
+      <button class="btn-back" type="button" (click)="voltar()" aria-label="Voltar">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </button>
+
+      <div class="hero-overlay">
+        <div class="camp-info">
+          <div class="camp-titulo">{{ campeonato?.titulo }}</div>
+          <div class="cat-titulo">{{ categoria?.titulo }}</div>
+        </div>
+
+        <div class="placar-area">
+          <div class="time mand">
+            <div class="t-logo">
+              <img *ngIf="j.logoMandante; else iM" [src]="j.logoMandante" [alt]="j.nomeMandante" />
+              <ng-template #iM><ion-icon name="shield-outline"></ion-icon></ng-template>
+            </div>
+            <div class="t-nome">{{ j.nomeMandante }}</div>
+          </div>
+
+          <div class="placar-meio">
+            <div class="placar-box">
+              <ng-container *ngIf="j.golsMandante != null && j.golsVisitante != null; else vs">
+                <strong>{{ j.golsMandante }}</strong>
+                <span class="x">:</span>
+                <strong>{{ j.golsVisitante }}</strong>
+              </ng-container>
+              <ng-template #vs><span class="vs">VS</span></ng-template>
+            </div>
+            <span class="placar-status" [class.ao-vivo]="j.status === 'em-andamento'">
+              {{ rotuloStatus(j.status) }}
+            </span>
+          </div>
+
+          <div class="time vis">
+            <div class="t-logo">
+              <img *ngIf="j.logoVisitante; else iV" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
+              <ng-template #iV><ion-icon name="shield-outline"></ion-icon></ng-template>
+            </div>
+            <div class="t-nome">{{ j.nomeVisitante }}</div>
+          </div>
+        </div>
+
+        <div class="meta" *ngIf="j.fase || j.rodada || j.dataHora || j.local">
+          <span *ngIf="j.fase">{{ j.fase }}</span>
+          <span *ngIf="j.fase && j.rodada"> · </span>
+          <span *ngIf="j.rodada">Rodada {{ j.rodada }}</span>
+          <span *ngIf="(j.fase || j.rodada) && j.dataHora"> · </span>
+          <span *ngIf="j.dataHora">{{ j.dataHora }}</span>
+          <span *ngIf="j.local"> · {{ j.local }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════
+         PLAYER DE TRANSMISSÃO AO VIVO (LiveKit) — visível pra QUALQUER
+         espectador (sem necessidade de login). Quando o organizador
+         inicia transmissão pelo botão "Transmitir ao vivo" no admin,
+         este componente detecta e se conecta automaticamente como viewer.
+         Se nada estiver ao vivo, o componente renderiza null (some).
+         ════════════════════════════════════════════════════════ -->
+    <div class="live-wrap" *ngIf="campeonato?.id">
+      <!-- `[patrocinadoresPartida]` (jogo) tem prioridade sobre
+           `[ownerIdPatrocinadores]` (globais do organizador).
+           `[fullscreenAncestor]=".live-wrap"` faz o expand fullscreenar
+           SOMENTE o player (não o hero/placar card externos). -->
+      <app-transmissao-player
+        [jogoId]="jogoId"
+        [campeonatoId]="campeonato!.id!"
+        [categoriaId]="catId"
+        [campeonatoNome]="campeonato?.titulo || ''"
+        [fullscreenAncestor]="'.live-wrap'"
+        [patrocinadoresPartida]="j.patrocinadores || null"
+        [ownerIdPatrocinadores]="campeonato?.ownerId || ''"
+        [placar]="{
+          mandanteNome: j.nomeMandante || '?',
+          visitanteNome: j.nomeVisitante || '?',
+          mandanteLogo: j.logoMandante,
+          visitanteLogo: j.logoVisitante,
+          golsMandante: j.golsMandante,
+          golsVisitante: j.golsVisitante,
+          statusTexto: rotuloStatus(j.status)
+        }"
+        modo="compacto"
+      ></app-transmissao-player>
+    </div>
+    </div>
+    <!-- ════════ FIM WRAPPER FULLSCREEN ════════ -->
+
+    <div class="conteudo">
+      <!-- Escalação -->
+      <section class="section">
+        <h2 class="section-title">Escalação</h2>
+        <div class="escala-grid">
+          <!-- Mandante -->
+          <div class="escala-col">
+            <div class="escala-head">
+              <div class="head-logo">
+                <img *ngIf="j.logoMandante; else mHd" [src]="j.logoMandante" />
+                <ng-template #mHd><ion-icon name="shield-outline"></ion-icon></ng-template>
+              </div>
+              <span>{{ j.nomeMandante }}</span>
+            </div>
+            <ng-container *ngIf="escalacaoMandante$ | async as esc">
+              <div class="escala-lista" *ngIf="esc.length > 0; else escVazia1">
+                <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado">
+                  <div class="foto">
+                    <img *ngIf="e.jogador.fotoUrl; else fic1" [src]="e.jogador.fotoUrl" />
+                    <ng-template #fic1><ion-icon name="person-circle-outline"></ion-icon></ng-template>
+                  </div>
+                  <span class="nome">
+                    <span *ngIf="e.jogador.numeroCamisa" class="num">#{{ e.jogador.numeroCamisa }}</span>
+                    {{ e.jogador.nome }}
+                  </span>
+                  <span class="badges">
+                    <span *ngFor="let _ of [].constructor(e.gols)" class="b-gol" title="Gol">⚽</span>
+                    <span *ngFor="let _ of [].constructor(e.amarelos)" class="b-am"></span>
+                    <span *ngFor="let _ of [].constructor(e.vermelhos)" class="b-vm"></span>
+                  </span>
+                </div>
+              </div>
+              <ng-template #escVazia1>
+                <div class="esc-vazia">Sem escalação cadastrada.</div>
+              </ng-template>
+            </ng-container>
+          </div>
+
+          <!-- Visitante -->
+          <div class="escala-col">
+            <div class="escala-head">
+              <div class="head-logo">
+                <img *ngIf="j.logoVisitante; else vHd" [src]="j.logoVisitante" />
+                <ng-template #vHd><ion-icon name="shield-outline"></ion-icon></ng-template>
+              </div>
+              <span>{{ j.nomeVisitante }}</span>
+            </div>
+            <ng-container *ngIf="escalacaoVisitante$ | async as esc">
+              <div class="escala-lista" *ngIf="esc.length > 0; else escVazia2">
+                <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado">
+                  <div class="foto">
+                    <img *ngIf="e.jogador.fotoUrl; else fic2" [src]="e.jogador.fotoUrl" />
+                    <ng-template #fic2><ion-icon name="person-circle-outline"></ion-icon></ng-template>
+                  </div>
+                  <span class="nome">
+                    <span *ngIf="e.jogador.numeroCamisa" class="num">#{{ e.jogador.numeroCamisa }}</span>
+                    {{ e.jogador.nome }}
+                  </span>
+                  <span class="badges">
+                    <span *ngFor="let _ of [].constructor(e.gols)" class="b-gol" title="Gol">⚽</span>
+                    <span *ngFor="let _ of [].constructor(e.amarelos)" class="b-am"></span>
+                    <span *ngFor="let _ of [].constructor(e.vermelhos)" class="b-vm"></span>
+                  </span>
+                </div>
+              </div>
+              <ng-template #escVazia2>
+                <div class="esc-vazia">Sem escalação cadastrada.</div>
+              </ng-template>
+            </ng-container>
+          </div>
+        </div>
+      </section>
+
+      <!-- Lances da Partida -->
+      <section class="section">
+        <h2 class="section-title">Lances da Partida</h2>
+        <ng-container *ngIf="eventos$ | async as evs">
+          <div class="lances" *ngIf="evs.length > 0; else nadaL">
+            <div
+              *ngFor="let e of evs; trackBy: trackByEvento"
+              class="lance"
+              [class]="'lance ' + classeTipo(e.tipo) + ' lado-' + e.lado"
+            >
+              <div class="lance-avatar">
+                <ion-icon name="person-circle-outline"></ion-icon>
+              </div>
+              <div class="lance-corpo">
+                <div class="lance-tipo">{{ labelTipo(e.tipo) }}</div>
+                <div class="lance-info">
+                  <span *ngIf="e.jogadorNome">{{ e.jogadorNome }}</span>
+                  <span *ngIf="!e.jogadorNome">{{ e.equipeNome }}</span>
+                  <span class="dot" *ngIf="e.minuto != null">·</span>
+                  <span *ngIf="e.minuto != null">{{ e.minuto }}'</span>
+                </div>
+              </div>
+              <div class="lance-icone">
+                <ion-icon [name]="iconeTipo(e.tipo)"></ion-icon>
+              </div>
+            </div>
+          </div>
+          <ng-template #nadaL>
+            <div class="empty">
+              <ion-icon name="flag-outline"></ion-icon>
+              <p>Nenhum lance registrado.</p>
+            </div>
+          </ng-template>
+        </ng-container>
+      </section>
+
+      <!-- Apoios e Patrocinadores — herda contexto do jogo (campeonato +
+           categoria) pra mostrar patrocinadores específicos da partida. -->
+      <app-patrocinadores-faixa
+        *ngIf="campeonato?.ownerId"
+        [ownerId]="campeonato!.ownerId"
+        [campeonatoId]="campeonato?.id"
+        [categoriaId]="categoria?.id"
+      ></app-patrocinadores-faixa>
+
+      <footer class="pub-footer">
+        <p>Powered by <strong>PlacarPro</strong></p>
+      </footer>
+    </div>
+  </ng-container>
+</ion-content>

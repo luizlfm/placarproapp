@@ -1,0 +1,220 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/app/campeonato/{{ campeonatoId }}/categoria/{{ categoriaId }}/inicio"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Jogos</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="abrirImprimir()" aria-label="Imprimir partidas" title="Imprimir relatório de partidas">
+        <ion-icon slot="icon-only" name="print-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="page-wrap">
+    <!-- ════════ HEADER da página com badges de status ════════
+         Título grande do campeonato + subtítulo da categoria.
+         Linha abaixo: 3 chips com contagem por status (total, ao vivo,
+         encerrados, agendados). Visual broadcast com cores semânticas. -->
+    <header class="page-head">
+      <h1 class="camp-titulo" *ngIf="campeonato$ | async as camp">{{ camp.titulo }}</h1>
+      <div class="cat-subtitulo" *ngIf="categoria$ | async as cat">{{ cat.titulo }}</div>
+
+      <ng-container *ngIf="jogos$ | async as todos">
+        <div class="status-badges" *ngIf="todos.length > 0">
+          <span class="sb-chip sb-total">
+            <ion-icon name="calendar-outline"></ion-icon>
+            <strong>{{ todos.length }}</strong> {{ todos.length === 1 ? 'jogo' : 'jogos' }}
+          </span>
+          <span class="sb-chip sb-vivo" *ngIf="contarPorStatus(todos, 'em-andamento') > 0">
+            <span class="sb-dot"></span>
+            <strong>{{ contarPorStatus(todos, 'em-andamento') }}</strong> ao vivo
+          </span>
+          <span class="sb-chip sb-fim" *ngIf="contarPorStatus(todos, 'encerrado') > 0">
+            <ion-icon name="checkmark-circle"></ion-icon>
+            <strong>{{ contarPorStatus(todos, 'encerrado') }}</strong> encerrados
+          </span>
+          <span class="sb-chip sb-agend" *ngIf="contarPorStatus(todos, 'agendado') > 0">
+            <ion-icon name="time-outline"></ion-icon>
+            <strong>{{ contarPorStatus(todos, 'agendado') }}</strong> agendados
+          </span>
+        </div>
+      </ng-container>
+    </header>
+
+    <!-- ════════ Card principal ════════ -->
+    <section class="painel-card">
+      <!-- FAB "+" sobreposto no topo -->
+      <button
+        type="button"
+        class="painel-fab"
+        (click)="abrirPopoverJogos($event)"
+        aria-label="Mais opções"
+        title="Adicionar jogos / gerar partidas"
+      >
+        <ion-icon name="add"></ion-icon>
+      </button>
+
+      <!-- Topbar: filtros + ação principal -->
+      <div class="painel-topbar">
+        <div class="filtros">
+          <div class="select-wrap">
+            <ion-icon name="layers-outline" class="select-ico"></ion-icon>
+            <select
+              class="fase-select"
+              [value]="filtroFase$ | async"
+              (change)="onFiltroFase($any($event.target).value)"
+              aria-label="Filtrar por fase"
+            >
+              <option value="">Todas as fases</option>
+              <option *ngFor="let f of fasesDisponiveis$ | async" [value]="f">{{ f }}</option>
+            </select>
+          </div>
+
+          <div class="select-wrap">
+            <ion-icon name="repeat-outline" class="select-ico"></ion-icon>
+            <select
+              class="fase-select"
+              [value]="filtroRodada$ | async"
+              (change)="onFiltroRodada($any($event.target).value)"
+              aria-label="Filtrar por rodada"
+            >
+              <option value="">Todas as rodadas</option>
+              <option *ngFor="let r of rodadasDisponiveis$ | async" [value]="r">{{ r }}ª rodada</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="button" class="btn-novo-jogo" (click)="novoJogo()">
+          <ion-icon name="add-circle-outline"></ion-icon>
+          Novo jogo
+        </button>
+      </div>
+
+      <!-- Lista de jogos -->
+      <ng-container *ngIf="jogos$ | async as lista">
+        <div class="lista" *ngIf="lista.length > 0; else empty">
+          <!-- ════════ Card de cada jogo (broadcast-style) ════════
+               Layout: faixa colorida lateral por status + tags topo +
+               linha principal de placar (escudo|nome|placar|nome|escudo)
+               + rodapé com local. Hover sobe 2px com shadow. -->
+          <button
+            type="button"
+            class="jogo-card"
+            [class.card-vivo]="j.status === 'em-andamento'"
+            [class.card-fim]="j.status === 'encerrado'"
+            [class.card-agendado]="j.status === 'agendado'"
+            [class.card-cancelado]="j.status === 'cancelado' || j.status === 'wo'"
+            *ngFor="let j of lista; trackBy: trackById"
+            (click)="irParaDetalhe(j)"
+          >
+            <!-- Faixa lateral colorida (estado da partida) -->
+            <span class="status-stripe" aria-hidden="true"></span>
+
+            <!-- Linha de tags topo + menu ⋮ -->
+            <div class="card-head">
+              <div class="tags">
+                <span *ngIf="j.fase" class="tag tag-fase">{{ j.fase }}</span>
+                <span *ngIf="j.rodada" class="tag tag-rod">{{ j.rodada }}ª rodada</span>
+                <span *ngIf="j.dataHora" class="tag tag-data">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  {{ formatarDataHora(j.dataHora) }}
+                </span>
+              </div>
+              <button
+                type="button"
+                class="btn-menu"
+                (click)="abrirAcoes($event, j)"
+                aria-label="Mais ações"
+                title="Mais ações"
+              >
+                <ion-icon name="ellipsis-vertical"></ion-icon>
+              </button>
+            </div>
+
+            <!-- Linha principal: equipe ← placar → equipe -->
+            <div class="placar-row">
+              <span
+                class="time esq clicavel"
+                (click)="selecionarEquipeNoJogo($event, j.id!, 'mandante')"
+                [title]="j.mandanteId ? 'Trocar equipe mandante' : 'Selecionar mandante'"
+              >
+                <span class="t-logo" [class.vazio]="!j.mandanteId">
+                  <img *ngIf="j.logoMandante; else iconM" [src]="j.logoMandante" alt="" loading="lazy" />
+                  <ng-template #iconM>
+                    <ion-icon [name]="j.mandanteId ? 'shield-outline' : 'shield-half-outline'"></ion-icon>
+                  </ng-template>
+                </span>
+                <span class="t-nome">{{ j.nomeMandante }}</span>
+              </span>
+
+              <div
+                class="placar"
+                [class.encerrado]="j.status === 'encerrado'"
+                [class.ao-vivo]="j.status === 'em-andamento'"
+                [class.agendado]="j.status === 'agendado'"
+              >
+                <div
+                  class="numeros"
+                  *ngIf="j.golsMandante != null && j.golsVisitante != null; else vs"
+                >
+                  <span>{{ j.golsMandante }}</span>
+                  <span class="dois-pontos">:</span>
+                  <span>{{ j.golsVisitante }}</span>
+                </div>
+                <ng-template #vs><span class="vs">VS</span></ng-template>
+                <div class="status">
+                  <span class="status-dot" *ngIf="j.status === 'em-andamento'"></span>
+                  <ion-icon *ngIf="j.status === 'encerrado'" name="checkmark-circle"></ion-icon>
+                  <ion-icon *ngIf="j.status === 'agendado'" name="time-outline"></ion-icon>
+                  {{ rotuloStatus(j) }}
+                </div>
+              </div>
+
+              <span
+                class="time dir clicavel"
+                (click)="selecionarEquipeNoJogo($event, j.id!, 'visitante')"
+                [title]="j.visitanteId ? 'Trocar equipe visitante' : 'Selecionar visitante'"
+              >
+                <span class="t-logo" [class.vazio]="!j.visitanteId">
+                  <img *ngIf="j.logoVisitante; else iconV" [src]="j.logoVisitante" alt="" loading="lazy" />
+                  <ng-template #iconV>
+                    <ion-icon [name]="j.visitanteId ? 'shield-outline' : 'shield-half-outline'"></ion-icon>
+                  </ng-template>
+                </span>
+                <span class="t-nome">{{ j.nomeVisitante }}</span>
+              </span>
+            </div>
+
+            <!-- Rodapé: local + indicadores extras -->
+            <div class="card-footer" *ngIf="j.local">
+              <span class="local">
+                <ion-icon name="location-outline"></ion-icon>
+                {{ j.local }}
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <ng-template #empty>
+          <div class="empty">
+            <ion-icon name="calendar-outline"></ion-icon>
+            <h2>Nenhum jogo encontrado</h2>
+            <p *ngIf="(filtroFase$ | async) || (filtroRodada$ | async); else semFiltros">
+              Tente ajustar os filtros acima ou crie um novo jogo.
+            </p>
+            <ng-template #semFiltros>
+              <p>Crie jogos definindo as equipes, data e local — ou gere automaticamente pela classificação.</p>
+            </ng-template>
+            <ion-button color="primary" (click)="novoJogo()">
+              <ion-icon slot="start" name="add-outline"></ion-icon>
+              Criar jogo
+            </ion-button>
+          </div>
+        </ng-template>
+      </ng-container>
+    </section>
+  </div>
+</ion-content>

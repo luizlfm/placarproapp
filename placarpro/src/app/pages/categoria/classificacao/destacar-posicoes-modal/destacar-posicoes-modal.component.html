@@ -1,0 +1,75 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Destacar posições</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="adicionar()" aria-label="Nova faixa">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <div class="wrap">
+    <p class="hint">
+      Pinte faixas de posições (ex: 1º ao 4º = Classificados, último = Rebaixamento).
+      Mostradas na coluna Pos da tabela.
+    </p>
+
+    <div *ngIf="itens.length === 0" class="empty">
+      <p>Nenhuma faixa criada.</p>
+      <ion-button color="primary" (click)="adicionar()">
+        <ion-icon slot="start" name="add-outline"></ion-icon>
+        Adicionar faixa
+      </ion-button>
+    </div>
+
+    <div class="faixa" *ngFor="let it of itens; let i = index; trackBy: trackByIndex">
+      <div class="faixa-head">
+        <span class="faixa-bola" [style.background]="it.cor"></span>
+        <input class="faixa-label" type="text" [(ngModel)]="it.label" placeholder="Rótulo (opcional)" />
+        <ion-button fill="clear" color="danger" size="small" (click)="remover(i)" aria-label="Remover">
+          <ion-icon slot="icon-only" name="close-circle-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="faixa-range">
+        <label>
+          <span>De</span>
+          <input type="number" min="1" [max]="totalEquipes || 99" [(ngModel)]="it.de" />
+        </label>
+        <span class="sep">até</span>
+        <label>
+          <span>Até</span>
+          <input type="number" min="1" [max]="totalEquipes || 99" [(ngModel)]="it.ate" />
+        </label>
+      </div>
+
+      <div class="cores">
+        <button type="button" *ngFor="let c of cores" class="cor-chip" [style.background]="c.cor"
+          [class.ativa]="it.cor === c.cor" (click)="selecionarCor(it, c.cor, c.label)" [attr.aria-label]="c.label"
+          [title]="c.label"></button>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-grid>
+      <ion-row>
+        <ion-col size="6">
+          <ion-button class="buttons" color="danger" (click)="dismiss()">Cancelar</ion-button>
+        </ion-col>
+        <ion-col size="6">
+          <ion-button class="buttons" color="secondary" (click)="salvar()">Aplicar</ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </ion-toolbar>
+</ion-footer>

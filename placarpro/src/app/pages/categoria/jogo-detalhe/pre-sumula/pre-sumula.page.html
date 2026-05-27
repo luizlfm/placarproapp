@@ -1,0 +1,362 @@
+<ion-header class="no-print">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Pré-Súmula</ion-title>
+    <ion-buttons slot="end">
+      <ion-button class="btn-painel" (click)="togglePainel()" aria-label="Opções">
+        <ion-icon slot="icon-only" name="options-outline"></ion-icon>
+      </ion-button>
+      <ion-button (click)="salvar()" [disabled]="salvando" aria-label="Salvar">
+        <ion-icon slot="start" name="save-outline"></ion-icon>
+        Salvar
+      </ion-button>
+      <ion-button (click)="imprimir()" aria-label="Imprimir">
+        <ion-icon slot="start" name="print-outline"></ion-icon>
+        Imprimir
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="ps-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <div class="cp-layout" *ngIf="!loading" [class.painel-fechado]="!painelAberto">
+
+    <!-- ═══════════════════════════════════════════════════════════
+         PAINEL LATERAL DE CONFIGURAÇÕES (no-print)
+         ═══════════════════════════════════════════════════════════ -->
+    <aside class="cp-painel no-print">
+      <div class="cp-painel-head">
+        <h2>Configurações</h2>
+        <button type="button" class="cp-painel-toggle" (click)="togglePainel()" aria-label="Recolher">
+          <ion-icon name="chevron-back-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="cp-painel-body">
+
+        <!-- ─── Título (até 3 linhas) ─── -->
+        <div class="campo-grupo">
+          <span class="grupo-titulo">Título do cabeçalho</span>
+          <p class="grupo-hint">Quebra em até 3 linhas. Linhas vazias são ignoradas.</p>
+
+          <label class="campo"
+                 *ngFor="let l of (config.tituloLinhas || ['','','']); let i = index; trackBy: trackByIdx">
+            <span class="campo-label">Linha {{ i + 1 }}</span>
+            <input
+              type="text"
+              class="campo-input"
+              [value]="l"
+              (input)="setLinha(i, $any($event.target).value)"
+              [placeholder]="i === 0 ? 'Ex: 5ª Copa Regional Sport+' :
+                              i === 1 ? 'Ex: De Futebol Society' :
+                                        'Ex: 2026'"
+            />
+          </label>
+        </div>
+
+        <!-- ─── Logos extras ─── -->
+        <div class="campo-grupo">
+          <div class="grupo-head">
+            <span class="grupo-titulo">Logos</span>
+            <span class="grupo-counter">
+              {{ (config.logosExtras?.length ?? 0) }} de {{ MAX_LOGOS }}
+            </span>
+          </div>
+          <p class="grupo-hint">
+            O logo do campeonato vai à esquerda automaticamente. Adicione logos da federação ou patrocinador.
+          </p>
+
+          <div class="logos-grid">
+            <div class="logo-card"
+                 *ngFor="let l of (config.logosExtras || []); let i = index; trackBy: trackByIdx">
+              <button type="button" class="logo-rm" (click)="removerLogo(i)" aria-label="Remover">
+                <ion-icon name="close"></ion-icon>
+              </button>
+              <div class="logo-img">
+                <img [src]="l.url" alt="" />
+              </div>
+              <input
+                type="text"
+                class="campo-input small"
+                [value]="l.legenda || ''"
+                (input)="setLegenda(i, $any($event.target).value)"
+                placeholder="Legenda"
+              />
+            </div>
+
+            <button
+              type="button"
+              class="logo-add"
+              (click)="acionarUploadLogo()"
+              [disabled]="(config.logosExtras?.length ?? 0) >= MAX_LOGOS"
+            >
+              <ion-icon name="add-circle-outline"></ion-icon>
+              <span>Adicionar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ─── Opções de layout ─── -->
+        <div class="campo-grupo">
+          <span class="grupo-titulo">Opções de layout</span>
+
+          <label class="campo-toggle">
+            <div>
+              <div class="toggle-title">Uma equipe por folha</div>
+              <div class="toggle-sub">Mandante e visitante em páginas separadas.</div>
+            </div>
+            <ion-toggle
+              [checked]="config.umaTabelaPorEquipe ?? true"
+              (ionChange)="setUmaTabela($any($event).detail.checked)"
+            ></ion-toggle>
+          </label>
+
+          <label class="campo-toggle">
+            <div>
+              <div class="toggle-title">Incluir foto dos jogadores</div>
+              <div class="toggle-sub">Adiciona coluna "Foto" na tabela.</div>
+            </div>
+            <ion-toggle
+              [checked]="!!config.incluirFotosJogadores"
+              (ionChange)="setIncluirFotos($any($event).detail.checked)"
+            ></ion-toggle>
+          </label>
+
+          <label class="campo campo-num">
+            <span class="campo-label">Linhas em branco p/ observações</span>
+            <input
+              type="number"
+              class="campo-input"
+              min="0"
+              max="20"
+              [value]="config.linhasObservacoes ?? 0"
+              (input)="setLinhasObs(+$any($event.target).value)"
+            />
+          </label>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         ÁREA DE PREVIEW DO DOCUMENTO
+         ═══════════════════════════════════════════════════════════ -->
+    <main class="cp-preview">
+      <ng-container *ngIf="view$ | async as v">
+        <!-- 1 folha por equipe (default) -->
+        <ng-container *ngIf="config.umaTabelaPorEquipe ?? true; else folhaUnica">
+          <div class="presu-folha modelo">
+            <ng-container
+              *ngTemplateOutlet="folhaTemplate; context: {
+                equipeNome: v.mandante?.nome || 'MANDANTE',
+                jogadores: v.jogadoresMand,
+                config: config,
+                campeonato: v.campeonato,
+                dataJogo: v.jogo.dataHora,
+                mandante: v.mandante,
+                visitante: v.visitante,
+                ownerId: v.campeonato?.ownerId
+              }"
+            ></ng-container>
+          </div>
+
+          <div class="presu-folha modelo page-break">
+            <ng-container
+              *ngTemplateOutlet="folhaTemplate; context: {
+                equipeNome: v.visitante?.nome || 'VISITANTE',
+                jogadores: v.jogadoresVis,
+                config: config,
+                campeonato: v.campeonato,
+                dataJogo: v.jogo.dataHora,
+                mandante: v.mandante,
+                visitante: v.visitante,
+                ownerId: v.campeonato?.ownerId
+              }"
+            ></ng-container>
+          </div>
+        </ng-container>
+
+        <!-- Modo "ambas equipes na mesma folha" -->
+        <ng-template #folhaUnica>
+          <div class="presu-folha modelo dupla">
+            <ng-container
+              *ngTemplateOutlet="headerTemplate; context: { config: config, campeonato: v.campeonato }"
+            ></ng-container>
+
+            <div class="dupla-tabelas">
+              <ng-container
+                *ngTemplateOutlet="tabelaTemplate; context: {
+                  jogadores: v.jogadoresMand,
+                  config: config
+                }"
+              ></ng-container>
+              <ng-container
+                *ngTemplateOutlet="tabelaTemplate; context: {
+                  jogadores: v.jogadoresVis,
+                  config: config
+                }"
+              ></ng-container>
+            </div>
+
+            <!-- #5 Banner do site no rodapé do impresso (modo dupla) -->
+            <app-banner-site-faixa
+              *ngIf="v.campeonato?.ownerId"
+              [ownerId]="v.campeonato!.ownerId!"
+              variante="impresso"
+              [intervaloMs]="0"
+            ></app-banner-site-faixa>
+          </div>
+        </ng-template>
+      </ng-container>
+    </main>
+  </div>
+
+  <!-- Picker invisível pra upload de logos -->
+  <input
+    #logoPicker
+    type="file"
+    accept="image/*"
+    style="display:none"
+    (change)="onLogoEscolhido($event)"
+  />
+
+  <!-- ════════════════════════════════════════════════════════
+       Templates reutilizáveis (folha, header, tabela)
+       ════════════════════════════════════════════════════════ -->
+
+  <ng-template #folhaTemplate
+               let-equipeNome="equipeNome"
+               let-jogadores="jogadores"
+               let-config="config"
+               let-campeonato="campeonato"
+               let-dataJogo="dataJogo"
+               let-mandante="mandante"
+               let-visitante="visitante"
+               let-ownerId="ownerId">
+    <ng-container
+      *ngTemplateOutlet="headerTemplate; context: { config: config, campeonato: campeonato }"
+    ></ng-container>
+
+    <!-- Confronto horizontal:
+         MANDANTE (CIDADE/UF)  |  X  |  VISITANTE (CIDADE/UF)
+         3 colunas totais — uma de cada lado do X. -->
+    <table class="ps-confronto-bar">
+      <tr>
+        <td class="time">
+          <span class="t-nome">{{ (mandante?.nome || equipeNome).toUpperCase() }}</span>
+          <span class="t-cidade" *ngIf="mandante?.cidade"> ({{ mandante.cidade.toUpperCase() }})</span>
+        </td>
+        <td class="x-cell">X</td>
+        <td class="time">
+          <span class="t-nome">{{ (visitante?.nome || '').toUpperCase() }}</span>
+          <span class="t-cidade" *ngIf="visitante?.cidade"> ({{ visitante.cidade.toUpperCase() }})</span>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Linha "Equipe atual: X" + "Data: ___" abaixo do confronto -->
+    <section class="ps-equipe-linha">
+      <div class="eq-info">
+        <span class="eq-label">Equipe:</span>
+        <span class="eq-nome">{{ equipeNome }}</span>
+      </div>
+      <div class="eq-data">
+        <span class="eq-label">Data:</span>
+        <span class="eq-valor" *ngIf="formatarSomenteData(dataJogo) as d; else semData">{{ d }}</span>
+        <ng-template #semData>
+          <span class="eq-traco">_______________</span>
+        </ng-template>
+      </div>
+    </section>
+
+    <ng-container
+      *ngTemplateOutlet="tabelaTemplate; context: {
+        jogadores: jogadores,
+        config: config
+      }"
+    ></ng-container>
+
+    <section class="ps-obs" *ngIf="(config.linhasObservacoes ?? 0) > 0">
+      <h3 class="ps-bloco-titulo">OBSERVAÇÕES DO ÁRBITRO</h3>
+      <div class="obs-linha" *ngFor="let i of range(config.linhasObservacoes); trackBy: trackByIdx"></div>
+    </section>
+
+    <!-- #5 Banner do site no rodapé do impresso (acima das assinaturas) -->
+    <app-banner-site-faixa
+      *ngIf="ownerId"
+      [ownerId]="ownerId"
+      variante="impresso"
+      [intervaloMs]="0"
+    ></app-banner-site-faixa>
+
+    <footer class="ps-assinaturas">
+      <div class="assinatura">
+        <div class="linha-assin"></div>
+        <div class="ass-label">Capitão / Responsável</div>
+      </div>
+      <div class="assinatura">
+        <div class="linha-assin"></div>
+        <div class="ass-label">Árbitro</div>
+      </div>
+    </footer>
+  </ng-template>
+
+  <ng-template #headerTemplate let-config="config" let-campeonato="campeonato">
+    <header class="ps-header">
+      <div class="logo-principal" *ngIf="campeonato?.logoUrl; else logoVazio">
+        <img [src]="campeonato.logoUrl" alt="" />
+      </div>
+      <ng-template #logoVazio><div class="logo-principal vazio"></div></ng-template>
+
+      <h1 class="ps-titulo">
+        <ng-container *ngFor="let l of config.tituloLinhas; trackBy: trackByIdx">
+          <div class="t-linha" *ngIf="l && l.trim().length > 0">{{ l }}</div>
+        </ng-container>
+        <!-- Fallback: se nenhuma linha preenchida, usa título do campeonato. -->
+        <div class="t-linha"
+             *ngIf="!config.tituloLinhas || (config.tituloLinhas.length === 0) || !temAlgumaLinha(config.tituloLinhas)">
+          {{ campeonato?.titulo || 'CAMPEONATO' }}
+        </div>
+      </h1>
+
+      <div class="logos-extras">
+        <div class="logo-extra" *ngFor="let l of config.logosExtras; trackBy: trackByIdx">
+          <img [src]="l.url" [alt]="l.legenda || ''" />
+          <span class="logo-legenda" *ngIf="l.legenda">{{ l.legenda }}</span>
+        </div>
+      </div>
+    </header>
+  </ng-template>
+
+  <ng-template #tabelaTemplate
+               let-jogadores="jogadores"
+               let-config="config">
+    <table class="ps-tabela" [class.com-foto]="config.incluirFotosJogadores">
+      <thead>
+        <tr>
+          <th class="w-num">NÚMERO</th>
+          <th *ngIf="config.incluirFotosJogadores" class="w-foto">FOTO</th>
+          <th>NOME DOS ATLETAS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let j of preencherJogadores(jogadores, LINHAS_JOGADORES); let i = index; trackBy: trackByIdx">
+          <td class="w-num">{{ j?.numeroCamisa ?? '' }}</td>
+          <td *ngIf="config.incluirFotosJogadores" class="w-foto">
+            <div class="foto-box">
+              <img *ngIf="j?.fotoUrl" [src]="j!.fotoUrl" alt="" />
+            </div>
+          </td>
+          <td class="nome">{{ j?.nome ?? '' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </ng-template>
+</ion-content>

@@ -1,0 +1,35 @@
+<div class="ph-page">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">{{ titulo }}</span>
+  </header>
+
+  <!-- Page header (padrão clean das outras páginas) -->
+  <header class="r-page-head">
+    <span class="r-page-tag">{{ tag }}</span>
+    <h1>{{ titulo }}</h1>
+    <p>{{ subtitulo }}</p>
+  </header>
+
+  <!-- Faixa verde com CTA "voltar" -->
+  <div class="r-hero-strip">
+    <button type="button" class="r-hero-strip-btn" (click)="voltarInicio()">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+      VOLTAR AO INÍCIO
+    </button>
+  </div>
+
+  <!-- Card central "Em breve" -->
+  <section class="ph-card">
+    <div class="ph-card-icone">
+      <ion-icon [name]="icone"></ion-icon>
+    </div>
+    <h2>Funcionalidade em desenvolvimento</h2>
+    <p>
+      Esta tela está sendo construída. Em breve aqui terá toda a funcionalidade
+      de <strong>{{ titulo }}</strong>. Por enquanto, confira as telas já
+      disponíveis no menu lateral.
+    </p>
+  </section>
+</div>

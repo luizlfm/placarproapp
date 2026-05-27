@@ -1,0 +1,61 @@
+<div class="r-page">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">Parça do Racha</span>
+  </header>
+
+  <!-- ═══════════ Page header ═══════════ -->
+  <header class="r-page-head">
+    <span class="r-page-tag">PARÇAS &amp; RIVAIS</span>
+    <h1>Parça do Racha</h1>
+    <p>
+      Descubra com quem você mais joga junto, suas duplas inseparáveis e quem
+      é seu maior rival nas partidas.
+    </p>
+  </header>
+
+  <!-- ═══════════ 3 cards das métricas (em breve) ═══════════ -->
+  <section class="rpc-grid">
+    <article class="r-card rpc-card">
+      <div class="rpc-card-icone azul">
+        <ion-icon name="people"></ion-icon>
+      </div>
+      <h3>Top Duplas</h3>
+      <p>Quais 2 jogadores se cruzam mais vezes no mesmo time. Quem é a dupla campeã do racha.</p>
+      <span class="rpc-em-breve">Em breve</span>
+    </article>
+
+    <article class="r-card rpc-card">
+      <div class="rpc-card-icone amarelo">
+        <ion-icon name="trending-up"></ion-icon>
+      </div>
+      <h3>Melhor Performance</h3>
+      <p>Combinações que mais vencem juntas — vitória vs. derrota quando jogam juntos.</p>
+      <span class="rpc-em-breve">Em breve</span>
+    </article>
+
+    <article class="r-card rpc-card">
+      <div class="rpc-card-icone vermelho">
+        <ion-icon name="flame"></ion-icon>
+      </div>
+      <h3>Maiores Rivais</h3>
+      <p>Quem mais joga contra você nos sorteios e qual o histórico de confrontos.</p>
+      <span class="rpc-em-breve">Em breve</span>
+    </article>
+  </section>
+
+  <!-- ═══════════ Card explicação ═══════════ -->
+  <section class="r-card rpc-explicacao">
+    <ion-icon name="information-circle-outline"></ion-icon>
+    <div>
+      <strong>Como funciona</strong>
+      <p>
+        A "Parça" usa o histórico de partidas pra cruzar quem jogou com quem.
+        Cadastre jogadores em <button type="button" (click)="irJogadores()">Elenco</button>
+        e termine algumas partidas — em algumas semanas você já terá dados
+        suficientes pra ver os destaques.
+      </p>
+    </div>
+  </section>
+</div>

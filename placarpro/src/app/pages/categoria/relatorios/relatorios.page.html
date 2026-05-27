@@ -1,0 +1,73 @@
+<!-- Header com botão Voltar — principal valor em mobile, onde a sidebar
+     contextual da categoria é off-canvas e o usuário não tem outro
+     atalho visível pra voltar pra Início da categoria. -->
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/app/campeonato/{{ campeonatoId }}/categoria/{{ categoriaId }}/inicio"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Relatórios</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="rel-content">
+  <div class="page-wrap">
+    <header class="page-head">
+      <h1 class="page-title">Relatórios</h1>
+      <div class="page-sub">Imprima ou exporte os dados desta categoria</div>
+    </header>
+
+    <section class="card">
+      <button class="link-row" type="button" (click)="imprimirEquipes()">
+        <ion-icon name="document-text-outline"></ion-icon>
+        <span class="link-text">Equipes</span>
+        <span class="link-edit">Imprimir</span>
+      </button>
+      <button class="link-row" type="button" (click)="imprimirJogadores()">
+        <ion-icon name="document-text-outline"></ion-icon>
+        <span class="link-text">Jogadores</span>
+        <span class="link-edit">Imprimir</span>
+      </button>
+      <button class="link-row" type="button" (click)="imprimirCarteirinhas()">
+        <ion-icon name="card-outline"></ion-icon>
+        <span class="link-text">Carteirinhas</span>
+        <span class="link-edit">Imprimir</span>
+      </button>
+      <button class="link-row" type="button" (click)="imprimirSumula()">
+        <ion-icon name="document-text-outline"></ion-icon>
+        <span class="link-text">Súmula</span>
+        <span class="link-edit">Imprimir</span>
+      </button>
+      <button class="link-row" type="button" (click)="imprimirPreSumula()">
+        <ion-icon name="reader-outline"></ion-icon>
+        <span class="link-text">Pré-Súmula</span>
+        <span class="link-edit">Imprimir</span>
+      </button>
+      <button class="link-row" type="button" (click)="editarCabecalhoPreSumula()">
+        <ion-icon name="image-outline"></ion-icon>
+        <span class="link-text">Cabeçalho da Pré-Súmula</span>
+        <span class="link-edit">Editar</span>
+      </button>
+      <button class="link-row" type="button" (click)="imprimirPartidas()">
+        <ion-icon name="document-text-outline"></ion-icon>
+        <span class="link-text">Partidas</span>
+        <span class="link-edit">Imprimir</span>
+      </button>
+      <button class="link-row" type="button" (click)="imprimirClassificacao()">
+        <ion-icon name="document-text-outline"></ion-icon>
+        <span class="link-text">Classificação</span>
+        <span class="link-edit">Imprimir</span>
+      </button>
+      <button class="link-row" type="button" (click)="imprimirRanking()">
+        <ion-icon name="document-text-outline"></ion-icon>
+        <span class="link-text">Ranking de jogadores</span>
+        <span class="link-edit">Imprimir</span>
+      </button>
+      <button class="link-row" type="button" (click)="abrirTermoMenor()">
+        <ion-icon name="shield-checkmark-outline"></ion-icon>
+        <span class="link-text">Termo de Autorização (menor de idade)</span>
+        <span class="link-edit">Gerar</span>
+      </button>
+    </section>
+  </div>
+</ion-content>

@@ -1,0 +1,215 @@
+/* ============================================================
+   Estilo compartilhado dos modais de mídia:
+   - AdicionarLinkModalComponent
+   - CriarNoticiaModalComponent
+   - YoutubeModalComponent
+   - EditarMidiaModalComponent
+   ============================================================ */
+
+ion-header.ion-no-border ion-toolbar {
+  --background: var(--ion-color-primary, #1C2E3D);
+  --color: #fff;
+  --border-width: 0;
+  --min-height: 56px;
+
+  ion-title {
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: 0.2px;
+  }
+
+  ion-button {
+    --color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+
+    &[disabled] { opacity: 0.5; }
+  }
+}
+
+.modal-shared {
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --background: var(--placar-bg, #f5f5f7);
+}
+
+/* Form principal — wrapper centralizado tipo "card" interno */
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 22px 36px;
+
+  @media (max-width: 540px) {
+    padding: 18px 14px 28px;
+    gap: 12px;
+  }
+}
+
+/* Inputs com fundo branco e sombra leve */
+ion-input,
+ion-textarea {
+  --background: #fff;
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 14px;
+  --padding-bottom: 14px;
+  --highlight-color-focused: var(--ion-color-primary, #1C2E3D);
+  --color: var(--placar-text, #1f1f1f);
+  font-size: 15px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+}
+
+ion-input.ion-invalid.ion-touched,
+ion-textarea.ion-invalid.ion-touched {
+  --highlight-color-invalid: var(--ion-color-danger, #eb445a);
+}
+
+/* Mensagem de erro abaixo do input */
+.error-msg {
+  color: var(--ion-color-danger, #eb445a);
+  font-size: 12.5px;
+  padding-left: 6px;
+  margin-top: -6px;
+  font-weight: 500;
+}
+
+/* Título de seção (separadores semânticos dentro do form) */
+.section-title {
+  margin: 14px 0 -4px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ion-color-medium-shade, #6b6b6b);
+  padding-left: 4px;
+}
+
+/* ============================================================
+   Capa picker (usado pela notícia)
+   ============================================================ */
+.capa-picker {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px dashed rgba(28, 46, 61, 0.18);
+  transition: border-color 150ms ease, background 150ms ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+  &:hover {
+    border-color: var(--ion-color-primary);
+    background: rgba(28, 46, 61, 0.02);
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--ion-color-medium-shade, #6b6b6b);
+    font-size: 13.5px;
+    font-weight: 500;
+
+    ion-icon {
+      font-size: 40px;
+      color: var(--ion-color-primary);
+      opacity: 0.8;
+    }
+  }
+
+  .remover-capa {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    transition: background 120ms ease;
+
+    &:hover { background: var(--ion-color-danger, #eb445a); }
+
+    ion-icon { font-size: 18px; }
+  }
+}
+
+/* ============================================================
+   Preview do YouTube (thumbnail estática)
+   ============================================================ */
+.yt-preview {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+
+  iframe { width: 100%; height: 100%; border: 0; display: block; }
+}
+
+.yt-preview-thumb {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  max-height: 240px;
+  aspect-ratio: 16 / 9;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .yt-play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+
+    ion-icon {
+      font-size: 60px;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.65);
+      border-radius: 50%;
+      padding: 10px 12px 10px 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      transition: background 150ms ease, transform 150ms ease;
+    }
+  }
+
+  &:hover .yt-play ion-icon {
+    background: rgba(235, 33, 33, 0.95);
+    transform: scale(1.06);
+  }
+}

@@ -1,0 +1,244 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ equipe?.nome || 'Equipe' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="compartilhar()" aria-label="Compartilhar">
+        <ion-icon slot="icon-only" name="share-social-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="pe-content">
+  <!-- Loading -->
+  <div class="pe-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+    <p>Carregando dados da equipe...</p>
+  </div>
+
+  <!-- Erro -->
+  <div class="pe-erro" *ngIf="erro && !loading">
+    <ion-icon name="alert-circle-outline"></ion-icon>
+    <h2>Equipe não encontrada</h2>
+    <p>Verifique se o link está correto ou volte para a categoria.</p>
+    <button class="pe-btn-secondary" type="button" (click)="voltar()">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+      Voltar
+    </button>
+  </div>
+
+  <!-- Conteúdo -->
+  <div class="pe-wrap" *ngIf="equipe && !loading && !erro">
+
+    <!-- Header da equipe -->
+    <section class="pe-hero">
+      <div class="pe-hero-logo">
+        <img *ngIf="equipe.logoUrl; else iconeDefault"
+             [src]="equipe.logoUrl" [alt]="equipe.nome" />
+        <ng-template #iconeDefault>
+          <ion-icon name="shield-outline"></ion-icon>
+        </ng-template>
+      </div>
+      <div class="pe-hero-info">
+        <h1 class="pe-nome">{{ equipe.nome }}</h1>
+        <div class="pe-meta" *ngIf="equipe.cidade || equipe.tecnico">
+          <span *ngIf="equipe.cidade">
+            <ion-icon name="location-outline"></ion-icon>
+            {{ equipe.cidade }}
+          </span>
+          <span *ngIf="equipe.tecnico">
+            <ion-icon name="person-outline"></ion-icon>
+            Técnico: {{ equipe.tecnico }}
+          </span>
+        </div>
+        <div class="pe-categ">{{ categoria?.titulo }} · {{ campeonato?.titulo }}</div>
+      </div>
+    </section>
+
+    <!-- Card de Posição na tabela (destaque acima das stats) -->
+    <section class="pe-posicao-wrap" *ngIf="posicao$ | async as p">
+      <div class="pe-posicao-card">
+        <div class="pe-posicao-medalha">
+          <ion-icon name="trophy-outline"></ion-icon>
+        </div>
+        <div class="pe-posicao-info">
+          <div class="pe-posicao-num">{{ p.pos }}º</div>
+          <div class="pe-posicao-lbl">
+            de {{ p.total }} {{ p.grupo ? ' · ' + p.grupo : '' }}
+          </div>
+        </div>
+        <div class="pe-posicao-sub">Posição<br>na tabela</div>
+      </div>
+    </section>
+
+    <!-- Stats agregadas -->
+    <section class="pe-stats" *ngIf="resumo$ | async as r">
+      <div class="pe-stat">
+        <span class="pe-stat-num">{{ r.jogosTotal }}</span>
+        <span class="pe-stat-lbl">Jogos</span>
+      </div>
+      <div class="pe-stat ok">
+        <span class="pe-stat-num">{{ r.vitorias }}</span>
+        <span class="pe-stat-lbl">Vitórias</span>
+      </div>
+      <div class="pe-stat warn">
+        <span class="pe-stat-num">{{ r.empates }}</span>
+        <span class="pe-stat-lbl">Empates</span>
+      </div>
+      <div class="pe-stat danger">
+        <span class="pe-stat-num">{{ r.derrotas }}</span>
+        <span class="pe-stat-lbl">Derrotas</span>
+      </div>
+      <div class="pe-stat">
+        <span class="pe-stat-num">{{ r.golsPro }}</span>
+        <span class="pe-stat-lbl">Gols pró</span>
+      </div>
+      <div class="pe-stat">
+        <span class="pe-stat-num">{{ r.golsContra }}</span>
+        <span class="pe-stat-lbl">Gols contra</span>
+      </div>
+      <div class="pe-stat" [class.ok]="r.saldo > 0" [class.danger]="r.saldo < 0">
+        <span class="pe-stat-num">{{ r.saldo > 0 ? '+' : '' }}{{ r.saldo }}</span>
+        <span class="pe-stat-lbl">Saldo</span>
+      </div>
+      <div class="pe-stat">
+        <span class="pe-stat-num">{{ r.aproveitamento }}%</span>
+        <span class="pe-stat-lbl">Aproveitamento</span>
+      </div>
+    </section>
+
+    <!-- Segmento Jogos / Jogadores (Jogos primeiro — mais relevante) -->
+    <div class="pe-segmento-wrap">
+      <ion-segment
+        class="pe-segmento"
+        [value]="aba"
+        (ionChange)="selecionarAba($any($event.detail.value))"
+        mode="ios"
+      >
+        <ion-segment-button value="jogos">
+          <ion-icon name="calendar-outline"></ion-icon>
+          <ion-label>
+            Jogos
+            <span class="pe-seg-badge" *ngIf="jogos$ | async as js">{{ js.length }}</span>
+          </ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="jogadores">
+          <ion-icon name="people-outline"></ion-icon>
+          <ion-label>
+            Jogadores
+            <span class="pe-seg-badge" *ngIf="jogadores$ | async as jgs">{{ jgs.length }}</span>
+          </ion-label>
+        </ion-segment-button>
+      </ion-segment>
+    </div>
+
+    <!-- Jogadores (lista vertical com linhas horizontais) -->
+    <section class="pe-secao" *ngIf="aba === 'jogadores'">
+      <ng-container *ngIf="jogadores$ | async as jgs">
+        <ul class="pe-jogadores-lista" *ngIf="jgs.length > 0; else nadaJgs">
+          <li class="pe-jogador-row"
+              *ngFor="let j of jgs; trackBy: trackByJogador">
+            <div class="pe-jg-num-badge" *ngIf="j.numeroCamisa; else semNum">
+              {{ j.numeroCamisa }}
+            </div>
+            <ng-template #semNum>
+              <div class="pe-jg-num-badge vazio">—</div>
+            </ng-template>
+
+            <div class="pe-jg-foto-mini">
+              <img *ngIf="j.fotoUrl; else iconJgMini" [src]="j.fotoUrl" [alt]="j.nome" loading="lazy" />
+              <ng-template #iconJgMini><ion-icon name="person-outline"></ion-icon></ng-template>
+            </div>
+
+            <div class="pe-jg-corpo">
+              <div class="pe-jg-nome-row">{{ j.apelido || j.nome }}</div>
+              <div class="pe-jg-sub" *ngIf="j.posicao || j.apelido && j.apelido !== j.nome">
+                <span *ngIf="j.posicao" class="pe-jg-pos-tag">{{ j.posicao }}</span>
+                <span *ngIf="j.apelido && j.apelido !== j.nome" class="pe-jg-nome-real">{{ j.nome }}</span>
+              </div>
+            </div>
+
+            <div class="pe-jg-stats-row" *ngIf="j.estatisticas">
+              <span class="pe-jg-stat-pill" *ngIf="j.estatisticas.gols" title="Gols">
+                <ion-icon name="football-outline"></ion-icon>
+                {{ j.estatisticas.gols }}
+              </span>
+              <span class="pe-jg-stat-pill amarelo" *ngIf="j.estatisticas.cartoesAmarelos" title="Cartões amarelos">
+                <ion-icon name="square"></ion-icon>
+                {{ j.estatisticas.cartoesAmarelos }}
+              </span>
+              <span class="pe-jg-stat-pill vermelho" *ngIf="j.estatisticas.cartoesVermelhos" title="Cartões vermelhos">
+                <ion-icon name="square"></ion-icon>
+                {{ j.estatisticas.cartoesVermelhos }}
+              </span>
+            </div>
+          </li>
+        </ul>
+        <ng-template #nadaJgs>
+          <div class="pe-empty">
+            <ion-icon name="people-outline"></ion-icon>
+            <p>Nenhum jogador cadastrado nesta equipe ainda.</p>
+          </div>
+        </ng-template>
+      </ng-container>
+    </section>
+
+    <!-- Histórico de jogos -->
+    <section class="pe-secao" *ngIf="aba === 'jogos'">
+      <ng-container *ngIf="jogos$ | async as js">
+        <div class="pe-jogos-lista" *ngIf="js.length > 0; else nadaJogos">
+          <article class="pe-jogo-card"
+                   *ngFor="let jg of js; trackBy: trackByJogoEquipe"
+                   [class.encerrado]="jg.jogo.status === 'encerrado'"
+                   [class.vivo]="jg.jogo.status === 'em-andamento'">
+            <div class="pe-jogo-resultado"
+                 [style.background]="corResultado(jg.resultado)">
+              {{ jg.resultado }}
+            </div>
+            <div class="pe-jogo-corpo">
+              <div class="pe-jogo-vs">
+                <span class="pe-jogo-lado">{{ jg.ehMandante ? 'em casa' : 'visitante' }}</span>
+                <span class="pe-jogo-versus">vs</span>
+                <div class="pe-jogo-adv">
+                  <img *ngIf="jg.adversarioLogo" [src]="jg.adversarioLogo" [alt]="jg.adversarioNome" />
+                  <span>{{ jg.adversarioNome }}</span>
+                </div>
+              </div>
+              <div class="pe-jogo-meta">
+                <span class="pe-jogo-placar"
+                      *ngIf="jg.jogo.status === 'encerrado' || jg.jogo.status === 'em-andamento'">
+                  {{ jg.placar }}
+                </span>
+                <span class="pe-jogo-status"
+                      [class.s-vivo]="jg.jogo.status === 'em-andamento'">
+                  <ng-container [ngSwitch]="jg.jogo.status">
+                    <ng-container *ngSwitchCase="'encerrado'">Encerrado</ng-container>
+                    <ng-container *ngSwitchCase="'em-andamento'">Ao vivo</ng-container>
+                    <ng-container *ngSwitchCase="'cancelado'">Cancelado</ng-container>
+                    <ng-container *ngSwitchCase="'wo'">W.O.</ng-container>
+                    <ng-container *ngSwitchDefault>Agendado</ng-container>
+                  </ng-container>
+                </span>
+                <span class="pe-jogo-data" *ngIf="jg.jogo.dataHora">
+                  {{ jg.jogo.dataHora }}
+                </span>
+              </div>
+            </div>
+          </article>
+        </div>
+        <ng-template #nadaJogos>
+          <div class="pe-empty">
+            <ion-icon name="calendar-outline"></ion-icon>
+            <p>Nenhum jogo agendado para esta equipe.</p>
+          </div>
+        </ng-template>
+      </ng-container>
+    </section>
+
+  </div>
+</ion-content>

@@ -1,0 +1,75 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>{{ isEdicao ? 'Editar' : 'Nova enquete' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button strong="true" [disabled]="saving" (click)="salvar()">Salvar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="edit-content">
+  <form [formGroup]="form" class="form-grid">
+    <ion-input
+      fill="outline"
+      label="Pergunta"
+      labelPlacement="stacked"
+      placeholder="Ex: Quem foi o melhor jogador da rodada?"
+      formControlName="pergunta"
+      autocapitalize="sentences"
+    ></ion-input>
+
+    <button type="button" class="link-row" (click)="abrirAlternativas()">
+      <ion-icon name="list-outline" color="success"></ion-icon>
+      <span class="link-text">Alternativas</span>
+      <span class="link-counter">{{ alternativas.length }}</span>
+    </button>
+
+    <button type="button" class="link-row" (click)="verVotacao()" [disabled]="!isEdicao">
+      <ion-icon name="eye-outline" color="success"></ion-icon>
+      <span class="link-text">Ver votação</span>
+      <span class="link-counter" *ngIf="enquete?.totalVotos">{{ enquete?.totalVotos }}</span>
+    </button>
+
+    <label class="check-row" (click)="toggle('visivel')">
+      <span class="check" [class.on]="form.value.visivel">
+        <ion-icon name="checkmark"></ion-icon>
+      </span>
+      <span class="check-label">Visível</span>
+    </label>
+
+    <label class="check-row" (click)="toggle('mostrarResultado')">
+      <span class="check" [class.on]="form.value.mostrarResultado">
+        <ion-icon name="checkmark"></ion-icon>
+      </span>
+      <span class="check-label">Mostrar resultado</span>
+    </label>
+
+    <label class="check-row" (click)="toggle('votacaoAberta')">
+      <span class="check" [class.on]="form.value.votacaoAberta">
+        <ion-icon name="checkmark"></ion-icon>
+      </span>
+      <span class="check-label">Votação aberta</span>
+    </label>
+
+    <label class="check-row" (click)="toggle('multiplaEscolha')">
+      <span class="check" [class.on]="form.value.multiplaEscolha">
+        <ion-icon name="checkmark"></ion-icon>
+      </span>
+      <span class="check-label">Escolher mais de 1</span>
+    </label>
+
+    <ion-button
+      *ngIf="isEdicao"
+      fill="clear"
+      color="danger"
+      class="btn-remover"
+      (click)="remover()"
+    >
+      <ion-icon slot="start" name="trash-outline"></ion-icon>
+      Remover enquete
+    </ion-button>
+  </form>
+</ion-content>

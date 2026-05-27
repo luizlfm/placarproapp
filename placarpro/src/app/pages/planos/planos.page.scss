@@ -1,0 +1,363 @@
+.hero {
+  background: linear-gradient(120deg, var(--ion-color-primary), var(--ion-color-primary-tint));
+  color: #fff;
+  padding: 36px 24px 26px;
+  text-align: center;
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 14.5px;
+  }
+}
+
+.planos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 24px 16px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.plano-card {
+  background: var(--placar-surface);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
+  }
+
+  &.destaque {
+    transform: scale(1.02);
+    &:hover { transform: scale(1.02) translateY(-3px); }
+  }
+}
+
+.plano-head {
+  padding: 22px 18px 18px;
+  color: #fff;
+  text-align: center;
+  position: relative;
+
+  h3 {
+    margin: 0 0 10px;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.2px;
+  }
+}
+
+.badge-assinado {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--placar-text);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 3px 14px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.preco {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+
+  .valor {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+  .detalhe {
+    font-size: 13px;
+    opacity: 0.85;
+  }
+}
+
+.features {
+  padding: 16px 18px;
+  flex: 1;
+}
+
+.feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--placar-divider);
+
+  &:first-of-type { border-top: none; }
+
+  ion-icon {
+    color: var(--ion-color-primary);
+    font-size: 22px;
+    flex: 0 0 auto;
+    margin-top: 1px;
+  }
+
+  .f-text { flex: 1; min-width: 0; }
+  .f-titulo {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--placar-text);
+  }
+  .f-desc {
+    font-size: 12px;
+    color: var(--ion-color-medium);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+}
+
+.btn-plano {
+  --border-radius: 0;
+  height: 50px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+// ─── Card Transmissão Avulsa ──────────────────────────────────────────────────
+.avulso-wrap {
+  padding: 0 16px 16px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.avulso-card {
+  background: var(--placar-surface);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  border: 2px solid rgba(124, 198, 29, 0.25);
+}
+
+.avulso-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #1C2E3D 0%, #2a3f52 100%);
+  color: #fff;
+}
+
+.avulso-icon {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  background: rgba(124, 198, 29, 0.18);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 24px;
+    color: #7cc61d;
+  }
+}
+
+.avulso-head-text {
+  flex: 1 1 auto;
+
+  h3 {
+    margin: 0 0 3px;
+    font-size: 17px;
+    font-weight: 800;
+  }
+  p {
+    margin: 0;
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.75);
+  }
+}
+
+.avulso-saldo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+  background: rgba(124, 198, 29, 0.15);
+  border: 1px solid rgba(124, 198, 29, 0.3);
+  border-radius: 10px;
+  padding: 6px 14px;
+  min-width: 64px;
+}
+
+.avulso-saldo-num {
+  font-size: 22px;
+  font-weight: 800;
+  color: #7cc61d;
+  line-height: 1;
+}
+
+.avulso-saldo-lbl {
+  font-size: 10px;
+  color: rgba(255,255,255,0.7);
+  text-align: center;
+  margin-top: 2px;
+}
+
+.avulso-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.avulso-preco-info {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.avulso-unit {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--placar-text);
+}
+
+.avulso-unit-lbl {
+  font-size: 13px;
+  color: var(--ion-color-medium);
+}
+
+// Stepper de quantidade
+.avulso-stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.avulso-step-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--placar-border);
+  background: var(--placar-surface);
+  color: var(--placar-text);
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover:not(:disabled) {
+    border-color: var(--ion-color-secondary);
+    background: rgba(124, 198, 29, 0.08);
+  }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+}
+
+.avulso-qty {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--placar-text);
+  min-width: 28px;
+  text-align: center;
+}
+
+.avulso-total {
+  font-size: 14px;
+  color: var(--ion-color-medium);
+
+  strong {
+    font-size: 18px;
+    color: var(--ion-color-secondary);
+    font-weight: 800;
+  }
+}
+
+// Lista de features do avulso
+.avulso-features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--placar-text);
+
+    ion-icon {
+      color: var(--ion-color-secondary);
+      font-size: 17px;
+      flex: 0 0 auto;
+    }
+  }
+}
+
+.avulso-btn {
+  font-weight: 700;
+  --border-radius: 10px;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+.fine-print {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 12px 20px 40px;
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 24px;
+
+    li {
+      color: var(--ion-color-medium);
+      font-size: 13px;
+      padding: 4px 0 4px 18px;
+      position: relative;
+
+      &::before {
+        content: '●';
+        position: absolute;
+        left: 0;
+        color: var(--ion-color-secondary);
+      }
+    }
+  }
+}
+
+.duvidas {
+  text-align: center;
+  border-top: 1px solid var(--placar-border);
+  padding-top: 20px;
+
+  h4 {
+    color: var(--ion-color-primary);
+    font-size: 15px;
+    margin: 0 0 8px;
+  }
+  p {
+    color: var(--ion-color-medium);
+    margin: 2px 0;
+    font-size: 13px;
+  }
+}

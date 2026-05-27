@@ -1,0 +1,36 @@
+:host {
+  display: block;
+}
+
+.acoes {
+  background: var(--ion-color-primary);
+  color: #fff;
+  min-width: 240px;
+  padding: 6px 0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.row {
+  background: none;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  font-size: 15px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+
+  ion-icon {
+    font-size: 20px;
+    color: var(--ion-color-secondary);
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}

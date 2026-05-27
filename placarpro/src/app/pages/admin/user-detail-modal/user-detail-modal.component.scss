@@ -1,0 +1,629 @@
+.ud-content { --background: #f3f4f6; }
+
+.ud-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #fff;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.ud-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--ion-color-secondary, #7CC61D);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 800;
+  overflow: hidden;
+  flex-shrink: 0;
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.ud-head-info {
+  flex: 1;
+  min-width: 0;
+  h2 {
+    margin: 0 0 4px;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--placar-text, #2d2d2d);
+  }
+}
+
+.ud-uid {
+  font-size: 11px;
+  color: var(--ion-color-medium);
+  margin-bottom: 8px;
+  code {
+    font-family: monospace;
+    background: rgba(0, 0, 0, 0.04);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+}
+
+.ud-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ud-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  background: rgba(28, 46, 61, 0.08);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--placar-text);
+  ion-icon { font-size: 12px; }
+
+  &[data-tipo="organizador"] { background: rgba(28, 46, 61, 0.14); color: var(--ion-color-primary); }
+  &[data-tipo="cliente"]     { background: rgba(77, 171, 247, 0.18); color: #1976d2; }
+  &[data-tipo="moderador"]   { background: rgba(255, 196, 9, 0.20); color: #b07b00; }
+  &.warn { background: rgba(255, 196, 9, 0.25); color: #b07b00; }
+}
+
+.ud-secao {
+  padding: 16px 20px;
+  background: #fff;
+  margin-top: 10px;
+
+  h3 {
+    margin: 0 0 12px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--ion-color-medium);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.ud-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  padding: 2px 8px;
+  background: var(--ion-color-secondary, #7CC61D);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ud-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.ud-field {
+  label {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--ion-color-medium);
+    margin-bottom: 3px;
+  }
+  div, code {
+    font-size: 13.5px;
+    color: var(--placar-text);
+    word-break: break-word;
+  }
+  code { font-family: monospace; }
+}
+
+.ud-bio {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #f0f2f5;
+  label {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--ion-color-medium);
+    margin-bottom: 4px;
+  }
+  p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--placar-text); }
+}
+
+.ud-vazio {
+  text-align: center;
+  padding: 24px 12px;
+  color: var(--ion-color-medium);
+  ion-icon { font-size: 36px; opacity: 0.4; }
+  p { margin: 6px 0 0; font-size: 13px; }
+}
+
+.ud-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ud-camp {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #eef0f3;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+  transition: background 120ms ease, border-color 120ms ease;
+
+  &:hover {
+    background: #fafafb;
+    border-color: var(--ion-color-primary);
+  }
+}
+
+.ud-camp-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(28, 46, 61, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 20px; color: var(--ion-color-primary); }
+}
+
+.ud-camp-body { flex: 1; min-width: 0; }
+.ud-camp-titulo {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--placar-text);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ud-camp-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--ion-color-medium);
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    ion-icon { font-size: 13px; }
+  }
+  .privado { color: #b51f30; }
+}
+
+.ud-arrow {
+  color: var(--ion-color-medium);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.ud-conv {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #eef0f3;
+  border-radius: 10px;
+
+  > ion-icon {
+    font-size: 32px;
+    color: var(--ion-color-secondary);
+    flex-shrink: 0;
+  }
+}
+.ud-conv-body { flex: 1; min-width: 0; }
+.ud-conv-titulo {
+  font-size: 13.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--placar-text);
+}
+.ud-conv-sub {
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  margin-top: 2px;
+}
+.ud-conv-tok {
+  font-family: monospace;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: var(--ion-color-medium);
+}
+
+/* ============ Bloco "Gerenciar conta" ============ */
+.ud-manage {
+  background: linear-gradient(135deg, rgba(124, 198, 29, 0.05), rgba(255, 196, 9, 0.05));
+  border: 2px solid rgba(124, 198, 29, 0.2);
+  border-radius: 12px;
+  margin-top: 10px;
+
+  h3 {
+    color: var(--ion-color-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 14px;
+      background: var(--ion-color-secondary, #7CC61D);
+      border-radius: 2px;
+    }
+  }
+}
+
+.ud-manage-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+  &:last-child { border-bottom: none; }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ud-manage-lbl {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  strong {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--placar-text);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  span {
+    font-size: 11.5px;
+    color: var(--ion-color-medium);
+    line-height: 1.4;
+  }
+}
+
+.ud-manage-acoes {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  @media (max-width: 600px) {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+.ud-select {
+  flex: 1;
+  min-width: 180px;
+  padding: 9px 12px;
+  border: 1px solid #d4d8de;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-family: inherit;
+  background: #fff;
+  color: var(--placar-text);
+  cursor: pointer;
+  outline: none;
+
+  &:focus { border-color: var(--ion-color-primary); }
+}
+
+.ud-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: var(--ion-color-primary, #1C2E3D);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: filter 120ms ease;
+  ion-icon { font-size: 16px; }
+
+  &:hover:not(:disabled) { filter: brightness(1.1); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+// ── Stepper de transmissões extras ───────────────────────────────────────────
+.ud-tx-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ud-btn-step {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid #d4d8de;
+  background: #fff;
+  color: var(--placar-text);
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 120ms;
+
+  &:hover:not(:disabled) { border-color: var(--ion-color-secondary); }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+}
+
+.ud-tx-val {
+  font-size: 16px;
+  font-weight: 700;
+  min-width: 24px;
+  text-align: center;
+  color: var(--ion-color-secondary);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+.ud-btn-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: #fff;
+  color: var(--ion-color-medium);
+  border: 1.5px solid #d4d8de;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  ion-icon { font-size: 18px; }
+
+  &:hover:not(:disabled) { border-color: var(--ion-color-warning, #ffc409); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  &.on {
+    background: var(--ion-color-warning, #ffc409);
+    color: #1C2E3D;
+    border-color: var(--ion-color-warning, #ffc409);
+  }
+}
+
+/* ============ Chip danger (banido) ============ */
+.ud-chip.danger {
+  background: rgba(235, 71, 71, 0.12);
+  color: var(--ion-color-danger, #eb4747);
+  border-color: rgba(235, 71, 71, 0.35);
+}
+
+/* ============ Banner de status (banido/bloqueado) ============
+   Aparece no topo do modal quando o user está em estado problemático.
+   `ud-banner-danger` (banido) e `ud-banner-warn` (bloqueado). */
+.ud-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin: 0 16px 12px;
+
+  > ion-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  strong {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 800;
+    margin-bottom: 2px;
+  }
+  p {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+}
+
+.ud-banner-danger {
+  background: rgba(235, 71, 71, 0.08);
+  border: 1px solid rgba(235, 71, 71, 0.25);
+  color: var(--ion-color-danger, #eb4747);
+}
+
+.ud-banner-warn {
+  background: rgba(255, 196, 9, 0.1);
+  border: 1px solid rgba(255, 196, 9, 0.3);
+  color: #8a6d00;
+}
+
+/* ============ Form de edição de dados ============ */
+.ud-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ud-field-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ud-lbl {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--placar-text-muted, #6b6b70);
+
+  .req {
+    color: var(--ion-color-danger, #eb4747);
+    font-weight: 800;
+  }
+}
+
+.ud-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--placar-divider, #d4d8de);
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  color: var(--placar-text, #2d2d2d);
+  font-family: inherit;
+  transition: border-color 120ms ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--ion-color-primary, #1C2E3D);
+  }
+
+  &::placeholder {
+    color: var(--placar-text-muted, #6b6b70);
+    opacity: 0.7;
+  }
+}
+
+.ud-textarea {
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+}
+
+.ud-err {
+  font-size: 11.5px;
+  color: var(--ion-color-danger, #eb4747);
+  font-weight: 500;
+  padding-left: 2px;
+}
+
+.ud-field-wrap.has-error .ud-input {
+  border-color: var(--ion-color-danger, #eb4747);
+}
+
+.ud-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+
+  @media (max-width: 540px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============ Seção moderação (fundo levemente avermelhado) ============ */
+.ud-secao-danger {
+  border: 1px solid rgba(235, 71, 71, 0.18);
+  border-radius: 12px;
+  background: rgba(235, 71, 71, 0.02);
+
+  h3 {
+    color: var(--ion-color-danger, #eb4747);
+  }
+}
+
+/* ============ Botão warn (laranja/amarelo — bloquear) ============ */
+.ud-btn-warn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: #fff;
+  color: var(--ion-color-warning-shade, #b88d00);
+  border: 1.5px solid var(--ion-color-warning, #ffc409);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: background 120ms ease, color 120ms ease, filter 120ms ease;
+  ion-icon { font-size: 18px; }
+
+  &:hover:not(:disabled) {
+    background: var(--ion-color-warning, #ffc409);
+    color: #1C2E3D;
+  }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  &.on {
+    background: var(--ion-color-warning, #ffc409);
+    color: #1C2E3D;
+  }
+}
+
+/* ============ Botão danger (vermelho — banir) ============ */
+.ud-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: var(--ion-color-danger, #eb4747);
+  color: #fff;
+  border: 1.5px solid var(--ion-color-danger, #eb4747);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: filter 120ms ease, transform 100ms ease;
+  ion-icon { font-size: 18px; }
+
+  &:hover:not(:disabled) { filter: brightness(1.1); }
+  &:active:not(:disabled) { transform: scale(0.97); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+/* UID clicável (copiar) */
+.ud-uid code {
+  cursor: pointer;
+  transition: background 120ms ease;
+  &:hover { background: rgba(28, 46, 61, 0.1); }
+}

@@ -1,0 +1,379 @@
+// Estilos compartilhados pelas páginas de autenticação (login, cadastro, reset).
+// Importado dentro de cada *.page.scss via @import.
+
+.auth-bg {
+  --background: radial-gradient(
+      ellipse at top,
+      rgba(124, 198, 29, 0.16) 0%,
+      transparent 55%
+    ),
+    radial-gradient(ellipse at bottom right, rgba(124, 198, 29, 0.08) 0%, transparent 55%),
+    linear-gradient(155deg, #14222d 0%, #1c2e3d 50%, #0f1a23 100%);
+}
+
+// Pontinhos decorativos no fundo (sutil)
+.auth-shell {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  box-sizing: border-box;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none;
+  }
+}
+
+.auth-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  background: var(--placar-card-bg, #fff);
+  border-radius: 20px;
+  padding: 36px 28px 28px;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  animation: auth-card-in 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  @media (max-width: 480px) {
+    padding: 28px 20px 22px;
+    border-radius: 16px;
+  }
+}
+
+@keyframes auth-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.auth-brand {
+  text-align: center;
+  margin-bottom: 28px;
+
+  /* Wrapper âncora — torna o logo clicável (volta pra home). Mantém o
+     layout antigo (text-align center) e adiciona um leve hover scale
+     pra dar affordance de interatividade. */
+  .auth-brand-link {
+    display: inline-block;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 180ms ease, filter 180ms ease;
+
+    &:hover {
+      transform: translateY(-2px) scale(1.02);
+      img { filter: drop-shadow(0 10px 20px rgba(124, 198, 29, 0.45)); }
+    }
+    &:active { transform: translateY(0) scale(1); }
+
+    &:focus-visible {
+      outline: 2px solid #7CC61D;
+      outline-offset: 4px;
+      border-radius: 8px;
+    }
+  }
+
+  img {
+    display: block;
+    margin: 0 auto 12px;
+    max-width: 200px;
+    max-height: 160px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 14px rgba(124, 198, 29, 0.25));
+    transition: filter 180ms ease;
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 22px;
+    img {
+      max-width: 160px;
+      max-height: 130px;
+    }
+  }
+}
+
+// Wordmark fallback (mostrar só quando não houver logo)
+.auth-wordmark {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin: 4px 0 8px;
+  font-style: italic;
+
+  .wm-dark { color: var(--placar-text); }
+  .wm-accent { color: var(--ion-color-primary); }
+}
+
+.auth-tagline {
+  color: var(--placar-text-muted);
+  font-size: 14.5px;
+  line-height: 1.4;
+  margin: 6px 0 0;
+}
+
+// Conjunto de inputs outlined empilhados verticalmente
+// (estilos do input em si vêm do global.scss)
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 8px 0 18px;
+
+  /* Placeholder dos ion-input — sempre visível (pedido do user pra
+     dar dica do formato esperado mesmo sem clicar). Com `labelPlacement`
+     "stacked" o label fica em cima e o placeholder dentro do input,
+     então não há sobreposição visual.
+     Antes ficava oculto por padrão (--placeholder-opacity: 0) e só
+     aparecia no focus — confundia novos usuários. */
+  ion-input {
+    --placeholder-color: #94a3b8;
+    --placeholder-opacity: 1;        // sempre visível
+    --placeholder-font-style: normal;
+    --placeholder-font-weight: 400;
+  }
+}
+
+.field-error {
+  color: var(--ion-color-danger);
+  font-size: 12px;
+  margin: 6px 0 14px 4px;
+  min-height: 16px;
+  font-weight: 500;
+}
+
+.auth-row-forgot {
+  text-align: right;
+  margin: 4px 0 18px;
+
+  a {
+    color: var(--ion-color-tertiary);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+  a:hover { color: var(--ion-color-tertiary-shade); text-decoration: underline; }
+}
+
+/* ── Linha com "Não tem conta?" à esquerda + "Esqueci minha senha" à
+   direita. Substitui o `.auth-row-forgot` + `.auth-footer` separados
+   por uma linha única logo abaixo dos inputs — UX mais escaneável. */
+.auth-row-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0 18px;
+  flex-wrap: wrap;
+  row-gap: 6px;
+
+  a {
+    color: var(--ion-color-tertiary);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+  a:hover { color: var(--ion-color-tertiary-shade); text-decoration: underline; }
+
+  .auth-criar-link {
+    color: var(--placar-text-muted, rgba(0, 0, 0, 0.6));
+    font-weight: 500;
+    strong {
+      color: var(--ion-color-tertiary);
+      font-weight: 700;
+      margin-left: 2px;
+    }
+    &:hover strong { color: var(--ion-color-tertiary-shade); }
+  }
+
+  @media (max-width: 360px) {
+    font-size: 12px;
+    a { font-size: 12px; }
+  }
+}
+
+/* ── Grid 2 colunas pra Google + Apple lado a lado. ── */
+.auth-social-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+
+  ion-button {
+    margin: 0 !important; // override do margin-top dos auth-google/apple
+    --padding-start: 8px;
+    --padding-end: 8px;
+  }
+}
+
+.auth-submit {
+  margin: 12px 0 4px;
+  --border-radius: 12px;
+  --box-shadow: 0 6px 18px rgba(28, 46, 61, 0.45);
+  font-weight: 600;
+  height: 48px;
+  letter-spacing: 0.2px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 22px 0;
+  color: #9a9aa1;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+
+  &::before, &::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--placar-border);
+  }
+  span { padding: 0 14px; }
+}
+
+.auth-google {
+  --border-radius: 12px;
+  --border-color: #dadce0;
+  --color: var(--placar-text);
+  height: 46px;
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: 4px;
+
+  ion-icon {
+    color: #4285f4;
+    font-size: 18px;
+  }
+}
+
+.auth-apple {
+  --border-radius: 12px;
+  --background: #000000;
+  --background-activated: #1a1a1a;
+  --background-hover: #1a1a1a;
+  --color: #ffffff;
+  height: 46px;
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: 10px;
+
+  ion-icon {
+    color: #ffffff;
+    font-size: 18px;
+  }
+}
+
+.auth-footer {
+  text-align: center;
+  margin: 22px 0 0;
+  color: var(--placar-text-muted);
+  font-size: 14px;
+
+  a {
+    color: var(--ion-color-tertiary);
+    font-weight: 600;
+    text-decoration: none;
+    margin-left: 4px;
+    transition: color 150ms ease;
+  }
+  a:hover { color: var(--ion-color-tertiary-shade); text-decoration: underline; }
+}
+
+
+/* ============ Tipo de login (cards Organizador / Espectador) ============
+   .auth-card é branco (--placar-card-bg #fff), então as cores aqui são
+   pensadas pra fundo claro: borda cinza, texto navy, card ativo com
+   borda e fundo verde do tema. */
+.auth-tipo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 4px 0 22px;
+}
+.tipo-card {
+  /* Reset Ionic/Material — botão nativo */
+  background: #fff;
+  border: 2px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px 10px 14px;
+  color: #5a6470;
+  cursor: pointer;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 110px;
+  transition: all 150ms ease;
+  font-family: inherit;
+
+  ion-icon {
+    font-size: 30px;
+    color: #94a3b8;
+    margin-bottom: 4px;
+    transition: color 150ms ease;
+  }
+  .tipo-titulo {
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    line-height: 1.2;
+    color: #1C2E3D;
+  }
+  .tipo-sub {
+    font-size: 10.5px;
+    line-height: 1.3;
+    margin-top: 3px;
+    color: #6b7280;
+    max-width: 100%;
+  }
+
+  &:hover {
+    border-color: var(--ion-color-secondary, #7CC61D);
+    background: rgba(124, 198, 29, 0.04);
+    ion-icon { color: var(--ion-color-secondary, #7CC61D); }
+    .tipo-titulo { color: var(--ion-color-secondary-shade, #5a9912); }
+  }
+  &.ativo {
+    background: rgba(124, 198, 29, 0.10);
+    border-color: var(--ion-color-secondary, #7CC61D);
+    box-shadow: 0 4px 14px rgba(124, 198, 29, 0.22);
+    ion-icon { color: var(--ion-color-secondary, #7CC61D); }
+    .tipo-titulo {
+      color: var(--ion-color-secondary-shade, #4a7e0e);
+    }
+    .tipo-sub { color: #1C2E3D; font-weight: 500; }
+  }
+}
+
+@media (max-width: 380px) {
+  .tipo-card {
+    padding: 12px 8px 10px;
+    min-height: 96px;
+    ion-icon { font-size: 26px; }
+    .tipo-titulo { font-size: 10.5px; }
+    .tipo-sub { font-size: 9.5px; }
+  }
+}
+

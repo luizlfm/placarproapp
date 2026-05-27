@@ -1,0 +1,64 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>Selecionar no mapa</ion-title>
+    <ion-buttons slot="end">
+      <ion-button strong="true" [disabled]="selLat === null || selLng === null" (click)="confirmar()">
+        Confirmar
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="mp-content" [scrollY]="false">
+  <!-- Barra de busca -->
+  <div class="search-bar">
+    <ion-icon name="search-outline"></ion-icon>
+    <input
+      type="text"
+      placeholder="Buscar endereço, cidade..."
+      [(ngModel)]="busca"
+      (keyup.enter)="buscarEndereco()"
+      [disabled]="buscando"
+    />
+    <button
+      type="button"
+      class="search-go"
+      (click)="buscarEndereco()"
+      [disabled]="!busca?.trim() || buscando"
+      aria-label="Buscar"
+    >
+      <ion-icon name="arrow-forward-outline" *ngIf="!buscando"></ion-icon>
+      <ion-spinner name="dots" *ngIf="buscando"></ion-spinner>
+    </button>
+  </div>
+
+  <!-- Endereço selecionado -->
+  <div class="endereco-bar" *ngIf="enderecoSelecionado || carregandoEndereco">
+    <ion-icon name="location-outline"></ion-icon>
+    <span *ngIf="!carregandoEndereco">{{ enderecoSelecionado }}</span>
+    <span *ngIf="carregandoEndereco" class="loading">Buscando endereço...</span>
+  </div>
+
+  <!-- Mapa -->
+  <div id="mapa-picker" class="mp-mapa"></div>
+
+  <!-- Footer com coords + ações -->
+  <div class="mp-footer">
+    <div class="coords" *ngIf="selLat !== null && selLng !== null; else dica">
+      <ion-icon name="navigate-circle-outline"></ion-icon>
+      <span>{{ selLat }}, {{ selLng }}</span>
+      <button type="button" class="limpar" (click)="limparPin()" aria-label="Limpar seleção">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+    <ng-template #dica>
+      <div class="dica">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        Toque no mapa pra escolher o local
+      </div>
+    </ng-template>
+  </div>
+</ion-content>

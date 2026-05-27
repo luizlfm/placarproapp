@@ -1,0 +1,190 @@
+<ion-header>
+  <ion-toolbar color="secondary">
+    <ion-buttons slot="start">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Editar inscrições</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap" *ngIf="categoria$ | async as cat">
+    <ng-container *ngIf="inicializarBuffer(cat) as _">{{ _ }}</ng-container>
+    <ng-container *ngIf="cfg(cat) as c">
+
+      <!-- ============ Configurações ============ -->
+      <section class="card">
+        <h3 class="card-title">Configurações</h3>
+
+        <!-- Inscrições fechadas (toggle) -->
+        <div class="toggle-row" (click)="toggleFechadas(cat)">
+          <ion-icon name="lock-closed-outline"></ion-icon>
+          <div class="t-text">
+            <div class="t-title">Inscrições fechadas</div>
+            <div class="t-sub">
+              Inscrições fechadas, somente os administradores podem adicionar as equipes em "Editar Equipes"
+            </div>
+          </div>
+          <ion-toggle
+            [checked]="c.fechadas"
+            (click)="$event.stopPropagation()"
+            (ionChange)="toggleFechadas(cat)"
+          ></ion-toggle>
+        </div>
+
+        <!-- Informações sobre as inscrições -->
+        <label class="textarea-block">
+          <span class="ta-label">Informações sobre as inscrições</span>
+          <textarea
+            class="ta-input"
+            rows="4"
+            placeholder="Texto que aparece pros visitantes no link público de inscrição..."
+            [(ngModel)]="informacoesBuffer"
+            (blur)="salvarInformacoes()"
+          ></textarea>
+        </label>
+
+        <!-- Inscrições (checkboxes + slider) -->
+        <div class="sub-block">
+          <span class="sub-title">Inscrições</span>
+
+          <label class="check-line" (click)="$event.stopPropagation()">
+            <input
+              type="checkbox"
+              [checked]="c.permiteEquipe"
+              (change)="toggleEquipe(cat)"
+            />
+            <span>Inscrição de equipe completa</span>
+          </label>
+
+          <label class="check-line" (click)="$event.stopPropagation()">
+            <input
+              type="checkbox"
+              [checked]="c.permiteJogadorIndividual"
+              (change)="toggleJogadorIndividual(cat)"
+            />
+            <span>Permitir inscrição somente de jogadores</span>
+          </label>
+
+          <div class="slider-block" *ngIf="c.permiteEquipe">
+            <div class="slider-row">
+              <span class="slider-label">Limite de jogadores por equipe</span>
+              <span class="slider-value">{{ c.limiteJogadoresPorEquipe }}</span>
+            </div>
+            <input
+              type="range"
+              class="slider"
+              min="1"
+              max="40"
+              step="1"
+              [value]="c.limiteJogadoresPorEquipe"
+              (input)="onSliderChange($event)"
+            />
+            <div class="slider-ticks">
+              <span>1</span>
+              <span>10</span>
+              <span>20</span>
+              <span>30</span>
+              <span>40</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ Formulário ============ -->
+      <section class="card">
+        <h3 class="card-title">Formulário</h3>
+
+        <button class="link-row" type="button" (click)="editarCamposEquipe(cat)">
+          <ion-icon name="reorder-three-outline"></ion-icon>
+          <span class="link-text">
+            Editar formulário das equipes
+            <span class="counter" *ngIf="(c.camposEquipe?.length ?? 0) > 0">
+              ({{ c.camposEquipe!.length }} {{ c.camposEquipe!.length === 1 ? 'campo' : 'campos' }})
+            </span>
+          </span>
+          <span class="link-edit">Editar</span>
+        </button>
+
+        <button class="link-row" type="button" (click)="editarCamposJogador(cat)">
+          <ion-icon name="reorder-three-outline"></ion-icon>
+          <span class="link-text">
+            Editar formulário dos jogadores
+            <span class="counter" *ngIf="(c.camposJogador?.length ?? 0) > 0">
+              ({{ c.camposJogador!.length }} {{ c.camposJogador!.length === 1 ? 'campo' : 'campos' }})
+            </span>
+          </span>
+          <span class="link-edit">Editar</span>
+        </button>
+      </section>
+
+      <!-- ============ Inscrições recebidas ============ -->
+      <section class="card">
+        <h3 class="card-title">Inscrições</h3>
+
+        <ng-container *ngIf="inscricoes$ | async as lista">
+          <div class="empty" *ngIf="lista.length === 0">Sem inscrições</div>
+
+          <div class="lista" *ngIf="lista.length > 0">
+            <div
+              class="insc-row"
+              *ngFor="let i of lista; trackBy: trackById"
+              [class.pendente]="i.status === 'pendente'"
+              [class.aprovada]="i.status === 'aprovada'"
+              [class.rejeitada]="i.status === 'rejeitada'"
+            >
+              <div class="insc-icone">
+                <ion-icon
+                  [name]="i.tipo === 'jogador' ? 'person-outline' : 'shield-outline'"
+                ></ion-icon>
+              </div>
+              <div class="insc-info">
+                <div class="insc-titulo">{{ i.nomeEquipe }}</div>
+                <div class="insc-meta">
+                  <span class="badge" [ngClass]="i.status">{{ statusLabel(i.status) }}</span>
+                  <span *ngIf="i.responsavel">{{ i.responsavel }}</span>
+                  <span *ngIf="i.telefone"> · {{ i.telefone }}</span>
+                </div>
+                <div class="insc-obs" *ngIf="i.observacao">{{ i.observacao }}</div>
+              </div>
+              <div class="insc-acoes">
+                <button
+                  *ngIf="i.status !== 'aprovada'"
+                  type="button"
+                  class="act act-ok"
+                  (click)="aprovar(i)"
+                  aria-label="Aprovar"
+                  title="Aprovar"
+                >
+                  <ion-icon name="checkmark-outline"></ion-icon>
+                </button>
+                <button
+                  *ngIf="i.status !== 'rejeitada'"
+                  type="button"
+                  class="act act-no"
+                  (click)="rejeitar(i)"
+                  aria-label="Rejeitar"
+                  title="Rejeitar"
+                >
+                  <ion-icon name="close-outline"></ion-icon>
+                </button>
+                <button
+                  type="button"
+                  class="act act-del"
+                  (click)="remover(i)"
+                  aria-label="Remover"
+                  title="Remover"
+                >
+                  <ion-icon name="trash-outline"></ion-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </section>
+
+    </ng-container>
+  </div>
+</ion-content>

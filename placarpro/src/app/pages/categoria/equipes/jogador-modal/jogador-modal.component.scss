@@ -1,0 +1,754 @@
+/* ion-content tratado igual ao equipe-modal — zera padding interno
+   pra neutralizar a regra global do @media (max-width: 540px) que
+   reescreve padding/margin em `.modal-card` / `.field-group` em mobile
+   quando o ion-input recebe foco (era o que tirava a borda lateral). */
+.bg {
+  --background: var(--placar-bg);
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+
+/* ─── LISTA ─────────────────────────────────────────────── */
+.lista-wrap {
+  margin: 14px;
+  min-height: calc(100% - 28px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Card de cadastro rápido ───────────────────────────── */
+.add-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(28, 46, 61, 0.08);
+  border-radius: 14px;
+  padding: 14px 16px 12px;
+  box-shadow: 0 2px 8px rgba(28, 46, 61, 0.06);
+}
+
+.add-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+
+  > ion-icon {
+    font-size: 22px;
+    flex: 0 0 auto;
+  }
+}
+
+.add-card-titulo {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  min-width: 0;
+
+  strong {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--placar-text);
+  }
+
+  span {
+    font-size: 11.5px;
+    color: var(--placar-text-muted, #6b6b70);
+    margin-top: 1px;
+  }
+}
+
+.quick-add {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+
+  ion-input {
+    flex: 1;
+    --background: #fff;
+    --border-radius: 10px;
+  }
+
+  .btn-add {
+    --border-radius: 10px;
+    --padding-start: 18px;
+    --padding-end: 18px;
+    --background: var(--ion-color-primary);
+    --background-activated: var(--ion-color-primary-shade);
+    height: 44px;
+    margin: 0 0 2px;
+    font-weight: 700;
+    font-size: 13.5px;
+    letter-spacing: 0.2px;
+    text-transform: none;
+    flex: 0 0 auto;
+
+    ion-icon[slot='start'] {
+      font-size: 18px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: stretch;
+
+    .btn-add {
+      height: 46px;
+      margin: 0;
+    }
+  }
+}
+
+/* ── Busca ─────────────────────────────────────────────── */
+.busca-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  > ion-icon {
+    position: absolute;
+    left: 14px;
+    color: #9ca3af;
+    font-size: 18px;
+    pointer-events: none;
+  }
+
+  input {
+    width: 100%;
+    border: 1px solid #e2e6ec;
+    background: #fff;
+    border-radius: 999px;
+    padding: 11px 40px 11px 40px;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+
+    &:focus {
+      border-color: var(--ion-color-secondary, #7CC61D);
+      box-shadow: 0 0 0 3px rgba(124, 198, 29, 0.18);
+    }
+  }
+
+  .busca-clear {
+    position: absolute;
+    right: 8px;
+    background: none;
+    border: none;
+    padding: 4px;
+    color: #9ca3af;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+
+    ion-icon { font-size: 18px; }
+    &:hover { color: #ef4444; }
+  }
+}
+
+/* ── Contador ──────────────────────────────────────────── */
+.counter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--placar-text-muted, #5a5a60);
+  padding: 0 4px;
+
+  .badge-total {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--ion-color-secondary, #7CC61D);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  strong {
+    color: var(--placar-text);
+    font-weight: 600;
+  }
+
+  .counter-busca {
+    color: var(--placar-text-muted, #6b6b70);
+    font-style: italic;
+  }
+}
+
+/* ── Lista ─────────────────────────────────────────────── */
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.jog-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #eaecef;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+
+  &:hover {
+    transform: translateX(2px);
+    border-color: var(--ion-color-secondary, #7CC61D);
+    box-shadow: 0 4px 12px rgba(28, 46, 61, 0.08);
+  }
+
+  &:active {
+    transform: translateX(2px) scale(0.99);
+  }
+}
+
+.jog-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7CC61D 0%, #5fa118 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+  overflow: hidden;
+  flex: 0 0 auto;
+  box-shadow: 0 2px 6px rgba(124, 198, 29, 0.28);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  ion-icon {
+    font-size: 20px;
+  }
+}
+
+.jog-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.jog-nome {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--placar-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  .apelido {
+    font-weight: 400;
+    color: var(--placar-text-muted);
+    margin-left: 6px;
+    font-size: 13px;
+  }
+}
+
+.jog-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--placar-text-muted);
+  margin-top: 3px;
+
+  .camisa {
+    background: rgba(28, 46, 61, 0.1);
+    color: var(--ion-color-primary);
+    padding: 1px 7px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+}
+
+.btn-rem {
+  --padding-start: 6px;
+  --padding-end: 6px;
+  margin: 0;
+  height: 34px;
+}
+
+.chev {
+  color: #cbd5e1;
+  font-size: 18px;
+  flex: 0 0 auto;
+}
+
+/* ── Empty state ───────────────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 44px 24px;
+  background: #fff;
+  border: 2px dashed #d1d5db;
+  border-radius: 14px;
+
+  .empty-icone {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(124, 198, 29, 0.12);
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    ion-icon {
+      font-size: 32px;
+      color: var(--ion-color-secondary, #7CC61D);
+    }
+  }
+
+  h3 {
+    margin: 0 0 6px;
+    font-size: 15.5px;
+    font-weight: 800;
+    color: var(--placar-text);
+  }
+
+  p {
+    margin: 0 0 12px;
+    color: var(--placar-text-muted);
+    font-size: 13.5px;
+    line-height: 1.4;
+  }
+}
+
+/* ─── FORM ──────────────────────────────────────────────── */
+/* IMPORTANTE: `[formGroup]` em Angular é property binding, NÃO atributo
+   HTML — então `form[formGroup]` jamais match no DOM. E `form.ng-untouched`
+   só vale até o user clicar em qualquer input (vira ng-touched). Resultado
+   antigo: ao tocar qualquer campo, o padding sumia. Pegamos o form direto
+   pelo escopo do ion-content do modal. */
+ion-content.bg > form {
+  padding: 16px;
+}
+
+.eq-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--placar-surface);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.eq-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(28, 46, 61, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--ion-color-primary);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  ion-icon {
+    font-size: 22px;
+  }
+}
+
+.eq-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.eq-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--placar-text);
+  text-transform: uppercase;
+}
+
+.eq-meta {
+  font-size: 12.5px;
+  color: var(--placar-text-muted);
+  margin-top: 2px;
+}
+
+.foto-block {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--placar-surface);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.foto-preview {
+  position: relative;
+  width: 100px;
+  height: 120px;
+  border-radius: 12px;
+  background: rgba(28, 46, 61, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--ion-color-primary);
+  cursor: pointer;
+  border: 2px dashed rgba(28, 46, 61, 0.18);
+  transition: border-color 120ms ease, background 120ms ease;
+  flex: 0 0 auto;
+  padding: 0;
+
+  &:hover:not(:disabled) {
+    border-color: var(--ion-color-secondary);
+    background: rgba(124, 198, 29, 0.1);
+  }
+
+  &:disabled {
+    cursor: wait;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  ion-icon {
+    font-size: 32px;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+  }
+}
+
+.foto-hint {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  gap: 2px;
+
+  strong {
+    color: var(--placar-text);
+    font-size: 14px;
+  }
+
+  >span {
+    color: var(--ion-color-medium);
+  }
+
+  .foto-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    margin-left: -8px;
+
+    ion-button {
+      margin: 0;
+      --padding-start: 8px;
+      --padding-end: 8px;
+    }
+  }
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px 16px;
+
+  .spacer {
+    flex: 1;
+  }
+
+
+}
+
+.button-primary {
+
+  --border-radius: 12px;
+  --padding-start: 18px;
+  --padding-end: 18px;
+  height: 56px;
+  align-self: flex-start;
+  font-weight: 600;
+  margin-top: 6px;
+  width: 100% !important;
+}
+
+.button-danger {
+
+  --border-radius: 12px;
+  --padding-start: 18px;
+  --padding-end: 18px;
+  height: 56px;
+  align-self: flex-start;
+  font-weight: 600;
+  margin-top: 6px;
+  width: 100% !important;
+}
+
+/* ============== Link rows (Estatísticas / Transferir / Suspensão) ============== */
+.link-rows {
+  background: #fff;
+  border-radius: 10px;
+  padding: 4px 14px;
+  margin: 8px 0 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 13px 0;
+  border-bottom: 1px solid #f0f0f2;
+  cursor: pointer;
+  text-align: left;
+  color: var(--placar-text, #2d2d2d);
+  font-family: inherit;
+  font-size: 14.5px;
+  transition: background 120ms ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.02);
+  }
+
+  ion-icon:not(.chev) {
+    font-size: 20px;
+    flex: 0 0 auto;
+  }
+
+  .link-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .susp-info {
+    display: block;
+    font-size: 12px;
+    color: var(--ion-color-medium, #6b6b70);
+    font-weight: 400;
+    margin-top: 1px;
+  }
+
+  .chev {
+    font-size: 16px;
+    color: var(--ion-color-medium, #b0b0b6);
+    flex: 0 0 auto;
+  }
+}
+
+.desde-info {
+  padding: 8px 14px 4px;
+  font-size: 12px;
+  color: var(--ion-color-medium, #6b6b70);
+  font-weight: 500;
+}
+
+/* ============== Sub-tela: Estatísticas / Suspensão ============== */
+.stats-wrap,
+.susp-wrap,
+.transf-wrap {
+  padding: 14px 14px 0;
+}
+
+.stats-header {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e9eaed;
+
+  .stats-jog {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--placar-text, #2d2d2d);
+
+    span {
+      font-weight: 400;
+      color: var(--ion-color-medium, #6b6b70);
+      margin-left: 4px;
+    }
+  }
+
+  .stats-eq {
+    font-size: 13px;
+    color: var(--ion-color-medium, #6b6b70);
+    margin-top: 2px;
+  }
+}
+
+.goleiro-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 4px;
+
+  ion-checkbox {
+    flex: 0 0 auto;
+    font-weight: 600;
+    --size: 20px;
+  }
+
+  ion-input {
+    flex: 1;
+  }
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--ion-color-medium, #6b6b70);
+  padding: 0 4px;
+  margin-top: -4px;
+}
+
+/* ============== Sub-tela: Transferir jogador ============== */
+.transf-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.transf-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid #eaeaef;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 120ms ease, background 120ms ease;
+  width: 100%;
+
+  &:hover:not(:disabled) {
+    border-color: var(--ion-color-primary);
+    background: rgba(28, 46, 61, 0.02);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &.atual {
+    border-color: var(--ion-color-secondary, #7CC61D);
+    background: rgba(124, 198, 29, 0.06);
+  }
+
+  &.indefinida {
+    border-style: dashed;
+    background: #fafafb;
+  }
+
+  .transf-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #f4f5f7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex: 0 0 auto;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    ion-icon {
+      font-size: 22px;
+      color: var(--ion-color-medium, #6b6b70);
+    }
+  }
+
+  .transf-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .transf-nome {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--placar-text, #2d2d2d);
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+  }
+
+  .transf-meta {
+    font-size: 12px;
+    color: var(--ion-color-medium, #6b6b70);
+    margin-top: 2px;
+  }
+
+  .badge-atual {
+    background: var(--ion-color-secondary, #7CC61D);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.transf-wrap .empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--ion-color-medium, #6b6b70);
+  font-size: 14px;
+}

@@ -1,0 +1,528 @@
+@import '../crud-shared.scss';
+
+/* ============ Grid de cards ricos (lista de patrocinadores) ============
+   Cards mostram banner do app como capa + logo flutuante + ações em
+   overlay. Substitui a `patro-row` compacta antiga. */
+.patros-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+
+  @media (max-width: 540px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.patro-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(28, 46, 61, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--ion-color-secondary, #7CC61D);
+    box-shadow: 0 6px 18px rgba(28, 46, 61, 0.12);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ion-color-primary, #1C2E3D);
+    outline-offset: 2px;
+  }
+}
+
+/* ─── Banner (capa do card, 16:9-ish 805/453 = ~1.78) ─── */
+.patro-banner {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 805 / 453;
+  background-size: cover;
+  background-position: center;
+  background-color: #f3f4f6;
+
+  /* Quando NÃO tem banner do app, fallback é gradient navy→lime com
+     ícone megafone centralizado (placeholder bonito). */
+  &.sem-banner {
+    background: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 55%, #4a7e0e 110%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &::before {
+      content: '🎤';
+      font-size: 56px;
+      opacity: 0.4;
+    }
+  }
+
+  /* Gradient sutil no rodapé pra logo ficar legível mesmo em banners claros. */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 60%;
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.55) 100%);
+    pointer-events: none;
+  }
+}
+
+.patro-tipo-pill {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  background: rgba(28, 46, 61, 0.65);
+  color: #fff;
+
+  &[data-tipo='apoiador']    { background: rgba(34, 197, 94, 0.85); }
+  &[data-tipo='organizador'] { background: rgba(245, 197, 24, 0.92); color: #1C2E3D; }
+}
+
+.patro-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: flex;
+  gap: 4px;
+}
+
+.patro-act {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--ion-color-medium, #6b7280);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: background 150ms ease, color 150ms ease, transform 150ms ease;
+
+  ion-icon { font-size: 17px; }
+
+  &:hover { background: #fff; transform: scale(1.06); }
+  &:active { transform: scale(0.94); }
+
+  &.vinculo {
+    color: var(--ion-color-medium, #6b7280);
+    &.ativo {
+      background: var(--ion-color-success, #7CC61D);
+      color: #fff;
+      &:hover { background: var(--ion-color-success-shade, #6dae1a); }
+    }
+  }
+
+  &.danger {
+    &:hover {
+      background: rgba(235, 68, 90, 0.95);
+      color: #fff;
+    }
+  }
+}
+
+.patro-logo {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  z-index: 2;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: #fff;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 26px; color: var(--ion-color-medium, #9ca3af); }
+}
+
+/* ─── Body (nome + contatos + banner jogos) ─── */
+.patro-body {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.patro-nome {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ion-color-primary, #1C2E3D);
+  letter-spacing: -0.1px;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.patro-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--ion-color-medium, #6b7280);
+
+  > a, > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    ion-icon { font-size: 13px; }
+  }
+
+  .patro-link {
+    color: var(--ion-color-tertiary, #4DABF7);
+    text-decoration: none;
+    font-weight: 600;
+    &:hover { text-decoration: underline; }
+  }
+
+  .patro-tem-banner-site {
+    color: var(--ion-color-secondary-shade, #5a9912);
+    font-weight: 600;
+  }
+}
+
+.patro-banner-site {
+  margin-top: 4px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+    aspect-ratio: 970 / 90;
+    object-fit: contain;
+  }
+}
+
+/* ============ Banner de contexto (aberto via campeonato) ============
+   Aparece no topo quando o usuário entrou na página vindo do menu de
+   um campeonato específico — explica o filtro e ensina o toggle. */
+.ctx-banner {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, rgba(28, 46, 61, 0.04), rgba(124, 198, 29, 0.06));
+  border: 1px solid rgba(28, 46, 61, 0.08);
+  border-left: 4px solid var(--ion-color-secondary, #7CC61D);
+  border-radius: 10px;
+
+  > ion-icon {
+    font-size: 24px;
+    color: var(--ion-color-primary, #1C2E3D);
+  }
+
+  .ctx-banner-txt {
+    min-width: 0;
+    strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--ion-color-primary, #1C2E3D);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    span {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--placar-text, #2d2d2d);
+    }
+  }
+
+  .ctx-hint {
+    grid-column: 1 / -1;
+    font-size: 12px;
+    color: var(--ion-color-medium, #6b7280);
+    line-height: 1.4;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(28, 46, 61, 0.08);
+
+    ion-icon {
+      font-size: 14px;
+      vertical-align: -2px;
+      color: var(--ion-color-success, #7CC61D);
+    }
+
+    strong { color: var(--ion-color-success-shade, #5a9912); }
+  }
+
+  @media (max-width: 540px) {
+    grid-template-columns: 28px 1fr;
+    > ion-icon { font-size: 20px; }
+  }
+}
+
+/* ============ Form de cadastro/edição ============ */
+.form-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.logo-titulo-row {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+
+  @media (max-width: 520px) {
+    flex-direction: column;
+  }
+}
+
+/* Botão-quadrado de upload (logo, banners) */
+.logo-box,
+.banner-box {
+  position: relative;
+  background: rgba(28, 46, 61, 0.06);
+  border: 2px dashed rgba(28, 46, 61, 0.18);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--ion-color-medium);
+  text-align: center;
+  overflow: hidden;
+  padding: 0;
+  transition: border-color 120ms ease, background 120ms ease;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 32px; }
+  span { font-size: 12px; }
+  .size { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+
+  &.clickable {
+    cursor: pointer;
+    &:hover:not(:disabled) {
+      border-color: var(--ion-color-secondary);
+      background: rgba(124, 198, 29, 0.06);
+    }
+    &:hover:not(:disabled) .hover-overlay { opacity: 1; }
+  }
+
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.logo-box {
+  width: 130px;
+  height: 130px;
+  flex: 0 0 auto;
+
+  @media (max-width: 520px) {
+    width: 100%;
+    height: 140px;
+  }
+}
+
+.banner-app          { aspect-ratio: 805 / 453; }
+/* Mobile usa 380×126 (~3:1) — faixa wide otimizada pra cards verticais
+   no celular. Bem mais compacto verticalmente que o landscape padrão. */
+.banner-app-mobile   { aspect-ratio: 380 / 126; min-height: 80px; }
+.banner-site         { aspect-ratio: 970 / 130; min-height: 80px; }
+.banner-site-mobile  { aspect-ratio: 640 / 200; min-height: 120px; }
+
+/* Toggle Web/Mobile na seção "Banner dos jogos" — segment-style. */
+.block-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+
+  .block-title { margin: 0; }
+}
+
+.modo-toggle {
+  display: inline-flex;
+  background: rgba(28, 46, 61, 0.06);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ion-color-medium-shade, #6b7280);
+    background: transparent;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease;
+
+    ion-icon { font-size: 14px; }
+
+    &:hover { color: var(--ion-color-primary, #1C2E3D); }
+
+    &.ativo {
+      background: #fff;
+      color: var(--ion-color-primary, #1C2E3D);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+  }
+}
+
+.modo-hint {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  color: var(--ion-color-medium, #6b7280);
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.4;
+  padding: 8px 10px;
+  background: rgba(245, 197, 24, 0.08);
+  border-radius: 8px;
+  border-left: 3px solid #f5c518;
+
+  ion-icon {
+    font-size: 14px;
+    color: #b89e1d;
+    flex: 0 0 auto;
+    margin-top: 1px;
+  }
+}
+
+/* Overlay no hover (mostra ícone de câmera) */
+.hover-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(28, 46, 61, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 150ms ease;
+  pointer-events: none;
+  border-radius: inherit;
+
+  ion-icon { color: #fff; font-size: 28px; }
+}
+
+/* Botão circular de remover imagem no canto superior direito */
+.remove-img {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 120ms ease;
+  z-index: 2;
+
+  ion-icon { font-size: 14px; color: #fff; }
+
+  &:hover { background: var(--ion-color-danger, #eb445a); }
+}
+
+.titulo-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  min-width: 0;
+}
+
+.banner-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.block-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ion-color-medium-shade);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* ============ Slider de tempo ============ */
+.tempo-block {
+  background: rgba(124, 198, 29, 0.06);
+  border-radius: 10px;
+  padding: 8px 14px;
+
+  .tempo-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ion-color-primary);
+  }
+  .tempo-valor {
+    color: var(--ion-color-secondary-shade);
+    font-weight: 700;
+  }
+}
+
+/* ============ Rodapé / botões ============ */
+.footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+
+  ion-button {
+    --border-radius: 10px;
+    --padding-start: 24px;
+    --padding-end: 24px;
+    font-weight: 600;
+  }
+}
+
+/* ============ Linhas da lista ============ */
+.patro-row .ic {
+  background: rgba(124, 198, 29, 0.15);
+  color: var(--ion-color-secondary-shade);
+
+  img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+}
+
+.patro-row .meta a {
+  color: var(--ion-color-tertiary);
+  text-decoration: none;
+  font-weight: 600;
+
+  &:hover { text-decoration: underline; }
+}
+
+/* Estado vazio usa `.empty-cta` compartilhado em crud-shared.scss
+   (botão grande com ícone + texto horizontal, navy). Sem override aqui. */

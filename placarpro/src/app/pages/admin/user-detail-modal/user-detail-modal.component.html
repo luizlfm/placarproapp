@@ -1,0 +1,374 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Detalhes do usuário</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ud-content">
+  <!-- ============ Cabeçalho com avatar + status chips ============ -->
+  <section class="ud-head">
+    <div class="ud-avatar">
+      <img *ngIf="usuario.logoUrl || usuario.fotoUrl; else iniciais"
+        [src]="usuario.logoUrl || usuario.fotoUrl"
+        [alt]="usuario.nome"
+        referrerpolicy="no-referrer" />
+      <ng-template #iniciais>
+        <span>{{ ((usuario.nome || '?').charAt(0)) | uppercase }}</span>
+      </ng-template>
+    </div>
+    <div class="ud-head-info">
+      <h2>{{ usuario.nome || '(sem nome)' }}</h2>
+      <div class="ud-uid">
+        UID:
+        <code (click)="copiarUid()" title="Clique para copiar">{{ usuario.uid }}</code>
+      </div>
+      <div class="ud-chips">
+        <span class="ud-chip" *ngIf="usuario.tipo" [attr.data-tipo]="usuario.tipo">
+          <ion-icon [name]="iconTipo(usuario.tipo)"></ion-icon>
+          {{ usuario.tipo }}
+        </span>
+        <span class="ud-chip warn" *ngIf="usuario.isMaster">
+          <ion-icon name="shield-checkmark"></ion-icon>
+          Admin Master
+        </span>
+        <span class="ud-chip" *ngIf="usuario.plano">
+          <ion-icon name="card-outline"></ion-icon>
+          {{ usuario.plano }}
+        </span>
+        <!-- Status de bloqueio/ban — visíveis SÓ quando ativos pra dar
+             feedback claro do estado atual da conta. -->
+        <span class="ud-chip warn" *ngIf="usuario.bloqueado">
+          <ion-icon name="lock-closed"></ion-icon>
+          Bloqueado
+        </span>
+        <span class="ud-chip danger" *ngIf="usuario.banido">
+          <ion-icon name="ban"></ion-icon>
+          Banido
+        </span>
+        <!-- Moderador pendente de validação — destaque pro admin agir. -->
+        <span
+          class="ud-chip warn"
+          *ngIf="usuario.tipo === 'moderador' && !usuario.moderadorValidado"
+        >
+          <ion-icon name="time-outline"></ion-icon>
+          Aguardando validação
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Alerta visual quando banido (com motivo) ============ -->
+  <div class="ud-banner ud-banner-danger" *ngIf="usuario.banido">
+    <ion-icon name="warning-outline"></ion-icon>
+    <div>
+      <strong>Conta banida</strong>
+      <p *ngIf="usuario.banidoMotivo">{{ usuario.banidoMotivo }}</p>
+    </div>
+  </div>
+  <div class="ud-banner ud-banner-warn" *ngIf="usuario.bloqueado && !usuario.banido">
+    <ion-icon name="lock-closed-outline"></ion-icon>
+    <div>
+      <strong>Conta bloqueada</strong>
+      <p>O usuário não consegue acessar a área autenticada.</p>
+    </div>
+  </div>
+
+  <!-- ============ EDITAR DADOS (form inline) ============ -->
+  <section class="ud-secao">
+    <h3>Editar dados</h3>
+    <form [formGroup]="form" class="ud-form">
+      <div class="ud-field-wrap" [class.has-error]="invalido('nome')">
+        <label class="ud-lbl">Nome <span class="req">*</span></label>
+        <input type="text" formControlName="nome" placeholder="Nome completo" class="ud-input" />
+        <div class="ud-err" *ngIf="invalido('nome')">{{ erroDe('nome') }}</div>
+      </div>
+
+      <div class="ud-grid-2">
+        <div class="ud-field-wrap" [class.has-error]="invalido('email')">
+          <label class="ud-lbl">Email</label>
+          <input type="email" mask="email" formControlName="email" placeholder="email@exemplo.com" class="ud-input" />
+          <div class="ud-err" *ngIf="invalido('email')">{{ erroDe('email') }}</div>
+        </div>
+        <div class="ud-field-wrap" [class.has-error]="invalido('telefone')">
+          <label class="ud-lbl">Telefone</label>
+          <input type="tel" mask="telefone" formControlName="telefone" placeholder="(11) 99999-9999" class="ud-input" />
+          <div class="ud-err" *ngIf="invalido('telefone')">{{ erroDe('telefone') }}</div>
+        </div>
+      </div>
+
+      <div class="ud-grid-2">
+        <div class="ud-field-wrap" [class.has-error]="invalido('cidade')">
+          <label class="ud-lbl">Cidade</label>
+          <input type="text" formControlName="cidade" placeholder="Cidade / UF" class="ud-input" />
+          <div class="ud-err" *ngIf="invalido('cidade')">{{ erroDe('cidade') }}</div>
+        </div>
+        <div class="ud-field-wrap">
+          <label class="ud-lbl">Tipo de conta</label>
+          <select formControlName="tipo" class="ud-input">
+            <option *ngFor="let t of tiposConta" [value]="t.value">{{ t.label }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="ud-field-wrap" [class.has-error]="invalido('sobre')">
+        <label class="ud-lbl">Sobre</label>
+        <textarea
+          formControlName="sobre"
+          rows="3"
+          placeholder="Bio/observações sobre o usuário..."
+          class="ud-input ud-textarea"
+        ></textarea>
+        <div class="ud-err" *ngIf="invalido('sobre')">{{ erroDe('sobre') }}</div>
+      </div>
+
+      <button
+        type="button"
+        class="ud-btn-primary"
+        [disabled]="salvandoDados"
+        (click)="salvarDados()"
+      >
+        <ion-icon name="save-outline"></ion-icon>
+        {{ salvandoDados ? 'Salvando...' : 'Salvar dados' }}
+      </button>
+    </form>
+  </section>
+
+  <!-- ============ GERENCIAR (plano + admin master) ============ -->
+  <section class="ud-secao ud-manage">
+    <h3>Gerenciar conta</h3>
+
+    <div class="ud-manage-row">
+      <label class="ud-manage-lbl">
+        <strong>Plano</strong>
+        <span>Mudança vale imediatamente. Não cobra automaticamente.</span>
+      </label>
+      <div class="ud-manage-acoes">
+        <select
+          class="ud-select"
+          [(ngModel)]="planoSelecionado"
+          [disabled]="salvandoPlano"
+        >
+          <option *ngFor="let p of planos" [value]="p.id">
+            {{ p.label }}
+            <ng-container *ngIf="p.preco === 0">— Grátis</ng-container>
+            <ng-container *ngIf="p.preco > 0">— R$ {{ p.preco }}/mês</ng-container>
+            <ng-container *ngIf="p.preco === -1">— Sob consulta</ng-container>
+          </option>
+        </select>
+        <button
+          type="button"
+          class="ud-btn-primary"
+          [disabled]="salvandoPlano || planoSelecionado === (usuario.plano ?? 'gratis')"
+          (click)="salvarPlano()"
+        >
+          <ion-icon name="save-outline"></ion-icon>
+          {{ salvandoPlano ? 'Salvando...' : 'Salvar plano' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Transmissões avulsas ── -->
+    <div class="ud-manage-row">
+      <label class="ud-manage-lbl">
+        <strong>Transmissões avulsas</strong>
+        <span>Créditos adicionados após pagamento de R$ 30 cada. Saldo atual: <strong>{{ usuario.transmissoesExtras ?? 0 }}</strong></span>
+      </label>
+      <div class="ud-manage-acoes">
+        <div class="ud-tx-stepper">
+          <button
+            type="button"
+            class="ud-btn-step"
+            (click)="ajustarTransmissoesExtras(-1)"
+            [disabled]="salvandoTx || (usuario.transmissoesExtras ?? 0) <= 0"
+            aria-label="Remover 1 crédito"
+          >−</button>
+          <span class="ud-tx-val">{{ deltaTransmissoes }}</span>
+          <button
+            type="button"
+            class="ud-btn-step"
+            (click)="ajustarTransmissoesExtras(1)"
+            [disabled]="salvandoTx"
+            aria-label="Adicionar 1 crédito"
+          >+</button>
+        </div>
+        <button
+          type="button"
+          class="ud-btn-primary"
+          [disabled]="salvandoTx || deltaTransmissoes === 0"
+          (click)="salvarTransmissoesExtras()"
+        >
+          <ion-icon name="save-outline"></ion-icon>
+          {{ salvandoTx ? 'Salvando...' : (deltaTransmissoes > 0 ? 'Adicionar' : 'Remover') }}
+        </button>
+      </div>
+    </div>
+
+    <div class="ud-manage-row">
+      <label class="ud-manage-lbl">
+        <strong>Admin Master</strong>
+        <span>Quando ativo, este usuário vê o painel /app/admin com todos os dados do sistema.</span>
+      </label>
+      <div class="ud-manage-acoes">
+        <button
+          type="button"
+          class="ud-btn-toggle"
+          [class.on]="usuario.isMaster"
+          [disabled]="salvandoAdmin"
+          (click)="toggleAdminMaster()"
+        >
+          <ion-icon [name]="usuario.isMaster ? 'shield-checkmark' : 'shield-outline'"></ion-icon>
+          {{ usuario.isMaster ? 'Admin ativo' : 'Tornar Admin' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Validação de MODERADOR — só aparece quando o tipo da conta é
+         moderador. Quem se cadastra sem código fica pendente até o admin
+         clicar em "Validar". O toggle também permite revogar. -->
+    <div class="ud-manage-row" *ngIf="usuario.tipo === 'moderador'">
+      <label class="ud-manage-lbl">
+        <strong>Validação de moderador</strong>
+        <span>
+          Moderadores cadastrados sem código de convite ficam pendentes
+          até serem validados por um admin master.
+        </span>
+      </label>
+      <div class="ud-manage-acoes">
+        <button
+          type="button"
+          class="ud-btn-toggle"
+          [class.on]="usuario.moderadorValidado"
+          [disabled]="alternandoValidacaoMod"
+          (click)="toggleModeradorValidado()"
+        >
+          <ion-icon [name]="usuario.moderadorValidado ? 'checkmark-circle' : 'time-outline'"></ion-icon>
+          {{ alternandoValidacaoMod
+              ? 'Aplicando...'
+              : (usuario.moderadorValidado ? 'Validado' : 'Validar') }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MODERAÇÃO (bloquear + banir) ============ -->
+  <section class="ud-secao ud-secao-danger">
+    <h3>Moderação</h3>
+
+    <div class="ud-manage-row">
+      <label class="ud-manage-lbl">
+        <strong>{{ usuario.bloqueado ? 'Desbloquear conta' : 'Bloquear conta' }}</strong>
+        <span>
+          Bloqueio "soft" — impede login mas preserva todos os dados.
+          Reversível a qualquer momento.
+        </span>
+      </label>
+      <div class="ud-manage-acoes">
+        <button
+          type="button"
+          class="ud-btn-warn"
+          [class.on]="usuario.bloqueado"
+          [disabled]="alternandoBloqueio"
+          (click)="toggleBloqueio()"
+        >
+          <ion-icon [name]="usuario.bloqueado ? 'lock-open-outline' : 'lock-closed-outline'"></ion-icon>
+          {{ alternandoBloqueio ? 'Aplicando...' : (usuario.bloqueado ? 'Desbloquear' : 'Bloquear') }}
+        </button>
+      </div>
+    </div>
+
+    <div class="ud-manage-row">
+      <label class="ud-manage-lbl">
+        <strong>{{ usuario.banido ? 'Remover banimento' : 'Banir conta' }}</strong>
+        <span>
+          Punição com motivo registrado. Mais severo que bloquear.
+          O motivo fica no histórico mesmo após desbanir.
+        </span>
+      </label>
+      <div class="ud-manage-acoes">
+        <button
+          *ngIf="!usuario.banido"
+          type="button"
+          class="ud-btn-danger"
+          [disabled]="alternandoBan"
+          (click)="banir()"
+        >
+          <ion-icon name="ban-outline"></ion-icon>
+          {{ alternandoBan ? 'Aplicando...' : 'Banir' }}
+        </button>
+        <button
+          *ngIf="usuario.banido"
+          type="button"
+          class="ud-btn-warn on"
+          [disabled]="alternandoBan"
+          (click)="desbanir()"
+        >
+          <ion-icon name="checkmark-outline"></ion-icon>
+          {{ alternandoBan ? 'Aplicando...' : 'Remover ban' }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Campeonatos do organizador ============ -->
+  <section class="ud-secao" *ngIf="campeonatosDoUsuario$ | async as camps">
+    <h3>
+      Campeonatos organizados
+      <span class="ud-badge">{{ camps.length }}</span>
+    </h3>
+    <div class="ud-vazio" *ngIf="camps.length === 0">
+      <ion-icon name="trophy-outline"></ion-icon>
+      <p>Nenhum campeonato sob organização deste usuário.</p>
+    </div>
+    <div class="ud-lista" *ngIf="camps.length > 0">
+      <button
+        type="button"
+        class="ud-camp"
+        *ngFor="let c of camps"
+        (click)="abrirCampeonato(c)"
+      >
+        <div class="ud-camp-logo">
+          <img *ngIf="c.logoUrl; else iC" [src]="c.logoUrl" [alt]="c.titulo" />
+          <ng-template #iC><ion-icon name="trophy-outline"></ion-icon></ng-template>
+        </div>
+        <div class="ud-camp-body">
+          <div class="ud-camp-titulo">{{ c.titulo }}</div>
+          <div class="ud-camp-meta">
+            <span [class.privado]="c.publico === false">
+              <ion-icon [name]="c.publico === false ? 'lock-closed' : 'eye-outline'"></ion-icon>
+              {{ c.publico === false ? 'Privado' : 'Público' }}
+            </span>
+            <span><ion-icon name="heart-outline"></ion-icon> {{ c.seguidores ?? 0 }}</span>
+          </div>
+        </div>
+        <ion-icon class="ud-arrow" name="chevron-forward-outline"></ion-icon>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ Convites/fichas vinculados ============ -->
+  <section class="ud-secao" *ngIf="meusConvites$ | async as convs">
+    <h3>
+      Fichas de inscrição vinculadas
+      <span class="ud-badge">{{ convs.length }}</span>
+    </h3>
+    <div class="ud-vazio" *ngIf="convs.length === 0">
+      <ion-icon name="clipboard-outline"></ion-icon>
+      <p>Nenhuma ficha vinculada a esta conta.</p>
+    </div>
+    <div class="ud-lista" *ngIf="convs.length > 0">
+      <div class="ud-conv" *ngFor="let cv of convs">
+        <ion-icon name="people-circle-outline"></ion-icon>
+        <div class="ud-conv-body">
+          <div class="ud-conv-titulo">{{ cv.nomeEquipe || 'Equipe sem nome' }}</div>
+          <div class="ud-conv-sub">{{ cv.tituloCampeonato || '—' }}</div>
+        </div>
+        <code class="ud-conv-tok">{{ cv.token }}</code>
+      </div>
+    </div>
+  </section>
+</ion-content>

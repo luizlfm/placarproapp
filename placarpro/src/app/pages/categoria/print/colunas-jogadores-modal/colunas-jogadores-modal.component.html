@@ -1,0 +1,48 @@
+<ion-header class="cjm-header">
+  <ion-toolbar>
+    <ion-title>Colunas dos jogadores</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="cjm-content">
+  <!-- Toolbar de atalhos: marcar/desmarcar tudo + padrão -->
+  <div class="cjm-toolbar">
+    <button type="button" class="cjm-link" (click)="marcarTodas()">Marcar todas</button>
+    <span class="cjm-sep">·</span>
+    <button type="button" class="cjm-link" (click)="desmarcarTodas()">Limpar</button>
+    <span class="cjm-sep">·</span>
+    <button type="button" class="cjm-link" (click)="restaurarPadrao()">Padrão</button>
+    <span class="cjm-count">{{ qtdMarcadas() }} de {{ colunas.length }}</span>
+  </div>
+
+  <p class="cjm-hint">
+    Marque as colunas que deseja incluir no impresso. <strong>Nome</strong> é obrigatório.
+  </p>
+
+  <ul class="cjm-list">
+    <li
+      *ngFor="let c of colunas; trackBy: trackById"
+      class="cjm-item"
+      [class.locked]="c.id === 'nome'"
+      (click)="c.id === 'nome' ? null : toggle(c)"
+    >
+      <span class="cjm-label">{{ c.label }}</span>
+      <span class="cjm-check" [class.on]="c.selecionado">
+        <ion-icon *ngIf="c.selecionado" name="checkmark-outline"></ion-icon>
+      </span>
+    </li>
+  </ul>
+</ion-content>
+
+<ion-footer class="cjm-footer">
+  <ion-toolbar>
+    <ion-buttons slot="end">
+      <ion-button color="primary" (click)="salvar()">Salvar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-footer>

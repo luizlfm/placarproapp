@@ -1,0 +1,53 @@
+:host {
+  display: block;
+}
+
+.acoes {
+  background: var(--ion-color-primary);
+  color: #fff;
+  min-width: 240px;
+  padding: 6px 0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.row {
+  background: none;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  font-size: 15px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+
+  ion-icon {
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  &.danger {
+    color: var(--ion-color-danger);
+    background: #fff;
+
+    ion-icon { color: var(--ion-color-danger); }
+
+    &:hover {
+      background: rgba(235, 71, 71, 0.08);
+    }
+  }
+}
+
+.sep {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 4px 0;
+}

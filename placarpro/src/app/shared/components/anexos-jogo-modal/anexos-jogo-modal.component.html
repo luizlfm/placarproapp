@@ -1,0 +1,64 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Anexos</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="adicionar()" aria-label="Adicionar anexo">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <p class="hint">
+    Adicione links externos relacionados a este jogo (foto da súmula, ata em PDF, regulamento, vídeo...).
+  </p>
+
+  <div class="empty" *ngIf="anexos.length === 0">
+    <ion-icon name="attach-outline"></ion-icon>
+    <h3>Sem anexos</h3>
+    <p>Toque em <strong>+</strong> no topo para adicionar.</p>
+  </div>
+
+  <div class="lista">
+    <div class="anx-card" *ngFor="let a of anexos; let i = index; trackBy: trackById">
+      <button type="button" class="anx-link" (click)="abrirLink(a)" [title]="a.url">
+        <div class="anx-ic">
+          <ion-icon [name]="iconeTipo(a.tipo)"></ion-icon>
+        </div>
+        <div class="anx-info">
+          <div class="anx-titulo">{{ a.titulo }}</div>
+          <div class="anx-url">{{ a.url }}</div>
+        </div>
+      </button>
+      <div class="anx-acoes">
+        <button type="button" class="ic-btn" (click)="editar(i)" aria-label="Editar">
+          <ion-icon name="create-outline"></ion-icon>
+        </button>
+        <button type="button" class="ic-btn danger" (click)="remover(i)" aria-label="Remover">
+          <ion-icon name="trash-outline"></ion-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <div class="footer-actions">
+      <ion-button fill="clear" color="medium" (click)="dismiss()" [disabled]="salvando">
+        Cancelar
+      </ion-button>
+      <div class="spacer"></div>
+      <ion-button color="primary" (click)="salvar()" [disabled]="salvando">
+        <ion-spinner *ngIf="salvando" name="dots" slot="start"></ion-spinner>
+        Salvar
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

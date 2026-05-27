@@ -1,0 +1,146 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <!-- Botão "Voltar" — principal valor em mobile, onde a sidebar
+         contextual é off-canvas. Volta pra Início da categoria. -->
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/app/campeonato/{{ campeonatoId }}/categoria/{{ categoriaId }}/inicio"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Fotos, Vídeos e notícias</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="midia-content">
+  <ng-container *ngIf="midias$ | async as items; else loadingTpl">
+
+    <div class="midia-empty" *ngIf="items.length === 0" (click)="abrirMenu()">
+      <button class="empty-cta" type="button">
+        <ion-icon name="add"></ion-icon>
+      </button>
+      <p class="empty-label">Ainda não há mídias</p>
+      <span class="empty-hint">Toque para adicionar fotos, vídeos, links ou notícias</span>
+    </div>
+
+    <ng-container *ngIf="items.length > 0">
+      <header class="midia-header">
+        <p class="midia-subtitle" *ngIf="contadores$ | async as c">
+          {{ c.todas }} {{ c.todas === 1 ? 'mídia cadastrada' : 'mídias cadastradas' }} nesta categoria
+        </p>
+      </header>
+
+      <nav class="midia-filtros" aria-label="Filtrar mídias">
+        <ng-container *ngIf="contadores$ | async as c">
+          <button
+            *ngFor="let f of filtros; trackBy: trackByFiltro"
+            type="button"
+            class="filtro-chip"
+            [class.active]="(filtroMidia$ | async) === f.id"
+            [class.empty]="c[f.id] === 0"
+            [disabled]="c[f.id] === 0"
+            (click)="selecionarFiltro(f.id)"
+          >
+            <ion-icon [name]="f.icon"></ion-icon>
+            <span>{{ f.label }}</span>
+            <span class="chip-count">{{ c[f.id] }}</span>
+          </button>
+        </ng-container>
+      </nav>
+
+      <ng-container *ngIf="midiasFiltradas$ | async as mds">
+        <div class="midia-grid" *ngIf="mds.length > 0; else semFiltrado">
+          <article
+            *ngFor="let m of mds; trackBy: trackById"
+            class="midia-card"
+            [class.no-thumb]="!thumb(m)"
+            [attr.data-tipo]="m.tipo"
+            (click)="abrir(m)"
+            tabindex="0"
+          >
+            <div class="card-thumb">
+              <img *ngIf="thumb(m) as src" [src]="src" [alt]="m.titulo || labelTipo(m.tipo)" loading="lazy" />
+              <div class="card-thumb-fallback" *ngIf="!thumb(m)">
+                <ion-icon [name]="iconePorTipo(m.tipo)"></ion-icon>
+              </div>
+
+              <span class="card-overlay">
+                <ion-icon
+                  [name]="m.tipo === 'video' || m.tipo === 'youtube' ? 'play-circle' :
+                          m.tipo === 'link' ? 'open-outline' :
+                          m.tipo === 'noticia' ? 'reader-outline' :
+                          'expand-outline'"
+                ></ion-icon>
+              </span>
+
+              <span class="card-badge">
+                <ion-icon [name]="iconePorTipo(m.tipo)"></ion-icon>
+                {{ labelTipo(m.tipo) }}
+              </span>
+
+              <div class="card-actions">
+                <button
+                  class="card-action card-edit"
+                  type="button"
+                  (click)="editar($event, m)"
+                  aria-label="Editar"
+                  title="Editar"
+                >
+                  <ion-icon name="create-outline"></ion-icon>
+                </button>
+                <button
+                  *ngIf="baixavel(m)"
+                  class="card-action card-download"
+                  type="button"
+                  (click)="baixarMidia($event, m)"
+                  aria-label="Baixar"
+                  title="Baixar"
+                >
+                  <ion-icon name="cloud-download-outline"></ion-icon>
+                </button>
+                <button
+                  class="card-action card-remove"
+                  type="button"
+                  (click)="confirmarRemover($event, m)"
+                  aria-label="Remover"
+                  title="Remover"
+                >
+                  <ion-icon name="trash-outline"></ion-icon>
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <h3 class="card-title">{{ m.titulo || labelTipo(m.tipo) }}</h3>
+              <p class="card-desc" *ngIf="m.descricao">{{ m.descricao }}</p>
+            </div>
+          </article>
+        </div>
+
+        <ng-template #semFiltrado>
+          <div class="filtro-vazio">
+            <ion-icon name="funnel-outline"></ion-icon>
+            <h3>Nenhuma mídia desse tipo</h3>
+            <p>Mude o filtro acima ou adicione uma nova mídia pelo botão "+".</p>
+          </div>
+        </ng-template>
+      </ng-container>
+    </ng-container>
+  </ng-container>
+
+  <ng-template #loadingTpl>
+    <div class="midia-loading">
+      <ion-spinner name="dots"></ion-spinner>
+    </div>
+  </ng-template>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="abrirMenu()" color="secondary">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+  <input
+    #filePicker
+    type="file"
+    multiple
+    style="display:none"
+    (change)="onFilesEscolhidos($event)"
+  />
+</ion-content>

@@ -1,0 +1,473 @@
+<!-- Header DESKTOP — no mobile dá lugar ao `<app-campeonato-mobile-header>`
+     (brand + segments). O atalho "Salvar" do header desktop continua aqui
+     pra desktop; em mobile o user usa o botão Salvar do rodapé do form. -->
+<ion-header class="cmh-desktop-only">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/app/campeonato/{{ campeonatoId }}/inicio"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Configurações</ion-title>
+    <ion-buttons slot="end">
+      <ion-button
+        type="button"
+        (click)="salvar()"
+        [disabled]="salvando"
+        aria-label="Salvar alterações"
+      >
+        <ion-icon slot="start" name="save-outline"></ion-icon>
+        <span class="hdr-salvar-txt">Salvar</span>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+    <div class="wrap">
+
+      <!-- ============ DADOS BÁSICOS ============ -->
+      <section class="card">
+        <h3>Dados básicos</h3>
+
+        <div class="logo-row">
+          <div class="logo-col">
+            <!-- Toggle Web / Mobile do logo. O `logoMobileUrl` é opcional —
+                 quando vazio, o front cai no `logoUrl` em qualquer viewport. -->
+            <div class="modo-toggle" role="tablist" aria-label="Modo de exibição do logo">
+              <button
+                type="button"
+                class="modo-btn"
+                [class.ativo]="modoLogo === 'web'"
+                (click)="modoLogo = 'web'"
+              >
+                <ion-icon name="desktop-outline"></ion-icon>
+                <span>Web</span>
+              </button>
+              <button
+                type="button"
+                class="modo-btn"
+                [class.ativo]="modoLogo === 'mobile'"
+                (click)="modoLogo = 'mobile'"
+              >
+                <ion-icon name="phone-portrait-outline"></ion-icon>
+                <span>Mobile</span>
+              </button>
+            </div>
+
+            <!-- Variante WEB (240×240) -->
+            <div
+              *ngIf="modoLogo === 'web'"
+              class="logo-box clickable"
+              (click)="selecionarImagem('logoUrl', 1, 'Ajustar logo (web)')"
+            >
+              <img *ngIf="form.value.logoUrl; else logoIc" [src]="form.value.logoUrl" alt="Logo web" />
+              <ng-template #logoIc>
+                <ion-icon name="add-outline"></ion-icon>
+                <span class="size">240×240</span>
+              </ng-template>
+            </div>
+
+            <!-- Variante MOBILE (240×240 — quadrado, mesmo aspecto web) -->
+            <div
+              *ngIf="modoLogo === 'mobile'"
+              class="logo-box logo-box-mobile clickable"
+              (click)="selecionarImagem('logoMobileUrl', 1, 'Ajustar logo (mobile)')"
+            >
+              <img *ngIf="form.value.logoMobileUrl; else logoMobIc" [src]="form.value.logoMobileUrl" alt="Logo mobile" />
+              <ng-template #logoMobIc>
+                <ion-icon name="add-outline"></ion-icon>
+                <span class="size">240×240</span>
+                <span class="hint">(opcional)</span>
+              </ng-template>
+            </div>
+          </div>
+
+          <div class="logo-fields">
+            <ion-input
+              fill="outline"
+              label="Título"
+              labelPlacement="stacked"
+              formControlName="titulo"
+              placeholder="Ex: Copa Interclubes 2026"
+              required
+            ></ion-input>
+            <ion-input
+              fill="outline"
+              label="Subtítulo"
+              labelPlacement="stacked"
+              formControlName="subtitulo"
+              placeholder="Ex: Futebol Society — Categoria Adulto"
+            ></ion-input>
+          </div>
+        </div>
+
+        <!-- Capa (banner hero do topo da página pública) -->
+        <div class="modo-toggle" role="tablist" aria-label="Modo de exibição da capa">
+          <button
+            type="button"
+            class="modo-btn"
+            [class.ativo]="modoCapa === 'web'"
+            (click)="modoCapa = 'web'"
+          >
+            <ion-icon name="desktop-outline"></ion-icon>
+            <span>Web</span>
+          </button>
+          <button
+            type="button"
+            class="modo-btn"
+            [class.ativo]="modoCapa === 'mobile'"
+            (click)="modoCapa = 'mobile'"
+          >
+            <ion-icon name="phone-portrait-outline"></ion-icon>
+            <span>Mobile</span>
+          </button>
+        </div>
+
+        <!-- Variante WEB da capa (1600×400 — 4:1). A proporção bate
+             exatamente com o `.banner` exibido em telas largas (depois que
+             o max-height antigo de 260px deixava o banner achatado em 4:1
+             efetivo). Agora crop e exibição são consistentes. -->
+        <div
+          *ngIf="modoCapa === 'web'"
+          class="capa-box clickable"
+          (click)="selecionarImagem('capaUrl', 1600/400, 'Ajustar imagem de capa (web)')"
+        >
+          <img *ngIf="form.value.capaUrl; else capaIc" [src]="form.value.capaUrl" alt="Capa web" />
+          <ng-template #capaIc>
+            <ion-icon name="add-outline"></ion-icon>
+            <span>Imagem de capa</span>
+            <span class="size">1600×400</span>
+          </ng-template>
+        </div>
+
+        <!-- Variante MOBILE da capa (1600×533 — 3:1). Mesma proporção
+             clássica de banner; em mobile o container será exibido em
+             100% da largura disponível (sem max-height clampando). -->
+        <div
+          *ngIf="modoCapa === 'mobile'"
+          class="capa-box capa-box-mobile clickable"
+          (click)="selecionarImagem('capaMobileUrl', 1600/533, 'Ajustar imagem de capa (mobile)')"
+        >
+          <img *ngIf="form.value.capaMobileUrl; else capaMobIc" [src]="form.value.capaMobileUrl" alt="Capa mobile" />
+          <ng-template #capaMobIc>
+            <ion-icon name="add-outline"></ion-icon>
+            <span>Imagem de capa (mobile)</span>
+            <span class="size">1600×533</span>
+            <span class="hint">(opcional — usa a web se vazio)</span>
+          </ng-template>
+        </div>
+
+        <ion-textarea
+          fill="outline"
+          label="Descrição"
+          labelPlacement="stacked"
+          [autoGrow]="true"
+          rows="3"
+          formControlName="descricao"
+          placeholder="Conte sobre o campeonato — categorias, formato, prêmios..."
+        ></ion-textarea>
+
+        <div class="row-2">
+          <app-date-input
+            label="Data de início"
+            mode="date"
+            placeholder="dd/mm/aaaa"
+            formControlName="dataInicio"
+          ></app-date-input>
+          <app-date-input
+            label="Data de término"
+            mode="date"
+            placeholder="dd/mm/aaaa"
+            formControlName="dataFim"
+          ></app-date-input>
+        </div>
+
+        <!-- Contatos -->
+        <div class="sub-block">
+          <div class="sub-title">
+            <ion-icon name="call-outline"></ion-icon>
+            <span>Contatos</span>
+          </div>
+          <div class="row-2">
+            <ion-input
+              fill="outline"
+              label="Telefone"
+              labelPlacement="stacked"
+              type="tel"
+              inputmode="numeric"
+              placeholder="(11) 99999-9999"
+              mask="telefone"
+              formControlName="contatoTelefone"
+            ></ion-input>
+            <ion-input
+              fill="outline"
+              label="WhatsApp"
+              labelPlacement="stacked"
+              type="tel"
+              inputmode="numeric"
+              placeholder="(11) 99999-9999"
+              mask="telefone"
+              formControlName="contatoWhatsapp"
+            ></ion-input>
+          </div>
+          <ion-input fill="outline" label="E-mail" labelPlacement="stacked" type="email" inputmode="email" mask="email" formControlName="contatoEmail" placeholder="contato@seudominio.com"></ion-input>
+        </div>
+
+        <!-- Cor -->
+        <div class="cor-row">
+          <ion-icon name="color-fill-outline"></ion-icon>
+          <span class="label">Cor do campeonato</span>
+          <input type="color" formControlName="cor" />
+        </div>
+
+        <!-- Regras -->
+        <div class="sub-block">
+          <div class="sub-title">
+            <ion-icon name="document-text-outline"></ion-icon>
+            <span>Regras do campeonato</span>
+          </div>
+          <ion-textarea
+            fill="outline"
+            label="Regras"
+            labelPlacement="stacked"
+            [autoGrow]="true"
+            rows="4"
+            formControlName="regras"
+            placeholder="Descreva as regras do campeonato — duração, faltas, substituições, critérios de desempate..."
+          ></ion-textarea>
+        </div>
+
+        <!-- Premiações -->
+        <div class="sub-block">
+          <div class="sub-title">
+            <ion-icon name="trophy-outline"></ion-icon>
+            <span>Premiações</span>
+          </div>
+          <ion-textarea
+            fill="outline"
+            label="Premiações"
+            labelPlacement="stacked"
+            [autoGrow]="true"
+            rows="3"
+            placeholder="Ex: 1º lugar R$ 5.000 + Troféu"
+            formControlName="premiacoes"
+          ></ion-textarea>
+        </div>
+
+        <!-- Anexos -->
+        <button type="button" class="link-row" (click)="abrirAnexos()">
+          <ion-icon name="attach-outline"></ion-icon>
+          <span>Anexos</span>
+          <span class="link-action">Editar</span>
+        </button>
+
+        <!-- Localização -->
+        <div class="sub-block">
+          <div class="sub-title">
+            <ion-icon name="location-outline"></ion-icon>
+            <span>Localização</span>
+          </div>
+          <ion-radio-group formControlName="localizacaoTipo">
+            <div
+              class="radio-card"
+              [class.active]="form.value.localizacaoTipo === 'internet'"
+              (click)="form.controls['localizacaoTipo'].setValue('internet')"
+            >
+              <ion-radio value="internet" slot="start" aria-label="Internet"></ion-radio>
+              <div class="r-text">Campeonato disputado na internet</div>
+            </div>
+            <div
+              class="radio-card"
+              [class.active]="form.value.localizacaoTipo === 'presencial'"
+              (click)="form.controls['localizacaoTipo'].setValue('presencial')"
+            >
+              <ion-radio value="presencial" slot="start" aria-label="Presencial"></ion-radio>
+              <div class="r-text">Campeonato disputado presencialmente</div>
+            </div>
+          </ion-radio-group>
+          <ion-input
+            *ngIf="form.value.localizacaoTipo === 'presencial'"
+            fill="outline"
+            label="Local (cidade / ginásio)"
+            labelPlacement="stacked"
+            formControlName="localizacao"
+            placeholder="Ex: Ginásio Municipal — Belo Horizonte / MG"
+          ></ion-input>
+        </div>
+      </section>
+
+      <!-- ============ DEFINIR LINK ============ -->
+      <section class="card">
+        <h3>Definir link do site</h3>
+        <div class="link-block">
+          <span class="link-prefix">{{ linkPrefix }}</span>
+          <ion-input
+            fill="outline"
+            label="Slug"
+            labelPlacement="stacked"
+            placeholder="meu-campeonato"
+            formControlName="slug"
+            (ionBlur)="validarESugerirSlug()"
+          ></ion-input>
+          <ion-button color="primary" type="button" (click)="copiarLink()">
+            <ion-icon slot="start" name="copy-outline"></ion-icon>
+            Copiar
+          </ion-button>
+          <ion-button color="secondary" type="button" (click)="abrirPublico()">
+            <ion-icon slot="start" name="open-outline"></ion-icon>
+            Ver agora
+          </ion-button>
+        </div>
+        <p class="hint" *ngIf="!form.value.slug">
+          Sem slug definido, o link público usa o ID: <strong>{{ linkPublicoAtual() }}</strong>
+        </p>
+      </section>
+
+      <!-- ============ CAMPEONATO (estrutural) ============ -->
+      <section class="card">
+        <h3>Campeonato</h3>
+        <button type="button" class="link-row" (click)="abrirListaSimples('arbitros')">
+          <ion-icon name="person-outline"></ion-icon>
+          <span>Arbitragem</span>
+          <span class="link-action">Editar</span>
+        </button>
+        <button type="button" class="link-row" (click)="abrirListaSimples('locaisCadastrados')">
+          <ion-icon name="location-outline"></ion-icon>
+          <span>Locais</span>
+          <span class="link-action">Editar</span>
+        </button>
+        <button type="button" class="link-row" (click)="abrirEnquetes()">
+          <ion-icon name="list-outline"></ion-icon>
+          <span>Enquetes</span>
+          <span class="link-action">Editar</span>
+        </button>
+        <button type="button" class="link-row" (click)="abrirMedalhas()">
+          <ion-icon name="medal-outline"></ion-icon>
+          <span>Quadro de medalhas</span>
+          <span class="link-action">Editar</span>
+        </button>
+      </section>
+
+      <!-- ============ DIVULGAÇÃO ============ -->
+      <section class="card">
+        <h3>Divulgação</h3>
+
+        <ion-item lines="none" class="toggle-row">
+          <ion-icon [name]="form.value.publico ? 'globe-outline' : 'lock-closed-outline'" slot="start"></ion-icon>
+          <ion-label>
+            <div class="t-title">
+              {{ form.value.publico ? 'Campeonato Público' : 'Campeonato Privado' }}
+            </div>
+            <div class="t-sub">
+              {{ form.value.publico
+                  ? 'Todos podem pesquisar e ver'
+                  : 'Acessível apenas com o link' }}
+            </div>
+          </ion-label>
+          <!-- Toggle representa "Público" (mais intuitivo que o "Privado" antigo) -->
+          <ion-toggle
+            slot="end"
+            [checked]="form.value.publico"
+            (ionChange)="onTogglePrivado(!$event.detail.checked)"
+          ></ion-toggle>
+        </ion-item>
+
+        <ion-item lines="none" class="toggle-row">
+          <ion-icon name="images-outline" slot="start"></ion-icon>
+          <ion-label>
+            <div class="t-title">Mídias dos usuários</div>
+            <div class="t-sub">Visitantes podem enviar mídias (após moderação)</div>
+          </ion-label>
+          <ion-toggle
+            slot="end"
+            [checked]="form.value.permitirMidiasUsuarios"
+            (ionChange)="onToggleSimples('permitirMidiasUsuarios', $event.detail.checked)"
+          ></ion-toggle>
+        </ion-item>
+
+        <ion-item lines="none" class="toggle-row">
+          <ion-icon name="chatbox-outline" slot="start"></ion-icon>
+          <ion-label>
+            <div class="t-title">Permitir que usuários enviem comentários</div>
+          </ion-label>
+          <ion-toggle
+            slot="end"
+            [checked]="form.value.permitirComentarios"
+            (ionChange)="onToggleSimples('permitirComentarios', $event.detail.checked)"
+          ></ion-toggle>
+        </ion-item>
+
+        <button type="button" class="link-row" (click)="abrirPatrocinadores()">
+          <ion-icon name="megaphone-outline"></ion-icon>
+          <span>Apoios e Patrocinadores</span>
+          <span class="link-action">Editar</span>
+        </button>
+        <button type="button" class="link-row" (click)="abrirInfo('visualizacoes')">
+          <ion-icon name="bar-chart-outline"></ion-icon>
+          <span>Visualizações</span>
+          <span class="link-action">Mostrar</span>
+        </button>
+        <button type="button" class="link-row" (click)="abrirSeguidores()">
+          <ion-icon name="people-outline"></ion-icon>
+          <span>Seguidores</span>
+          <span class="link-action">Editar</span>
+        </button>
+        <button type="button" class="link-row" (click)="abrirModeradores()">
+          <ion-icon name="shield-checkmark-outline"></ion-icon>
+          <span>Moderadores</span>
+          <span class="link-action">Editar</span>
+        </button>
+        <button type="button" class="link-row" (click)="abrirExibicao()">
+          <ion-icon name="eye-outline"></ion-icon>
+          <span>Exibição de nomes e datas</span>
+          <span class="link-action">Editar</span>
+        </button>
+      </section>
+
+      <!-- ============ OPÇÕES AVANÇADAS ============ -->
+      <section class="card">
+        <h3>Opções avançadas</h3>
+        <button type="button" class="link-row" (click)="abrirInfo('embed')">
+          <ion-icon name="code-slash-outline"></ion-icon>
+          <span>Html de incorporação</span>
+          <span class="link-action">Compartilhar</span>
+        </button>
+        <button type="button" class="link-row" (click)="abrirInfo('api')">
+          <ion-icon name="rocket-outline"></ion-icon>
+          <span>API Json</span>
+          <span class="link-action">Mostrar</span>
+        </button>
+      </section>
+
+      <!-- ============ BOTÕES ============ -->
+      <div class="actions">
+        <ion-button
+          expand="block"
+          color="primary"
+          type="submit"
+          class="btn-save"
+          [disabled]="salvando"
+        >
+          Salvar alterações
+        </ion-button>
+
+        <ion-button
+          fill="outline"
+          color="danger"
+          type="button"
+          class="btn-remove"
+          (click)="removerCampeonato()"
+        >
+          Remover campeonato
+        </ion-button>
+      </div>
+
+      <!-- ============ SUPORTE ============ -->
+      <div class="suporte">
+        <h4>Dúvidas? Problemas?</h4>
+        <p>E-mail: suporte&#64;placarpro.app</p>
+        <p>WhatsApp: +55 82 99102-7052</p>
+      </div>
+    </div>
+  </form>
+</ion-content>

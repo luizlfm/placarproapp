@@ -1,0 +1,143 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>{{ modoCrop ? 'Cortar imagem' : (idx >= 0 ? 'Editar' : 'Novo patrocinador') }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<!-- ══════════════════════════════════════
+     MODO CROP — ocupa o espaço todo
+     ══════════════════════════════════════ -->
+<ng-container *ngIf="modoCrop">
+  <div class="crop-area">
+    <!-- Spinner enquanto a lib carrega a imagem -->
+    <div class="crop-loading" *ngIf="cropCarregando">
+      <ion-spinner name="dots"></ion-spinner>
+      <span>Carregando imagem…</span>
+    </div>
+
+    <image-cropper
+      [imageFile]="fileParaCrop!"
+      [maintainAspectRatio]="true"
+      [aspectRatio]="16 / 9"
+      format="jpeg"
+      [roundCropper]="false"
+      [canvasRotation]="0"
+      backgroundColor="#ffffff"
+      [hidden]="cropCarregando"
+      (imageLoaded)="onCropperCarregado()"
+      (imageCropped)="onImageCropped($event)"
+      class="cropper"
+    ></image-cropper>
+  </div>
+
+  <ion-footer>
+    <ion-toolbar>
+      <div class="pat-footer-btns">
+        <ion-button fill="outline" color="medium" (click)="cancelarCorte()">
+          <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
+          Voltar
+        </ion-button>
+        <ion-button
+          fill="solid"
+          color="secondary"
+          [disabled]="!cropEvento || cropCarregando"
+          (click)="confirmarCorte()"
+        >
+          <ion-icon slot="start" name="crop-outline"></ion-icon>
+          Confirmar corte
+        </ion-button>
+      </div>
+    </ion-toolbar>
+  </ion-footer>
+</ng-container>
+
+<!-- ══════════════════════════════════════
+     MODO FORM — foto + nome
+     ══════════════════════════════════════ -->
+<ng-container *ngIf="!modoCrop">
+  <div class="pat-modal-content">
+    <div class="pat-form">
+
+      <!-- ── Área de upload da foto ── -->
+      <div class="pat-foto-wrap">
+        <button
+          type="button"
+          class="pat-foto-box"
+          [class.tem-imagem]="previewUrl"
+          (click)="escolherFoto()"
+          aria-label="Selecionar logo"
+        >
+          <img *ngIf="previewUrl" [src]="previewUrl" alt="Preview do logo" />
+          <ng-container *ngIf="!previewUrl">
+            <ion-icon name="add-outline" class="pat-foto-plus"></ion-icon>
+          </ng-container>
+
+          <!-- Botão "×" pra remover foto -->
+          <button
+            *ngIf="previewUrl"
+            type="button"
+            class="pat-foto-remove"
+            (click)="$event.stopPropagation(); removerFoto()"
+            aria-label="Remover foto"
+          >
+            <ion-icon name="close-circle"></ion-icon>
+          </button>
+        </button>
+
+        <!-- Legenda abaixo do box -->
+        <span class="pat-foto-dim">
+          <ion-icon name="resize-outline"></ion-icon>
+          Proporção 16:9 &nbsp;·&nbsp; recomendado 360 × 202 px
+        </span>
+
+        <!-- Botão "Trocar foto" quando já existe preview -->
+        <button
+          *ngIf="previewUrl"
+          type="button"
+          class="pat-trocar-btn"
+          (click)="escolherFoto()"
+        >
+          <ion-icon name="swap-horizontal-outline"></ion-icon>
+          Trocar foto
+        </button>
+      </div>
+
+      <!-- ── Campo nome ── -->
+      <div class="pat-field">
+        <label class="pat-label" for="pat-nome">Título</label>
+        <input
+          id="pat-nome"
+          class="pat-input"
+          type="text"
+          placeholder="Nome do patrocinador"
+          maxlength="60"
+          [(ngModel)]="nome"
+          autocomplete="off"
+        />
+      </div>
+
+    </div>
+  </div>
+
+  <ion-footer>
+    <ion-toolbar>
+      <div class="pat-footer-btns">
+        <ion-button fill="outline" color="medium" (click)="fechar()">Cancelar</ion-button>
+        <ion-button
+          fill="solid"
+          color="secondary"
+          [disabled]="!podeSalvar"
+          (click)="salvar()"
+        >
+          <ion-spinner *ngIf="salvando" name="dots" slot="start"></ion-spinner>
+          {{ salvando ? 'Salvando…' : 'Salvar' }}
+        </ion-button>
+      </div>
+    </ion-toolbar>
+  </ion-footer>
+</ng-container>

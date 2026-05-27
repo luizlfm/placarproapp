@@ -1,0 +1,161 @@
+<ion-header class="no-print">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Tabela de Partidas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="imprimir()" aria-label="Imprimir">
+        <ion-icon slot="start" name="print-outline"></ion-icon>
+        <span class="tb-label">Imprimir</span>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="folha" *ngIf="view$ | async as v; else carregando">
+    <!-- ============ Cabeçalho ============ -->
+    <header class="ip-head">
+      <div class="ph-logo">
+        <img *ngIf="v.campeonato?.logoUrl; else iconC" [src]="v.campeonato!.logoUrl" [alt]="v.campeonato?.titulo" />
+        <ng-template #iconC><ion-icon name="trophy-outline"></ion-icon></ng-template>
+      </div>
+      <div class="ph-titulo-bloco">
+        <h1>{{ v.campeonato?.titulo || 'Campeonato' }}</h1>
+        <h2>{{ v.categoria?.titulo || '' }}</h2>
+        <p class="ph-sub">Tabela de Partidas</p>
+      </div>
+      <div class="ip-resumo ph-resumo">
+        <div class="r-item r-total">
+          <span class="r-num">{{ v.totalJogos }}</span>
+          <span class="r-lbl">Total</span>
+        </div>
+        <div class="r-item r-ok">
+          <span class="r-num">{{ v.totalEncerrados }}</span>
+          <span class="r-lbl">Encerradas</span>
+        </div>
+        <div class="r-item r-pend">
+          <span class="r-num">{{ v.totalAgendados }}</span>
+          <span class="r-lbl">Agendadas</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Empty state -->
+    <div class="empty" *ngIf="v.grupos.length === 0">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <p>Nenhuma partida cadastrada nesta categoria.</p>
+    </div>
+
+    <!-- ============ Grupos por fase + rodada ============ -->
+    <section class="grupo print-section" *ngFor="let g of v.grupos; trackBy: trackByGrupo">
+      <!-- Faixa do grupo (fase + rodada + qtd) -->
+      <div class="g-banner">
+        <ion-icon name="football-outline"></ion-icon>
+        <span class="g-fase">{{ g.fase }}</span>
+        <span class="g-dot" *ngIf="g.rodada > 0">·</span>
+        <span class="g-rodada" *ngIf="g.rodada > 0">Rodada {{ g.rodada }}</span>
+        <span class="g-qtd">{{ g.jogos.length }} {{ g.jogos.length === 1 ? 'partida' : 'partidas' }}</span>
+      </div>
+
+      <!-- Lista de cards de partida -->
+      <div class="match-list">
+        <article
+          class="match-card"
+          *ngFor="let l of g.jogos; trackBy: trackByJogo; let i = index"
+          [class.even]="i % 2 === 1"
+        >
+          <!-- Cabeçalho do card: data/hora + local + status -->
+          <header class="mc-meta">
+            <div class="mc-meta-left">
+              <span class="mc-data" *ngIf="l.jogo.dataHora; else semData">
+                <ion-icon name="time-outline"></ion-icon>
+                {{ l.dataBr }}
+              </span>
+              <ng-template #semData>
+                <span class="mc-data sem">
+                  <ion-icon name="time-outline"></ion-icon>
+                  A definir
+                </span>
+              </ng-template>
+              <span class="mc-local" *ngIf="l.jogo.local">
+                <ion-icon name="location-outline"></ion-icon>
+                {{ l.jogo.local }}
+              </span>
+            </div>
+            <span class="status-badge" [class]="'st-' + l.jogo.status">
+              {{ rotuloStatus(l.jogo.status) }}
+            </span>
+          </header>
+
+          <!-- Corpo: time mandante × placar × visitante -->
+          <div class="mc-body">
+            <!-- Mandante (alinhado à direita, encostando no placar) -->
+            <div class="mc-time mc-mandante">
+              <div class="mc-time-info">
+                <span class="mc-time-nome">{{ l.mandante?.nome || 'Equipe não definida' }}</span>
+                <span class="mc-time-cidade" *ngIf="l.mandante?.cidade">{{ l.mandante?.cidade }}</span>
+              </div>
+              <div class="mc-shield">
+                <img
+                  *ngIf="l.mandante?.logoUrl; else iconM"
+                  [src]="l.mandante!.logoUrl"
+                  [alt]="l.mandante?.nome"
+                />
+                <ng-template #iconM>
+                  <ion-icon name="shield-outline"></ion-icon>
+                </ng-template>
+              </div>
+            </div>
+
+            <!-- Placar central -->
+            <div class="mc-placar">
+              <ng-container
+                *ngIf="l.jogo.golsMandante != null && l.jogo.golsVisitante != null; else vsTpl"
+              >
+                <span class="mc-placar-num">{{ l.jogo.golsMandante }}</span>
+                <span class="mc-placar-x">×</span>
+                <span class="mc-placar-num">{{ l.jogo.golsVisitante }}</span>
+              </ng-container>
+              <ng-template #vsTpl>
+                <span class="mc-vs">VS</span>
+              </ng-template>
+            </div>
+
+            <!-- Visitante (alinhado à esquerda, encostando no placar) -->
+            <div class="mc-time mc-visitante">
+              <div class="mc-shield">
+                <img
+                  *ngIf="l.visitante?.logoUrl; else iconV"
+                  [src]="l.visitante!.logoUrl"
+                  [alt]="l.visitante?.nome"
+                />
+                <ng-template #iconV>
+                  <ion-icon name="shield-outline"></ion-icon>
+                </ng-template>
+              </div>
+              <div class="mc-time-info">
+                <span class="mc-time-nome">{{ l.visitante?.nome || 'Equipe não definida' }}</span>
+                <span class="mc-time-cidade" *ngIf="l.visitante?.cidade">{{ l.visitante?.cidade }}</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <footer class="ip-foot">
+      <span class="marca">
+        Gerado por <span class="marca-acento">PlacarPro</span>
+      </span>
+      <span>{{ v.campeonato?.titulo }} · {{ v.categoria?.titulo }}</span>
+    </footer>
+  </div>
+
+  <ng-template #carregando>
+    <div class="loading"><ion-spinner name="dots"></ion-spinner></div>
+  </ng-template>
+</ion-content>

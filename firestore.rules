@@ -1,0 +1,287 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ──────────────────────────────────────────────────────────────
+    // Helpers
+    // ──────────────────────────────────────────────────────────────
+    function isAuthed() {
+      return request.auth != null;
+    }
+
+    function isOwner(ownerId) {
+      return isAuthed() && request.auth.uid == ownerId;
+    }
+
+    function campeonatoOwner(campeonatoId) {
+      return isAuthed() &&
+        get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data.ownerId == request.auth.uid;
+    }
+
+    function isCampeonatoPublico(campeonatoId) {
+      return exists(/databases/$(database)/documents/campeonatos/$(campeonatoId)) &&
+        get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data.publico == true;
+    }
+
+    /**
+     * Verdadeiro quando o payload da escrita inclui um `inscricaoToken` válido,
+     * ou seja: existe um documento `convitesEquipe/{token}` que aponta para o
+     * mesmo (campeonatoId, categoriaId, equipeId) que está sendo escrito.
+     *
+     * Usado pra permitir que o dono da equipe (que recebeu o link do organizador)
+     * preencha a ficha de inscrição: criar/atualizar jogadores, comissão técnica
+     * e atualizar dados da equipe — SEM precisar ser o ownerId do campeonato.
+     *
+     * Segurança: o token tem 8 caracteres aleatórios. Sem o token, ninguém
+     * consegue mexer. O organizador pode invalidar o convite a qualquer momento.
+     */
+    function temInscricaoTokenValido(campId, catId, equipeId) {
+      let tok = request.resource.data.inscricaoToken;
+      return tok != null
+        && exists(/databases/$(database)/documents/convitesEquipe/$(tok))
+        && get(/databases/$(database)/documents/convitesEquipe/$(tok)).data.campeonatoId == campId
+        && get(/databases/$(database)/documents/convitesEquipe/$(tok)).data.categoriaId == catId
+        && get(/databases/$(database)/documents/convitesEquipe/$(tok)).data.equipeId == equipeId;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // USERS — cada usuário lê/escreve só seu próprio doc + subcoleções.
+    // ADMIN MASTER lê tudo (pra painel /app/admin listar todos os users).
+    // (Exceção: collectionGroup `seguindo` é liberada abaixo)
+    // ──────────────────────────────────────────────────────────────
+    match /users/{uid} {
+      // Read: dono OU admin master (admin precisa listar todos pro painel)
+      allow read: if isOwner(uid) || isMaster();
+      // Write: apenas o dono (admin não escreve no doc dos outros via cliente).
+      // Pra promover/rebaixar plano, o admin usa Cloud Function ou seta
+      // isMaster=true em si próprio antes via console.
+      allow write: if isOwner(uid) || isMaster();
+
+      match /{sub=**} {
+        allow read, write: if isOwner(uid) || isMaster();
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // COLLECTION GROUP "seguindo"
+    // Usada pelo admin pra ressincronizar seguidores antigos.
+    // ──────────────────────────────────────────────────────────────
+    match /{path=**}/seguindo/{campId} {
+      allow read: if isAuthed();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // CAMPEONATOS
+    //   - Read: qualquer um (mesmo anônimo) se publico==true; dono se privado.
+    //   - Create/Delete: só dono autenticado.
+    //   - Update completo: só dono.
+    //   - Update parcial (seguidores +/-): qualquer user autenticado.
+    // ──────────────────────────────────────────────────────────────
+    match /campeonatos/{campeonatoId} {
+      allow read: if
+        resource.data.publico == true
+        || (isAuthed() && resource.data.ownerId == request.auth.uid)
+        || isMaster();
+
+      allow create: if isAuthed() && request.resource.data.ownerId == request.auth.uid;
+      allow delete: if (isAuthed() && resource.data.ownerId == request.auth.uid)
+                   || isMaster();
+
+      allow update: if isMaster() || (isAuthed() && (
+        resource.data.ownerId == request.auth.uid
+        ||
+        (
+          resource.data.publico == true
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['seguidores', 'atualizadoEm'])
+        )
+      ));
+
+      // ─── Seguidores: público pode ler; user logado pode seguir/desseguir.
+      match /seguidores/{uid} {
+        allow read: if isCampeonatoPublico(campeonatoId)
+                   || campeonatoOwner(campeonatoId);
+        allow create, update, delete: if isAuthed() && request.auth.uid == uid;
+        // Admin pode mexer/apagar qualquer
+        allow update, delete: if campeonatoOwner(campeonatoId);
+      }
+
+      // ─── Categorias (públicas): visitantes anônimos podem ler se campeonato é público.
+      match /categorias/{catId} {
+        allow read: if isCampeonatoPublico(campeonatoId)
+                   || campeonatoOwner(campeonatoId)
+                   || isMaster();
+        allow write: if campeonatoOwner(campeonatoId) || isMaster();
+
+        // Equipes — permite write tanto pelo owner quanto pelo público com
+        // convite válido (inscricaoToken cujo equipeId == docId).
+        match /equipes/{equipeId} {
+          allow read: if isCampeonatoPublico(campeonatoId)
+                     || campeonatoOwner(campeonatoId)
+                     || isMaster();
+          allow write: if campeonatoOwner(campeonatoId)
+                     || isMaster()
+                     || (isAuthed() && temInscricaoTokenValido(campeonatoId, catId, equipeId));
+        }
+
+        // Jogadores — permite write pelo dono OU quando o jogador pertence
+        // à equipe referenciada por um convite válido (equipeId vem no payload).
+        match /jogadores/{jogadorId} {
+          allow read: if isCampeonatoPublico(campeonatoId)
+                     || campeonatoOwner(campeonatoId)
+                     || isMaster();
+          allow write: if campeonatoOwner(campeonatoId)
+                     || isMaster()
+                     || (
+                       isAuthed()
+                       && request.resource.data.equipeId != null
+                       && temInscricaoTokenValido(campeonatoId, catId, request.resource.data.equipeId)
+                     );
+        }
+
+        // Comissão técnica — mesma lógica de jogadores.
+        match /equipe-tecnica/{membroId} {
+          allow read: if isCampeonatoPublico(campeonatoId)
+                     || campeonatoOwner(campeonatoId)
+                     || isMaster();
+          allow write: if campeonatoOwner(campeonatoId)
+                     || isMaster()
+                     || (
+                       isAuthed()
+                       && request.resource.data.equipeId != null
+                       && temInscricaoTokenValido(campeonatoId, catId, request.resource.data.equipeId)
+                     );
+        }
+
+        // Demais subcoleções (grupos, jogos, fases, mídias, rankings, etc.)
+        // — dono OU admin master.
+        match /{sub}/{docId} {
+          allow read: if isCampeonatoPublico(campeonatoId)
+                     || campeonatoOwner(campeonatoId)
+                     || isMaster();
+          allow write: if campeonatoOwner(campeonatoId) || isMaster();
+        }
+
+        // Sub-subcoleções (eventos, escalação, mídias de jogo, etc.)
+        match /{sub}/{docId}/{nested=**} {
+          allow read: if isCampeonatoPublico(campeonatoId)
+                     || campeonatoOwner(campeonatoId)
+                     || isMaster();
+          allow write: if campeonatoOwner(campeonatoId) || isMaster();
+        }
+      }
+
+      // Demais subcoleções diretas do campeonato (mensagens, inscrições, etc.)
+      match /{sub}/{docId} {
+        allow read: if isCampeonatoPublico(campeonatoId)
+                   || campeonatoOwner(campeonatoId)
+                   || isMaster();
+        allow write: if campeonatoOwner(campeonatoId) || isMaster();
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // ADMIN MASTER — helper pra checar isMaster no perfil do user.
+    // Usado pelas regras de cobrancas/logs/config (acesso restrito).
+    // ──────────────────────────────────────────────────────────────
+    function isMaster() {
+      return isAuthed() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isMaster == true;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // COBRANÇAS
+    //   - Read: admin master OU o próprio usuário cobrado.
+    //   - Create: admin master OU qualquer user autenticado, DESDE QUE
+    //     esteja criando uma cobrança com seu próprio `usuarioId` e
+    //     `status: 'aguardando'` (não pode auto-marcar como paga!).
+    //   - Update/Delete: apenas admin master — só ele pode confirmar
+    //     pagamento ou cancelar.
+    // ──────────────────────────────────────────────────────────────
+    match /cobrancas/{cobrancaId} {
+      allow read: if isMaster()
+                 || (isAuthed() && resource.data.usuarioId == request.auth.uid);
+
+      allow create: if isMaster()
+                   || (
+                     isAuthed()
+                     && request.resource.data.usuarioId == request.auth.uid
+                     && request.resource.data.status == 'aguardando'
+                   );
+
+      allow update, delete: if isMaster();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // LOGS DE AUDITORIA — qualquer usuário autenticado pode CRIAR
+    // logs (pra registrar suas próprias ações). Só admin master lê
+    // todos os logs do sistema.
+    // ──────────────────────────────────────────────────────────────
+    match /logs/{logId} {
+      allow read:   if isMaster();
+      allow create: if isAuthed();
+      allow update, delete: if isMaster();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // CONFIGURAÇÕES GLOBAIS — leitura pública (pra signup checar
+    // códigos de convite), escrita só admin master.
+    // ──────────────────────────────────────────────────────────────
+    match /config/{docId} {
+      allow read:  if true;
+      allow write: if isMaster();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // CONVITES DE EQUIPE — coleção raiz com tokens públicos.
+    //   - Read: qualquer pessoa com o token pode ler (token é a chave).
+    //     Segurança vem da impossibilidade de adivinhar o token (8 chars).
+    //   - Write/delete: só o dono do campeonato referenciado pelo doc.
+    //   - Update (marcar como usado / preenchido): user autenticado pode
+    //     atualizar APENAS os campos `usado`, `preenchidoPor`, `preenchidoEm`
+    //     — pra permitir que o convidado feche o convite após enviar a ficha.
+    // ──────────────────────────────────────────────────────────────
+    match /convitesEquipe/{token} {
+      allow read: if true;
+
+      allow create, delete: if isAuthed()
+        && get(/databases/$(database)/documents/campeonatos/$(request.resource.data.campeonatoId)).data.ownerId == request.auth.uid;
+
+      allow update: if isAuthed() && (
+        // Dono do campeonato pode fazer qualquer update
+        get(/databases/$(database)/documents/campeonatos/$(resource.data.campeonatoId)).data.ownerId == request.auth.uid
+        ||
+        // Convidado pode marcar como usado (limited update)
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['usado', 'preenchidoPor', 'preenchidoEm'])
+      );
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // RACHAS (peladas / pickup soccer games) — coleção root paralela
+    // a `campeonatos`. Cada doc tem `ownerId` (UID do criador).
+    // Tudo público por padrão; só owner/master altera.
+    // ──────────────────────────────────────────────────────────────
+    match /rachas/{rachaId} {
+      allow list: if true;
+      allow get:  if true;
+
+      allow create: if isAuthed()
+                    && request.resource.data.ownerId == request.auth.uid;
+
+      allow update, delete: if isAuthed() && (
+        resource.data.ownerId == request.auth.uid || isMaster()
+      );
+
+      match /{sub=**} {
+        allow read: if true;
+        allow write: if isAuthed() && (
+          get(/databases/$(database)/documents/rachas/$(rachaId)).data.ownerId == request.auth.uid
+          || isMaster()
+        );
+      }
+    }
+  }
+}

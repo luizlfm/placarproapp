@@ -1,0 +1,54 @@
+<!-- Header MOBILE do shell admin de campeonato. Sticky no topo, navy,
+     brand row + segments row. Visível só em ≤767px (controlado por CSS). -->
+<header class="cmh-root">
+  <div class="cmh-brand">
+    <!-- Voltar — NavBackService (histórico ou fallback /meus-campeonatos). -->
+    <button
+      class="cmh-back"
+      type="button"
+      (click)="voltar()"
+      aria-label="Voltar"
+    >
+      <ion-icon name="arrow-back-outline"></ion-icon>
+    </button>
+
+    <ng-container *ngIf="campeonato$ | async as camp; else cmhLoading">
+      <div class="cmh-logo">
+        <img *ngIf="camp.logoUrl; else cmhLogoIc" [src]="camp.logoUrl" [alt]="camp.titulo" />
+        <ng-template #cmhLogoIc>
+          <ion-icon name="trophy-outline"></ion-icon>
+        </ng-template>
+      </div>
+      <div class="cmh-title">{{ camp.titulo }}</div>
+    </ng-container>
+    <ng-template #cmhLoading>
+      <div class="cmh-logo"><ion-spinner color="light" name="dots"></ion-spinner></div>
+      <div class="cmh-title">Carregando...</div>
+    </ng-template>
+
+    <!-- Sair — ícone vermelho na ponta direita. -->
+    <button
+      class="cmh-logout"
+      type="button"
+      (click)="confirmLogout()"
+      aria-label="Sair"
+    >
+      <ion-icon name="log-out-outline"></ion-icon>
+    </button>
+  </div>
+
+  <!-- Segments — ícones do menu (Início / Mídia / Config). Texto escondido
+       em mobile pra caber 3 itens em 360px. Indicador é uma faixa lime
+       no border-bottom do item ativo. -->
+  <nav class="cmh-segments" aria-label="Navegação do campeonato">
+    <a
+      *ngFor="let item of menu"
+      [routerLink]="item.path"
+      routerLinkActive="active"
+      class="cmh-seg"
+    >
+      <ion-icon [name]="item.icon"></ion-icon>
+      <span>{{ item.label }}</span>
+    </a>
+  </nav>
+</header>

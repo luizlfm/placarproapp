@@ -1,0 +1,111 @@
+.cjm-content {
+  --background: var(--placar-bg, #f5f5f7);
+}
+
+.cjm-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 18px 4px;
+  font-size: 12.5px;
+}
+
+.cjm-link {
+  background: transparent;
+  border: none;
+  color: var(--ion-color-primary);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 6px;
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+
+  &:hover { text-decoration: underline; }
+}
+
+.cjm-sep { color: var(--ion-color-medium); }
+
+.cjm-count {
+  margin-left: auto;
+  background: var(--placar-surface-2, #f0f0f3);
+  color: var(--ion-color-medium);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.cjm-hint {
+  margin: 6px 18px 14px;
+  font-size: 13px;
+  color: var(--ion-color-medium);
+  line-height: 1.4;
+
+  strong { color: var(--placar-text); font-weight: 700; }
+}
+
+.cjm-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 0 16px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.cjm-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--placar-divider, #ececec);
+  cursor: pointer;
+  transition: background 120ms ease;
+
+  &:last-child { border-bottom: none; }
+  &:hover:not(.locked) { background: var(--placar-surface-2, #f5f5f7); }
+
+  &.locked {
+    cursor: not-allowed;
+    background: rgba(28, 46, 61, 0.04);
+    .cjm-label::after {
+      content: '🔒';
+      margin-left: 6px;
+      opacity: 0.6;
+      font-size: 12px;
+    }
+  }
+}
+
+.cjm-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--placar-text);
+}
+
+.cjm-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid var(--placar-divider, #d1d5db);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease, border-color 120ms ease;
+
+  ion-icon { font-size: 16px; color: #fff; }
+
+  &.on {
+    background: var(--ion-color-primary);
+    border-color: var(--ion-color-primary);
+  }
+}
+
+.cjm-footer ion-toolbar {
+  --background: var(--placar-bg);
+  --border-width: 0;
+}

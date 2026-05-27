@@ -1,0 +1,207 @@
+<div class="r-page rw-page" *ngIf="racha">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">WhatsApp do Racha</span>
+  </header>
+
+  <!-- ═══════════ Page header ═══════════ -->
+  <header class="r-page-head">
+    <span class="r-page-tag">INTEGRAÇÃO · WHATSAPP</span>
+    <h1>{{ racha.nome }} no Zap</h1>
+    <p>
+      Conecte o grupo do WhatsApp e dispare mensagens prontas (lista de
+      presença, sorteio, próximo jogo) com 1 toque.
+    </p>
+  </header>
+
+  <!-- ═══════════ Faixa principal: estado do grupo ═══════════ -->
+  <section class="rw-grupo-card" [class.configurado]="grupoConfigurado">
+    <div class="rw-grupo-icone">
+      <ion-icon name="logo-whatsapp"></ion-icon>
+    </div>
+
+    <ng-container *ngIf="grupoConfigurado; else semGrupo">
+      <div class="rw-grupo-info">
+        <span class="rw-grupo-label">Grupo conectado ✅</span>
+        <a
+          class="rw-grupo-link"
+          [href]="racha.whatsappGrupoLink"
+          target="_blank"
+          rel="noopener"
+        >
+          {{ racha.whatsappGrupoLink }}
+        </a>
+      </div>
+      <div class="rw-grupo-acoes">
+        <button type="button" class="rw-grupo-btn primario" (click)="abrirGrupo()">
+          <ion-icon name="open-outline"></ion-icon>
+          Abrir grupo
+        </button>
+        <button type="button" class="rw-grupo-btn ghost" (click)="configurarGrupo()">
+          <ion-icon name="create-outline"></ion-icon>
+          Trocar link
+        </button>
+      </div>
+    </ng-container>
+
+    <ng-template #semGrupo>
+      <div class="rw-grupo-info">
+        <span class="rw-grupo-label">Nenhum grupo conectado</span>
+        <span class="rw-grupo-sub">
+          Salve o link de convite do seu grupo pra acessar com 1 toque.
+        </span>
+      </div>
+      <button type="button" class="rw-grupo-btn primario" (click)="configurarGrupo()">
+        <ion-icon name="logo-whatsapp"></ion-icon>
+        Conectar grupo
+      </button>
+    </ng-template>
+  </section>
+
+  <!-- ═══════════ Ações: envio de mensagens prontas ═══════════ -->
+  <section class="rw-acoes-secao">
+    <header class="rw-secao-head">
+      <h2>Mensagens prontas</h2>
+      <p>
+        Cada botão abre o WhatsApp com a mensagem já formatada — só escolher
+        pra qual grupo enviar.
+      </p>
+    </header>
+
+    <div class="rw-acoes-grid">
+      <!-- Lista de presença -->
+      <button type="button" class="rw-acao verde" (click)="compartilharListaPresenca()">
+        <span class="rw-acao-icone"><ion-icon name="person-add"></ion-icon></span>
+        <span class="rw-acao-titulo">Abrir lista de presença</span>
+        <span class="rw-acao-desc">
+          Manda o link público pra galera confirmar presença
+        </span>
+        <span class="rw-acao-cta">
+          <ion-icon name="logo-whatsapp"></ion-icon>
+          Compartilhar
+        </span>
+      </button>
+
+      <!-- Próximo jogo -->
+      <button type="button" class="rw-acao azul" (click)="compartilharProximoJogo()">
+        <span class="rw-acao-icone"><ion-icon name="calendar"></ion-icon></span>
+        <span class="rw-acao-titulo">Avisar próximo jogo</span>
+        <span class="rw-acao-desc">
+          Data, horário e local formatados — bonito de ler no Zap
+        </span>
+        <span class="rw-acao-cta">
+          <ion-icon name="logo-whatsapp"></ion-icon>
+          Compartilhar
+        </span>
+      </button>
+
+      <!-- Cobrança PIX -->
+      <button type="button" class="rw-acao amarelo" (click)="compartilharCobranca()">
+        <span class="rw-acao-icone"><ion-icon name="cash"></ion-icon></span>
+        <span class="rw-acao-titulo">Cobrar mensalidade</span>
+        <span class="rw-acao-desc">
+          <ng-container *ngIf="racha.chavePix; else semPix">
+            Chave PIX: <strong>{{ racha.chavePix }}</strong>
+          </ng-container>
+          <ng-template #semPix>
+            Configure sua chave PIX primeiro ↓
+          </ng-template>
+        </span>
+        <span class="rw-acao-cta">
+          <ion-icon name="logo-whatsapp"></ion-icon>
+          Compartilhar
+        </span>
+      </button>
+
+      <!-- Convite novo jogador -->
+      <button type="button" class="rw-acao roxo" (click)="compartilharConvite()">
+        <span class="rw-acao-icone"><ion-icon name="link"></ion-icon></span>
+        <span class="rw-acao-titulo">Convidar novo jogador</span>
+        <span class="rw-acao-desc">
+          Link público + link do grupo num pacote pronto
+        </span>
+        <span class="rw-acao-cta">
+          <ion-icon name="logo-whatsapp"></ion-icon>
+          Compartilhar
+        </span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ═══════════ Configurações extras (PIX, etc.) ═══════════ -->
+  <section class="rw-config-secao">
+    <header class="rw-secao-head">
+      <h2>Configurações</h2>
+    </header>
+
+    <div class="rw-config-list">
+      <button type="button" class="rw-config-item" (click)="configurarPix()">
+        <ion-icon class="rw-config-ico" name="card-outline"></ion-icon>
+        <div class="rw-config-info">
+          <strong>Chave PIX</strong>
+          <span>{{ racha.chavePix || 'Não configurada' }}</span>
+        </div>
+        <ion-icon class="rw-config-chev" name="chevron-forward"></ion-icon>
+      </button>
+
+      <button type="button" class="rw-config-item" (click)="configurarGrupo()">
+        <ion-icon class="rw-config-ico" name="people-outline"></ion-icon>
+        <div class="rw-config-info">
+          <strong>Link do grupo WhatsApp</strong>
+          <span *ngIf="!grupoConfigurado">Não configurado</span>
+          <span class="rw-config-link" *ngIf="grupoConfigurado">
+            {{ racha.whatsappGrupoLink }}
+          </span>
+        </div>
+        <ion-icon class="rw-config-chev" name="chevron-forward"></ion-icon>
+      </button>
+    </div>
+  </section>
+
+  <!-- ═══════════ Em breve: bot real ═══════════ -->
+  <section class="rw-em-breve-secao">
+    <header class="rw-secao-head">
+      <h2>Em breve</h2>
+      <p>
+        Recursos que exigem aprovação da Meta (WhatsApp Business API).
+        Em produção quando a integração for liberada.
+      </p>
+    </header>
+
+    <div class="rw-em-breve-list">
+      <div class="rw-em-breve-item">
+        <ion-icon name="terminal-outline"></ion-icon>
+        <div>
+          <strong>Comandos no grupo</strong>
+          <span>/lista, /times, /proxima, /chavepix — respostas automáticas</span>
+        </div>
+        <span class="rw-eb-pill">Em breve</span>
+      </div>
+      <div class="rw-em-breve-item">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <div>
+          <strong>Lembretes automáticos</strong>
+          <span>Aviso 24h e 2h antes da pelada, sem ação manual</span>
+        </div>
+        <span class="rw-eb-pill">Em breve</span>
+      </div>
+      <div class="rw-em-breve-item">
+        <ion-icon name="megaphone-outline"></ion-icon>
+        <div>
+          <strong>Resultado pós-jogo</strong>
+          <span>Placar + craque da partida postados no grupo sozinho</span>
+        </div>
+        <span class="rw-eb-pill">Em breve</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ Disclaimer ═══════════ -->
+  <p class="rw-disclaimer">
+    <ion-icon name="lock-closed"></ion-icon>
+    O PlacarPro <strong>não tem acesso</strong> às mensagens do seu grupo.
+    As ações acima geram mensagens localmente e abrem o WhatsApp pra você
+    enviar — nada sai do app sem você clicar.
+  </p>
+</div>

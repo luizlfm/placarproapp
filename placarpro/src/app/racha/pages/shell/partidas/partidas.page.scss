@@ -1,0 +1,246 @@
+@import '../../../styles/racha-shared';
+
+/* ============================================================
+   Partidas — histórico + filtros + em breve
+   ============================================================ */
+
+.rpa-filtros {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rpa-filtro {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1.5px solid var(--rp-border);
+  color: var(--rp-text);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  &:hover { border-color: var(--rp-lime); color: var(--rp-lime-deep); }
+
+  &.ativo {
+    background: var(--rp-lime);
+    border-color: var(--rp-lime);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(124, 198, 29, 0.4);
+  }
+
+  .rpa-count {
+    background: rgba(0, 0, 0, 0.1);
+    color: inherit;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 1px 7px;
+    border-radius: 999px;
+    min-width: 18px;
+    text-align: center;
+  }
+  &.ativo .rpa-count {
+    background: rgba(255, 255, 255, 0.28);
+  }
+}
+
+/* ============ Loading ============ */
+.rpa-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 30vh;
+}
+
+/* ============ Lista de partidas ============ */
+.rpa-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.rpa-card {
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: transform 150ms ease, border-color 150ms ease;
+  border-left: 4px solid var(--rp-border);
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: var(--rp-lime);
+  }
+
+  &.finalizada {
+    border-left-color: var(--rp-lime, #7CC61D);
+  }
+  &:not(.finalizada) {
+    border-left-color: #f5c518;
+  }
+}
+
+.rpa-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+
+  .rpa-data {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--rp-text-muted, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .rpa-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 999px;
+
+    .rpa-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    &[data-status='finalizada'] {
+      color: var(--rp-lime-shade, #4a7e0e);
+      background: rgba(124, 198, 29, 0.14);
+    }
+    &:not([data-status='finalizada']) {
+      color: #8a6a08;
+      background: rgba(245, 197, 24, 0.16);
+    }
+  }
+}
+
+.rpa-placar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 12px 4px;
+  background: rgba(28, 46, 61, 0.02);
+  border-radius: 10px;
+
+  .rpa-time {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--rp-navy, #1C2E3D);
+    text-align: center;
+
+    &:last-child { text-align: center; }
+  }
+
+  .rpa-gols {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+
+    strong {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--rp-navy, #1C2E3D);
+      font-variant-numeric: tabular-nums;
+      min-width: 28px;
+      text-align: center;
+    }
+    .rpa-vs {
+      font-size: 14px;
+      color: var(--rp-text-muted, #9ca3af);
+      font-weight: 600;
+    }
+  }
+}
+
+.rpa-acoes {
+  display: flex;
+  gap: 8px;
+}
+
+.rpa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  transition: transform 120ms ease, background 120ms ease;
+
+  ion-icon { font-size: 14px; }
+
+  &.primary {
+    flex: 1;
+    background: var(--rp-navy, #1C2E3D);
+    color: #fff;
+
+    &:hover { transform: translateY(-1px); background: #0f1d2b; }
+  }
+
+  &.danger {
+    background: rgba(239, 68, 68, 0.10);
+    color: #ef4444;
+    width: 38px;
+    padding: 9px;
+
+    &:hover { background: rgba(239, 68, 68, 0.18); }
+  }
+}
+
+/* ============ Em breve ============ */
+.rpa-em-breve {
+  background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
+  border-color: #fcd34d;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 14px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #92400e;
+
+    ion-icon { font-size: 18px; color: #f59e0b; }
+  }
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #78350f;
+
+      ion-icon { font-size: 16px; color: #16a34a; }
+    }
+  }
+}

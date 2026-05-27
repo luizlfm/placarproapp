@@ -1,0 +1,196 @@
+.bg {
+  --background: var(--placar-bg);
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 14px;
+  --padding-bottom: 18px;
+}
+
+.sec-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--placar-text-muted);
+}
+
+.hint {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--placar-text-muted);
+}
+
+.atuais { margin-bottom: 22px; }
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 16px;
+  background: var(--placar-card-bg);
+  border-radius: 10px;
+  color: var(--placar-text-muted);
+  gap: 6px;
+
+  ion-icon { font-size: 36px; opacity: 0.5; }
+  p { margin: 0; font-size: 12.5px; }
+}
+
+/* Card de árbitro já selecionado pra esta partida */
+.sel-card {
+  display: grid;
+  grid-template-columns: 1fr 28px;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--placar-card-bg);
+  border: 1px solid var(--placar-divider);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.sel-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+.sel-nome {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--placar-text);
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sel-funcao {
+  font-size: 12.5px;
+  color: var(--ion-color-primary);
+  font-weight: 600;
+  background: var(--placar-surface);
+  border: 1px solid var(--placar-divider);
+  border-radius: 6px;
+  padding: 4px 8px;
+  appearance: none;
+  cursor: pointer;
+  max-width: 100%;
+
+  option {
+    background: var(--placar-card-bg);
+    color: var(--placar-text);
+  }
+}
+
+.sel-remover {
+  background: none;
+  border: 0;
+  color: var(--placar-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon { font-size: 22px; }
+  &:hover { color: var(--ion-color-danger); }
+}
+
+/* Cards do catálogo (árbitros cadastrados) */
+.catalogo {
+  display: flex;
+  flex-direction: column;
+}
+
+.cat-empty {
+  margin-bottom: 8px;
+}
+
+.cat-card {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--placar-card-bg);
+  border: 1px solid var(--placar-divider);
+  border-radius: 10px;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  margin-bottom: 6px;
+  transition: background 120ms ease, border-color 120ms ease;
+
+  &:hover:not(.disabled):not(:disabled) {
+    background: var(--placar-surface);
+    border-color: var(--placar-border-strong, #c8c8cd);
+  }
+
+  &.disabled,
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.cat-foto {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(28, 46, 61, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--placar-text-muted);
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 28px; }
+}
+
+.cat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cat-nome {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--placar-text);
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cat-fed {
+  font-size: 11.5px;
+  color: var(--placar-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cat-acao {
+  font-size: 22px;
+  color: var(--ion-color-secondary);
+}
+
+/* Footer */
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px;
+
+  .spacer { flex: 1; }
+
+  ion-button[color="primary"] {
+    --border-radius: 10px;
+    --padding-start: 22px;
+    --padding-end: 22px;
+    font-weight: 700;
+  }
+}

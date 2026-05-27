@@ -1,0 +1,476 @@
+@import '../../../styles/racha-shared';
+
+/* ============================================================
+   Jogadores (Elenco) — CRUD com tabs Elenco/Convidados/Notas.
+   Tokens PlacarPro.
+   ============================================================ */
+
+.rj-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ============ Hero (mesmo padrão do Times mas com botão azul "voz") ============ */
+.rj-hero {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1C2E3D 45%, #16a34a 110%);
+  border-radius: 16px;
+  padding: 26px 28px;
+  color: #fff;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: center;
+  box-shadow: 0 10px 28px rgba(28, 46, 61, 0.22);
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+    padding: 22px;
+  }
+}
+
+.rj-hero-text {
+  min-width: 0;
+
+  .rj-hero-tag {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 {
+    margin: 0 0 6px;
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.1;
+    @media (max-width: 480px) { font-size: 22px; }
+  }
+  p {
+    margin: 0 0 16px;
+    font-size: 13.5px;
+    color: rgba(255, 255, 255, 0.82);
+    max-width: 520px;
+    line-height: 1.5;
+  }
+}
+
+.rj-hero-acoes {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.rj-btn-ghost,
+.rj-btn-amarelo,
+.rj-btn-azul {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  border: none;
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+  ion-icon { font-size: 16px; }
+}
+.rj-btn-ghost {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  &:hover { background: rgba(255, 255, 255, 0.24); }
+}
+.rj-btn-amarelo {
+  background: #f5c518;
+  color: #1C2E3D;
+  box-shadow: 0 4px 12px rgba(245, 197, 24, 0.4);
+  &:hover { transform: translateY(-1px); box-shadow: 0 7px 16px rgba(245, 197, 24, 0.5); }
+}
+.rj-btn-azul {
+  background: #3b82f6;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  &:hover { transform: translateY(-1px); box-shadow: 0 7px 16px rgba(59, 130, 246, 0.5); }
+}
+
+.rj-hero-metricas {
+  display: flex;
+  gap: 18px;
+}
+.rj-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  .rj-metric-lbl {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+  .rj-metric-val {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1;
+  }
+}
+.rj-metric-divider {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* ============ Filtros ============ */
+.rj-filtros {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px 20px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rj-filtro-input {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 11.5px;
+    color: #4b5563;
+    font-weight: 600;
+  }
+}
+.rj-filtro-input-wrap {
+  position: relative;
+
+  > ion-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 18px;
+  }
+  input {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 999px;
+    padding: 11px 40px 11px 40px;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    &:focus {
+      border-color: #16a34a;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+    }
+  }
+  .rj-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    ion-icon { font-size: 18px; }
+    &:hover { color: #ef4444; }
+  }
+}
+
+.rj-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: #1C2E3D;
+
+  input { display: none; }
+  .rj-checkbox-box {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #16a34a;
+    border-radius: 4px;
+    position: relative;
+    flex: 0 0 auto;
+    transition: all 150ms ease;
+  }
+  input:checked + .rj-checkbox-box {
+    background: #16a34a;
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 5px;
+      height: 9px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: translate(-50%, -60%) rotate(45deg);
+    }
+  }
+}
+
+/* ============ Tabs — compactas ============ */
+.rj-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e5e7eb;
+}
+.rj-tab {
+  background: none;
+  border: none;
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: #6b7280;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 150ms ease, border-color 150ms ease;
+  line-height: 1.2;
+
+  .rj-tab-count {
+    color: #9ca3af;
+    font-weight: 600;
+    margin-left: 2px;
+  }
+
+  &:hover { color: #1C2E3D; }
+  &.ativa {
+    color: #7CC61D;
+    border-bottom-color: #7CC61D;
+  }
+}
+
+/* ============ Loading ============ */
+.rj-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30vh;
+}
+
+/* ============ Lista de cards ============ */
+.rj-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rj-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 180ms ease;
+
+  &:hover {
+    transform: translateX(2px);
+    border-color: #16a34a;
+    box-shadow: 0 4px 12px rgba(28, 46, 61, 0.08);
+  }
+
+  &.arquivado {
+    opacity: 0.55;
+    background: #f9fafb;
+  }
+}
+
+.rj-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+  flex: 0 0 auto;
+  overflow: hidden;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.rj-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rj-nome-linha {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.rj-nome {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #1C2E3D;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rj-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+
+  &.mensalista { background: #fef3c7; color: #92400e; }
+  &.inativo    { background: #e5e7eb; color: #4b5563; }
+}
+
+.rj-meta {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: #6b7280;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    ion-icon { font-size: 13px; color: #16a34a; }
+  }
+}
+
+.rj-nota {
+  flex: 0 0 auto;
+  min-width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.rj-chev {
+  color: #cbd5e1;
+  font-size: 18px;
+  flex: 0 0 auto;
+}
+
+/* ============ Tabela Notas ============ */
+.rj-notas {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+.rj-tabela {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1C2E3D 100%);
+    color: #fff;
+  }
+  th, td {
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 13.5px;
+  }
+  th {
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .pos { width: 50px; text-align: center; font-weight: 800; color: #6b7280; }
+  .num { width: 80px; text-align: right; }
+  tbody tr {
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    transition: background 150ms ease;
+    &:hover { background: #f9fafb; }
+    &:last-child { border-bottom: 0; }
+  }
+}
+.rj-tabela-jog {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rj-avatar-mini {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex: 0 0 auto;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+.rj-nota-pill {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* ============ Empty state ============ */
+.rj-empty {
+  text-align: center;
+  padding: 60px 24px;
+  background: #fff;
+  border: 2px dashed #d1d5db;
+  border-radius: 16px;
+
+  .rj-empty-icone {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(34, 197, 94, 0.12);
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    ion-icon { font-size: 40px; color: #16a34a; }
+  }
+  h2 {
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 800;
+    color: #1C2E3D;
+  }
+  p {
+    margin: 0 0 18px;
+    font-size: 13.5px;
+    color: #6b7280;
+  }
+}

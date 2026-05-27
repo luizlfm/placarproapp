@@ -1,0 +1,395 @@
+@import '../../../styles/racha-shared';
+
+/* ============================================================
+   Times — CRUD com escudos coloridos. Tokens PlacarPro.
+   ============================================================ */
+
+.rt-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ============ Hero ============ */
+.rt-hero {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1C2E3D 45%, #16a34a 110%);
+  border-radius: 16px;
+  padding: 26px 28px;
+  color: #fff;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: center;
+  box-shadow: 0 10px 28px rgba(28, 46, 61, 0.22);
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+    padding: 22px;
+  }
+}
+
+.rt-hero-text {
+  min-width: 0;
+
+  .rt-hero-tag {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 {
+    margin: 0 0 6px;
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.1;
+
+    @media (max-width: 480px) { font-size: 22px; }
+  }
+  p {
+    margin: 0 0 16px;
+    font-size: 13.5px;
+    color: rgba(255, 255, 255, 0.82);
+    max-width: 520px;
+    line-height: 1.5;
+  }
+}
+
+.rt-hero-acoes {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.rt-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 150ms ease;
+  ion-icon { font-size: 16px; }
+  &:hover { background: rgba(255, 255, 255, 0.24); }
+}
+
+.rt-btn-amarelo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: #f5c518;
+  color: #1C2E3D;
+  border: none;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(245, 197, 24, 0.4);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+  ion-icon { font-size: 16px; }
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 7px 16px rgba(245, 197, 24, 0.5);
+  }
+}
+
+.rt-hero-metricas {
+  display: flex;
+  align-items: stretch;
+  gap: 18px;
+  padding: 0 16px;
+
+  @media (max-width: 720px) { justify-content: flex-start; padding-left: 0; }
+}
+.rt-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .rt-metric-lbl {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: capitalize;
+  }
+  .rt-metric-val {
+    font-size: 28px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1;
+  }
+}
+.rt-metric-divider {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* ============ Filtros ============ */
+.rt-filtros {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px 20px;
+  border: 1px solid #e5e7eb;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: end;
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rt-filtro-input {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 11.5px;
+    color: #4b5563;
+    font-weight: 600;
+  }
+}
+.rt-filtro-input-wrap {
+  position: relative;
+
+  > ion-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 18px;
+  }
+  input {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 999px;
+    padding: 11px 14px 11px 40px;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+    &:focus {
+      border-color: #16a34a;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+    }
+  }
+}
+
+.rt-filtro-acoes {
+  display: flex;
+  gap: 8px;
+}
+
+.rt-btn-verde-escuro {
+  background: #065f46;
+  color: #fff;
+  border: none;
+  padding: 11px 22px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 150ms ease;
+  &:hover { background: #047857; }
+}
+
+.rt-btn-amarelo-out {
+  background: transparent;
+  color: #b45309;
+  border: 1.5px solid #f59e0b;
+  padding: 11px 22px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 150ms ease;
+  &:hover { background: rgba(245, 158, 11, 0.12); }
+}
+
+.rt-checkbox {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: #1C2E3D;
+  margin-top: 4px;
+
+  input { display: none; }
+  .rt-checkbox-box {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #16a34a;
+    border-radius: 4px;
+    position: relative;
+    transition: all 150ms ease;
+    flex: 0 0 auto;
+  }
+  input:checked + .rt-checkbox-box {
+    background: #16a34a;
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 5px;
+      height: 9px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: translate(-50%, -60%) rotate(45deg);
+    }
+  }
+}
+
+/* ============ Loading ============ */
+.rt-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30vh;
+}
+
+/* ============ Grid de cards ============ */
+.rt-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+
+  @media (max-width: 900px) { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 640px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 380px) { grid-template-columns: 1fr; }
+}
+
+.rt-card {
+  background: #f3f4f6;
+  border-radius: 14px;
+  padding: 18px 14px;
+  text-align: center;
+  border: 1px solid #e5e7eb;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+
+  &.arquivado {
+    opacity: 0.55;
+    background: #f9fafb;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(28, 46, 61, 0.1);
+  }
+}
+
+.rt-escudo {
+  width: 64px;
+  height: 72px;
+  margin: 0 auto 12px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.12));
+
+  svg { width: 100%; height: 100%; }
+}
+
+.rt-card-nome {
+  margin: 0 0 12px;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #1C2E3D;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rt-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.rt-badge {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #16a34a;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+
+  &.inativo { background: #94a3b8; }
+}
+
+.rt-btn-editar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  border: 1.5px solid #16a34a;
+  color: #16a34a;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: background 150ms ease;
+  ion-icon { font-size: 13px; }
+  &:hover { background: rgba(34, 197, 94, 0.1); }
+}
+
+/* ============ Empty state ============ */
+.rt-empty {
+  text-align: center;
+  padding: 60px 24px;
+  background: #fff;
+  border: 2px dashed #d1d5db;
+  border-radius: 16px;
+
+  .rt-empty-icone {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(34, 197, 94, 0.12);
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    ion-icon { font-size: 40px; color: #16a34a; }
+  }
+  h2 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    font-weight: 800;
+    color: #1C2E3D;
+  }
+  p {
+    margin: 0 0 18px;
+    font-size: 13.5px;
+    color: #6b7280;
+  }
+}

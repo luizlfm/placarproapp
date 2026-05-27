@@ -1,0 +1,324 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Pagamento</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="pg-content">
+  <ng-container *ngIf="cobranca$ | async as c; else carregando">
+    <div class="pg-wrap">
+
+      <!-- Card resumo da cobrança -->
+      <div class="pg-resumo">
+        <div class="pg-resumo-head">
+          <ion-icon name="receipt-outline"></ion-icon>
+          <span>Fatura {{ c.id?.slice(0, 8) }}</span>
+          <span class="pg-status" [class.aguardando]="c.status === 'aguardando'">
+            {{ c.status === 'aguardando' ? 'Aguardando pagamento' : c.status }}
+          </span>
+        </div>
+
+        <div class="pg-resumo-valor">
+          {{ formatarValor(c.valorCentavos) }}
+        </div>
+
+        <div class="pg-resumo-grid">
+          <div class="pg-cell">
+            <span class="pg-cell-lbl">Plano</span>
+            <span class="pg-cell-val">{{ c.planoId | titlecase }}</span>
+          </div>
+          <div class="pg-cell">
+            <span class="pg-cell-lbl">Período</span>
+            <span class="pg-cell-val">{{ labelPeriodicidade(c.periodicidade) }}</span>
+          </div>
+          <div class="pg-cell">
+            <span class="pg-cell-lbl">Vencimento</span>
+            <span class="pg-cell-val">{{ c.vencimento }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aviso -->
+      <div class="pg-aviso">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        <span>
+          Após pagar, o plano será ativado em até 24h. Em caso de dúvida,
+          envie o comprovante para <strong>suporte&#64;placarpro.app</strong>.
+        </span>
+      </div>
+
+      <!-- Tabs de método de pagamento -->
+      <div class="pg-tabs">
+        <button
+          class="pg-tab"
+          type="button"
+          [class.on]="metodo === 'pix'"
+          (click)="selecionarMetodo('pix')"
+        >
+          <ion-icon name="qr-code-outline"></ion-icon>
+          <span>PIX</span>
+        </button>
+        <button
+          class="pg-tab"
+          type="button"
+          [class.on]="metodo === 'boleto'"
+          (click)="selecionarMetodo('boleto')"
+        >
+          <ion-icon name="barcode-outline"></ion-icon>
+          <span>Boleto</span>
+        </button>
+        <button
+          class="pg-tab"
+          type="button"
+          [class.on]="metodo === 'cartao_credito'"
+          (click)="selecionarMetodo('cartao_credito')"
+        >
+          <ion-icon name="card-outline"></ion-icon>
+          <span>Crédito</span>
+        </button>
+        <button
+          class="pg-tab"
+          type="button"
+          [class.on]="metodo === 'cartao_debito'"
+          (click)="selecionarMetodo('cartao_debito')"
+        >
+          <ion-icon name="wallet-outline"></ion-icon>
+          <span>Débito</span>
+        </button>
+      </div>
+
+      <!-- Conteúdo do método selecionado -->
+
+      <!-- PIX -->
+      <div class="pg-painel" *ngIf="metodo === 'pix'">
+        <h3 class="pg-painel-titulo">
+          <ion-icon name="qr-code-outline"></ion-icon>
+          Pagamento via PIX
+        </h3>
+        <p class="pg-painel-sub">
+          Abra o app do seu banco, escolha a opção <strong>PIX QR Code</strong>
+          e escaneie o código abaixo. Ou copie a chave PIX.
+        </p>
+
+        <!-- QR Code REAL gerado pelo Mercado Pago (base64) -->
+        <ng-container *ngIf="c.pixQrCodeBase64; else qrPlaceholder">
+          <div class="pg-qr pg-qr-real">
+            <img
+              [src]="'data:image/png;base64,' + c.pixQrCodeBase64"
+              alt="QR Code PIX"
+            />
+          </div>
+        </ng-container>
+        <ng-template #qrPlaceholder>
+          <div class="pg-qr">
+            <div class="pg-qr-grid" aria-hidden="true">
+              <span *ngFor="let i of [].constructor(225)"></span>
+            </div>
+            <div class="pg-qr-overlay">
+              <ion-icon name="qr-code"></ion-icon>
+              <small>
+                {{ gerandoPagamento ? 'Gerando QR Code...' : 'Clique em PIX para gerar' }}
+              </small>
+            </div>
+          </div>
+        </ng-template>
+
+        <!-- Copia e cola PIX (real, vindo do MP) -->
+        <div class="pg-campo-copia" *ngIf="c.pixCopiaCola">
+          <label>Copia e cola</label>
+          <div class="pg-copia-row">
+            <textarea readonly rows="3">{{ c.pixCopiaCola }}</textarea>
+            <button class="pg-btn-icon" type="button" (click)="copiar(c.pixCopiaCola || '', 'Código PIX')">
+              <ion-icon name="copy-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="pg-passos">
+          <h4>Como pagar:</h4>
+          <ol>
+            <li>Abra o app do seu banco</li>
+            <li>Vá em <strong>PIX → Pagar com QR Code</strong> ou <strong>Pagar com cópia e cola</strong></li>
+            <li>Escaneie o QR ou cole o código acima</li>
+            <li>Confira o valor: <strong>{{ formatarValor(c.valorCentavos) }}</strong></li>
+            <li>Confirme o pagamento</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- BOLETO -->
+      <div class="pg-painel" *ngIf="metodo === 'boleto'">
+        <h3 class="pg-painel-titulo">
+          <ion-icon name="barcode-outline"></ion-icon>
+          Pagamento via Boleto
+        </h3>
+        <p class="pg-painel-sub">
+          Imprima ou copie o código de barras abaixo. O boleto vence em
+          <strong>{{ c.vencimento }}</strong>.
+        </p>
+
+        <!-- Boleto REAL gerado pelo Mercado Pago -->
+        <ng-container *ngIf="c.linkBoleto; else boletoPlaceholder">
+          <div class="pg-boleto-real">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            <p>Boleto gerado com sucesso!</p>
+            <small>Vencimento: <strong>{{ c.vencimento }}</strong></small>
+          </div>
+          <div class="pg-boleto-acoes">
+            <a class="pg-btn-secondary" [href]="c.linkBoleto" target="_blank" rel="noopener">
+              <ion-icon name="download-outline"></ion-icon>
+              Abrir / Baixar boleto
+            </a>
+          </div>
+        </ng-container>
+        <ng-template #boletoPlaceholder>
+          <div class="pg-boleto-stub">
+            <ion-icon name="document-text-outline"></ion-icon>
+            <p>
+              {{ gerandoPagamento ? 'Gerando boleto...' : 'Clique em Boleto para gerar' }}
+            </p>
+            <small>Boleto será gerado via Mercado Pago.</small>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- CARTÃO CRÉDITO / DÉBITO -->
+      <div
+        class="pg-painel"
+        *ngIf="metodo === 'cartao_credito' || metodo === 'cartao_debito'"
+      >
+        <h3 class="pg-painel-titulo">
+          <ion-icon name="card-outline"></ion-icon>
+          Pagamento via Cartão de {{ metodo === 'cartao_credito' ? 'Crédito' : 'Débito' }}
+        </h3>
+        <p class="pg-painel-sub">
+          Preencha os dados do cartão. Tokenização feita diretamente com o Mercado Pago —
+          o número do cartão NÃO trafega pelos nossos servidores.
+        </p>
+
+        <!-- Status pós-pagamento (sucesso/pendente/erro) -->
+        <div
+          *ngIf="cartaoStatus"
+          class="pg-status-box"
+          [class.ok]="cartaoStatus.tipo === 'sucesso'"
+          [class.pendente]="cartaoStatus.tipo === 'pendente'"
+          [class.erro]="cartaoStatus.tipo === 'erro'"
+        >
+          <ion-icon
+            [name]="cartaoStatus.tipo === 'sucesso' ? 'checkmark-circle' :
+                    cartaoStatus.tipo === 'pendente' ? 'time-outline' : 'close-circle'"
+          ></ion-icon>
+          <span>{{ cartaoStatus.mensagem }}</span>
+        </div>
+
+        <div class="pg-form" *ngIf="cartaoStatus?.tipo !== 'sucesso'">
+          <label class="pg-campo">
+            <span class="pg-lbl">Número do cartão</span>
+            <input
+              type="text"
+              inputmode="numeric"
+              maxlength="23"
+              placeholder="0000 0000 0000 0000"
+              [value]="cartao.numero"
+              (input)="onNumeroInput($event)"
+              autocomplete="cc-number"
+            />
+          </label>
+
+          <label class="pg-campo">
+            <span class="pg-lbl">Nome impresso no cartão</span>
+            <input
+              type="text"
+              placeholder="NOME COMO NO CARTÃO"
+              [(ngModel)]="cartao.nome"
+              autocomplete="cc-name"
+            />
+          </label>
+
+          <div class="pg-row-2">
+            <label class="pg-campo">
+              <span class="pg-lbl">Validade (MM/AA)</span>
+              <input
+                type="text"
+                inputmode="numeric"
+                maxlength="5"
+                placeholder="MM/AA"
+                [value]="cartao.validade"
+                (input)="onValidadeInput($event)"
+                autocomplete="cc-exp"
+              />
+            </label>
+            <label class="pg-campo">
+              <span class="pg-lbl">CVV</span>
+              <input
+                type="text"
+                inputmode="numeric"
+                maxlength="4"
+                placeholder="000"
+                [(ngModel)]="cartao.cvv"
+                autocomplete="cc-csc"
+              />
+            </label>
+          </div>
+
+          <label class="pg-campo">
+            <span class="pg-lbl">CPF do titular</span>
+            <input
+              type="text"
+              inputmode="numeric"
+              maxlength="14"
+              placeholder="000.000.000-00"
+              [value]="cartao.cpf"
+              (input)="onCpfInput($event)"
+            />
+          </label>
+
+          <label class="pg-campo" *ngIf="metodo === 'cartao_credito'">
+            <span class="pg-lbl">Parcelas</span>
+            <select [(ngModel)]="cartao.parcelas">
+              <option
+                *ngFor="let p of parcelasOpcoes(c.valorCentavos); trackBy: trackParcela"
+                [ngValue]="p.n"
+              >{{ p.label }}</option>
+            </select>
+          </label>
+
+          <button
+            class="pg-btn-primary"
+            type="button"
+            [disabled]="gerandoPagamento"
+            (click)="submitCartao()"
+          >
+            <ion-icon name="lock-closed-outline"></ion-icon>
+            {{ gerandoPagamento ? 'Processando...' : 'Pagar ' + formatarValor(c.valorCentavos) }}
+          </button>
+
+          <div class="pg-cartoes-aceitos">
+            <small>Aceitamos Visa, Mastercard, Elo, Hipercard, Amex e outras.</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rodapé com segurança -->
+      <div class="pg-rodape">
+        <ion-icon name="shield-checkmark-outline"></ion-icon>
+        <span>
+          Esta cobrança é de responsabilidade da <strong>PlacarPro</strong>.
+          Cobrança {{ c.id?.slice(0, 8) }} · gerada em {{ c.vencimento }}
+        </span>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template #carregando>
+    <div class="pg-loading">
+      <ion-spinner name="dots"></ion-spinner>
+      <p>Carregando dados do pagamento...</p>
+    </div>
+  </ng-template>
+</ion-content>

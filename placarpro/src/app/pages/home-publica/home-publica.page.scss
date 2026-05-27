@@ -1,0 +1,2373 @@
+/* ============================================================
+   PlacarPro — Home pública (landing) MODERNA
+   Paleta: navy (#1C2E3D) + verde lime (#7CC61D) + glass + glow.
+   ============================================================ */
+
+:host {
+  --navy: #1C2E3D;
+  --navy-soft: #2d4a63;
+  --navy-deep: #0f1d2b;
+  --lime: #7CC61D;
+  --lime-soft: #95d63f;
+  --lime-deep: #4a7e0e;
+  --azul: #4DABF7;
+  --amarelo: #f5c518;
+  --laranja: #ff9f43;
+  --roxo: #845EF7;
+  --rosa: #FF6B9D;
+  --grad-hero: linear-gradient(135deg, #0f1d2b 0%, #1C2E3D 45%, #2d4a63 100%);
+  --grad-acento: linear-gradient(135deg, #7CC61D 0%, #95d63f 100%);
+  --grad-glass: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+}
+
+.bg {
+  --background: #ffffff;
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+/* =====================================================
+   HEADER — glass com blur ao rolar
+   ===================================================== */
+.hp-header {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  border-bottom: 1px solid rgba(28, 46, 61, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+}
+
+.hp-header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.hp-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--navy);
+  text-decoration: none;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+  flex: 0 0 auto;
+  transition: transform 200ms ease;
+
+  ion-icon {
+    font-size: 28px;
+    color: var(--lime);
+    filter: drop-shadow(0 2px 8px rgba(124, 198, 29, 0.4));
+  }
+
+  /* Logo image (substitui o pacote ícone + texto). Altura fixa pra alinhar
+     com a navegação ao lado, largura auto pra preservar aspect ratio. */
+  .hp-brand-img {
+    height: 38px;
+    width: auto;
+    display: block;
+    filter: drop-shadow(0 2px 6px rgba(124, 198, 29, 0.25));
+  }
+
+  &:hover { transform: scale(1.04); }
+}
+
+.hp-nav {
+  flex: 1;
+  display: flex;
+  gap: 32px;
+  justify-content: center;
+
+  a {
+    color: var(--navy);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    position: relative;
+    padding: 4px 0;
+    transition: color 150ms ease;
+
+    /* Underline animada que cresce no hover */
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -2px;
+      height: 2px;
+      background: var(--lime);
+      border-radius: 1px;
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 250ms ease;
+    }
+
+    &:hover {
+      color: var(--lime-deep);
+      &::after { transform: scaleX(1); }
+    }
+  }
+
+  @media (max-width: 880px) { display: none; }
+}
+
+.hp-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+
+  /* Em telas estreitas (≤480px) o "Acessar conta" estava sendo truncado
+     porque o padding original (11px 22px / font 13.5px) deixava o botão
+     largo demais ao lado do logo. Reduzimos padding/font, e em telas muito
+     estreitas (≤360px) escondemos o texto pra deixar só o ícone — chip
+     pequeno mas reconhecível como CTA primário. */
+  @media (max-width: 480px) {
+    .btn-primary {
+      padding: 8px 12px;
+      font-size: 12px;
+      gap: 4px;
+
+      ion-icon { font-size: 15px; }
+    }
+  }
+  @media (max-width: 360px) {
+    .btn-primary {
+      padding: 8px 10px;
+      /* Esconde o texto, mantém o ícone — clique continua acessível
+         pelo aria-label/título. */
+      font-size: 0;
+      ion-icon { font-size: 18px; }
+    }
+  }
+}
+
+/* =====================================================
+   BOTÕES — todos com sombras coloridas e hover lift
+   ===================================================== */
+.btn-primary,
+.btn-secondary,
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 11px 22px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  transition: transform 180ms ease, box-shadow 220ms ease, background 180ms ease;
+  text-decoration: none;
+  font-family: inherit;
+  letter-spacing: 0.2px;
+  position: relative;
+  overflow: hidden;
+
+  ion-icon { font-size: 17px; }
+
+  &.big {
+    padding: 16px 32px;
+    font-size: 15px;
+    font-weight: 800;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  &:active { transform: translateY(0); }
+}
+
+.btn-primary {
+  background: var(--navy);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(28, 46, 61, 0.25);
+
+  &:hover {
+    background: var(--navy-deep);
+    box-shadow: 0 8px 24px rgba(28, 46, 61, 0.35);
+  }
+}
+
+.btn-secondary {
+  background: var(--grad-acento);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(124, 198, 29, 0.45);
+
+  /* Brilho passando por cima ao hover */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform 600ms ease;
+  }
+
+  &:hover {
+    box-shadow: 0 10px 28px rgba(124, 198, 29, 0.55);
+    &::before { transform: translateX(100%); }
+  }
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--navy);
+  border: 2px solid rgba(28, 46, 61, 0.25);
+
+  &:hover {
+    background: var(--navy);
+    color: #fff;
+    border-color: var(--navy);
+    box-shadow: 0 4px 14px rgba(28, 46, 61, 0.18);
+  }
+}
+
+/* Variante do btn-ghost em fundos escuros (hero, racha, cta-final) */
+.hero .btn-ghost,
+.racha-section .btn-ghost,
+.cta-final .btn-ghost {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.06);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+/* ============ CTA "Entrar no PlacarPro Pelada" ============
+   Botão exclusivo do módulo Racha, no hero. Visual diferenciado:
+   gradient azul→verde (mistura das duas paletas — bola + grama) com
+   leve glow azul pra não competir com o verde do btn-secondary. */
+.btn-pelada {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 11px 22px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  letter-spacing: 0.2px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 180ms ease, box-shadow 220ms ease;
+
+  background: linear-gradient(135deg, #4DABF7 0%, #1d4ed8 55%, #16a34a 100%);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(77, 171, 247, 0.4);
+
+  ion-icon { font-size: 17px; }
+
+  &.big {
+    padding: 16px 32px;
+    font-size: 15px;
+    font-weight: 800;
+  }
+
+  /* Brilho passando por cima ao hover (mesmo efeito do btn-secondary) */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform 600ms ease;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(77, 171, 247, 0.55);
+    &::before { transform: translateX(100%); }
+  }
+
+  &:active { transform: translateY(0); }
+}
+
+/* =====================================================
+   HERO — fundo dark com blobs animados + mockup glow
+   ===================================================== */
+.hero {
+  background: var(--grad-hero);
+  color: #fff;
+  padding: 110px 24px 130px;
+  position: relative;
+  overflow: hidden;
+
+  /* Grid pattern sutil de fundo */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    pointer-events: none;
+  }
+
+  /* Blobs verdes flutuantes */
+  &::after {
+    content: '';
+    position: absolute;
+    width: 520px;
+    height: 520px;
+    background: radial-gradient(circle, rgba(124, 198, 29, 0.35), transparent 70%);
+    top: -180px;
+    right: -100px;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: blob-flutuar 14s ease-in-out infinite;
+  }
+}
+
+/* Blob extra (segundo) — adicionado via div interna */
+.hero-blob-2 {
+  position: absolute;
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(77, 171, 247, 0.28), transparent 70%);
+  bottom: -160px;
+  left: -100px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: blob-flutuar 18s ease-in-out infinite reverse;
+  z-index: 0;
+}
+
+@keyframes blob-flutuar {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(40px, -30px) scale(1.08); }
+}
+
+.hero-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.1fr 400px;
+  gap: 64px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+
+  @media (max-width: 980px) {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 40px;
+  }
+}
+
+.hero-texto { min-width: 0; }
+
+.badge-hero {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(124, 198, 29, 0.18);
+  color: var(--lime-soft);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(124, 198, 29, 0.35);
+  backdrop-filter: blur(8px);
+
+  /* Bolinha pulsante */
+  &::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--lime);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--lime);
+    animation: pulse-dot 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(1.3); }
+}
+
+.hero h1 {
+  margin: 0 0 22px;
+  font-size: 58px;
+  font-weight: 900;
+  line-height: 1.02;
+  letter-spacing: -1.5px;
+  color: #fff;
+
+  /* Aplica um gradient na palavra "Fácil" / etc. via highlight inline */
+  .hl {
+    background: linear-gradient(120deg, var(--lime), var(--lime-soft));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  @media (max-width: 720px) { font-size: 36px; }
+}
+
+.hero .sub {
+  margin: 0 0 36px;
+  font-size: 18px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.75);
+  max-width: 560px;
+
+  @media (max-width: 980px) { margin: 0 auto 36px; }
+}
+
+.hero-cta {
+  display: inline-flex;
+  gap: 14px;
+  flex-wrap: wrap;
+
+  @media (max-width: 980px) { justify-content: center; }
+}
+
+/* Trust signals abaixo dos botões */
+.hero-trust {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 28px;
+  flex-wrap: wrap;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12.5px;
+  font-weight: 600;
+
+  .trust-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    ion-icon { font-size: 16px; color: var(--lime); }
+  }
+
+  @media (max-width: 980px) { justify-content: center; }
+}
+
+/* =====================================================
+   MOCKUP do celular — efeito "tilt" + glow verde atrás
+   ===================================================== */
+.hero-mockup {
+  display: flex;
+  justify-content: center;
+  position: relative;
+
+  &::before {
+    /* Glow verde grande atrás */
+    content: '';
+    position: absolute;
+    inset: -40px;
+    background: radial-gradient(circle, rgba(124, 198, 29, 0.35), transparent 60%);
+    filter: blur(30px);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  @media (max-width: 980px) { margin-top: 12px; }
+}
+
+.mockup-frame {
+  background: linear-gradient(180deg, #0f1d2b 0%, #1C2E3D 100%);
+  border-radius: 38px;
+  padding: 12px;
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  width: 290px;
+  position: relative;
+  z-index: 1;
+  transform: rotate(-2deg);
+  transition: transform 400ms cubic-bezier(.2,.8,.3,1);
+
+  &:hover {
+    transform: rotate(0deg) translateY(-6px);
+  }
+
+  /* Notch */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110px;
+    height: 22px;
+    background: #000;
+    border-radius: 0 0 14px 14px;
+    z-index: 2;
+  }
+}
+
+/* ============================================================
+   MOCKUP — réplica fiel da tela "Detalhe da Partida" do app
+   ============================================================ */
+.mockup-screen {
+  background: #f3f4f6;
+  border-radius: 26px;
+  padding: 0;
+  height: 540px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Espaço pro notch */
+  padding-top: 28px;
+}
+
+/* Header navy (igual ao app) */
+.mock-app-header {
+  background: var(--navy);
+  color: #fff;
+  display: grid;
+  grid-template-columns: 24px 1fr 24px;
+  align-items: center;
+  padding: 10px 14px;
+  gap: 8px;
+
+  ion-icon {
+    font-size: 18px;
+    color: #fff;
+  }
+
+  .mock-app-title {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Conteúdo branco scrollável */
+.mock-body {
+  flex: 1;
+  background: #fff;
+  padding: 12px 12px 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mock-cat-head {
+  .mock-cat-titulo {
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--navy);
+    letter-spacing: 0.4px;
+    line-height: 1;
+  }
+  .mock-cat-sub {
+    margin-top: 2px;
+    font-size: 9.5px;
+    font-weight: 700;
+    color: rgba(28, 46, 61, 0.5);
+    letter-spacing: 0.6px;
+  }
+}
+
+/* Card do placar com escudos */
+.mock-placar-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(28, 46, 61, 0.08);
+  padding: 12px 8px 10px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.mock-eq {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+  min-width: 0;
+}
+
+.mock-shield {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+
+  ion-icon { font-size: 22px; color: #fff; }
+
+  &.azul {
+    background: linear-gradient(135deg, #6dcdf8, var(--azul));
+  }
+  &.verde {
+    background: linear-gradient(135deg, #95d63f, var(--lime-deep));
+  }
+}
+
+.mock-eq-nome {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: var(--navy);
+  line-height: 1.1;
+  letter-spacing: 0.3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  max-width: 70px;
+}
+
+.mock-placar-mid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(124, 198, 29, 0.12), rgba(124, 198, 29, 0.04));
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(124, 198, 29, 0.2);
+}
+
+.mock-num {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--navy);
+  letter-spacing: -0.5px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.mock-status-min {
+  margin-top: 3px;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: var(--lime-deep);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* Faixa "1ª FASE · 1ª rodada" */
+.mock-fase {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(28, 46, 61, 0.7);
+  letter-spacing: 0.4px;
+  padding: 4px 0 6px;
+  border-bottom: 1px solid rgba(28, 46, 61, 0.06);
+
+  .mock-fase-lbl { color: var(--navy); font-weight: 900; }
+  .mock-fase-sep { margin: 0 4px; opacity: 0.4; }
+  .mock-fase-rod { color: rgba(28, 46, 61, 0.55); }
+}
+
+/* Segmento Escalação / Lances */
+.mock-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 3px;
+
+  .mock-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 7px 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(28, 46, 61, 0.55);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+
+    ion-icon { font-size: 13px; }
+
+    &.ativa {
+      background: var(--navy);
+      color: #fff;
+      box-shadow: 0 2px 4px rgba(28, 46, 61, 0.18);
+    }
+  }
+}
+
+/* Lista de lances — clone fiel do app (mandante esq / visitante dir) */
+.mock-lances {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 2px;
+
+  .lance {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 9px;
+    background: rgba(124, 198, 29, 0.12);
+    border: 1px solid rgba(124, 198, 29, 0.22);
+    border-radius: 999px;
+    min-height: 32px;
+  }
+
+  /* Mandante: card ocupa ~85% e fica colado à esquerda */
+  .lance.mandante {
+    width: 88%;
+    margin-right: auto;
+  }
+
+  /* Visitante: card ocupa ~85% e fica colado à direita
+     com ordem invertida (bola → texto → avatar) */
+  .lance.visitante {
+    width: 88%;
+    margin-left: auto;
+    background: rgba(124, 198, 29, 0.08);
+    text-align: right;
+
+    .lance-info {
+      text-align: right;
+    }
+  }
+
+  /* Variante amarela (cartão) */
+  .lance.amarelo {
+    background: rgba(245, 197, 24, 0.14);
+    border-color: rgba(245, 197, 24, 0.32);
+  }
+
+  .lance-av {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(28, 46, 61, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    ion-icon {
+      font-size: 13px;
+      color: rgba(28, 46, 61, 0.45);
+    }
+  }
+
+  .lance-info {
+    min-width: 0;
+
+    .lance-tit {
+      font-size: 10.5px;
+      font-weight: 900;
+      letter-spacing: 0.3px;
+      line-height: 1;
+      &.gol { color: var(--lime-deep); }
+      &.am  { color: #9a6b00; }
+    }
+    .lance-jog {
+      margin-top: 2px;
+      font-size: 8.5px;
+      font-weight: 700;
+      color: rgba(28, 46, 61, 0.65);
+      letter-spacing: 0.2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .lance-ico {
+    font-size: 16px;
+    flex-shrink: 0;
+    &.gol-ico { color: var(--lime-deep); }
+  }
+
+  .lance-cartao {
+    width: 10px;
+    height: 14px;
+    border-radius: 2px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
+    flex-shrink: 0;
+    &.am { background: var(--amarelo); }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.35; transform: scale(0.85); }
+}
+
+/* =====================================================
+   BENEFÍCIOS — cards com elevação 3D no hover
+   ===================================================== */
+.beneficios {
+  background: #fff;
+  padding: 90px 24px;
+  position: relative;
+}
+
+.beneficios-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.section-title {
+  margin: 0 0 12px;
+  font-size: 40px;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: -1px;
+  color: var(--navy);
+
+  @media (max-width: 720px) { font-size: 28px; }
+}
+
+.section-sub {
+  margin: 0 auto 50px;
+  text-align: center;
+  font-size: 16px;
+  color: rgba(28, 46, 61, 0.6);
+  max-width: 600px;
+  line-height: 1.5;
+}
+
+.benef-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 50px;
+
+  @media (max-width: 880px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.benef-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 32px 28px;
+  border: 1px solid rgba(28, 46, 61, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: transform 350ms cubic-bezier(.2,.8,.3,1), box-shadow 350ms ease, border-color 250ms ease;
+  position: relative;
+  overflow: hidden;
+
+  /* Barra colorida no topo que cresce no hover */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--grad-acento);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 400ms ease;
+  }
+
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 18px 48px rgba(28, 46, 61, 0.12);
+    border-color: rgba(124, 198, 29, 0.35);
+    &::before { transform: scaleX(1); }
+  }
+
+  h3 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--navy);
+    letter-spacing: -0.3px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: rgba(28, 46, 61, 0.65);
+  }
+}
+
+.benef-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  position: relative;
+  box-shadow: 0 8px 20px rgba(0,0,0,.12);
+
+  ion-icon { font-size: 28px; color: #fff; }
+
+  &.verde { background: linear-gradient(135deg, #95d63f, var(--lime-deep)); }
+  &.azul  { background: linear-gradient(135deg, #6dcdf8, var(--azul)); }
+  &.roxo  { background: linear-gradient(135deg, #a78bfa, var(--roxo)); }
+  &.rosa  { background: linear-gradient(135deg, #ffb6cb, var(--rosa)); }
+  &.amarelo { background: linear-gradient(135deg, #fde047, var(--amarelo)); }
+  &.laranja { background: linear-gradient(135deg, #ffd29c, var(--laranja)); }
+}
+
+/* =====================================================
+   FEATURES — duas colunas com checks animados
+   ===================================================== */
+.features {
+  background: linear-gradient(180deg, #f7fbf3 0%, #fff 100%);
+  padding: 90px 24px;
+}
+
+.features-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+
+  @media (max-width: 980px) {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+}
+
+.features-texto .section-title { text-align: left; @media (max-width: 980px) { text-align: center; } }
+
+.features-sub {
+  margin: 12px 0 28px;
+  font-size: 16px;
+  color: rgba(28, 46, 61, 0.65);
+  line-height: 1.5;
+
+  @media (max-width: 980px) { text-align: center; }
+}
+
+.check-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--navy);
+    padding: 12px 16px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid rgba(28, 46, 61, 0.06);
+    transition: transform 250ms ease, border-color 200ms ease;
+
+    ion-icon {
+      font-size: 22px;
+      color: var(--lime);
+      flex-shrink: 0;
+      filter: drop-shadow(0 2px 4px rgba(124, 198, 29, 0.35));
+    }
+
+    &:hover {
+      transform: translateX(4px);
+      border-color: var(--lime);
+    }
+  }
+}
+
+.features-imagens {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: 280px 180px;
+  gap: 16px;
+
+  .img-card {
+    background: linear-gradient(135deg, #fff 0%, #f7fbf3 100%);
+    border: 1px solid rgba(28, 46, 61, 0.08);
+    border-radius: 18px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    box-shadow: 0 6px 18px rgba(28, 46, 61, 0.08);
+    transition: transform 300ms ease, box-shadow 300ms ease;
+
+    ion-icon {
+      font-size: 64px;
+      color: var(--lime);
+      filter: drop-shadow(0 6px 12px rgba(124, 198, 29, 0.35));
+    }
+
+    span {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--navy);
+      text-align: center;
+    }
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 14px 32px rgba(28, 46, 61, 0.12);
+    }
+
+    &.grande {
+      grid-row: 1 / span 2;
+      grid-column: 1;
+      background: var(--grad-hero);
+      color: #fff;
+
+      ion-icon {
+        font-size: 84px;
+        color: var(--lime);
+        filter: drop-shadow(0 8px 20px rgba(124, 198, 29, 0.5));
+      }
+      span { color: #fff; font-size: 17px; }
+    }
+  }
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    .img-card.grande { grid-row: auto; grid-column: auto; height: 200px; }
+    .img-card { height: 140px; }
+  }
+}
+
+/* =====================================================
+   ENCONTRE SEU CAMPEONATO
+   ===================================================== */
+.campeonatos {
+  background: #fff;
+  padding: 90px 24px;
+}
+
+.campeonatos-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.hp-espectador-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(77, 171, 247, 0.08), rgba(124, 198, 29, 0.08));
+  border: 1px solid rgba(77, 171, 247, 0.25);
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 32px;
+  color: var(--navy);
+  font-size: 14px;
+  line-height: 1.5;
+
+  ion-icon { font-size: 28px; color: var(--azul); flex-shrink: 0; }
+  strong { color: var(--navy); display: block; margin-bottom: 2px; }
+}
+
+.hp-search {
+  position: relative;
+  max-width: 580px;
+  margin: 0 auto 40px;
+  display: flex;
+  align-items: center;
+
+  > ion-icon {
+    position: absolute;
+    left: 18px;
+    font-size: 20px;
+    color: rgba(28, 46, 61, 0.4);
+    pointer-events: none;
+  }
+
+  input {
+    width: 100%;
+    border: 2px solid rgba(28, 46, 61, 0.12);
+    background: #fff;
+    border-radius: 999px;
+    padding: 14px 50px 14px 48px;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--navy);
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--lime);
+      box-shadow: 0 0 0 4px rgba(124, 198, 29, 0.15);
+    }
+
+    &::placeholder { color: rgba(28, 46, 61, 0.4); }
+  }
+
+  .clear {
+    position: absolute;
+    right: 12px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    padding: 4px;
+    color: rgba(28, 46, 61, 0.5);
+    transition: color 150ms ease;
+
+    ion-icon { font-size: 22px; }
+
+    &:hover { color: var(--navy); }
+  }
+}
+
+/* Linha de chips de filtro (Todos / Que sigo) — aparece logo abaixo da busca.
+   Estilo "pill" navy/verde alinhado com a paleta da home pública. */
+.hp-filtros {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: -20px auto 32px;
+  max-width: 580px;
+
+  .filtro-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 2px solid rgba(28, 46, 61, 0.12);
+    background: #fff;
+    color: var(--navy);
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 150ms ease;
+
+    ion-icon { font-size: 16px; }
+
+    .chip-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: rgba(28, 46, 61, 0.08);
+      color: var(--navy);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    &:hover {
+      border-color: rgba(28, 46, 61, 0.25);
+      transform: translateY(-1px);
+    }
+
+    &.active {
+      background: var(--lime, #7CC61D);
+      border-color: var(--lime, #7CC61D);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(124, 198, 29, 0.3);
+
+      .chip-badge {
+        background: rgba(255, 255, 255, 0.25);
+        color: #fff;
+      }
+    }
+
+    /* Estado "trancado" — deslogado. Mantém clicável (leva pro login) mas
+       aparece com ícone de cadeado + cor mais suave indicando que precisa
+       de autenticação pra usar. */
+    &.disabled {
+      color: rgba(28, 46, 61, 0.55);
+      border-style: dashed;
+
+      .chip-lock {
+        font-size: 13px;
+        opacity: 0.6;
+        margin-left: 2px;
+      }
+
+      &:hover {
+        border-color: var(--lime, #7CC61D);
+        color: var(--navy);
+      }
+    }
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 20px;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   SEÇÃO "AO VIVO AGORA" — destaque no topo da home pública
+   ════════════════════════════════════════════════════════════════════
+   Aparece SÓ quando há transmissões LiveKit ativas. Visual mais
+   chamativo que a grid normal de campeonatos: gradient navy + badges
+   vermelhos + ícone play grande no hover. */
+.hp-aovivo-section {
+  margin: 12px 0 36px;
+  padding: 22px;
+  background: linear-gradient(135deg, #0f1922 0%, #1c2e3d 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(211, 47, 47, 0.4);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+}
+
+.hp-aovivo-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.hp-aovivo-titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  h2 {
+    margin: 0;
+    color: #fff;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.2px;
+  }
+}
+
+.hp-aovivo-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d32f2f;
+  box-shadow: 0 0 0 4px rgba(211, 47, 47, 0.25);
+  animation: hpAovivoDotPulse 1.4s ease-in-out infinite;
+}
+
+.hp-aovivo-contador {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hp-aovivo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+}
+
+.hp-aovivo-card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: rgba(211, 47, 47, 0.7);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+
+    .hp-aovivo-play { opacity: 1; transform: scale(1); }
+  }
+}
+
+.hp-aovivo-capa {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background-color: #0a0e12;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Gradient escuro pra leitura do badge AO VIVO */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg,
+      rgba(0, 0, 0, 0.45) 0%,
+      rgba(0, 0, 0, 0) 40%,
+      rgba(0, 0, 0, 0.55) 100%);
+  }
+}
+
+.hp-aovivo-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  background: #d32f2f;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(211, 47, 47, 0.5);
+
+  .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #fff;
+    animation: hpAovivoDotPulse 1.4s ease-in-out infinite;
+  }
+}
+
+.hp-aovivo-play {
+  position: relative;
+  z-index: 2;
+  font-size: 56px;
+  color: #fff;
+  opacity: 0.85;
+  transform: scale(0.9);
+  transition: transform 200ms ease, opacity 200ms ease;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+}
+
+.hp-aovivo-info {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hp-aovivo-camp {
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hp-aovivo-broadcaster {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  ion-icon {
+    font-size: 12px;
+    color: #d32f2f;
+  }
+}
+
+@keyframes hpAovivoDotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.75); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CAMP-CARD — versão PREMIUM
+   ═══════════════════════════════════════════════════════════════════
+   Visual estilo "card de liga esportiva" (ESPN/PrémiumLeague):
+     ┌──────────────────────────────────────┐
+     │  [HERO IMAGE — sem crop, sem tarja]  │
+     │  [AO VIVO badge canto superior dir]  │
+     ├──────────────────────────────────────┤
+     │  ⌬                                   │ ← logo flutuante na borda
+     │                                      │
+     │  TÍTULO BOLD                         │
+     │  subtítulo discreto                  │
+     │                                      │
+     │  [🏆 Futebol] [📍 Arcos-MG]          │ ← chips
+     │  ───────────────────────             │
+     │  👥 123 seguidores      Ver →        │ ← rodapé
+     └──────────────────────────────────────┘
+   Hover: card levanta + sombra verde acento + chevron desliza.
+   ═══════════════════════════════════════════════════════════════════ */
+.camp-card {
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(28, 46, 61, 0.08);
+  box-shadow: 0 2px 10px rgba(28, 46, 61, 0.05);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition:
+    transform 400ms cubic-bezier(.2, .8, .3, 1),
+    box-shadow 400ms ease,
+    border-color 250ms ease;
+
+  /* Acento verde no topo — fininho, só fica visível em hover. Dá um
+     "selo de marca" ao card sem poluir. */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--lime, #9BE36A) 0%, var(--lime-deep, #7CC61D) 100%);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 400ms cubic-bezier(.2, .8, .3, 1);
+    z-index: 4;
+  }
+
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow:
+      0 22px 50px rgba(28, 46, 61, 0.18),
+      0 0 0 1px rgba(124, 198, 29, 0.25);
+    border-color: rgba(124, 198, 29, 0.35);
+
+    &::before { transform: scaleX(1); }
+
+    .capa::after { opacity: 0.55; }
+    .capa picture img { transform: scale(1.04); }
+    .rodape-cta {
+      background: var(--lime-deep, #7CC61D);
+      color: #fff;
+      ion-icon { transform: translateX(3px); }
+    }
+  }
+
+  /* ─── HERO / CAPA ─── */
+  .capa {
+    min-height: 130px; /* fallback quando sem imagem */
+    background-color: var(--navy);
+    background-image: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .capa:has(picture) { min-height: 0; }
+
+  .capa picture {
+    display: block;
+    width: 100%;
+    line-height: 0;
+  }
+  .capa picture img {
+    display: block;
+    width: 100%;
+    height: auto;
+    transition: transform 600ms cubic-bezier(.2, .8, .3, 1);
+  }
+
+  .capa::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
+    opacity: 0.4;
+    transition: opacity 300ms ease;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .capa .capa-overlay { display: none; }
+
+  /* Badge AO VIVO — top-right, vermelho com glow pulsante. */
+  .capa .capa-ao-vivo {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    background: #d32f2f;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    box-shadow: 0 4px 14px rgba(211, 47, 47, 0.55);
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #fff;
+      animation: cardLivePulse 1.4s ease-in-out infinite;
+    }
+  }
+
+  /* ─── INFO (conteúdo abaixo da capa) ─── */
+  .info {
+    padding: 14px 18px 16px;
+    position: relative;
+  }
+
+  /* Logo flutuante sobrepondo a borda imagem/info (estilo álbum). */
+  .logo-float {
+    position: absolute;
+    top: -28px;
+    right: 18px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 3px solid #fff;
+    box-shadow: 0 6px 18px rgba(28, 46, 61, 0.22);
+    z-index: 4;
+    transition: transform 350ms cubic-bezier(.2, .8, .3, 1);
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+    ion-icon { font-size: 26px; color: var(--lime-deep, #7CC61D); }
+  }
+
+  &:hover .logo-float { transform: translateY(-2px) rotate(-4deg); }
+
+  .textos {
+    margin: 0;
+    padding-right: 68px; /* não bate no logo flutuante */
+  }
+
+  .titulo {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--navy, #1C2E3D);
+    line-height: 1.2;
+    letter-spacing: -0.3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .subtitulo {
+    margin-top: 4px;
+    font-size: 12.5px;
+    color: rgba(28, 46, 61, 0.55);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+
+  /* Chips de metadados (esporte, localização, etc.) */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    background: rgba(28, 46, 61, 0.06);
+    color: var(--navy, #1C2E3D);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1px;
+    max-width: 100%;
+
+    ion-icon {
+      font-size: 13px;
+      color: var(--lime-deep, #7CC61D);
+      flex-shrink: 0;
+    }
+
+    > span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  /* Rodapé: seguidores à esquerda, CTA à direita, separados por linha. */
+  .rodape {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(28, 46, 61, 0.10);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .rodape-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: rgba(28, 46, 61, 0.65);
+    font-weight: 500;
+    min-width: 0;
+
+    ion-icon { font-size: 14px; color: var(--lime-deep, #7CC61D); }
+    strong { color: var(--navy); font-weight: 800; }
+  }
+  .rodape-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: rgba(28, 46, 61, 0.06);
+    color: var(--navy, #1C2E3D);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    transition: background 250ms ease, color 250ms ease;
+
+    ion-icon {
+      font-size: 14px;
+      transition: transform 250ms ease;
+    }
+  }
+
+  /* ─── Botão ASSISTIR AO VIVO (full-width abaixo de tudo) ─── */
+  .camp-card-assistir {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--lime-deep, #7CC61D), #5a9912);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    transition: filter 150ms ease;
+
+    ion-icon { font-size: 18px; }
+
+    &:hover { filter: brightness(1.08); }
+    &:active { filter: brightness(0.92); }
+  }
+
+  /* Mobile: encolhe paddings/fontes pra caber bem em coluna única. */
+  @media (max-width: 480px) {
+    border-radius: 16px;
+
+    .info { padding: 12px 14px 14px; }
+    .logo-float {
+      width: 48px;
+      height: 48px;
+      top: -24px;
+      right: 14px;
+    }
+    .textos { padding-right: 56px; }
+    .titulo { font-size: 15.5px; }
+    .subtitulo { font-size: 11.5px; }
+    .chip { font-size: 10.5px; padding: 3px 8px; }
+    .rodape { margin-top: 10px; padding-top: 10px; }
+    .rodape-stat { font-size: 11.5px; }
+    .rodape-cta { padding: 5px 10px; font-size: 11px; }
+  }
+}
+
+@keyframes cardLivePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.75); }
+}
+
+.empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: rgba(28, 46, 61, 0.55);
+
+  ion-icon {
+    font-size: 80px;
+    opacity: 0.18;
+    margin-bottom: 18px;
+    color: var(--navy);
+  }
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    color: var(--navy);
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0 auto 18px;
+    max-width: 420px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+/* =====================================================
+   PELADA / RACHA — seção dedicada (estilo FutBora)
+   Fundo navy escuro com grid + glow azul/verde.
+   ===================================================== */
+.racha-section {
+  background:
+    radial-gradient(circle at 80% 30%, rgba(34, 197, 94, 0.22), transparent 55%),
+    radial-gradient(circle at 15% 70%, rgba(77, 171, 247, 0.22), transparent 55%),
+    linear-gradient(180deg, #0f1d2b 0%, #1C2E3D 70%, #1d4ed8 100%);
+  color: #fff;
+  padding: 100px 24px 100px;
+  position: relative;
+  overflow: hidden;
+
+  /* Grid pattern sutil */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at center, black 25%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 25%, transparent 80%);
+    pointer-events: none;
+  }
+}
+
+.racha-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.1fr 320px;
+  gap: 64px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+
+  @media (max-width: 980px) {
+    grid-template-columns: 1fr;
+    gap: 48px;
+    justify-items: center;
+    text-align: left;
+  }
+}
+
+.racha-texto {
+  min-width: 0;
+
+  .racha-badge {
+    display: inline-block;
+    padding: 7px 16px;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.2);
+    color: #86efac;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  h2 {
+    margin: 0 0 18px;
+    font-size: 42px;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+
+    .hl {
+      background: linear-gradient(135deg, #7CC61D 0%, #95d63f 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    @media (max-width: 720px) { font-size: 30px; }
+  }
+  p {
+    margin: 0 0 28px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.75);
+    max-width: 540px;
+  }
+}
+
+.racha-cta-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.racha-foot {
+  margin: 0 !important;
+  font-size: 13px !important;
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+/* ============ Mockup mobile — espelha tela real do racha ============ */
+.racha-mockup {
+  display: flex;
+  justify-content: center;
+  perspective: 1200px;
+}
+.rk-phone {
+  position: relative;
+  width: 290px;
+  border-radius: 38px;
+  padding: 12px 10px 14px;
+  background: linear-gradient(180deg, #1C2E3D, #0f1d2b);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  transform: rotateY(-4deg) rotateX(2deg);
+  transform-style: preserve-3d;
+  transition: transform 320ms ease;
+
+  &:hover {
+    transform: rotateY(0deg) rotateX(0deg) translateY(-4px);
+  }
+}
+/* Notch */
+.rk-notch {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 18px;
+  background: #000;
+  border-radius: 12px;
+  z-index: 5;
+}
+.rk-screen {
+  background: linear-gradient(180deg, #1C2E3D 0%, #173a5e 40%, #0d4d7a 100%);
+  border-radius: 26px;
+  min-height: 580px;
+  padding: 26px 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Status bar fake */
+.rk-statusbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 6px;
+  margin-bottom: 2px;
+
+  .rk-sb-icons {
+    display: inline-flex;
+    gap: 4px;
+    ion-icon { font-size: 11px; }
+  }
+}
+
+.rk-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  padding: 0 4px;
+
+  .rk-title {
+    flex: 1;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rk-menu {
+    font-size: 18px;
+    flex: 0 0 auto;
+    opacity: 0.85;
+  }
+}
+
+.rk-card {
+  background:
+    linear-gradient(135deg, rgba(124, 198, 29, 0.22), rgba(77, 171, 247, 0.18)),
+    rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 12px 12px 10px;
+  color: #fff;
+
+  .rk-bem-vindo {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    color: rgba(255, 255, 255, 0.65);
+    margin-bottom: 3px;
+  }
+  h3 {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.15;
+  }
+  p {
+    margin: 0 0 10px;
+    font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.4;
+  }
+  .rk-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+}
+.rk-chip {
+  border: none;
+  background: #f5c518;
+  color: #1C2E3D;
+  border-radius: 999px;
+  padding: 6px 8px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  font-family: inherit;
+
+  ion-icon { font-size: 12px; }
+
+  &.alt {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+}
+
+/* Progresso de ativação */
+.rk-progresso-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #fff;
+
+  .rk-pc-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+
+    ion-icon {
+      font-size: 18px;
+      color: #f5c518;
+      flex: 0 0 auto;
+    }
+    .rk-pc-txt {
+      flex: 1;
+      min-width: 0;
+      strong {
+        display: block;
+        font-size: 11.5px;
+        font-weight: 800;
+      }
+      span {
+        font-size: 9.5px;
+        color: rgba(255, 255, 255, 0.65);
+      }
+    }
+    .rk-pc-badge {
+      background: rgba(124, 198, 29, 0.22);
+      color: #95d63f;
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+  }
+  .rk-pc-bar {
+    height: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 8px;
+
+    .rk-pc-fill {
+      width: 75%;
+      height: 100%;
+      background: linear-gradient(90deg, #7CC61D, #95d63f);
+      border-radius: inherit;
+    }
+  }
+  .rk-pc-passos {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px 8px;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9.5px;
+      color: rgba(255, 255, 255, 0.55);
+
+      ion-icon { font-size: 11px; }
+
+      &.done {
+        color: #95d63f;
+      }
+    }
+  }
+}
+
+/* Mini ranking */
+.rk-ranking {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #fff;
+
+  .rk-rk-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 6px;
+
+    ion-icon { font-size: 13px; color: #f5c518; }
+    small {
+      margin-left: auto;
+      font-size: 8.5px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.5);
+      letter-spacing: 0.3px;
+      text-transform: lowercase;
+    }
+  }
+
+  .rk-rk-row {
+    display: grid;
+    grid-template-columns: 18px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 10.5px;
+
+    &:last-child { border-bottom: none; }
+
+    .rk-pos {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9.5px;
+      font-weight: 800;
+      color: #1C2E3D;
+      background: rgba(255, 255, 255, 0.5);
+
+      &.um  { background: #f5c518; }
+      &.dois { background: #b8c2cc; }
+      &.tres { background: #cd7f32; color: #fff; }
+    }
+    .rk-jog {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    .rk-gols {
+      font-weight: 800;
+      color: #95d63f;
+      font-size: 11px;
+    }
+  }
+}
+
+/* Bottom tab bar */
+.rk-tabbar {
+  margin-top: auto;
+  margin-left: -10px;
+  margin-right: -10px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: rgba(0, 0, 0, 0.45);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 4px 12px;
+  backdrop-filter: blur(6px);
+
+  .rk-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 8.5px;
+    font-weight: 600;
+
+    ion-icon { font-size: 18px; }
+
+    &.ativa {
+      color: #95d63f;
+    }
+  }
+}
+
+/* =====================================================
+   CTA FINAL — dark com texto grande
+   ===================================================== */
+.cta-final {
+  background: var(--grad-hero);
+  color: #fff;
+  padding: 100px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+
+  /* Blob verde no fundo */
+  &::before {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(124, 198, 29, 0.18), transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+}
+
+.cta-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+
+  h2 {
+    margin: 0 0 12px;
+    font-size: 46px;
+    font-weight: 900;
+    letter-spacing: -1px;
+
+    @media (max-width: 720px) { font-size: 30px; }
+  }
+
+  p {
+    margin: 0 0 32px;
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.5;
+  }
+}
+
+/* =====================================================
+   FOOTER
+   ===================================================== */
+.hp-footer {
+  background: var(--navy-deep);
+  color: rgba(255, 255, 255, 0.65);
+  padding: 60px 24px 24px;
+}
+
+.footer-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 40px;
+
+  @media (max-width: 880px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  h4 {
+    margin: 0 0 8px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  a, button {
+    color: rgba(255, 255, 255, 0.65);
+    text-decoration: none;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    transition: color 150ms ease;
+
+    &:hover { color: var(--lime); }
+  }
+
+  p {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.5;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    ion-icon { color: var(--lime); font-size: 16px; }
+  }
+}
+
+.hp-brand.light {
+  color: #fff;
+  ion-icon { color: var(--lime); }
+}
+
+.texto-marca {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13.5px;
+  line-height: 1.5;
+  display: block !important;
+}
+
+.redes {
+  display: flex;
+  gap: 10px;
+
+  a {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 200ms ease, transform 200ms ease;
+
+    ion-icon { font-size: 18px; }
+
+    &:hover {
+      background: var(--lime);
+      transform: translateY(-2px);
+    }
+  }
+}
+
+.footer-bottom {
+  max-width: 1240px;
+  margin: 40px auto 0;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.45);
+
+  p { margin: 0; }
+}
+
+/* =====================================================
+   FADE-IN ao scrollar (intersection observer não usado;
+   só anima na 1ª renderização pra dar dinamismo)
+   ===================================================== */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hero-texto > *,
+.hero-mockup,
+.benef-card,
+.camp-card,
+.check-list li,
+.img-card {
+  animation: fade-up 700ms cubic-bezier(.2,.8,.3,1) backwards;
+}
+
+.hero-texto > *:nth-child(1) { animation-delay: 0ms; }
+.hero-texto > *:nth-child(2) { animation-delay: 100ms; }
+.hero-texto > *:nth-child(3) { animation-delay: 180ms; }
+.hero-texto > *:nth-child(4) { animation-delay: 260ms; }
+.hero-texto > *:nth-child(5) { animation-delay: 340ms; }
+
+.hero-mockup { animation-delay: 400ms; }
+
+.benef-card:nth-child(1) { animation-delay: 0ms; }
+.benef-card:nth-child(2) { animation-delay: 120ms; }
+.benef-card:nth-child(3) { animation-delay: 240ms; }

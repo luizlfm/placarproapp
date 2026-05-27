@@ -1,0 +1,687 @@
+@import '../../styles/racha-shared';
+
+/* ============================================================
+   Meus Rachas — landing /racha (paralelo ao /espectador).
+   Usa o padrão page-head + hero-strip do shared.
+   ============================================================ */
+
+.mr-content {
+  --background: #f3f4f6;
+}
+
+/* ============ Header navy ============ */
+.mr-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: #1C2E3D;
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.mr-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  &:hover { opacity: 0.85; }
+
+  .mr-brand-img {
+    height: 32px;
+    width: auto;
+    display: block;
+    object-fit: contain;
+  }
+  .mr-brand-sub {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+}
+.mr-sair {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease;
+  ion-icon { font-size: 16px; }
+  &:hover { background: rgba(235, 71, 71, 0.18); border-color: rgba(255, 138, 138, 0.5); }
+}
+
+/* ============ Page wrapper ============ */
+.mr-page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+
+  @media (max-width: 600px) {
+    padding: 14px 12px 80px;
+  }
+}
+
+/* ============ Hero v2 (compacto: título + CTA num bloco só) ============
+   Substitui os blocos `.r-page-head` + `.r-hero-strip` antigos. Em mobile
+   colapsa pra 1 coluna; em desktop fica side-by-side. */
+.mr-hero-v2 {
+  background: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 55%, #3d7820 100%);
+  color: #fff;
+  border-radius: 16px;
+  padding: 22px 22px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 22px;
+  box-shadow: 0 8px 22px rgba(28, 46, 61, 0.18);
+  position: relative;
+  overflow: hidden;
+
+  /* Bolha verde decorativa no canto */
+  &::before {
+    content: '';
+    position: absolute;
+    right: -40px;
+    top: -40px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124, 198, 29, 0.25), transparent 70%);
+    pointer-events: none;
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    padding: 18px 18px;
+    gap: 14px;
+  }
+}
+
+.mr-hero-text {
+  position: relative;
+  z-index: 1;
+
+  .mr-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: rgba(124, 198, 29, 0.22);
+    color: #b9e87d;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+
+    ion-icon { font-size: 12px; }
+  }
+  h1 {
+    margin: 0 0 6px;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.15;
+
+    @media (max-width: 600px) { font-size: 20px; }
+  }
+  p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.78);
+    max-width: 420px;
+  }
+}
+
+.mr-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  background: #7CC61D;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 14px rgba(124, 198, 29, 0.4);
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+
+  ion-icon { font-size: 20px; flex: 0 0 auto; }
+
+  &:hover {
+    transform: translateY(-1px);
+    background: #6cb318;
+    box-shadow: 0 6px 18px rgba(124, 198, 29, 0.5);
+  }
+
+  @media (max-width: 600px) {
+    width: 100%;
+    padding: 14px 18px;
+    font-size: 14px;
+  }
+}
+
+/* ============ Hero card ============ */
+.mr-hero {
+  background: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 50%, #1e7e34 100%);
+  border-radius: 18px;
+  padding: 28px 28px;
+  color: #fff;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 28px;
+  align-items: center;
+  box-shadow: 0 10px 32px rgba(28, 46, 61, 0.25);
+  margin-bottom: 32px;
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+    padding: 22px 20px;
+    gap: 18px;
+  }
+}
+
+.mr-hero-text {
+  min-width: 0;
+
+  .mr-hero-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(124, 198, 29, 0.22);
+    color: #b9e87d;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  h1 {
+    margin: 0 0 8px;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.15;
+  }
+  p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.78);
+    max-width: 460px;
+  }
+}
+
+.mr-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #7CC61D 0%, #5a9912 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  box-shadow: 0 3px 12px rgba(124, 198, 29, 0.32);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  white-space: nowrap;
+  text-align: left;
+  line-height: 1.2;
+
+  ion-icon { font-size: 20px; flex: 0 0 auto; }
+
+  span {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    strong { font-size: 12.5px; font-weight: 700; }
+    small { font-size: 10px; opacity: 0.85; font-weight: 500; }
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(124, 198, 29, 0.42);
+  }
+
+  &.secondary {
+    margin-top: 10px;
+  }
+}
+
+/* ============ Loading ============ */
+.mr-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+}
+
+/* ============ Showcase de recursos (disponíveis + em breve) ============ */
+.mr-features {
+  margin-top: 36px;
+  margin-bottom: 28px;
+  /* Separador sutil acima pra desencostar do card "Meus rachas" anterior. */
+  padding-top: 24px;
+  border-top: 1px solid rgba(28, 46, 61, 0.06);
+}
+
+.mr-features-head {
+  margin-bottom: 14px;
+  padding: 0 4px;
+
+  h2 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 800;
+    color: #1C2E3D;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--rp-text-muted, #6b7280);
+    line-height: 1.45;
+  }
+}
+
+.mr-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+}
+
+.mr-feat {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  grid-template-areas:
+    'icon  title'
+    'icon  desc'
+    'eb    eb';
+  align-items: start;
+  gap: 2px 12px;
+  padding: 14px 14px 12px;
+  background: #fff;
+  border: 1px solid var(--rp-border, #e5e7eb);
+  border-radius: 12px;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: var(--rp-lime, #7CC61D);
+    box-shadow: 0 4px 12px rgba(28, 46, 61, 0.08);
+  }
+
+  .mr-feat-icon {
+    grid-area: icon;
+    grid-row: span 2; /* span só pelas 2 linhas do topo (title + desc) */
+    align-self: center;
+    justify-self: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(124, 198, 29, 0.16), rgba(124, 198, 29, 0.06));
+    color: var(--rp-lime-shade, #5fa118);
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  strong {
+    grid-area: title;
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #1C2E3D;
+    line-height: 1.2;
+    padding-right: 24px; /* espaço pro check verde no canto (cards "ok") */
+  }
+
+  > span:not(.mr-feat-status) {
+    grid-area: desc;
+    font-size: 11.5px;
+    color: var(--rp-text-muted, #6b7280);
+    line-height: 1.35;
+    margin-top: 2px;
+  }
+
+  /* Status:
+     - `.ok` → check verde discreto no canto superior direito (sem texto)
+     - `.eb` → badge "Em breve" INLINE no grid (área 'eb'), abaixo da desc.
+       Não usa position:absolute pra evitar sobreposição com o título em
+       cards estreitos (mobile). */
+  .mr-feat-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+
+    &.ok {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      gap: 0;
+      font-size: 0; /* esconde "Disponível", deixa só o check */
+      ion-icon {
+        font-size: 16px;
+        color: var(--rp-lime, #7CC61D);
+      }
+    }
+    &.eb {
+      grid-area: eb;
+      width: fit-content;
+      margin-top: 10px;
+      padding: 3px 8px;
+      color: #8a6a08;
+      background: rgba(245, 197, 24, 0.14);
+      border: 1px solid rgba(245, 197, 24, 0.30);
+      border-radius: 999px;
+      ion-icon { font-size: 11px; }
+    }
+  }
+
+  /* Variante "em breve" — visual mais quieto, opacity sutil */
+  &.em-breve {
+    background: #fafbfc;
+    border-color: var(--rp-border, #e5e7eb);
+
+    .mr-feat-icon {
+      background: linear-gradient(135deg, rgba(148, 163, 184, 0.12), rgba(148, 163, 184, 0.05));
+      color: #94a3b8;
+    }
+    strong { color: #475569; }
+
+    &:hover {
+      border-color: rgba(245, 197, 24, 0.45);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(245, 197, 24, 0.12);
+    }
+  }
+}
+
+/* ============ Seção (lista de rachas) ============ */
+.mr-secao {
+  .mr-secao-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 16px;
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+      color: #1C2E3D;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .mr-secao-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 26px;
+      height: 22px;
+      padding: 0 8px;
+      background: rgba(124, 198, 29, 0.16);
+      color: #4a7e0e;
+      font-size: 12px;
+      font-weight: 800;
+      border-radius: 999px;
+    }
+  }
+}
+
+/* ============ Grid de cards ============ */
+.mr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 14px;
+
+  @media (max-width: 600px) { gap: 12px; }
+}
+
+/* ============ Card v2 (mais compacto, sem capa gigante) ============
+   Substitui o `.mr-card` antigo. Layout: status no topo, header (logo +
+   nome + sub) numa linha, stats em mini-pílulas, ações no rodapé. */
+.mr-card-v2 {
+  position: relative;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  padding: 16px 14px 12px;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  /* Borda lateral verde sutil — identidade racha */
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14px;
+    bottom: 14px;
+    width: 3px;
+    border-radius: 3px;
+    background: #7CC61D;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(28, 46, 61, 0.1);
+    border-color: #7CC61D;
+  }
+
+  /* Cards em rascunho ganham destaque amarelo (rede da borda lateral). */
+  &.rascunho {
+    border-color: #f5c518;
+    box-shadow: 0 3px 10px rgba(245, 197, 24, 0.14);
+    &::before { background: #f5c518; }
+  }
+}
+
+.mr-card-status {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(124, 198, 29, 0.15);
+  color: #4a7e0e;
+
+  &[data-status='rascunho']  { background: rgba(245, 197, 24, 0.18); color: #936b00; }
+  &[data-status='ativo']     { background: rgba(124, 198, 29, 0.18); color: #3d7820; }
+  &[data-status='pausado']   { background: rgba(148, 163, 184, 0.22); color: #475569; }
+  &[data-status='encerrado'] { background: rgba(107, 114, 128, 0.2);  color: #4b5563; }
+}
+
+.mr-card-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding-left: 8px; /* compensa a borda lateral */
+  padding-right: 60px; /* não cobre o status badge */
+}
+
+.mr-card-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7CC61D 0%, #5a9912 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(124, 198, 29, 0.3);
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 24px; color: #fff; }
+}
+
+.mr-card-titulo {
+  min-width: 0;
+  flex: 1;
+
+  h3 {
+    margin: 0 0 3px;
+    font-size: 16px;
+    font-weight: 800;
+    color: #1C2E3D;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+  .mr-card-sub {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #6b7280;
+
+    ion-icon { font-size: 13px; color: #94a3b8; }
+    .mr-dot { color: #cbd5e1; }
+  }
+}
+
+/* Stats em mini-cards (2 colunas) */
+.mr-card-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding-left: 8px;
+}
+.mr-stat {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 8px 10px;
+  text-align: center;
+
+  .mr-stat-valor {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1C2E3D;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+  .mr-stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+}
+
+/* Ações */
+.mr-card-actions {
+  display: flex;
+  gap: 8px;
+  padding-left: 8px;
+  margin-top: 2px;
+}
+.mr-card-btn {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 150ms ease;
+  line-height: 1.2;
+
+  ion-icon { font-size: 16px; }
+
+  &.primary {
+    flex: 1;
+    background: #1C2E3D;
+    color: #fff;
+    &:hover { background: #0f1d2b; }
+  }
+  &.danger {
+    background: #fef2f2;
+    color: #ef4444;
+    padding: 10px 12px;
+    &:hover { background: #fee2e2; color: #dc2626; }
+  }
+}
+
+/* ============ Empty state ============ */
+.mr-empty {
+  background: #fff;
+  border: 2px dashed #d1d5db;
+  border-radius: 16px;
+  padding: 56px 24px;
+  text-align: center;
+
+  .mr-empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(124, 198, 29, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    ion-icon { font-size: 44px; color: #7CC61D; }
+  }
+  h2 {
+    margin: 0 0 8px;
+    font-size: 19px;
+    font-weight: 800;
+    color: #1C2E3D;
+  }
+  p {
+    margin: 0;
+    font-size: 14px;
+    color: #6b7280;
+  }
+}

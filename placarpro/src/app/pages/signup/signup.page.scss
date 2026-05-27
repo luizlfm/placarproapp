@@ -1,0 +1,90 @@
+@import '../auth-styles.scss';
+
+/* Botão Voltar — mesmo estilo de login.page.scss. Posiciona acima do
+   logo do card, no canto superior esquerdo. */
+.auth-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: -4px 0 8px -6px;
+  padding: 6px 10px 6px 6px;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--placar-text-muted, rgba(0, 0, 0, 0.55));
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+
+  ion-icon { font-size: 18px; }
+
+  &:hover {
+    background: rgba(28, 46, 61, 0.06);
+    color: var(--placar-text, #1C2E3D);
+  }
+  &:active { background: rgba(28, 46, 61, 0.10); }
+}
+
+/* Grid de 3 colunas (Organizador / Moderador / Espectador). Em telas
+   estreitas vira 1 coluna pra não cortar nada. */
+.auth-tipo-grid.tipo-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Grid 2x2 (Organizador / Moderador / Racha / Espectador).
+   Mantém 2 colunas SEMPRE — em mobile estreito (<= 380px) compacta
+   fontes/padding. Padronizado com login.page.scss. */
+.auth-tipo-grid.tipo-4col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+
+  .tipo-card {
+    padding: 14px 12px;
+    .tipo-titulo { font-size: 12.5px; }
+    .tipo-sub    { font-size: 11px; }
+    ion-icon { font-size: 26px; }
+  }
+
+  @media (max-width: 380px) {
+    gap: 6px;
+    .tipo-card {
+      padding: 12px 8px;
+      .tipo-titulo { font-size: 11px; letter-spacing: 0.2px; }
+      .tipo-sub    { font-size: 10px; line-height: 1.25; }
+      ion-icon { font-size: 22px; }
+    }
+  }
+}
+
+/* Aviso amigável abaixo do campo "código de convite" — só aparece quando
+   o usuário escolhe SOU ORGANIZADOR no cadastro. */
+.codigo-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: rgba(245, 197, 24, 0.12);
+  border: 1px solid rgba(245, 197, 24, 0.32);
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: #5a4500;
+
+  ion-icon {
+    font-size: 18px;
+    color: #b88a00;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  b { color: #1C2E3D; font-weight: 800; }
+}

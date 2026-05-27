@@ -1,0 +1,549 @@
+/* ============================================================
+   RACHA — Mixins e classes compartilhadas
+   Tokens (--rp-*) vivem em src/global.scss porque :root dentro
+   de SCSS scoped do Angular não funciona. Aqui ficam só as
+   classes utilitárias usadas pelas páginas do shell `/racha/*`.
+
+   Padrão de design: mais clean e próximo da área `/app/*`
+   (campeonatos) — sombras leves, botões menores, gradientes
+   suaves. Sem "loud" UI.
+   ============================================================ */
+
+/* ============ Toolbar topo (faixa navy fixa estilo ion-toolbar) ============
+   Adicionar `<header class="r-toolbar"><span class="r-toolbar-title">...</span></header>`
+   no TOPO de cada página do shell racha. Equivale ao `ion-toolbar color="primary"`
+   das pages do /app/*. Sticky para acompanhar scroll, estende até as bordas do
+   `shell-main` (que tem padding 24px 28px). */
+.r-toolbar {
+  background: var(--placar-sidebar-bg, #1C2E3D);
+  color: #fff;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* FIXED em vez de sticky — agora atravessa toda a viewport, incluindo
+     por cima da sidebar. Visual unificado: uma única barra navy no topo
+     da tela inteira, como em apps mobile nativos. */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 80;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  margin: 0;
+  /* Min-height fixo (32px do botão back + 10+10 de padding = 52px) pra
+     que TODAS as telas tenham a mesma altura de header, mesmo as que não
+     têm botão voltar (a Início, por exemplo, ficava 14px mais baixa). */
+  min-height: calc(52px + env(safe-area-inset-top, 0px));
+  box-sizing: border-box;
+
+  @media (max-width: 720px) {
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px;
+  }
+}
+
+/* Nota: o espaço pro conteúdo não ficar embaixo do header fixo é
+   reservado pelo `.shell-main padding-top` (em racha-shell.page.scss).
+   Antes tinha `.r-page padding-top` aqui também — removido pra evitar
+   padding duplo. */
+
+/* Botão "voltar" DENTRO do header — irmão do título, alinhado à esquerda.
+   Pages precisam adicionar `<button class="r-toolbar-back" (click)="voltar()">`
+   antes do `.r-toolbar-title`. Estilo unificado em todas as telas. */
+.r-toolbar-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: background 150ms ease, transform 100ms ease;
+
+  ion-icon { font-size: 20px; }
+
+  &:hover { background: rgba(255, 255, 255, 0.16); }
+  &:active { background: rgba(255, 255, 255, 0.22); transform: scale(0.95); }
+}
+
+.r-toolbar-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @media (max-width: 720px) { font-size: 14px; }
+}
+
+/* Espaço pro hamburger flutuante (direita) no mobile não cobrir o título. */
+@media (max-width: 767px) {
+  .r-toolbar { padding-right: 56px; }
+}
+
+/* ============ Page header (HERO v2: gradient navy→verde com tag+título+sub) ============
+   ANTES: cabeçalho clean (fundo claro, h1 navy, p cinza).
+   AGORA: bloco hero com gradient navy→verde e texto branco — mesmo look
+   da home de meus-rachas. Cria identidade forte e unifica as telas.
+
+   Quando seguido de `.r-hero-strip` adjacente, eles se mesclam visualmente
+   via `margin-top` negativo + bordas que se conectam (canto inferior do
+   page-head plano + canto superior do strip plano também). */
+.r-page-head {
+  position: relative;
+  background: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 55%, #3d7820 100%);
+  border-radius: 14px 14px 14px 14px;
+  padding: 20px 22px;
+  margin: 0 0 14px;
+  color: #fff;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(28, 46, 61, 0.15);
+
+  /* Bolha verde decorativa no canto direito — mesma identidade da home racha. */
+  &::before {
+    content: '';
+    position: absolute;
+    right: -40px;
+    top: -40px;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124, 198, 29, 0.25), transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Wrapper interno garante z-index acima da decoração. */
+  > * { position: relative; z-index: 1; }
+
+  .r-page-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(124, 198, 29, 0.22);
+    color: #b9e87d;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    margin: 0 0 4px;
+    font-size: 21px;
+    font-weight: 800;
+    line-height: 1.15;
+    color: #fff;
+    letter-spacing: -0.3px;
+
+    @media (max-width: 480px) { font-size: 19px; }
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.82);
+    max-width: 640px;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 600px) { padding: 16px 16px; }
+}
+
+/* ============ Hero strip (faixa lime com CTA, mesclada com page-head) ============
+   Quando vem LOGO APÓS `.r-page-head`, mescla visualmente: encosta no rodapé
+   do page-head (margin-top negativo + corners de cima planos) pra parecer
+   uma continuação do mesmo bloco. Quando aparece sozinho, mantém visual
+   independente. */
+.r-hero-strip {
+  background: linear-gradient(135deg, #7CC61D 0%, #5a9912 100%);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-radius: 0 0 14px 14px;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 14px rgba(124, 198, 29, 0.28);
+  margin-bottom: 14px;
+}
+
+/* Mescla com o page-head acima (CSS sibling selector): canto superior plano +
+   levanta -14px (mesma margem que o page-head reserva embaixo) pra encostar. */
+.r-page-head + .r-hero-strip {
+  margin-top: -14px;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 0 6px 18px rgba(124, 198, 29, 0.22);
+}
+
+/* Quando o page-head é seguido por um hero-strip, achata o canto inferior do
+   page-head pra os dois encostarem sem "degrau" no canto. */
+.r-page-head:has(+ .r-hero-strip) {
+  border-radius: 14px 14px 0 0;
+  margin-bottom: 0;
+  box-shadow: none;
+}
+
+/* Fallback pra browsers sem suporte a :has() (Firefox < 121, Safari < 15.4):
+   o degrau fica visível mas funcional. */
+
+.r-hero-strip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--rp-navy, #1C2E3D);
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: background 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+
+  ion-icon { font-size: 16px; color: var(--rp-lime-deep, #4a7e0e); }
+
+  &:hover {
+    background: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  }
+
+  &:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+  /* Variante secundária (transparente com borda branca) — pra ação alternativa
+     dentro da mesma hero-strip (ex: "Por voz" ao lado de "Novo jogador"). */
+  &.alt {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(2px);
+
+    ion-icon { color: #fff; }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+    }
+  }
+}
+
+/* ============ Métricas compactas (chips inline) ============
+   Substitui o `.r-hero-metricas` que ficava dentro do hero gradient.
+   Agora aparecem como chips abaixo do título quando relevante. */
+.r-metricas-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0 14px;
+}
+
+.r-metric-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: #fff;
+  border: 1px solid var(--rp-border, #e5e7eb);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--rp-text-muted, #6b7280);
+
+  strong {
+    color: var(--rp-navy, #1C2E3D);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  ion-icon { font-size: 13px; color: var(--rp-lime, #7CC61D); }
+}
+
+/* ============ Compat: classes antigas .r-hero ainda funcionam ============
+   Mantemos definições mínimas pra páginas que ainda usam .r-hero/.r-hero-text
+   funcionarem em transição. Estilo é o mesmo do hero gradient antigo, mais
+   compacto. Quando migrar tudo, removemos esse bloco. */
+.r-hero {
+  background: var(--rp-grad-hero-soft);
+  border-radius: 14px;
+  padding: 18px 20px;
+  color: #fff;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(28, 46, 61, 0.1);
+  margin-bottom: 14px;
+
+  @media (max-width: 720px) { grid-template-columns: 1fr; padding: 16px; }
+}
+.r-hero-text {
+  min-width: 0;
+
+  .r-hero-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  h1 {
+    margin: 0 0 4px;
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.15;
+    @media (max-width: 480px) { font-size: 18px; }
+  }
+  p {
+    margin: 0 0 10px;
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.82);
+    line-height: 1.5;
+    max-width: 520px;
+  }
+}
+.r-hero-acoes {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.r-hero-metricas {
+  display: flex;
+  gap: 12px;
+
+  @media (max-width: 720px) { justify-content: flex-start; }
+}
+.r-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  .r-metric-lbl { font-size: 9.5px; font-weight: 700; letter-spacing: 0.4px; color: rgba(255, 255, 255, 0.7); }
+  .r-metric-val { font-size: 20px; font-weight: 800; color: #fff; line-height: 1; }
+}
+.r-metric-divider { width: 1px; background: rgba(255, 255, 255, 0.16); }
+
+/* ============ Botões — padrão único pequeno ============ */
+/* Tamanho ÚNICO pequeno em TODAS as telas. Ícone interno sempre
+   visível em 14px. `.r-btn-big` virou modificador discreto pra CTAs
+   primários (só um pouco maior, não exagerado). */
+.r-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+  white-space: nowrap;
+
+  /* Ícone interno — tamanho fixo visível, alinhamento garantido. */
+  ion-icon {
+    font-size: 14px;
+    flex: 0 0 auto;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+}
+
+.r-btn-ghost {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: #fff;
+  &:hover { background: rgba(255, 255, 255, 0.22); }
+}
+
+.r-btn-lime {
+  background: var(--rp-lime);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(124, 198, 29, 0.32);
+  &:hover {
+    background: var(--rp-lime-deep);
+    box-shadow: 0 4px 12px rgba(124, 198, 29, 0.42);
+  }
+}
+
+.r-btn-amarelo {
+  background: var(--rp-amarelo);
+  color: var(--rp-navy);
+  box-shadow: 0 2px 8px rgba(245, 197, 24, 0.28);
+  &:hover {
+    background: var(--rp-amarelo-soft);
+    box-shadow: 0 4px 12px rgba(245, 197, 24, 0.4);
+  }
+}
+
+.r-btn-navy {
+  background: var(--rp-navy);
+  color: #fff;
+  &:hover { background: var(--rp-navy-deep); }
+}
+
+.r-btn-azul {
+  background: var(--rp-azul);
+  color: #fff;
+  &:hover { background: var(--rp-azul-deep); }
+}
+
+.r-btn-outline {
+  background: transparent;
+  border: 1px solid var(--rp-lime);
+  color: var(--rp-lime-deep);
+  &:hover { background: rgba(124, 198, 29, 0.08); }
+}
+
+.r-btn-danger {
+  background: #fef2f2;
+  color: var(--rp-vermelho);
+  &:hover { background: #fee2e2; }
+}
+
+/* CTA principal — versão "média" (não exagerada). */
+.r-btn-big {
+  padding: 8px 16px;
+  font-size: 12.5px;
+  ion-icon { font-size: 15px; }
+}
+
+/* ============ Card padrão ============ */
+.r-card {
+  background: var(--rp-card);
+  border-radius: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--rp-border);
+  box-shadow: 0 1px 3px rgba(28, 46, 61, 0.04);
+
+  @media (max-width: 720px) { padding: 14px 14px; }
+}
+
+/* ============ Título de seção ============ */
+.r-secao {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 0 12px;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--rp-text);
+
+  ion-icon {
+    font-size: 14px;
+    color: var(--rp-lime);
+    background: rgba(124, 198, 29, 0.12);
+    border-radius: 50%;
+    padding: 4px;
+    width: 24px;
+    height: 24px;
+  }
+  small {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--rp-text-muted);
+    margin-left: 4px;
+  }
+
+  &:first-of-type { margin-top: 4px; }
+}
+
+/* ============ Empty state padrão ============ */
+.r-empty {
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--rp-card);
+  border: 2px dashed #d1d5db;
+  border-radius: 14px;
+
+  .r-empty-icone {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(124, 198, 29, 0.12);
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    ion-icon { font-size: 32px; color: var(--rp-lime); }
+  }
+  h2 {
+    margin: 0 0 6px;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--rp-text);
+  }
+  p {
+    margin: 0 0 14px;
+    font-size: 13px;
+    color: var(--rp-text-muted);
+    line-height: 1.5;
+  }
+}
+
+/* ============ Page container ============ */
+.r-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ============ Reset global pros botões custom das pages ============ */
+/* Cada page tem prefixo próprio (.ri-* / .rt-* / .rj-* / .rs-* / .mr-* /
+   .rp-* / .rf-* / .ru-* / .rv-* / .rl-* / .rw-* / .rpa-* / .rpc-* / .rrm-* / .rr-*).
+   Esse reset GARANTE padding/font padronizado em todos os botões que
+   tenham `-btn-` no nome — mesmo os definidos antes desse refactor.
+   Specificity é a mesma de um selector normal, então page-specific
+   regras AINDA podem sobrescrever (gradients, cores, etc.). */
+[class*='-btn-amarelo'],
+[class*='-btn-ghost'],
+[class*='-btn-lime'],
+[class*='-btn-navy'],
+[class*='-btn-azul'],
+[class*='-btn-cancel'],
+[class*='-btn-save'],
+[class*='-btn-editar'],
+[class*='-acao-btn'] {
+  &:not(.r-btn) {
+    padding: 6px 12px !important;
+    font-size: 11.5px !important;
+    border-radius: 6px !important;
+    letter-spacing: 0.2px !important;
+    line-height: 1.2 !important;
+
+    ion-icon {
+      font-size: 14px !important;
+      flex: 0 0 auto;
+    }
+  }
+}
+
+/* Variante "big" pra qualquer botão custom com modificador `.big` */
+[class*='-btn'].big {
+  padding: 8px 16px !important;
+  font-size: 12.5px !important;
+  ion-icon { font-size: 15px !important; }
+}

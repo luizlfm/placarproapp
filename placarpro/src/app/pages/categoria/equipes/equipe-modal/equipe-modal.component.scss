@@ -1,0 +1,776 @@
+/* ════════════════════════════════════════════════════════════════════
+   EQUIPE-MODAL — design profissional (inspiração Linear / Notion)
+   ════════════════════════════════════════════════════════════════════
+
+   ESTRUTURA:
+     ┌─────────────────────────────────┐
+     │ Editar equipe          ↗  ×    │ ← header bar (título + ações)
+     ├─────────────────────────────────┤
+     │                                 │
+     │            ⬤ escudo            │
+     │                                 │
+     │ IDENTIFICAÇÃO                   │
+     │ ┌─────────────────────────────┐ │
+     │ │ Nome da equipe              │ │
+     │ │ [ATALANTA...              ] │ │
+     │ │ Técnico                     │ │
+     │ │ [Ex: Tite                 ] │ │
+     │ │ Grupo  [Sem grupo        ▾] │ │
+     │ └─────────────────────────────┘ │
+     │ ▸ Mais opções                   │
+     │                                 │
+     │ GERENCIAR                       │
+     │ ┌─────────────────────────────┐ │
+     │ │ ⚽ Jogadores             →  │ │
+     │ │ 👥 Equipe Técnica        →  │ │
+     │ └─────────────────────────────┘ │
+     ├─────────────────────────────────┤
+     │ Remover            [Salvar]    │ ← footer sticky
+     └─────────────────────────────────┘
+
+   DESIGN PRINCIPLES:
+   • Sistema espacial 4/8/12/16/24/32
+   • Cores neutras (#fff bg, #f5f6f8 surface, navy text)
+   • Tipografia clean: títulos seções 11px uppercase, body 14px
+   • Botões com altura fixa 40-44px
+   • Border-radius 10px (cards, inputs, buttons)
+   • Apenas 1 breakpoint (≥ 720px = layout side-by-side opcional)
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ─── Override do padding global do modal-card ───
+   Global aplica padding 16/14 em ≤ 540px — neutralizamos pra ter
+   controle total. */
+ion-content.bg .modal-card {
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+
+/* ═══════ Base ═══════ */
+.bg {
+  --background: #fff;
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.modal-card {
+  background: #fff;
+  color: var(--placar-text, #1c2e3d);
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ═══════ HEADER (title bar) ═══════ */
+.modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--ion-color-primary, #1c2e3d);
+  border-bottom: 1px solid var(--placar-divider, #ececef);
+  min-height: 56px;
+
+  h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffff;
+    letter-spacing: -0.2px;
+  }
+
+  button {
+    color: #fff;
+    border: 1px solid #fff;
+  }
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--placar-text-muted, #030811);
+  transition: background 140ms ease, color 140ms ease;
+
+  ion-icon {
+    font-size: 20px;
+    color: #ffffff;
+  }
+
+  &:hover {
+    background: var(--placar-surface, #ebebec);
+    color: var(--placar-text, #1c2e3d);
+
+    ion-icon {
+      color: #1c2e3d;
+    }
+  }
+
+  &:active {
+    background: #cccccc;
+  }
+}
+
+/* ═══════ BODY ═══════ */
+.modal-body {
+  flex: 1;
+  padding: 20px 16px 24px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  /* Em web limita largura central pra não esticar demais em modais largos */
+  >* {
+    max-width: 100%;
+  }
+}
+
+/* ─── Identity (escudo centralizado) ─── */
+.team-identity {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 0;
+}
+
+.logo-circle {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--placar-surface, #f5f6f8);
+  color: var(--ion-color-primary, #1c2e3d);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  box-shadow: 0 2px 8px rgba(28, 46, 61, 0.08);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  ion-icon {
+    font-size: 40px;
+  }
+
+  /* Sem logo: borda tracejada (call to action) */
+  &:not(:has(img)) {
+    background: rgba(28, 46, 61, 0.04);
+    border: 2px dashed rgba(28, 46, 61, 0.18);
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(28, 46, 61, 0.14);
+  }
+
+  &:disabled {
+    cursor: wait;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  /* Camera badge — discreto, dentro do círculo */
+  .hint-edit {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--ion-color-secondary, #7CC61D);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    border: 2px solid #fff;
+
+    ion-icon {
+      font-size: 12px;
+    }
+  }
+}
+
+/* ─── Section "Informações básicas" — espaçamento entre inputs outlined ─── */
+.divider {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  ion-input,
+  ion-select {
+    --background: #fff;
+    width: 100%;
+  }
+}
+
+.divider-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--placar-text-muted, #6b7280);
+}
+
+/* ─── Section ─── */
+// .section {
+//   display: flex;
+//   flex-direction: column;
+//   gap: 12px;
+// }
+
+// .section-label {
+//   margin: 0;
+//   font-size: 11px;
+//   font-weight: 700;
+//   text-transform: uppercase;
+//   letter-spacing: 0.8px;
+//   color: var(--placar-text-muted, #6b7280);
+// }
+
+// /* ─── Inputs ─── (usa o estilo global outlined) */
+// .section ion-input[fill="outline"],
+// .section ion-select[fill="outline"] {
+//   --background: #fff;
+//   --border-radius: 10px solid var(--placar-divider, #0a0acc);
+//   width: 100%;
+// }
+
+/* ─── Collapsible "Mais opções" ─── */
+.extra {
+  margin-top: 20px;
+  background: #fff;
+  border: 1px solid var(--placar-divider, #ececef);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 150ms ease;
+
+  &[open] {
+    border-color: rgba(28, 46, 61, 0.18);
+  }
+
+  summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--placar-text, #1c2e3d);
+    padding: 12px 14px;
+    user-select: none;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    .ic-open,
+    .ic-close {
+      font-size: 18px;
+      color: var(--ion-color-secondary, #7CC61D);
+    }
+
+    .ic-close {
+      display: none;
+    }
+  }
+
+  &[open] summary {
+    border-bottom: 1px solid var(--placar-divider);
+
+    .ic-open {
+      display: none;
+    }
+
+    .ic-close {
+      display: inline-flex;
+    }
+  }
+}
+
+.extra-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ─── Color picker ─── */
+.cor-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cor-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--placar-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cor-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+
+  @media (max-width: 380px) {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+.cor-swatch {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 120ms ease;
+
+  ion-icon {
+    color: #fff;
+    font-size: 14px;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
+  }
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  &.sel {
+    border-color: var(--ion-color-primary);
+    box-shadow: 0 0 0 2px #fff inset;
+  }
+
+  &.custom {
+    background: conic-gradient(from 0deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+
+    input[type="color"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      border: 0;
+      padding: 0;
+    }
+
+    ion-icon {
+      color: #fff;
+    }
+  }
+}
+
+.cor-hex {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, monospace;
+  background: var(--placar-surface, #f5f6f8);
+  padding: 4px 6px 4px 4px;
+  border-radius: 999px;
+  align-self: flex-start;
+
+  >span {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .cor-clear {
+    background: none;
+    border: 0;
+    color: var(--placar-text-muted);
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    ion-icon {
+      font-size: 14px;
+    }
+
+    &:hover {
+      background: rgba(235, 71, 71, 0.12);
+      color: var(--ion-color-danger);
+    }
+  }
+}
+
+/* ─── Nav cards (Jogadores / Equipe Técnica) ─── */
+.nav-card {
+  display: grid;
+  grid-template-columns: 40px 1fr 18px;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid var(--placar-divider, #ececef);
+  border-radius: 10px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+  width: 100%;
+
+  &+& {
+    margin-top: 8px;
+  }
+
+  &:hover {
+    border-color: var(--ion-color-secondary, #7CC61D);
+    background: rgba(124, 198, 29, 0.04);
+
+    .nav-chev {
+      color: var(--ion-color-secondary, #7CC61D);
+      transform: translateX(2px);
+    }
+  }
+
+  &:active {
+    transform: scale(0.998);
+  }
+
+  .nav-ic {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(124, 198, 29, 0.12);
+    color: var(--ion-color-secondary, #7CC61D);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    ion-icon {
+      font-size: 20px;
+    }
+  }
+
+  .nav-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .nav-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--placar-text, #1c2e3d);
+    letter-spacing: -0.1px;
+  }
+
+  .nav-sub {
+    font-size: 12px;
+    color: var(--placar-text-muted, #6b7280);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nav-chev {
+    font-size: 16px;
+    color: var(--placar-text-muted);
+    transition: color 150ms ease, transform 150ms ease;
+  }
+
+  &--warning {
+    .nav-ic {
+      background: rgba(217, 119, 6, 0.14);
+      color: #d97706;
+      border-radius: 10px;
+    }
+
+    .nav-title {
+      color: #92400e;
+    }
+
+    &:hover {
+      border-color: #d97706;
+      background: rgba(217, 119, 6, 0.05);
+
+      .nav-chev {
+        color: #d97706;
+      }
+    }
+  }
+}
+
+/* ═══════ FOOTER ═══════ */
+.modal-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fff;
+  border-top: 1px solid var(--placar-divider, #ececef);
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  background-color: var(--placar-text, medium);
+
+  .spacer {
+    flex: 1;
+  }
+}
+
+/* ─── Botões base ─── (button nativos, sem ion-button) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 40px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: background 140ms ease, border-color 140ms ease, transform 100ms ease;
+
+  ion-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  ion-spinner {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-danger-outline {
+  background: transparent;
+  border-color: var(--ion-color-danger, #eb445a);
+  color: var(--ion-color-danger, #eb445a);
+
+  &:hover:not(:disabled) {
+    background: rgba(235, 68, 90, 0.08);
+  }
+}
+
+.btn-primary:not([class*="ion-"]):not(.btn-icon):not(.btn-icon-sm):not([data-compact]) {
+  background: var(--ion-color-primary, #1c2e3d);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(28, 46, 61, 0.22);
+  border: 1.5px solid #fff;
+
+  &:hover:not(:disabled) {
+    background: #2d4a63;
+  }
+
+  &:disabled {
+    box-shadow: none;
+    background: var(--ion-color-primary, #1c2e3d);
+  }
+
+  /* Botões nativos (HTML <button>) — garantia de touch target.
+     `ion-button` já tem `min-height` via tokens, este alvo é pra
+     <button> puro que aparece em listas/cards customizados. */
+
+  min-height: 36px;
+  width: 100% !important;
+
+}
+
+.btn-danger:not([class*="ion-"]):not(.btn-icon):not(.btn-icon-sm):not([data-compact]) {
+  background: var(--ion-color-danger, #eb445a);
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #ff4747;
+  }
+
+  &:disabled {
+    box-shadow: none;
+    background: var(--ion-color-danger, #eb445a);
+  }
+
+  /* Botões nativos (HTML <button>) — garantia de touch target.
+     `ion-button` já tem `min-height` via tokens, este alvo é pra
+     <button> puro que aparece em listas/cards customizados. */
+
+  min-height: 36px;
+  width: 100% !important;
+
+}
+
+/* ═══════ MOBILE (≤ 600px) ═══════ */
+@media (max-width: 600px) {
+  .modal-header {
+    padding: 10px 12px;
+    min-height: 52px;
+
+    h2 {
+      font-size: 15px;
+    }
+  }
+
+  .header-btn {
+    width: 34px;
+    height: 34px;
+
+    ion-icon {
+      font-size: 19px;
+    }
+  }
+
+  .modal-body {
+    padding: 16px 12px 20px;
+    gap: 20px;
+  }
+
+  .logo-circle {
+    width: 110px;
+    height: 110px;
+    border: 1px solid var(--placar-divider, #141424);
+
+    ion-icon {
+      font-size: 36px;
+    }
+  }
+
+  .nav-card {
+    padding: 11px 12px;
+    gap: 12px;
+    grid-template-columns: 36px 1fr 16px;
+    width: 100%;
+
+    .nav-ic {
+      width: 36px;
+      height: 36px;
+
+      ion-icon {
+        font-size: 18px;
+      }
+    }
+
+    .nav-title {
+      font-size: 13.5px;
+    }
+
+    .nav-sub {
+      font-size: 11.5px;
+    }
+  }
+
+  .modal-footer {
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    gap: 8px;
+    background-color: var(--placar-text, #f5f5f5);
+  }
+
+  /* "Remover" vira só ícone (botão quadrado). */
+  .btn-danger-outline {
+    ion-icon {
+      font-size: 20px;
+      color: var(--ion-color-danger, #eb445a);
+    }
+
+    span {
+      color: var(--ion-color-danger, #eb445a);
+    }
+  }
+
+  /* Salvar mantém texto. */
+  .btn-primary {
+    padding: 0 30px;
+    font-size: 13.5px;
+
+  }
+}
+
+/* ═══════ Desktop (≥ 720px): identidade + form lado a lado ═══════ */
+@media (min-width: 720px) {
+  .modal-body {
+    padding: 28px 28px 32px;
+    gap: 28px;
+  }
+
+  .modal-footer {
+    padding: 14px 28px calc(14px + env(safe-area-inset-bottom, 0px));
+    background-color: var(--placar-text, #f5f5f5);
+  }
+
+  .logo-circle {
+    width: 110px;
+    height: 110px;
+
+    ion-icon {
+      font-size: 44px;
+    }
+
+    .hint-edit {
+      width: 30px;
+      height: 30px;
+
+      ion-icon {
+        font-size: 14px;
+      }
+    }
+  }
+}

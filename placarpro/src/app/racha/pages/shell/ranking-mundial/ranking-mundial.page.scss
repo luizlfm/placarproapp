@@ -1,0 +1,103 @@
+@import '../../../styles/racha-shared';
+
+/* ============================================================
+   Ranking Mundial — comparação global (placeholder rico)
+   ============================================================ */
+
+.rrm-hero {
+  background: linear-gradient(135deg, #0f1d2b 0%, #1d4ed8 60%, #16a34a 110%);
+}
+
+.rrm-globo {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(124, 198, 29, 0.6), rgba(28, 46, 61, 0.8));
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 30px rgba(124, 198, 29, 0.4);
+
+  ion-icon { font-size: 56px; color: #fff; }
+
+  @media (max-width: 720px) { display: none; }
+}
+
+/* ============ Grid 4 categorias ============ */
+.rrm-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+
+  @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 440px) { grid-template-columns: 1fr; }
+}
+
+.rrm-card {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+
+  h3 {
+    margin: 0;
+    font-size: 13.5px;
+    font-weight: 800;
+    color: var(--rp-text);
+  }
+  p {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--rp-text-soft);
+  }
+  .rrm-em-breve {
+    margin-top: auto;
+    padding: 3px 12px;
+    background: rgba(245, 197, 24, 0.18);
+    color: var(--rp-amarelo-deep);
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+  }
+}
+
+.rrm-icone {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  ion-icon { font-size: 28px; }
+}
+
+/* ============ Card explicação ============ */
+.rrm-explicacao {
+  display: flex;
+  gap: 14px;
+  background: linear-gradient(135deg, #1C2E3D 0%, #16a34a 100%);
+  color: #fff;
+  border: 0;
+
+  > ion-icon {
+    font-size: 32px;
+    color: var(--rp-amarelo);
+    flex: 0 0 auto;
+  }
+  strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.82);
+  }
+}

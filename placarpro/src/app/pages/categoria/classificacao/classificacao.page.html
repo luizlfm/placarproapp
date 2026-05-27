@@ -1,0 +1,326 @@
+<!-- Header com botão Voltar — principal valor em mobile, onde a sidebar
+     contextual da categoria é off-canvas. Volta pra Início da categoria. -->
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button
+        defaultHref="/app/campeonato/{{ campeonatoId }}/categoria/{{ categoriaId }}/inicio"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Classificação</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Permissões efetivas do user no campeonato. Esconde botões de edição
+       pra moderadores sem a permissão correspondente. Owner/admin sempre
+       passam (todas flags vêm true). Defaults usados quando ainda não
+       resolveu (evita FAB piscando antes da decisão). -->
+  <ng-container *ngIf="permissoes$ | async as p">
+    <!-- Backdrop comum para os dois menus (clique fora fecha) -->
+    <div *ngIf="menuAberto || menuJogosAberto" class="menu-backdrop" (click)="fecharMenu(); fecharMenuJogos()"></div>
+
+    <div class="page-wrap">
+      <!-- Cabeçalho da página com título do campeonato + categoria -->
+      <header class="page-head">
+        <h1 class="camp-titulo" *ngIf="campeonato$ | async as camp">
+          {{ camp.titulo }}
+        </h1>
+        <div class="cat-subtitulo" *ngIf="categoria$ | async as cat">
+          {{ cat.titulo }}
+        </div>
+      </header>
+
+      <div class="layout">
+        <!-- ─── COLUNA PRINCIPAL ────────────────────────────────── -->
+        <main class="principal">
+          <!-- Card principal: tabela + topbar + botão "+" central -->
+          <section class="painel-card">
+            <!-- Botão "+" estilo guia, sobreposto no topo.
+               Só aparece se o user tem ALGUMA permissão de edição
+               (gerenciarEquipes ou editarCampeonato). Read-only (somente
+               Exportar/Tabela) não justifica o FAB. -->
+            <button *ngIf="p.gerenciarEquipes || p.editarCampeonato" type="button" class="painel-fab"
+              [class.aberto]="menuAberto" (click)="toggleMenu()" aria-label="Mais opções">
+              <ion-icon name="add"></ion-icon>
+            </button>
+
+            <!-- Menu de ações (drop-down centralizado).
+               Cada item aparece conforme a permissão correspondente:
+                 - Equipes      → gerenciarEquipes
+                 - Grupos/Fases/
+                   Critérios/
+                   Reordenar    → editarCampeonato
+                 - Exportar/
+                   Tabela        → sempre (são leitura/print) -->
+            <div *ngIf="menuAberto" class="menu-card centered">
+              <button *ngIf="p.gerenciarEquipes" type="button" class="menu-item" (click)="irParaEquipes()">
+                <ion-icon name="shield-outline"></ion-icon>
+                <span>Equipes</span>
+              </button>
+              <button *ngIf="p.editarCampeonato" type="button" class="menu-item" (click)="abrirGrupos()">
+                <ion-icon name="apps-outline"></ion-icon>
+                <span>Grupos</span>
+              </button>
+              <button *ngIf="p.editarCampeonato" type="button" class="menu-item" (click)="abrirFases()">
+                <ion-icon name="layers-outline"></ion-icon>
+                <span>Fases</span>
+              </button>
+              <button type="button" class="menu-item" (click)="exportar()">
+                <ion-icon name="download-outline"></ion-icon>
+                <span>Exportar</span>
+              </button>
+              <button type="button" class="menu-item" (click)="imprimirTabela()">
+                <ion-icon name="list-outline"></ion-icon>
+                <span>Tabela</span>
+              </button>
+              <button *ngIf="p.editarCampeonato" type="button" class="menu-item" (click)="abrirCriterios()">
+                <ion-icon name="options-outline"></ion-icon>
+                <span>Critério de classificação</span>
+              </button>
+              <button *ngIf="p.editarCampeonato" type="button" class="menu-item" (click)="abrirReordenar()">
+                <ion-icon name="swap-vertical-outline"></ion-icon>
+                <span>Reordenar</span>
+              </button>
+            </div>
+
+            <!-- Topbar do card: select fase + toggle agrupar -->
+            <div class="painel-topbar">
+              <select class="fase-select" *ngIf="fases.length > 0" [value]="faseAtual?.id"
+                (change)="onFaseChange($any($event.target).value)">
+                <option *ngFor="let f of fases" [value]="f.id">{{ f.nome }}</option>
+              </select>
+
+              <label class="toggle-row" (click)="toggleAgruparPorGrupo($event)">
+                <span class="toggle-label">Classificação por Grupo</span>
+                <span class="toggle" [class.on]="agruparPorGrupo">
+                  <span class="thumb"></span>
+                </span>
+              </label>
+            </div>
+
+            <!-- Badge de ordem manual (se ativa) -->
+            <div class="manual-row" *ngIf="ordemManual">
+              <span class="manual-badge">
+                <ion-icon name="hand-right-outline"></ion-icon>
+                Ordem manual ativa
+                <button type="button" class="link" (click)="toggleOrdemManual()">desativar</button>
+              </span>
+            </div>
+
+            <!-- Legenda dos destaques -->
+            <div class="legenda" *ngIf="destaquesAtivos.length > 0">
+              <span class="leg-item" *ngFor="let d of destaquesAtivos">
+                <span class="leg-bola" [style.background]="d.cor"></span>
+                {{ d.label || (d.de + (d.ate > d.de ? '–' + d.ate : 'º')) }}
+              </span>
+            </div>
+
+            <!-- Tabela(s) -->
+            <ng-container *ngIf="classificacao$ | async as grupos">
+              <ng-container *ngIf="grupos.length > 0; else empty">
+                <div class="grupo-card" *ngFor="let g of grupos; trackBy: trackByGrupo">
+                  <div class="titulo-bar">
+                    <span class="grupo-titulo">{{ g.grupo?.nome || 'CLASSIFICAÇÃO' }}</span>
+                  </div>
+
+                  <div class="tabela-scroll" *ngIf="g.linhas.length > 0; else semEquipes">
+                    <table class="tabela">
+                      <thead>
+                        <tr>
+                          <th class="th-pos">Pos</th>
+                          <th class="th-eq">Equipes</th>
+                          <th>P</th>
+                          <th>J</th>
+                          <th>V</th>
+                          <th>E</th>
+                          <th>D</th>
+                          <th>GP</th>
+                          <th>GC</th>
+                          <th>SG</th>
+                          <th>%</th>
+                          <th>PE</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let l of g.linhas; trackBy: trackByLinhaId"
+                          [class.has-destaque]="corDaPosicao(l.pos)">
+                          <td class="td-pos">
+                            <span class="pos-bola" [class.has-destaque]="corDaPosicao(l.pos)"
+                              [style.background]="corDaPosicao(l.pos) || null"
+                              [style.color]="corDaPosicao(l.pos) ? '#fff' : null">f
+                              {{ l.pos }}
+                            </span>
+                          </td>
+                          <td class="td-eq">
+                            <div class="eq-cell">
+                              <div class="eq-logo">
+                                <img *ngIf="l.equipe.logoUrl; else iconF" [src]="l.equipe.logoUrl"
+                                  [alt]="l.equipe.nome" />
+                                <ng-template #iconF><ion-icon name="shield-outline"></ion-icon></ng-template>
+                              </div>
+                              <span class="eq-nome">{{ l.equipe.nome }}</span>
+                            </div>
+                          </td>
+                          <td class="td-num td-pontos">{{ l.pontos }}</td>
+                          <td class="td-num">{{ l.jogos }}</td>
+                          <td class="td-num">{{ l.vitorias }}</td>
+                          <td class="td-num">{{ l.empates }}</td>
+                          <td class="td-num">{{ l.derrotas }}</td>
+                          <td class="td-num">{{ l.golsPro }}</td>
+                          <td class="td-num">{{ l.golsContra }}</td>
+                          <td class="td-num" [class.neg]="l.saldoGols < 0" [class.pos]="l.saldoGols > 0">
+                            {{ l.saldoGols > 0 ? '+' : '' }}{{ l.saldoGols }}
+                          </td>
+                          <td class="td-num">{{ l.aproveitamento }}%</td>
+                          <!-- Penalização clicável só pra quem pode editar
+                             config do campeonato. Pra moderador sem essa
+                             perm, vira só leitura (sem cursor pointer). -->
+                          <td class="td-num td-pe" [class.tem-pe]="l.penalizacao > 0"
+                            [class.read-only]="!p.editarCampeonato"
+                            (click)="p.editarCampeonato && editarPenalizacao(l.equipe)"
+                            [title]="p.editarCampeonato ? 'Clique para editar penalização' : ''">
+                            {{ l.penalizacao }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <ng-template #semEquipes>
+                    <div class="empty-inline">
+                      <p>Adicione equipes acima para começar.</p>
+                    </div>
+                  </ng-template>
+                </div>
+              </ng-container>
+
+              <ng-template #empty>
+                <div class="empty">
+                  <ion-icon name="podium-outline"></ion-icon>
+                  <h2>Sem classificação ainda</h2>
+                  <p>Cadastre equipes para que apareçam na tabela imediatamente.</p>
+                </div>
+              </ng-template>
+            </ng-container>
+          </section>
+        </main>
+
+        <!-- ─── COLUNA LATERAL: JOGOS ──────────────────────────── -->
+       
+          <aside class="jogos-aside">
+            <!-- Botão "+" central também no card de jogos.
+             Só aparece pra quem pode editar resultados (criar partidas,
+             gerar rodadas, agendar). Pra leitor puro, fica sem FAB. -->
+            <button *ngIf="p.editarResultados" type="button" class="painel-fab dark" (click)="abrirPopoverJogos($event)"
+              aria-label="Opções de jogos">
+              <ion-icon name="add"></ion-icon>
+            </button>
+
+            <div class="jogos-header">
+              <h3>Jogos</h3>
+              <select class="fase-select small" *ngIf="fases.length > 0" [value]="faseAtual?.id"
+                (change)="onFaseChange($any($event.target).value)">
+                <option *ngFor="let f of fases" [value]="f.id">{{ f.nome }}</option>
+              </select>
+            </div>
+
+            <ng-container *ngIf="jogos$ | async as js">
+              <ng-container *ngIf="js.length > 0; else acoesGeracao">
+                <div class="jogos-lista">
+                  <button type="button" class="jogo-card" *ngFor="let j of js; trackBy: trackByJogo"
+                    [class.vazio]="!j.mandanteId || !j.visitanteId" [class.ao-vivo]="j.status === 'em-andamento'"
+                    (click)="abrirJogo($event, j.id!)"
+                    [title]="p.editarResultados ? 'Clique para ver opções' : 'Ver detalhes'">
+                    <div class="jogo-times">
+                      <!-- Trocar equipe de um jogo só pra quem pode editar
+                       resultados. Pra leitor, fica como span estático. -->
+                      <span class="jogo-time" [class.clicavel]="p.editarResultados"
+                        (click)="p.editarResultados && selecionarEquipeNoJogo($event, j.id!, 'mandante')"
+                        [title]="p.editarResultados ? 'Clique para selecionar mandante' : ''">
+                        <span class="t-logo" [class.vazio]="!j.mandanteId">
+                          <img *ngIf="j.logoMandante; else iconM" [src]="j.logoMandante" alt="" />
+                          <ng-template #iconM>
+                            <ion-icon [name]="j.mandanteId ? 'shield-outline' : 'shield-half-outline'"></ion-icon>
+                          </ng-template>
+                        </span>
+                        <span class="t-nome">{{ j.nomeMandante }}</span>
+                      </span>
+
+                      <div class="jogo-placar" [class.encerrado]="j.status === 'encerrado'">
+                        <div class="placar-numeros" *ngIf="j.golsMandante != null && j.golsVisitante != null; else vs">
+                          <span>{{ j.golsMandante }}</span>
+                          <span class="dois-pontos">:</span>
+                          <span>{{ j.golsVisitante }}</span>
+                        </div>
+                        <ng-template #vs><span class="vs">VS</span></ng-template>
+                        <span class="placar-status" *ngIf="j.status === 'encerrado'">Encerrado</span>
+                        <span class="placar-status" *ngIf="j.status === 'em-andamento'">Em andamento</span>
+                        <span class="placar-status" *ngIf="j.status === 'agendado'">Agendado</span>
+                        <span class="placar-status" *ngIf="j.status === 'cancelado'">Cancelado</span>
+                        <span class="placar-status" *ngIf="j.status === 'wo'">W.O.</span>
+                      </div>
+
+                      <span class="jogo-time vis" [class.clicavel]="p.editarResultados"
+                        (click)="p.editarResultados && selecionarEquipeNoJogo($event, j.id!, 'visitante')"
+                        [title]="p.editarResultados ? 'Clique para selecionar visitante' : ''">
+                        <span class="t-logo" [class.vazio]="!j.visitanteId">
+                          <img *ngIf="j.logoVisitante; else iconV" [src]="j.logoVisitante" alt="" />
+                          <ng-template #iconV>
+                            <ion-icon [name]="j.visitanteId ? 'shield-outline' : 'shield-half-outline'"></ion-icon>
+                          </ng-template>
+                        </span>
+                        <span class="t-nome">{{ j.nomeVisitante }}</span>
+                      </span>
+                    </div>
+                    <div class="jogo-fase" *ngIf="j.fase || j.rodada">
+                      <span *ngIf="j.fase">{{ j.fase }}</span>
+                      <span *ngIf="j.fase && j.rodada"> · </span>
+                      <span *ngIf="j.rodada">Rodada {{ j.rodada }}</span>
+                    </div>
+                    <div class="jogo-meta-extra" *ngIf="j.dataHora || j.local">
+                      <span *ngIf="j.dataHora" class="meta-item">
+                        <ion-icon name="calendar-outline"></ion-icon>
+                        {{ formatarDataBr(j.dataHora) }}
+                      </span>
+                      <span *ngIf="j.local" class="meta-item">
+                        <ion-icon name="location-outline"></ion-icon>
+                        {{ j.local }}
+                      </span>
+                    </div>
+                    <ion-icon class="edit-hint" name="create-outline"></ion-icon>
+                  </button>
+                </div>
+              </ng-container>
+
+              <ng-template #acoesGeracao>
+                <!-- Ações de criar partida só pra quem pode editar resultados.
+                 Leitor puro vê empty-state explicativo. -->
+                <div class="aside-acoes-vazio" *ngIf="p.editarResultados; else acoesLeitor">
+                  <ion-button expand="block" color="primary" class="btn-gerar" (click)="adicionarPartidaVazia()">
+                    <ion-icon slot="start" name="add-outline"></ion-icon>
+                    Adicionar partida
+                  </ion-button>
+                  <div class="ou">ou</div>
+                  <ion-button expand="block" fill="outline" color="primary" (click)="gerarPartidas()">
+                    <ion-icon slot="start" name="flash-outline"></ion-icon>
+                    Gerar todas as partidas
+                  </ion-button>
+                  <button type="button" class="mini-link standalone" (click)="adicionarRodada()">
+                    <ion-icon name="layers-outline"></ion-icon>
+                    Nova rodada manual
+                  </button>
+                </div>
+                <ng-template #acoesLeitor>
+                  <div class="aside-acoes-vazio leitor">
+                    <ion-icon name="calendar-outline"></ion-icon>
+                    <p>Sem jogos cadastrados ainda.</p>
+                  </div>
+                </ng-template>
+              </ng-template>
+            </ng-container>
+          </aside>
+        
+      </div>
+    </div>
+  </ng-container>
+</ion-content>

@@ -1,0 +1,404 @@
+.es-content {
+  --background: #f3f4f6;
+}
+
+/* ============ Header ============ */
+.es-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: #1C2E3D;
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.es-brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  &:hover { opacity: 0.85; }
+
+  .es-brand-img {
+    height: 32px;
+    width: auto;
+    display: block;
+    object-fit: contain;
+  }
+}
+.es-sair {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  ion-icon { font-size: 16px; }
+  &:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,107,107,0.5);
+    color: #ff6b6b;
+  }
+}
+
+/* ============ Página ============ */
+.es-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+}
+
+/* ============ Seção (cabeçalho + conteúdo) ============ */
+.es-secao {
+  margin-bottom: 40px;
+  &:last-child { margin-bottom: 12px; }
+}
+.es-secao-head {
+  text-align: center;
+  margin-bottom: 22px;
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: 24px;
+    font-weight: 800;
+    color: #1C2E3D;
+    text-transform: uppercase;
+    letter-spacing: -0.2px;
+  }
+  p {
+    margin: 0 auto;
+    font-size: 14px;
+    color: #5a6470;
+    line-height: 1.5;
+    max-width: 560px;
+  }
+}
+
+/* Compat com layout antigo (hero) */
+.es-hero { @extend .es-secao-head; }
+
+/* ============ Barra de busca ============ */
+.es-busca {
+  position: relative;
+  margin: 0 auto 22px;
+  max-width: 560px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #d8d8dd;
+  border-radius: 999px;
+  padding: 4px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: border-color 120ms ease;
+
+  &:focus-within {
+    border-color: #7CC61D;
+    box-shadow: 0 2px 12px rgba(124, 198, 29, 0.15);
+  }
+
+  > ion-icon {
+    font-size: 18px;
+    color: #94a3b8;
+    flex: 0 0 auto;
+  }
+  input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 11px 0;
+    font-size: 14px;
+    color: #1C2E3D;
+    outline: none;
+    min-width: 0;
+    &::placeholder { color: #9ca3af; }
+  }
+  .es-busca-limpar {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    &:hover { color: #ff6b6b; }
+    ion-icon { font-size: 18px; }
+  }
+}
+
+/* Chips de filtro Todos / Que sigo — abaixo da busca, alinhados à esquerda. */
+.es-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -8px 0 18px;
+
+  .es-filtro-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #1C2E3D;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 150ms ease;
+
+    ion-icon { font-size: 15px; }
+
+    .es-chip-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: rgba(28, 46, 61, 0.08);
+      color: #1C2E3D;
+      font-size: 10.5px;
+      font-weight: 800;
+    }
+
+    &:hover {
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
+    }
+
+    &.active {
+      background: #7CC61D;
+      border-color: #7CC61D;
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(124, 198, 29, 0.3);
+
+      .es-chip-badge {
+        background: rgba(255, 255, 255, 0.25);
+        color: #fff;
+      }
+    }
+  }
+}
+
+.es-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+}
+
+.es-vazio {
+  text-align: center;
+  padding: 60px 24px;
+  color: #6b7280;
+
+  ion-icon {
+    font-size: 64px;
+    opacity: 0.35;
+    margin-bottom: 12px;
+    color: #4DABF7;
+  }
+  h2 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1C2E3D;
+  }
+  p {
+    font-size: 13.5px;
+    line-height: 1.5;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+}
+
+/* ============ Grid de cards ============ */
+.es-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.es-card {
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  border: 1px solid #ececef;
+  display: flex;
+  flex-direction: column;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Variante "campeonato" — card inteiro clicável */
+  &.camp { cursor: pointer; }
+}
+
+/* Botão de seguir (coração) flutuando no canto direito da cover */
+.es-seguir-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  transition: all 150ms ease;
+  z-index: 2;
+
+  ion-icon {
+    font-size: 20px;
+    color: #94a3b8;
+    transition: color 150ms ease;
+  }
+
+  &:hover {
+    background: #fff;
+    transform: scale(1.08);
+    ion-icon { color: #eb445a; }
+  }
+
+  &.ativo {
+    background: #eb445a;
+    ion-icon { color: #fff; }
+    &:hover {
+      background: #c41e3a;
+      ion-icon { color: #fff; }
+    }
+  }
+}
+
+/* Cover precisa de position: relative pra o botão de coração */
+.es-card-cover { position: relative; }
+
+.es-card-cover {
+  position: relative;
+  height: 110px;
+  background-color: #1C2E3D;
+  background-size: cover;
+  background-position: center;
+  background-image: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.es-card-logo {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 32px; color: #7CC61D; }
+}
+
+.es-card-body {
+  padding: 14px 16px 8px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.es-card-camp {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1C2E3D;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.25;
+}
+.es-card-equipe {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4DABF7;
+  ion-icon { font-size: 16px; }
+}
+.es-card-cat {
+  font-size: 12px;
+  color: #6b7280;
+}
+.es-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: #9ca3af;
+  margin-top: 2px;
+  ion-icon { font-size: 13px; }
+}
+
+.es-card-acoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px 12px 14px;
+  border-top: 1px solid #f3f4f6;
+
+  /* Quando há só 1 ação (cards de campeonato), ocupa a largura toda */
+  &.single { grid-template-columns: 1fr; }
+}
+.es-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  border: none;
+  transition: all 120ms ease;
+
+  ion-icon { font-size: 16px; }
+
+  &.ghost {
+    background: #fff;
+    color: #5a6470;
+    border: 1px solid #d8d8dd;
+    &:hover { background: #f3f4f6; color: #1C2E3D; }
+  }
+  &.primary {
+    background: #7CC61D;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(124, 198, 29, 0.3);
+    &:hover {
+      background: #5a9912;
+      transform: translateY(-1px);
+    }
+  }
+
+  &.full { width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .es-page { padding: 20px 12px 32px; }
+  .es-hero h1 { font-size: 22px; }
+}

@@ -1,0 +1,290 @@
+.pf-section {
+  margin: 16px 0 20px;
+
+  &.escuro {
+    .pf-titulo { color: rgba(255, 255, 255, 0.9); }
+  }
+}
+
+.pf-titulo {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--placar-text-muted, #6b6b70);
+  padding-left: 4px;
+}
+
+/* GRID em LINHA — cards retangulares 16:9 (mesma proporção do banner
+   uploadado 805×453). Largura mínima de 180px, mas EXPANDEM via `1fr`
+   pra preencher o espaço disponível — sem isso, com 5 cards de 180px
+   numa largura de ~1100px sobrava um slot vazio à direita. `auto-fit`
+   (em vez de `auto-fill`) colapsa colunas extras quando não há cards
+   suficientes, pra não criar "fantasmas". */
+.pf-scroller {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  padding: 4px 4px 10px;
+
+  @media (max-width: 520px) {
+    /* Mobile: uma coluna que ocupa a largura toda. Combinado com o modo
+       rotativo (cardsPorPagina=1) e `display: none` nos cards fora da
+       página, isso faz o card visível ficar grande e legível — não mais
+       como uma faixa fininha. */
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+/* ============ Modo Rotativo (mobile: 1-por-vez com dots) ============
+   No mobile, cards fora da página atual ficam com `display: none` —
+   o card visível ocupa toda a largura (grid `1fr`). Troca controlada
+   por timer JS com fade suave entre cards. */
+.pf-section.rotativo:not(.marquee) {
+  .pf-card.fora {
+    display: none;
+  }
+
+  .pf-card.ativo {
+    animation: pfFadeIn 350ms ease-out;
+  }
+}
+
+@keyframes pfFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============ Modo Marquee (desktop com várias linhas) ============
+   Carrossel CONTÍNUO: cards deslizam da direita pra esquerda em loop
+   infinito sem pausa. A `.pf-track` interna contém a lista DUPLICADA
+   (1ª passagem + cópia) — ao terminar de transladar a 1ª, a 2ª já
+   está exatamente no lugar da 1ª, criando ilusão de loop seamless.
+
+   `translateX(-50%)` no fim leva exatamente o tamanho de UMA passagem,
+   porque o conteúdo é `lista + lista` (= 2 vezes a lista). Pausa no
+   hover pra deixar o usuário ler com calma. */
+.pf-section.marquee {
+  .pf-scroller {
+    overflow: hidden;
+    /* Anula o grid template — usamos flex na .pf-track interna. */
+    display: block;
+    padding: 4px 0 10px;
+  }
+
+  .pf-track {
+    display: flex;
+    gap: 10px;
+    width: max-content;
+    animation: pfMarquee linear infinite;
+
+    &:hover {
+      animation-play-state: paused;
+    }
+  }
+
+  .pf-card-marquee {
+    /* Largura fixa em marquee pra `translateX(-50%)` calcular certo.
+       Sem isso, `1fr` (default do grid) deixa os cards expandirem
+       e a animação fica errada. */
+    flex: 0 0 180px;
+    width: 180px;
+
+    /* Em mobile mantemos 180px também — antes era `calc(100vw - 80px)`
+       mas estourava o container (cards saíam pelo lado direito da tela).
+       Com 180px fixo os cards são visualmente menores mas cabem direito
+       e o marquee desliza limpo. */
+    @media (max-width: 520px) {
+      flex: 0 0 160px;
+      width: 160px;
+    }
+  }
+}
+
+@keyframes pfMarquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Dots indicadores embaixo dos banners — só visíveis no modo rotativo */
+.pf-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+.pf-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(28, 46, 61, 0.18);
+  cursor: pointer;
+  padding: 0;
+  transition: background 200ms ease, transform 200ms ease;
+
+  &:hover { background: rgba(28, 46, 61, 0.35); }
+
+  &.ativo {
+    background: var(--ion-color-secondary, #7CC61D);
+    transform: scale(1.3);
+  }
+}
+
+/* Card compacto — só banner + nome pequeno embaixo */
+.pf-card {
+  background: var(--placar-card-bg, #fff);
+  border: 1px solid var(--placar-divider, #ececef);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+  cursor: default;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  &.clicavel {
+    cursor: pointer;
+    &:hover {
+      transform: translateY(-1px);
+      border-color: var(--ion-color-secondary, #7CC61D);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    }
+  }
+}
+
+/* Banner principal — proporção 805/453 (~16:9) idêntica à do upload.
+   Imagem ocupa o card inteiro via `object-fit: cover` SEM cortar
+   nada, porque agora o card tem a mesma proporção do arquivo enviado.
+   Antes era 1:1 (quadrado) e cortava as laterais de banners paisagem. */
+.pf-banner {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 805 / 453;
+  background: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 100%);
+  overflow: hidden;
+
+  /* Em viewport mobile, usa 380×126 (3:1) — formato wide pensado pra
+     ocupar pouca altura no celular. O card vira full-width via grid
+     mobile `1fr`, então mesmo achatado fica visível. Quando a imagem
+     usa `contain` e sobra espaço lateral, o `.pf-banner-bg` por
+     baixo preenche com a própria imagem borrada — pega as cores
+     naturais (sem fundo branco artificial). */
+  &.eh-mobile {
+    aspect-ratio: 380 / 126;
+    background: transparent;
+
+    .pf-banner-bg { display: block; }
+
+    img {
+      /* `contain` (em vez do cover do web) — em mobile a imagem é exibida
+         por inteiro, sem cortar laterais/topo. Patrocinadores que só
+         têm banner web (805×453, 16:9) também aparecem completos com
+         pequenas bordas em cima/embaixo, em vez de só uma faixa central
+         cropada feio. As "bordas" agora mostram a imagem borrada. */
+      object-fit: contain;
+      position: relative;
+      z-index: 1;
+    }
+  }
+
+  /* Fundo borrado — espelha a imagem do banner pra harmonizar as cores
+     do espaço lateral que sobra com `object-fit: contain`. Escondido em
+     web (não precisa porque o card é 16:9 igual à imagem). */
+  .pf-banner-bg {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    /* Blur generoso suaviza detalhes e deixa o efeito parecido com
+       o player do Spotify/Apple. `scale(1.2)` esconde as bordas
+       brancas que o blur cria quando aplicado direto na imagem. */
+    filter: blur(18px) saturate(1.15);
+    transform: scale(1.2);
+    opacity: 0.85;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    position: relative;
+    z-index: 1;
+  }
+
+  .pf-banner-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.75);
+
+    ion-icon { font-size: 28px; }
+  }
+}
+
+/* Rodapé compacto: só o nome (escondemos tipo "PATROCINADOR" — já está
+   no título da seção). Mostramos logo mini se houver banner separado. */
+.pf-rodape {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: var(--placar-card-bg, #fff);
+  min-height: 24px;
+}
+
+.pf-logo-mini {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(124, 198, 29, 0.12);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--placar-divider, #ececef);
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.pf-info {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.pf-nome {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--placar-text, #2d2d2d);
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* Tipo escondido por padrão — repetitivo. Mostra só no hover via tooltip
+   nativo (atributo title="" já está no botão). Quem quiser ver detalhes
+   passa o mouse / toca longo. */
+.pf-tipo {
+  display: none;
+}

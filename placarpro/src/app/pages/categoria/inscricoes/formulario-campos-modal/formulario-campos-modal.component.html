@@ -1,0 +1,93 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ titulo }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="adicionar()" aria-label="Novo campo">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <div class="wrap">
+    <p class="hint">
+      Adicione campos extras que os inscritos devem preencher (ex: CPF, posição preferida, número de uniforme).
+    </p>
+
+    <div *ngIf="campos.length === 0" class="empty">
+      <ion-icon name="reorder-three-outline"></ion-icon>
+      <p>Nenhum campo customizado.</p>
+      <ion-button color="primary" (click)="adicionar()">
+        <ion-icon slot="start" name="add-outline"></ion-icon>
+        Adicionar campo
+      </ion-button>
+    </div>
+
+    <div class="campos" *ngIf="campos.length > 0">
+      <div class="campo" *ngFor="let c of campos; let i = index; let last = last; trackBy: trackByCampo">
+        <div class="campo-head">
+          <span class="campo-ord">{{ i + 1 }}.</span>
+          <strong class="campo-label">{{ c.label }}</strong>
+          <div class="campo-acoes">
+            <ion-button fill="clear" size="small" [disabled]="i === 0" (click)="mover(i, -1)" aria-label="Subir">
+              <ion-icon slot="icon-only" name="chevron-up-outline"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" size="small" [disabled]="last" (click)="mover(i, 1)" aria-label="Descer">
+              <ion-icon slot="icon-only" name="chevron-down-outline"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" size="small" color="primary" (click)="renomear(c)" aria-label="Renomear">
+              <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" size="small" color="danger" (click)="remover(i)" aria-label="Remover">
+              <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+            </ion-button>
+          </div>
+        </div>
+
+        <div class="campo-config">
+          <label class="lbl">
+            Tipo
+            <select [(ngModel)]="c.tipo">
+              <option *ngFor="let t of tipos" [value]="t.value">{{ t.label }}</option>
+            </select>
+          </label>
+          <label class="check-line">
+            <input type="checkbox" [(ngModel)]="c.obrigatorio" />
+            <span>Obrigatório</span>
+          </label>
+        </div>
+
+        <button
+          *ngIf="c.tipo === 'select'"
+          type="button"
+          class="opcoes-btn"
+          (click)="editarOpcoes(c)"
+        >
+          <ion-icon name="list-outline"></ion-icon>
+          {{ (c.opcoes?.length ?? 0) > 0 ? c.opcoes!.length + ' opções' : 'Adicionar opções' }}
+        </button>
+
+        <label class="ph-line">
+          <span>Placeholder</span>
+          <input type="text" [(ngModel)]="c.placeholder" placeholder="Texto de exemplo (opcional)" />
+        </label>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <div class="footer-actions">
+      <ion-button fill="clear" color="medium" (click)="dismiss()">Cancelar</ion-button>
+      <div class="spacer"></div>
+      <ion-button color="primary" (click)="salvar()">Salvar</ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

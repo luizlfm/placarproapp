@@ -1,0 +1,93 @@
+.modal-bg {
+  --background: var(--placar-bg, #f5f5f7);
+}
+
+.dup-form {
+  padding: 18px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field-group {
+  ion-input {
+    --background: #fff;
+    --border-radius: 10px;
+    --padding-start: 14px;
+    --padding-end: 14px;
+  }
+
+  .field-error {
+    color: var(--ion-color-danger);
+    font-size: 12px;
+    padding: 4px 4px 0;
+  }
+}
+
+.opcoes {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.opcao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--placar-divider, #ececec);
+  cursor: pointer;
+
+  &:last-child { border-bottom: none; }
+
+  .opcao-label {
+    font-size: 15px;
+    color: var(--placar-text);
+    font-weight: 500;
+  }
+
+  ion-checkbox {
+    --size: 22px;
+    --border-radius: 4px;
+  }
+}
+
+.modalidade-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  .mod-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--ion-color-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    ion-icon { font-size: 20px; }
+  }
+
+  .mod-nome {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--placar-text);
+  }
+}
+
+.btn-submit {
+  --background: transparent;
+  --color: var(--ion-color-primary);
+  --border-radius: 10px;
+  --box-shadow: none;
+  font-weight: 700;
+  margin-top: 6px;
+  letter-spacing: 0.3px;
+}

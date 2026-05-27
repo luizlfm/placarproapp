@@ -1,0 +1,20 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>{{ titulo || 'Editar' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="iframe-rota-content">
+  <iframe
+    *ngIf="url"
+    [src]="urlSegura"
+    frameborder="0"
+    title="Conteúdo embutido"
+    allow="clipboard-write"
+  ></iframe>
+</ion-content>

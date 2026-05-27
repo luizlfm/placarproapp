@@ -1,0 +1,29 @@
+<div class="exp-popover">
+  <div class="exp-head">Exportar</div>
+
+  <button class="exp-item" type="button" (click)="acao('colunas')">
+    <ion-icon name="list-outline"></ion-icon>
+    <span>Selecionar colunas</span>
+  </button>
+
+  <button
+    class="exp-item"
+    type="button"
+    *ngIf="temFases"
+    (click)="acao('fase')"
+  >
+    <ion-icon name="layers-outline"></ion-icon>
+    <span>Selecionar Fase</span>
+  </button>
+
+  <div class="exp-divider"></div>
+
+  <div class="exp-actions">
+    <button class="exp-btn" type="button" (click)="acao('excel')">
+      Excel
+    </button>
+    <button class="exp-btn primary" type="button" (click)="acao('imprimir')">
+      Imprimir
+    </button>
+  </div>
+</div>

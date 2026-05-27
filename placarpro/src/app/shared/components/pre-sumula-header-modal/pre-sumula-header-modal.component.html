@@ -1,0 +1,141 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>Cabeçalho da Pré-Súmula</ion-title>
+    <ion-buttons slot="end">
+      <ion-button strong="true" [disabled]="salvando" (click)="salvar()">Salvar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="psh-content">
+  <p class="psh-intro">
+    Configure como o cabeçalho da Pré-Súmula vai aparecer no impresso. Os logos extras (federação, patrocinadores) aparecem ao lado do logo principal do campeonato.
+  </p>
+
+  <div class="psh-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <form *ngIf="!loading" class="psh-form">
+    <!-- ═══════════ Texto do cabeçalho ═══════════ -->
+    <section class="psh-card">
+      <h3>Textos</h3>
+
+      <label class="psh-field">
+        <span class="psh-label">Título personalizado</span>
+        <input
+          type="text"
+          class="psh-input"
+          [value]="config.tituloCustom || ''"
+          (input)="setTitulo($any($event.target).value)"
+          placeholder="Deixe em branco para usar o título do campeonato"
+        />
+      </label>
+
+      <label class="psh-field">
+        <span class="psh-label">Subtítulo personalizado</span>
+        <input
+          type="text"
+          class="psh-input"
+          [value]="config.subtituloCustom || ''"
+          (input)="setSubtitulo($any($event.target).value)"
+          placeholder="Ex: Edição 2026 · Categoria SUB7"
+        />
+      </label>
+
+      <label class="psh-field">
+        <span class="psh-label">Texto extra do cabeçalho</span>
+        <textarea
+          class="psh-input psh-textarea"
+          [value]="config.textoCabecalho || ''"
+          (input)="setTextoCabecalho($any($event.target).value)"
+          placeholder="Texto livre — regras curtas, observações, número da edição..."
+          rows="3"
+        ></textarea>
+      </label>
+    </section>
+
+    <!-- ═══════════ Logos extras ═══════════ -->
+    <section class="psh-card">
+      <div class="psh-card-head">
+        <h3>Logos extras</h3>
+        <span class="psh-counter">
+          {{ (config.logosExtras?.length ?? 0) }} de {{ MAX_LOGOS }}
+        </span>
+      </div>
+      <p class="psh-card-hint">
+        Adicione logos da federação, patrocinadores ou da organização. Eles aparecem na faixa de topo da pré-súmula.
+      </p>
+
+      <div class="psh-logos-grid">
+        <!-- Cards de logos existentes -->
+        <div class="psh-logo-card"
+             *ngFor="let l of (config.logosExtras || []); let i = index; trackBy: trackByIdx">
+          <button type="button" class="psh-logo-remove" (click)="removerLogo(i)" aria-label="Remover logo">
+            <ion-icon name="close"></ion-icon>
+          </button>
+          <div class="psh-logo-img">
+            <img [src]="l.url" alt="" />
+          </div>
+          <input
+            type="text"
+            class="psh-input small"
+            [value]="l.legenda || ''"
+            (input)="setLegenda(i, $any($event.target).value)"
+            placeholder="Legenda (opcional)"
+          />
+        </div>
+
+        <!-- Botão de adicionar (até o limite) -->
+        <button
+          type="button"
+          class="psh-logo-add"
+          (click)="acionarUploadLogo()"
+          [disabled]="(config.logosExtras?.length ?? 0) >= MAX_LOGOS"
+        >
+          <ion-icon name="add-circle-outline"></ion-icon>
+          <span>Adicionar logo</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ═══════════ Opções de exibição ═══════════ -->
+    <section class="psh-card">
+      <h3>Opções de exibição</h3>
+
+      <label class="psh-toggle-row">
+        <div>
+          <div class="psh-toggle-title">Incluir fotos dos jogadores</div>
+          <div class="psh-toggle-sub">Aumenta o tamanho da tabela — útil para reconhecimento.</div>
+        </div>
+        <ion-toggle
+          [checked]="!!config.incluirFotosJogadores"
+          (ionChange)="setIncluirFotos($any($event).detail.checked)"
+        ></ion-toggle>
+      </label>
+
+      <label class="psh-field psh-field-row">
+        <span class="psh-label">Linhas em branco para observações</span>
+        <input
+          type="number"
+          class="psh-input psh-input-num"
+          min="0"
+          max="20"
+          [value]="config.linhasObservacoes ?? 5"
+          (input)="setLinhasObs(+$any($event.target).value)"
+        />
+      </label>
+    </section>
+  </form>
+
+  <input
+    #logoPicker
+    type="file"
+    accept="image/*"
+    style="display:none"
+    (change)="onLogoEscolhido($event)"
+  />
+</ion-content>

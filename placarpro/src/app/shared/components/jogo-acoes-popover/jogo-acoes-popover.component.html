@@ -1,0 +1,35 @@
+<div class="acoes">
+  <!-- "Ver partida" sempre disponível (leitura). -->
+  <button type="button" class="row" (click)="pick('ver')">
+    <ion-icon name="reader-outline"></ion-icon>
+    <span>Ver partida</span>
+  </button>
+
+  <!-- Ações de edição (só pra quem tem editarResultados — owner, admin
+       ou moderador com a permissão habilitada). -->
+  <ng-container *ngIf="podeEditar">
+    <button type="button" class="row" (click)="pick('equipes')">
+      <ion-icon name="list-outline"></ion-icon>
+      <span>Selecionar equipes</span>
+    </button>
+    <button type="button" class="row" (click)="pick('resultado')">
+      <ion-icon name="checkmark-outline"></ion-icon>
+      <span>Editar resultado</span>
+    </button>
+    <button type="button" class="row" (click)="pick('informacoes')">
+      <ion-icon name="create-outline"></ion-icon>
+      <span>Editar informações</span>
+    </button>
+
+    <div class="sep"></div>
+
+    <button type="button" class="row danger" (click)="pick('restaurar')">
+      <ion-icon name="refresh-outline"></ion-icon>
+      <span>Restaurar</span>
+    </button>
+    <button type="button" class="row danger" (click)="pick('remover')">
+      <ion-icon name="close-outline"></ion-icon>
+      <span>Remover</span>
+    </button>
+  </ng-container>
+</div>

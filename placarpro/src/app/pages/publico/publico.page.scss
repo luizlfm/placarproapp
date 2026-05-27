@@ -1,0 +1,1421 @@
+.pub-content {
+  --background: var(--placar-bg, #F6F7F9);
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+/* ============ Estados loading/erro ============ */
+.pub-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  text-align: center;
+  padding: 24px;
+  color: var(--ion-color-medium);
+
+  ion-icon { font-size: 64px; opacity: 0.5; margin-bottom: 12px; }
+  h2 { margin: 0 0 6px; color: var(--ion-color-primary); font-size: 20px; font-weight: 700; }
+  p { margin: 0 0 18px; font-size: 14px; }
+}
+
+/* ============ Shell — sidebar + main ============ */
+.shell {
+  display: flex;
+  min-height: 100%;
+  background: var(--placar-bg, #F6F7F9);
+
+  /* Em mobile, o topbar fica acima e o conteúdo embaixo (column layout) */
+  @media (max-width: 640px) {
+    flex-direction: column;
+  }
+}
+
+/* ============ Sidebar ============ */
+.sidebar {
+  flex: 0 0 280px;
+  width: 280px;
+  background: var(--placar-sidebar-bg, #1C2E3D);
+  color: var(--placar-sidebar-text, #fff);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+
+  @media (max-width: 900px) {
+    flex: 0 0 220px;
+    width: 220px;
+  }
+  /* Em mobile, esconde a sidebar — navegação vira tab bar inferior */
+  @media (max-width: 640px) {
+    display: none;
+  }
+}
+
+/* Botão "Voltar" no topo da sidebar — leva pra /espectador (minhas equipes) */
+.sidebar-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease, color 120ms ease;
+
+  ion-icon { font-size: 18px; }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+  }
+}
+
+/* Botão "Voltar" no header mobile — apenas o ícone, à esquerda */
+.topbar-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  margin-right: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease;
+  ion-icon { font-size: 22px; }
+
+  &:hover { background: rgba(255, 255, 255, 0.18); }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  width: 100%;
+  transition: background 120ms ease;
+
+  &:hover { background: rgba(255, 255, 255, 0.04); }
+}
+
+.brand-logo {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--placar-accent, #7CC61D);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #fff;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 22px; }
+}
+
+.brand-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+  overflow-y: auto;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: none;
+  border: none;
+  color: var(--placar-sidebar-text, #fff);
+  text-align: left;
+  font-size: 14.5px;
+  font-weight: 500;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background 150ms ease, border-color 150ms ease;
+
+  ion-icon {
+    font-size: 20px;
+    color: var(--placar-sidebar-text-muted, rgba(255, 255, 255, 0.65));
+    flex-shrink: 0;
+    transition: color 150ms ease;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+    ion-icon { color: #fff; }
+  }
+
+  &.active {
+    background: var(--placar-sidebar-active-bg, rgba(124, 198, 29, 0.18));
+    border-left-color: var(--placar-sidebar-active-border, #7CC61D);
+    color: #fff;
+    ion-icon { color: var(--placar-accent, #7CC61D); }
+  }
+}
+
+/* Botão "Editar minha equipe" — só aparece pra usuários com convite vinculado.
+   Estilo destacado (verde sólido) pra puxar a atenção. */
+.sidebar-entrar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  margin: 12px 14px;
+  background: linear-gradient(135deg, #7CC61D 0%, #5a9912 100%);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(124, 198, 29, 0.35);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  margin-top: auto;
+
+  ion-icon { font-size: 20px; flex: 0 0 auto; }
+
+  .se-txt {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    flex: 1;
+  }
+  .se-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    line-height: 1.15;
+  }
+  .se-equipe {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.15;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(124, 198, 29, 0.5);
+  }
+
+  /* Esconde labels quando a sidebar é colapsada no mobile */
+  @media (max-width: 640px) {
+    margin: 8px;
+    padding: 12px;
+    justify-content: center;
+    .se-txt { display: none; }
+  }
+}
+
+/* Card "Conectado como…" — avatar + nome do usuário logado.
+   Aparece logo acima do botão Sair, dando contexto visual de quem está
+   conectado nesta sessão (importante quando o usuário tem múltiplas
+   contas Google ou está em um device compartilhado). */
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 12px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 0;
+
+  .su-avatar {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(124, 198, 29, 0.16);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    color: var(--placar-accent, #7CC61D);
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+
+    img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    span { line-height: 1; }
+  }
+
+  .su-info {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .su-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .su-nome {
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.92);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* No mobile (sidebar colapsada) esconde o texto e centraliza o avatar */
+  @media (max-width: 640px) {
+    margin: 8px;
+    padding: 8px;
+    justify-content: center;
+    .su-info { display: none; }
+  }
+}
+
+.footer-login {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: none;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--placar-accent, #7CC61D);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  ion-icon { font-size: 18px; }
+
+  &:hover { background: rgba(124, 198, 29, 0.08); }
+
+  /* Variante "Sair" — vermelho/rosa pra diferenciar visualmente */
+  &.sair {
+    color: #ff8a8a;
+    &:hover {
+      background: rgba(235, 71, 71, 0.08);
+      color: #ff6b6b;
+    }
+  }
+}
+
+/* ============ Main area ============ */
+.main {
+  flex: 1;
+  min-width: 0;
+  /* Limita a largura interna pra não esticar demais em monitores grandes
+     — antes o conteúdo ficava esmagado em telas wide. */
+  max-width: 1080px;
+  margin: 0 auto;
+  /* Padding-bottom de 110px reserva espaço pro banner sticky (~90px) + folga. */
+  padding: 16px 20px 110px;
+  overflow-x: hidden;
+
+  @media (max-width: 767px) { padding: 14px 16px 110px; }
+  /* Em mobile, libera o padding-bottom pra não cobrir a tab bar fixa (64px)
+     E o banner sticky (56px) que fica acima dela. */
+  @media (max-width: 640px) {
+    max-width: stretch;
+    padding: 12px 14px 140px;
+  }
+}
+
+/* ============ Tab bar inferior (mobile) ============ */
+.tabbar-mobile {
+  display: none;
+
+  @media (max-width: 640px) {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    background: var(--placar-sidebar-bg, #1C2E3D);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.18);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  }
+
+  .tab-item {
+    background: none;
+    border: 0;
+    color: rgba(255, 255, 255, 0.65);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 4px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: color 120ms ease, background 120ms ease;
+
+    ion-icon {
+      font-size: 22px;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+    }
+
+    &.active {
+      color: var(--placar-accent, #7CC61D);
+      ion-icon { color: var(--placar-accent, #7CC61D); }
+    }
+
+    &.login {
+      color: var(--placar-accent, #7CC61D);
+      ion-icon { color: var(--placar-accent, #7CC61D); }
+    }
+
+    span {
+      line-height: 1;
+    }
+  }
+}
+
+.page-title {
+  margin: 2px 0 12px;
+  color: var(--placar-text, #2d2d2d);
+  /* Antes 26px — caía exagerado em desktop, espaçava demais o restante. */
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  text-transform: uppercase;
+
+  @media (max-width: 600px) { font-size: 18px; }
+  /* Em mobile o título já aparece no topbar — esconde o duplicado */
+  @media (max-width: 640px) { display: none; }
+}
+
+/* ============ Topbar mobile (header navy fixo) ============ */
+.topbar-mobile {
+  display: none;
+
+  @media (max-width: 640px) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 25;
+    background: var(--placar-sidebar-bg, #1C2E3D);
+    color: #fff;
+    padding: 10px 14px calc(10px + env(safe-area-inset-top, 0px));
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  }
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  text-align: left;
+  color: inherit;
+  padding: 4px 0;
+  cursor: pointer;
+
+  .tb-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--placar-accent, #7CC61D);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    flex-shrink: 0;
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+    ion-icon { font-size: 16px; }
+  }
+
+  .tb-titulo {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+}
+
+.topbar-share {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  ion-icon { font-size: 18px; }
+  &:hover { background: rgba(255, 255, 255, 0.16); }
+}
+/* ============ HERO CARD (overlay compacto sobre imagem) ============
+   Imagem real + overlay absolute com gradient. Mesma estrutura do
+   publico-categoria.page. */
+.hero-card {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #1C2E3D;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+}
+
+.hero-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* Trava altura máxima pro hero não estourar a viewport quando a capa
+     for muito alta (proporções quadradas/verticais). Mantém aspect ratio
+     usando `object-fit: cover` quando a imagem é cortada pelo max-height. */
+  max-height: 320px;
+  object-fit: cover;
+
+  @media (max-width: 640px) {
+    max-height: 220px;
+  }
+}
+
+.hero-info {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px 14px;
+  color: #fff;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 35%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0) 45%);
+  pointer-events: none;
+
+  > * { pointer-events: auto; }
+}
+
+.hero-meta {
+  align-self: flex-start;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  padding: 6px 10px;
+  border-radius: 8px;
+
+  .hero-meta-label {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .hero-meta-value {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    line-height: 1.1;
+  }
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.hero-status {
+  font-size: 11.5px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+
+.hero-btn-seguir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ion-color-secondary, #7CC61D);
+  color: #fff;
+  border: 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease, transform 100ms ease;
+
+  ion-icon { font-size: 14px; }
+
+  &:disabled { opacity: 0.65; cursor: wait; }
+  &:hover:not(:disabled) { transform: translateY(-1px); }
+
+  &.ativo {
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+
+    &:hover:not(:disabled) {
+      background: rgba(235, 71, 71, 0.85);
+      border-color: rgba(235, 71, 71, 0.85);
+    }
+  }
+}
+
+.hero-share {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 0;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 120ms ease;
+
+  ion-icon { font-size: 18px; }
+  &:hover { background: rgba(255, 255, 255, 0.2); }
+}
+
+/* ============ CATS SECTION (cards de categorias em grid) ============ */
+.cats-section { margin-top: 24px; }
+
+.cats-titulo {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--placar-text, #2d2d2d);
+  letter-spacing: -0.2px;
+  margin: 0 0 14px;
+}
+
+.cats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--placar-surface, #fff);
+  border: 1px solid var(--placar-divider, #ececef);
+  border-radius: 12px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    border-color: var(--ion-color-secondary, #7CC61D);
+  }
+}
+
+.cat-card-logo {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(124, 198, 29, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--ion-color-secondary, #7CC61D);
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 22px; }
+}
+
+.cat-card-titulo {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--placar-text, #2d2d2d);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cat-card-chev {
+  flex: 0 0 auto;
+  color: var(--ion-color-medium);
+  font-size: 18px;
+}
+
+.cats-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--ion-color-medium);
+  font-size: 13px;
+  background: var(--placar-surface, #fff);
+  border: 1px solid var(--placar-divider, #ececef);
+  border-radius: 12px;
+
+  p { margin: 0; }
+}
+
+/*Banner ocupa 100% do wrap, mantendo proporção 1600×400 (4:1) — bate com
+   o crop da config e com a versão pública.
+   (Mantido pra outras seções/legado — não usado mais na seção inicio.) */
+.banner {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1600 / 400;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #1C2E3D;
+  background-image:
+    linear-gradient(135deg, #1C2E3D 0%, #2d4a63 100%);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: #fff;
+
+  /* Em telas estreitas, a aspect-ratio pode deixar o banner muito baixo;
+     mantemos a altura mínima pra UI continuar legível. */
+  min-height: 180px;
+}
+
+.banner-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+  /* Gradiente apenas no topo e no rodapé pra deixar a imagem aparecer no meio. */
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 30%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0) 35%);
+}
+
+.banner-meta {
+  display: inline-block;
+  background: rgba(28, 46, 61, 0.7);
+  border-radius: 8px;
+  padding: 6px 12px;
+  align-self: flex-start;
+
+  .meta-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .meta-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+  }
+}
+
+.banner-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  .foot-info {
+    background: rgba(28, 46, 61, 0.7);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+  }
+
+  .btn-seguir {
+    --border-radius: 999px;
+    --padding-start: 18px;
+    --padding-end: 18px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+}
+
+.foot-info {
+  background: rgba(28, 46, 61, 0.75);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+
+  @media (max-width: 540px) {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+}
+
+.btn-seguir {
+  --border-radius: 999px;
+  --padding-start: 18px;
+  --padding-end: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.btn-share {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(28, 46, 61, 0.7);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 120ms ease;
+
+  ion-icon { font-size: 18px; }
+  &:hover { background: rgba(28, 46, 61, 0.9); }
+}
+
+/* ============ Descrição ============ */
+.descricao {
+  margin: 18px 0 0;
+  padding: 14px 18px;
+  background: #fff;
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--placar-text-muted, #6b6b70);
+  line-height: 1.5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* ============ Seções ============ */
+.section { margin: 28px 0 0; }
+
+.section-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--placar-text, #2d2d2d);
+  margin: 0 0 14px;
+  letter-spacing: -0.2px;
+}
+
+.card {
+  background: var(--placar-surface, #fff);
+  border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.lista { padding: 6px 0; }
+
+.cat-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 14px 18px;
+  cursor: pointer;
+  text-align: left;
+  border-top: 1px solid var(--placar-divider, #ececef);
+  transition: background 120ms ease;
+
+  &:first-of-type { border-top: none; }
+  &:hover { background: #fafafb; }
+
+  .chev {
+    color: var(--ion-color-medium);
+    font-size: 20px;
+  }
+}
+
+.cat-logo {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: rgba(124, 198, 29, 0.15);
+  color: var(--ion-color-secondary);
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 22px; }
+}
+
+.cat-title {
+  flex: 1;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--placar-text, #2d2d2d);
+  text-transform: uppercase;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--ion-color-medium);
+  font-size: 13px;
+}
+
+/* ============ Categorias (estrutura idêntica ao admin
+   campeonato/inicio/inicio.page.scss) ============ */
+.categorias-card {
+  padding: 12px;
+}
+
+.categoria-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 6px 6px 12px;
+  border-top: 1px solid var(--placar-divider, #ececef);
+  transition: background 120ms ease;
+
+  &:first-of-type { border-top: none; }
+  &:hover { background: var(--placar-surface-2, #fafbfc); }
+}
+
+.cat-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 6px 6px 0;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
+/* Mensagens — placeholder centralizado */
+.msg-empty {
+  padding: 18px;
+  text-align: center;
+  color: var(--placar-text-muted, #6b6b70);
+
+  p { margin: 0; font-size: 14px; }
+}
+
+/* ============ Placeholder de mídia ============ */
+.placeholder {
+  text-align: center;
+  padding: 80px 24px;
+  color: var(--ion-color-medium);
+
+  > ion-icon {
+    font-size: 64px;
+    opacity: 0.35;
+    margin-bottom: 14px;
+  }
+  h3 {
+    margin: 0 0 6px;
+    color: var(--ion-color-primary);
+    font-size: 18px;
+    font-weight: 700;
+  }
+  p { margin: 0; font-size: 14px; }
+}
+
+/* ============ Header da seção Mídia ============ */
+.midia-header {
+  margin-bottom: 18px;
+
+  .midia-subtitle {
+    margin: 0;
+    font-size: 14px;
+    color: var(--ion-color-medium);
+    font-weight: 500;
+  }
+}
+
+/* ============ Filtros (chips) ============ */
+.midia-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--placar-divider, #ececec);
+
+  @media (max-width: 540px) {
+    /* Em mobile, o chip-bar vira rolagem horizontal pra não estourar a tela. */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+  }
+}
+
+.filtro-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #fff;
+  border: 1px solid var(--placar-divider, #ececec);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--placar-text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+
+  ion-icon { font-size: 16px; }
+
+  .chip-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--placar-surface-2, #f0f0f3);
+    color: var(--ion-color-medium);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: var(--ion-color-primary);
+    color: var(--ion-color-primary);
+  }
+
+  &.active {
+    background: var(--ion-color-primary);
+    border-color: var(--ion-color-primary);
+    color: #fff;
+
+    .chip-count { background: rgba(255, 255, 255, 0.22); color: #fff; }
+  }
+
+  &.empty, &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+/* ============ Grid de mídias ============ */
+.midia-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+
+  @media (max-width: 700px) {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+.midia-card {
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+  display: flex;
+  flex-direction: column;
+  outline: none;
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(28, 46, 61, 0.14);
+
+    .card-overlay { opacity: 1; }
+    .card-thumb img { transform: scale(1.04); }
+  }
+}
+
+.card-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  /* Fallback default — sobrescrito por tipo abaixo. */
+  background: linear-gradient(135deg, #e9eaee 0%, #d8dade 100%);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 300ms ease;
+  }
+}
+
+/* Gradientes específicos por tipo de mídia (aplicados na thumb vazia). */
+.midia-card[data-tipo="video"]  .card-thumb { background: linear-gradient(135deg, #1c2e3d 0%, #2d4a63 100%); }
+.midia-card[data-tipo="youtube"] .card-thumb { background: linear-gradient(135deg, #cc1a1a 0%, #ff3030 100%); }
+.midia-card[data-tipo="link"]    .card-thumb { background: linear-gradient(135deg, #1976d2 0%, #5fa8ee 100%); }
+.midia-card[data-tipo="noticia"] .card-thumb { background: linear-gradient(135deg, #4a7e0e 0%, #7CC61D 100%); }
+.midia-card[data-tipo="foto"].no-thumb .card-thumb {
+  background: linear-gradient(135deg, #6b6b6b 0%, #a5a5a5 100%);
+}
+
+.card-thumb-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.85);
+
+  ion-icon { font-size: 72px; opacity: 0.6; }
+}
+
+.card-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.45) 100%);
+  opacity: 0;
+  transition: opacity 160ms ease;
+  pointer-events: none;
+
+  ion-icon {
+    font-size: 54px;
+    color: #fff;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
+  }
+}
+
+.card-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(28, 46, 61, 0.85);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  backdrop-filter: blur(6px);
+  z-index: 2;
+
+  ion-icon { font-size: 13px; }
+}
+
+.card-body {
+  padding: 12px 14px 14px;
+}
+
+.card-title {
+  margin: 0 0 4px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--placar-text);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.card-desc {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ion-color-medium);
+  line-height: 1.45;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* ============================================================
+   Seção "Minha equipe" — fichas de inscrição vinculadas
+   ============================================================ */
+.me-intro {
+  margin: 4px 0 18px;
+  font-size: 14px;
+  color: var(--ion-color-medium);
+  line-height: 1.5;
+  max-width: 700px;
+
+  strong {
+    color: var(--placar-text, #2d2d2d);
+    font-weight: 700;
+  }
+}
+
+.me-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 56px 24px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+
+  ion-icon {
+    font-size: 64px;
+    color: var(--ion-color-medium);
+    opacity: 0.45;
+    margin-bottom: 14px;
+  }
+  h3 {
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--placar-text, #2d2d2d);
+  }
+  p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--ion-color-medium);
+    max-width: 420px;
+    line-height: 1.5;
+  }
+}
+
+.me-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.me-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid #eef0f3;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: box-shadow 150ms ease, transform 100ms ease;
+
+  &:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
+    transform: translateY(-2px);
+  }
+
+  .me-card-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border-bottom: 1px solid #f0f2f5;
+
+    .me-ico {
+      font-size: 44px;
+      color: var(--ion-color-secondary, #7CC61D);
+      flex-shrink: 0;
+    }
+
+    /* Escudo (logo) do clube — substitui o ícone genérico quando a equipe
+       tem foto cadastrada. Mantém um placeholder estilizado quando não. */
+    .me-escudo {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid var(--ion-color-secondary, #7CC61D);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      ion-icon {
+        font-size: 26px;
+        color: var(--ion-color-secondary, #7CC61D);
+      }
+
+      /* Fallback: equipe não carregada ainda OU sem logo */
+      &.sem-logo,
+      &.placeholder {
+        background: rgba(124, 198, 29, 0.12);
+        border-color: rgba(124, 198, 29, 0.35);
+        ion-icon { color: var(--ion-color-secondary-shade, #4a7e0e); }
+      }
+      &.placeholder ion-icon { font-size: 30px; }
+    }
+
+    .me-cidade {
+      background: rgba(77, 171, 247, 0.10);
+      color: #1e6bb8;
+    }
+    .me-info {
+      min-width: 0;
+      flex: 1;
+    }
+    .me-titulo {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--placar-text, #2d2d2d);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .me-sub {
+      font-size: 12.5px;
+      color: var(--ion-color-medium);
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .me-cat {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11.5px;
+      color: var(--ion-color-primary);
+      background: rgba(28, 46, 61, 0.08);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 6px;
+      font-weight: 600;
+      ion-icon { font-size: 12px; }
+    }
+  }
+
+  .me-card-foot {
+    padding: 12px 14px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .me-btn-editar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    background: var(--ion-color-secondary, #7CC61D);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    transition: filter 120ms ease, transform 100ms ease;
+    ion-icon { font-size: 16px; }
+
+    &:hover { filter: brightness(1.08); }
+    &:active { transform: scale(0.96); }
+  }
+}

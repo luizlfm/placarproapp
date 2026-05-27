@@ -1,0 +1,165 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="dark">
+    <ion-buttons slot="start">
+      <ion-button (click)="fechar()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ rotulo }}</ion-title>
+    <ion-buttons slot="end">
+      <!-- Botão TELA CHEIA — leva o vídeo pra fullscreen real do device.
+           No iOS Safari usa `webkitEnterFullscreen` no <video> (única
+           forma de tela cheia sem PWA instalado); demais browsers usam
+           `requestFullscreen` no container. Sai com gesto/ESC. -->
+      <ion-button (click)="entrarTelaCheia()" aria-label="Tela cheia">
+        <ion-icon slot="icon-only" name="expand-outline"></ion-icon>
+      </ion-button>
+      <!-- Badge "AO VIVO" no header quando está transmitindo -->
+      <span class="badge-ao-vivo" *ngIf="estado === 'live'">
+        <span class="dot"></span>
+        AO VIVO
+      </span>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="tx-content">
+  <!-- ============ ESTADO: ERRO ============ -->
+  <div class="tx-state tx-erro" *ngIf="estado === 'erro'">
+    <ion-icon name="warning-outline"></ion-icon>
+    <h2>Não foi possível iniciar</h2>
+    <p>{{ mensagemErro }}</p>
+    <ion-button color="primary" (click)="tentarNovamente()">
+      <ion-icon slot="start" name="refresh-outline"></ion-icon>
+      Tentar novamente
+    </ion-button>
+  </div>
+
+  <!-- ============ ESTADO: IDLE / LIVE — preview + controles ============ -->
+  <div class="tx-corpo" *ngIf="estado === 'idle' || estado === 'connecting' || estado === 'live'">
+    <!-- Preview da câmera (sempre visível enquanto não tem erro). -->
+    <div class="tx-video-wrap">
+      <video #videoPreview autoplay playsinline muted class="tx-video"></video>
+
+      <!-- Overlay quando câmera está desligada -->
+      <div class="tx-cam-off" *ngIf="cameraDesligada">
+        <ion-icon name="videocam-off-outline"></ion-icon>
+        <span>Câmera desligada</span>
+      </div>
+
+      <!-- Overlay de "Conectando..." -->
+      <div class="tx-overlay-loading" *ngIf="estado === 'connecting'">
+        <ion-spinner name="dots" color="light"></ion-spinner>
+        <span>Conectando à transmissão...</span>
+      </div>
+
+      <!-- Stats sobrepostas no canto superior (só em live) -->
+      <div class="tx-stats" *ngIf="estado === 'live'">
+        <div class="tx-stat">
+          <ion-icon name="time-outline"></ion-icon>
+          <span>{{ duracaoFormatada }}</span>
+        </div>
+        <div class="tx-stat">
+          <ion-icon name="people-outline"></ion-icon>
+          <span>{{ viewersConectados }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CONTROLES ============ -->
+    <div class="tx-controles">
+      <!-- IDLE: botão Iniciar + flip câmera (frontal/traseira).
+           Flip aqui é útil antes de transmitir — broadcaster confere se
+           tá apontando pra direção certa antes de virar AO VIVO. -->
+      <ng-container *ngIf="estado === 'idle'">
+        <p class="tx-hint">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          Verifique se a câmera está funcionando antes de iniciar.
+          Espectadores verão a transmissão na página pública do jogo.
+        </p>
+
+        <div class="tx-acoes-rapidas">
+          <button
+            type="button"
+            class="tx-btn-icon"
+            [disabled]="trocandoCamera"
+            (click)="flipCamera()"
+            [attr.aria-label]="facingMode === 'user' ? 'Mudar pra câmera traseira' : 'Mudar pra câmera frontal'"
+            [title]="facingMode === 'user' ? 'Câmera frontal — toque pra trocar pra traseira' : 'Câmera traseira — toque pra trocar pra frontal'"
+          >
+            <ion-icon name="camera-reverse-outline"></ion-icon>
+          </button>
+        </div>
+
+        <ion-button
+          expand="block"
+          color="danger"
+          class="tx-btn-iniciar"
+          (click)="iniciar()"
+          [disabled]="trocandoCamera"
+        >
+          <ion-icon slot="start" name="radio-outline"></ion-icon>
+          INICIAR TRANSMISSÃO
+        </ion-button>
+      </ng-container>
+
+      <!-- CONNECTING: só estado de espera -->
+      <ng-container *ngIf="estado === 'connecting'">
+        <ion-button expand="block" color="medium" disabled>
+          <ion-spinner name="crescent" slot="start"></ion-spinner>
+          Conectando...
+        </ion-button>
+      </ng-container>
+
+      <!-- LIVE: mute mic / câmera + flip frontal-traseira + parar -->
+      <ng-container *ngIf="estado === 'live'">
+        <div class="tx-acoes-rapidas">
+          <button
+            type="button"
+            class="tx-btn-icon"
+            [class.ativo]="micMutado"
+            (click)="toggleMic()"
+            [attr.aria-label]="micMutado ? 'Desmutar microfone' : 'Mutar microfone'"
+          >
+            <ion-icon [name]="micMutado ? 'mic-off-outline' : 'mic-outline'"></ion-icon>
+          </button>
+          <button
+            type="button"
+            class="tx-btn-icon"
+            [class.ativo]="cameraDesligada"
+            (click)="toggleCamera()"
+            [attr.aria-label]="cameraDesligada ? 'Ligar câmera' : 'Desligar câmera'"
+          >
+            <ion-icon [name]="cameraDesligada ? 'videocam-off-outline' : 'videocam-outline'"></ion-icon>
+          </button>
+          <button
+            type="button"
+            class="tx-btn-icon"
+            [disabled]="trocandoCamera || cameraDesligada"
+            (click)="flipCamera()"
+            [attr.aria-label]="facingMode === 'user' ? 'Mudar pra câmera traseira' : 'Mudar pra câmera frontal'"
+            [title]="facingMode === 'user' ? 'Trocar pra traseira' : 'Trocar pra frontal'"
+          >
+            <ion-icon name="camera-reverse-outline"></ion-icon>
+          </button>
+        </div>
+
+        <ion-button
+          expand="block"
+          color="medium"
+          fill="outline"
+          class="tx-btn-parar"
+          (click)="pararComConfirmacao()"
+        >
+          <ion-icon slot="start" name="stop-circle-outline"></ion-icon>
+          Encerrar transmissão
+        </ion-button>
+
+        <!-- Pico de viewers como info secundária -->
+        <p class="tx-pico" *ngIf="viewersPico > 0">
+          Pico de espectadores: {{ viewersPico }}
+        </p>
+      </ng-container>
+    </div>
+  </div>
+</ion-content>

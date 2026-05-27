@@ -1,0 +1,1127 @@
+<!-- Header padrão Ionic com botão voltar + título. Resolve o problema do
+     menu lateral não funcionar em mobile (botão hambúrguer + back fica
+     no toolbar nativo) e dá hierarquia visual clara. -->
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/app/meus-campeonatos"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Painel Admin Master</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ad-content">
+  <!-- Pull-to-refresh padrão. -->
+  <ion-refresher slot="fixed" (ionRefresh)="onRefresh($event)">
+    <ion-refresher-content
+      pullingIcon="chevron-down-circle-outline"
+      refreshingSpinner="circles"
+      refreshingText="Atualizando...">
+    </ion-refresher-content>
+  </ion-refresher>
+
+  <div class="ad-wrap">
+
+    <!-- ============ Cabeçalho ============ -->
+    <header class="ad-header">
+      <div class="ad-title-wrap">
+        <ion-icon name="shield-checkmark-outline" class="ad-shield"></ion-icon>
+        <div>
+          <h1 class="ad-title">Painel Admin Master</h1>
+          <p class="ad-sub">Visão global do sistema PlacarPro</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============ Tabs (scroll horizontal em mobile) ============ -->
+    <nav class="ad-tabs" aria-label="Seções do painel">
+      <button
+        type="button"
+        class="ad-tab"
+        [class.active]="secao === 'dashboard'"
+        (click)="selecionarSecao('dashboard')"
+      >
+        <ion-icon name="grid-outline"></ion-icon>
+        <span>Dashboard</span>
+      </button>
+      <button
+        type="button"
+        class="ad-tab"
+        [class.active]="secao === 'usuarios'"
+        (click)="selecionarSecao('usuarios')"
+      >
+        <ion-icon name="people-outline"></ion-icon>
+        <span>Usuários</span>
+      </button>
+      <button
+        type="button"
+        class="ad-tab"
+        [class.active]="secao === 'campeonatos'"
+        (click)="selecionarSecao('campeonatos')"
+      >
+        <ion-icon name="trophy-outline"></ion-icon>
+        <span>Campeonatos</span>
+      </button>
+      <button
+        type="button"
+        class="ad-tab"
+        [class.active]="secao === 'organizadores'"
+        (click)="selecionarSecao('organizadores')"
+      >
+        <ion-icon name="briefcase-outline"></ion-icon>
+        <span>Organizadores</span>
+      </button>
+      <button
+        type="button"
+        class="ad-tab"
+        [class.active]="secao === 'inscricoes'"
+        (click)="selecionarSecao('inscricoes')"
+      >
+        <ion-icon name="clipboard-outline"></ion-icon>
+        <span>Inscrições</span>
+      </button>
+      <button
+        type="button"
+        class="ad-tab"
+        [class.active]="secao === 'planos'"
+        (click)="selecionarSecao('planos')"
+      >
+        <ion-icon name="card-outline"></ion-icon>
+        <span>Planos</span>
+      </button>
+      <button
+        type="button"
+        class="ad-tab"
+        [class.active]="secao === 'cobrancas'"
+        (click)="selecionarSecao('cobrancas')"
+      >
+        <ion-icon name="receipt-outline"></ion-icon>
+        <span>Cobranças</span>
+      </button>
+      <button
+        type="button"
+        class="ad-tab"
+        [class.active]="secao === 'financeiro'"
+        (click)="selecionarSecao('financeiro')"
+      >
+        <ion-icon name="trending-up-outline"></ion-icon>
+        <span>Financeiro</span>
+      </button>
+      <button
+        type="button"
+        class="ad-tab"
+        [class.active]="secao === 'configuracoes'"
+        (click)="selecionarSecao('configuracoes')"
+      >
+        <ion-icon name="settings-outline"></ion-icon>
+        <span>Configurações</span>
+      </button>
+      <button
+        type="button"
+        class="ad-tab"
+        [class.active]="secao === 'logs'"
+        (click)="selecionarSecao('logs')"
+      >
+        <ion-icon name="time-outline"></ion-icon>
+        <span>Logs</span>
+      </button>
+    </nav>
+
+    <!-- ============ Seção: DASHBOARD ============ -->
+    <section class="ad-secao" *ngIf="secao === 'dashboard'">
+      <ng-container *ngIf="stats$ | async as s">
+        <h2 class="ad-secao-title">Visão geral</h2>
+        <div class="ad-cards">
+          <div class="ad-card primary">
+            <div class="ad-card-icon"><ion-icon name="people-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.totalUsuarios }}</div>
+              <div class="ad-card-label">Usuários cadastrados</div>
+            </div>
+          </div>
+          <div class="ad-card">
+            <div class="ad-card-icon"><ion-icon name="briefcase-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.totalOrganizadores }}</div>
+              <div class="ad-card-label">Organizadores</div>
+            </div>
+          </div>
+          <div class="ad-card">
+            <div class="ad-card-icon"><ion-icon name="person-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.totalClientes }}</div>
+              <div class="ad-card-label">Espectadores (clientes)</div>
+            </div>
+          </div>
+          <div class="ad-card">
+            <div class="ad-card-icon"><ion-icon name="shield-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.totalModeradores }}</div>
+              <div class="ad-card-label">Moderadores</div>
+            </div>
+          </div>
+          <div class="ad-card warn">
+            <div class="ad-card-icon"><ion-icon name="shield-checkmark-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.totalAdmins }}</div>
+              <div class="ad-card-label">Admins Master</div>
+            </div>
+          </div>
+        </div>
+
+        <h2 class="ad-secao-title">Campeonatos</h2>
+        <div class="ad-cards">
+          <div class="ad-card primary">
+            <div class="ad-card-icon"><ion-icon name="trophy-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.totalCampeonatos }}</div>
+              <div class="ad-card-label">Total no sistema</div>
+            </div>
+          </div>
+          <div class="ad-card success">
+            <div class="ad-card-icon"><ion-icon name="eye-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.campeonatosPublicos }}</div>
+              <div class="ad-card-label">Públicos</div>
+            </div>
+          </div>
+          <div class="ad-card">
+            <div class="ad-card-icon"><ion-icon name="lock-closed-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.campeonatosPrivados }}</div>
+              <div class="ad-card-label">Privados</div>
+            </div>
+          </div>
+        </div>
+
+        <h2 class="ad-secao-title">Atividade do sistema</h2>
+        <div class="ad-cards">
+          <div class="ad-card">
+            <div class="ad-card-icon"><ion-icon name="shield-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.totalEquipes }}</div>
+              <div class="ad-card-label">Equipes cadastradas</div>
+            </div>
+          </div>
+          <div class="ad-card">
+            <div class="ad-card-icon"><ion-icon name="people-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.totalJogadores }}</div>
+              <div class="ad-card-label">Jogadores</div>
+            </div>
+          </div>
+          <div class="ad-card">
+            <div class="ad-card-icon"><ion-icon name="calendar-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.totalJogos }}</div>
+              <div class="ad-card-label">Jogos no total</div>
+            </div>
+          </div>
+          <div class="ad-card success" *ngIf="s.jogosEmAndamento > 0">
+            <div class="ad-card-icon"><ion-icon name="play-circle-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.jogosEmAndamento }}</div>
+              <div class="ad-card-label">Jogos ao vivo</div>
+            </div>
+          </div>
+          <div class="ad-card primary">
+            <div class="ad-card-icon"><ion-icon name="clipboard-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.totalInscricoes }}</div>
+              <div class="ad-card-label">Fichas de inscrição</div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </section>
+
+    <!-- ============ Seção: USUÁRIOS ============ -->
+    <section class="ad-secao" *ngIf="secao === 'usuarios'">
+      <div class="ad-secao-head">
+        <h2 class="ad-secao-title">Usuários cadastrados</h2>
+        <div class="ad-busca">
+          <ion-icon name="search-outline"></ion-icon>
+          <input
+            type="text"
+            placeholder="Buscar por nome, email, tipo ou UID..."
+            (input)="setBuscaUsuarios($any($event.target).value)"
+          />
+        </div>
+      </div>
+
+      <ng-container *ngIf="usuariosFiltrados$ | async as users">
+        <div class="ad-vazio" *ngIf="users.length === 0">
+          <ion-icon name="people-outline"></ion-icon>
+          <p>Nenhum usuário encontrado.</p>
+        </div>
+
+        <div class="ad-table" *ngIf="users.length > 0">
+          <div class="ad-thead">
+            <div class="th avatar"></div>
+            <div class="th nome">Nome</div>
+            <div class="th email">Email</div>
+            <div class="th tipo">Tipo</div>
+            <div class="th plano">Plano</div>
+            <div class="th admin">Admin</div>
+          </div>
+          <div
+            class="ad-tr clickable"
+            *ngFor="let u of users; trackBy: trackByUid"
+            (click)="abrirDetalhesUsuario(u)"
+            [title]="'Ver detalhes de ' + (u.nome || u.uid)"
+          >
+            <div class="td avatar">
+              <div class="ad-avatar">
+                <img *ngIf="u.logoUrl || u.fotoUrl; else iniciais"
+                  [src]="u.logoUrl || u.fotoUrl" [alt]="u.nome"
+                  referrerpolicy="no-referrer" loading="lazy" />
+                <ng-template #iniciais>
+                  <span>{{ ((u.nome || '?').charAt(0)) | uppercase }}</span>
+                </ng-template>
+              </div>
+            </div>
+            <div class="td nome">
+              <div class="ad-nome">{{ u.nome || '(sem nome)' }}</div>
+              <div class="ad-uid">{{ u.uid }}</div>
+            </div>
+            <div class="td email">{{ u.email || '—' }}</div>
+            <div class="td tipo">
+              <span class="ad-chip" [attr.data-tipo]="u.tipo || 'na'">
+                <ion-icon [name]="iconTipo(u.tipo)"></ion-icon>
+                {{ u.tipo || '—' }}
+              </span>
+            </div>
+            <div class="td plano">{{ u.plano || '—' }}</div>
+            <div class="td admin">
+              <ion-icon
+                *ngIf="u.isMaster"
+                name="shield-checkmark"
+                color="warning"
+                title="Admin Master"
+              ></ion-icon>
+              <span *ngIf="!u.isMaster">—</span>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </section>
+
+    <!-- ============ Seção: CAMPEONATOS ============ -->
+    <section class="ad-secao" *ngIf="secao === 'campeonatos'">
+      <div class="ad-secao-head">
+        <h2 class="ad-secao-title">Todos os campeonatos</h2>
+        <div class="ad-busca">
+          <ion-icon name="search-outline"></ion-icon>
+          <input
+            type="text"
+            placeholder="Buscar por título, organizador, cidade..."
+            (input)="setBuscaCampeonatos($any($event.target).value)"
+          />
+        </div>
+      </div>
+
+      <ng-container *ngIf="campeonatosFiltrados$ | async as camps">
+        <div class="ad-vazio" *ngIf="camps.length === 0">
+          <ion-icon name="trophy-outline"></ion-icon>
+          <p>Nenhum campeonato encontrado.</p>
+        </div>
+
+        <div class="ad-grid" *ngIf="camps.length > 0">
+          <div
+            class="ad-camp-card"
+            *ngFor="let c of camps; trackBy: trackByCampId"
+            (click)="abrirDetalhesCampeonato(c)"
+          >
+            <div
+              class="ad-camp-cover"
+              [style.backgroundImage]="(c.capaUrl || c.bannerUrl)
+                ? 'url(' + (c.capaUrl || c.bannerUrl) + ')'
+                : null"
+            >
+              <span class="ad-camp-status" [class.privado]="c.publico === false">
+                <ion-icon [name]="c.publico === false ? 'lock-closed' : 'eye'"></ion-icon>
+                {{ c.publico === false ? 'Privado' : 'Público' }}
+              </span>
+              <div class="ad-camp-logo">
+                <img *ngIf="c.logoUrl; else iconC" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
+                <ng-template #iconC><ion-icon name="trophy-outline"></ion-icon></ng-template>
+              </div>
+            </div>
+            <div class="ad-camp-body">
+              <div class="ad-camp-titulo">{{ c.titulo }}</div>
+              <div class="ad-camp-sub" *ngIf="c.subtitulo">{{ c.subtitulo }}</div>
+              <div class="ad-camp-meta">
+                <ion-icon name="person-circle-outline"></ion-icon>
+                {{ c.donoNome }}
+              </div>
+              <div class="ad-camp-meta" *ngIf="c.localizacao">
+                <ion-icon name="location-outline"></ion-icon>
+                {{ c.localizacao }}
+              </div>
+              <div class="ad-camp-meta" *ngIf="c.criadoEm">
+                <ion-icon name="calendar-outline"></ion-icon>
+                Criado em {{ formatarDataTs(c.criadoEm) }}
+              </div>
+            </div>
+            <div class="ad-camp-foot">
+              <span class="ad-camp-seguidores">
+                <ion-icon name="heart-outline"></ion-icon>
+                {{ c.seguidores ?? 0 }}
+              </span>
+              <button
+                type="button"
+                class="ad-btn-abrir"
+                (click)="abrirCampeonato(c); $event.stopPropagation()"
+              >
+                <ion-icon name="open-outline"></ion-icon>
+                Abrir como dono
+              </button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </section>
+
+    <!-- ============ Seção: ORGANIZADORES (grouped view) ============ -->
+    <section class="ad-secao" *ngIf="secao === 'organizadores'">
+      <div class="ad-secao-head">
+        <h2 class="ad-secao-title">Por organizador</h2>
+        <div class="ad-busca">
+          <ion-icon name="search-outline"></ion-icon>
+          <input
+            type="text"
+            placeholder="Buscar por organizador ou nome de campeonato..."
+            (input)="setBuscaOrganizadores($any($event.target).value)"
+          />
+        </div>
+      </div>
+
+      <ng-container *ngIf="organizadoresFiltrados$ | async as grupos">
+        <div class="ad-vazio" *ngIf="grupos.length === 0">
+          <ion-icon name="briefcase-outline"></ion-icon>
+          <p>Nenhum organizador encontrado.</p>
+        </div>
+
+        <div class="ad-orgs" *ngIf="grupos.length > 0">
+          <div
+            class="ad-org"
+            *ngFor="let g of grupos; trackBy: trackByGrupo"
+            [class.expandido]="estaExpandido(g.organizador.uid)"
+          >
+            <!-- Header do organizador (sempre visível) -->
+            <button
+              type="button"
+              class="ad-org-head"
+              (click)="toggleOrganizador(g.organizador.uid)"
+            >
+              <div class="ad-org-avatar">
+                <img
+                  *ngIf="g.organizador.logoUrl || g.organizador.fotoUrl; else iniOrg"
+                  [src]="g.organizador.logoUrl || g.organizador.fotoUrl"
+                  [alt]="g.organizador.nome"
+                  referrerpolicy="no-referrer"
+                />
+                <ng-template #iniOrg>
+                  <span>{{ ((g.organizador.nome || '?').charAt(0)) | uppercase }}</span>
+                </ng-template>
+              </div>
+              <div class="ad-org-info">
+                <div class="ad-org-nome">
+                  {{ g.organizador.nome || '(sem nome)' }}
+                  <ion-icon
+                    *ngIf="g.organizador.isMaster"
+                    name="shield-checkmark"
+                    color="warning"
+                    title="Admin Master"
+                  ></ion-icon>
+                </div>
+                <div class="ad-org-email" *ngIf="g.organizador.email">
+                  {{ g.organizador.email }}
+                </div>
+              </div>
+              <div class="ad-org-stats">
+                <div class="ad-org-stat">
+                  <div class="num">{{ g.campeonatos.length }}</div>
+                  <div class="lbl">Campeonatos</div>
+                </div>
+                <div class="ad-org-stat">
+                  <div class="num">{{ g.totalSeguidores }}</div>
+                  <div class="lbl">Seguidores</div>
+                </div>
+              </div>
+              <ion-icon
+                class="ad-org-chevron"
+                [name]="estaExpandido(g.organizador.uid) ? 'chevron-up-outline' : 'chevron-down-outline'"
+              ></ion-icon>
+            </button>
+
+            <!-- Lista de campeonatos do organizador (expandida) -->
+            <div class="ad-org-camps" *ngIf="estaExpandido(g.organizador.uid)">
+              <div
+                class="ad-org-camp"
+                *ngFor="let c of g.campeonatos"
+                (click)="abrirDetalhesCampeonato(c)"
+              >
+                <div class="ad-org-camp-logo">
+                  <img *ngIf="c.logoUrl; else iconOC" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
+                  <ng-template #iconOC><ion-icon name="trophy-outline"></ion-icon></ng-template>
+                </div>
+                <div class="ad-org-camp-body">
+                  <div class="ad-org-camp-titulo">{{ c.titulo }}</div>
+                  <div class="ad-org-camp-meta">
+                    <span [class.privado]="c.publico === false">
+                      <ion-icon [name]="c.publico === false ? 'lock-closed' : 'eye-outline'"></ion-icon>
+                      {{ c.publico === false ? 'Privado' : 'Público' }}
+                    </span>
+                    <span><ion-icon name="heart-outline"></ion-icon> {{ c.seguidores ?? 0 }}</span>
+                    <span *ngIf="c.localizacao">
+                      <ion-icon name="location-outline"></ion-icon> {{ c.localizacao }}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="ad-org-camp-abrir"
+                  (click)="abrirCampeonato(c); $event.stopPropagation()"
+                  title="Abrir como dono"
+                >
+                  <ion-icon name="open-outline"></ion-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </section>
+
+    <!-- ============ Seção: INSCRIÇÕES ============ -->
+    <section class="ad-secao" *ngIf="secao === 'inscricoes'">
+      <div class="ad-secao-head">
+        <h2 class="ad-secao-title">Fichas de inscrição</h2>
+        <div class="ad-busca">
+          <ion-icon name="search-outline"></ion-icon>
+          <input
+            type="text"
+            placeholder="Buscar por equipe, responsável, email, status..."
+            (input)="setBuscaInscricoes($any($event.target).value)"
+          />
+        </div>
+      </div>
+
+      <ng-container *ngIf="inscricoesFiltradas$ | async as inscs">
+        <div class="ad-vazio" *ngIf="inscs.length === 0">
+          <ion-icon name="clipboard-outline"></ion-icon>
+          <p>Nenhuma inscrição encontrada.</p>
+        </div>
+
+        <div class="ad-table inscricoes" *ngIf="inscs.length > 0">
+          <div class="ad-thead">
+            <div class="th">Equipe</div>
+            <div class="th">Responsável</div>
+            <div class="th">Email</div>
+            <div class="th">Status</div>
+            <div class="th">Criada em</div>
+            <div class="th acao"></div>
+          </div>
+          <div
+            class="ad-tr clickable"
+            *ngFor="let i of inscs; trackBy: trackByInscId"
+            (click)="abrirInscricao(i)"
+          >
+            <div class="td"><strong>{{ i.nomeEquipe || '—' }}</strong></div>
+            <div class="td">{{ i.responsavel || '—' }}</div>
+            <div class="td">{{ i.email || '—' }}</div>
+            <div class="td">
+              <span class="ad-status" [attr.data-status]="i.status || 'na'">
+                {{ i.status || '—' }}
+              </span>
+            </div>
+            <div class="td">{{ formatarDataTs(i.criadoEm) }}</div>
+            <div class="td acao">
+              <button type="button" class="ad-btn-link" (click)="abrirInscricao(i)">
+                <ion-icon name="open-outline"></ion-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </section>
+
+    <!-- ============ Seção: PLANOS (gerencia plano de cada usuário) ============ -->
+    <section class="ad-secao" *ngIf="secao === 'planos'">
+      <h2 class="ad-secao-title">Distribuição de planos</h2>
+      <ng-container *ngIf="contagemPlanos$ | async as ct">
+        <div class="ad-planos-cards">
+          <div class="ad-plano-card" *ngFor="let p of catalogoPlanos" [style.--cor]="p.cor">
+            <div class="ad-plano-head">
+              <span class="ad-plano-label">{{ p.label }}</span>
+              <span class="ad-plano-preco">{{ formatarPrecoPlano(p) }}</span>
+            </div>
+            <div class="ad-plano-cont">
+              <div class="num">{{ ct[p.id] || 0 }}</div>
+              <div class="lbl">usuários</div>
+            </div>
+            <div class="ad-plano-limites">
+              <div *ngIf="p.limites.maxCampeonatos !== -1">
+                <ion-icon name="trophy-outline"></ion-icon> {{ p.limites.maxCampeonatos }} campeonatos
+              </div>
+              <div *ngIf="p.limites.maxCampeonatos === -1">
+                <ion-icon name="infinite-outline"></ion-icon> Campeonatos ilimitados
+              </div>
+              <div *ngIf="p.limites.maxJogadoresPorCategoria !== -1">
+                <ion-icon name="people-outline"></ion-icon> {{ p.limites.maxJogadoresPorCategoria }} jogadores/cat.
+              </div>
+              <div *ngIf="p.limites.maxJogadoresPorCategoria === -1">
+                <ion-icon name="infinite-outline"></ion-icon> Jogadores ilimitados
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <div class="ad-secao-head" style="margin-top: 22px;">
+        <h2 class="ad-secao-title">Plano de cada usuário</h2>
+        <div class="ad-busca">
+          <ion-icon name="search-outline"></ion-icon>
+          <input
+            type="text"
+            placeholder="Buscar por nome, email ou plano..."
+            (input)="setBuscaPlanos($any($event.target).value)"
+          />
+        </div>
+      </div>
+
+      <ng-container *ngIf="linhasPlanosFiltradas$ | async as linhas">
+        <div class="ad-vazio" *ngIf="linhas.length === 0">
+          <ion-icon name="card-outline"></ion-icon>
+          <p>Nenhum usuário encontrado.</p>
+        </div>
+
+        <div class="ad-table planos" *ngIf="linhas.length > 0">
+          <div class="ad-thead">
+            <div class="th">Usuário</div>
+            <div class="th">Email</div>
+            <div class="th">Plano atual</div>
+            <div class="th">Alterar para</div>
+          </div>
+          <div class="ad-tr" *ngFor="let l of linhas">
+            <div class="td">
+              <div class="ad-nome">{{ l.usuario.nome || '(sem nome)' }}</div>
+              <div class="ad-uid">{{ l.usuario.uid }}</div>
+            </div>
+            <div class="td">{{ l.usuario.email || '—' }}</div>
+            <div class="td">
+              <span
+                class="ad-plano-chip"
+                [style.--cor]="l.planoDef.cor"
+              >
+                {{ l.planoDef.label }}
+              </span>
+            </div>
+            <div class="td">
+              <select
+                class="ad-plano-select"
+                [ngModel]="(l.usuario.plano || 'gratis')"
+                (ngModelChange)="alterarPlanoNaTabela(l.usuario.uid, $event)"
+              >
+                <option *ngFor="let p of catalogoPlanos" [value]="p.id">
+                  {{ p.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </section>
+
+    <!-- ============ Seção: COBRANÇAS ============ -->
+    <section class="ad-secao" *ngIf="secao === 'cobrancas'">
+      <div class="ad-section-head">
+        <h2 class="ad-secao-title">Cobranças</h2>
+        <p class="ad-secao-sub">
+          Faturas emitidas para os organizadores. Integração com Asaas planejada
+          — por enquanto, gestão manual.
+        </p>
+      </div>
+
+      <!-- ===== Botão Nova Cobrança + Form inline ===== -->
+      <div class="ad-nova-cob-wrap">
+        <button
+          type="button"
+          class="ad-nova-cob-btn"
+          [class.aberto]="novaCobAberta"
+          (click)="toggleNovaCobranca()"
+        >
+          <ion-icon [name]="novaCobAberta ? 'close-outline' : 'add-circle-outline'"></ion-icon>
+          {{ novaCobAberta ? 'Cancelar' : 'Nova Cobrança' }}
+        </button>
+
+        <div class="ad-nova-cob-form" *ngIf="novaCobAberta">
+          <div class="ad-nova-cob-grid">
+            <label>
+              <span>Usuário</span>
+              <select [(ngModel)]="novaCob.usuarioId">
+                <option value="">— Selecione —</option>
+                <option *ngFor="let u of (usuarios$ | async); trackBy: trackByUid" [value]="u.uid">
+                  {{ u.nome || '(sem nome)' }} {{ u.email ? '— ' + u.email : '' }}
+                </option>
+              </select>
+            </label>
+            <label>
+              <span>Plano</span>
+              <select [(ngModel)]="novaCob.planoId">
+                <option *ngFor="let p of catalogoPlanos" [value]="p.id">{{ p.label }}</option>
+              </select>
+            </label>
+            <label>
+              <span>Periodicidade</span>
+              <select [(ngModel)]="novaCob.periodicidade">
+                <option value="mensal">Mensal</option>
+                <option value="trimestral">Trimestral</option>
+                <option value="semestral">Semestral</option>
+                <option value="anual">Anual</option>
+              </select>
+            </label>
+            <label>
+              <span>Vencimento</span>
+              <app-date-input
+                label=""
+                mode="date"
+                [(ngModel)]="novaCob.vencimento"
+              ></app-date-input>
+            </label>
+            <label>
+              <span>Método</span>
+              <select [(ngModel)]="novaCob.metodoPagamento">
+                <option value="pix">Pix</option>
+                <option value="boleto">Boleto</option>
+                <option value="cartao_credito">Cartão de crédito</option>
+                <option value="cartao_debito">Cartão de débito</option>
+                <option value="transferencia">Transferência</option>
+                <option value="dinheiro">Dinheiro</option>
+                <option value="outro">Outro</option>
+              </select>
+            </label>
+            <label class="full">
+              <span>Observação (opcional)</span>
+              <input type="text" [(ngModel)]="novaCob.observacao" placeholder="Notas internas..." />
+            </label>
+          </div>
+          <div class="ad-nova-cob-foot">
+            <div class="ad-nova-cob-valor">
+              <span class="lbl">Valor:</span>
+              <strong>{{ formatarValorCobranca(valorCalculadoCentavos) }}</strong>
+            </div>
+            <button
+              type="button"
+              class="ad-nova-cob-salvar"
+              [disabled]="salvandoNovaCob || !novaCob.usuarioId || !novaCob.vencimento || valorCalculadoCentavos === 0"
+              (click)="criarCobranca()"
+            >
+              <ion-icon name="checkmark-outline"></ion-icon>
+              {{ salvandoNovaCob ? 'Criando...' : 'Criar cobrança' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtros + Busca -->
+      <div class="ad-cobr-toolbar">
+        <div class="ad-cobr-chips">
+          <button
+            class="ad-cobr-chip"
+            type="button"
+            [class.on]="filtroStatusCobranca === null"
+            (click)="selecionarFiltroStatusCobranca(null)"
+          >Todas</button>
+          <button
+            class="ad-cobr-chip aguardando"
+            type="button"
+            [class.on]="filtroStatusCobranca === 'aguardando'"
+            (click)="selecionarFiltroStatusCobranca('aguardando')"
+          >Aguardando</button>
+          <button
+            class="ad-cobr-chip pago"
+            type="button"
+            [class.on]="filtroStatusCobranca === 'pago'"
+            (click)="selecionarFiltroStatusCobranca('pago')"
+          >Pago</button>
+          <button
+            class="ad-cobr-chip atrasado"
+            type="button"
+            [class.on]="filtroStatusCobranca === 'atrasado'"
+            (click)="selecionarFiltroStatusCobranca('atrasado')"
+          >Atrasado</button>
+          <button
+            class="ad-cobr-chip cancelado"
+            type="button"
+            [class.on]="filtroStatusCobranca === 'cancelado'"
+            (click)="selecionarFiltroStatusCobranca('cancelado')"
+          >Cancelado</button>
+        </div>
+        <input
+          type="text"
+          class="ad-cobr-busca"
+          placeholder="Buscar por nome, email, plano..."
+          (input)="onBuscaCobrancas($any($event))"
+        />
+      </div>
+
+      <!-- Lista de cobranças -->
+      <div class="ad-cobr-lista" *ngIf="cobrancasFiltradas$ | async as cobrs">
+        <div class="ad-cobr-empty" *ngIf="cobrs.length === 0">
+          <ion-icon name="receipt-outline"></ion-icon>
+          <p>Nenhuma cobrança encontrada.</p>
+        </div>
+
+        <div
+          class="ad-cobr-card"
+          *ngFor="let c of cobrs; trackBy: trackByCobranca"
+        >
+          <div class="ad-cobr-row1">
+            <div class="ad-cobr-status"
+                 [style.background]="COBRANCA_STATUS_COR[statusEfetivoCobranca(c)]">
+              {{ COBRANCA_STATUS_LABEL[statusEfetivoCobranca(c)] }}
+            </div>
+            <div class="ad-cobr-valor">{{ formatarValorCobranca(c.valorCentavos) }}</div>
+            <div class="ad-cobr-acoes">
+              <button
+                *ngIf="c.status === 'aguardando'"
+                class="ad-cobr-btn pagar"
+                type="button"
+                (click)="marcarCobrancaPaga(c)"
+              >
+                <ion-icon name="checkmark-circle-outline"></ion-icon>
+                Marcar pago
+              </button>
+              <button
+                *ngIf="c.status === 'aguardando'"
+                class="ad-cobr-btn cancelar"
+                type="button"
+                (click)="cancelarCobranca(c)"
+              >
+                <ion-icon name="close-circle-outline"></ion-icon>
+                Cancelar
+              </button>
+              <a
+                *ngIf="c.linkPagamento"
+                class="ad-cobr-btn link"
+                [href]="c.linkPagamento"
+                target="_blank"
+                rel="noopener"
+              >
+                <ion-icon name="open-outline"></ion-icon>
+                Abrir link
+              </a>
+            </div>
+          </div>
+
+          <div class="ad-cobr-row2">
+            <div class="ad-cobr-info">
+              <strong>{{ c.usuarioNome || c.usuarioId }}</strong>
+              <span *ngIf="c.usuarioEmail">{{ c.usuarioEmail }}</span>
+            </div>
+            <div class="ad-cobr-meta">
+              <span class="ad-cobr-tag">{{ c.planoId | titlecase }}</span>
+              <span class="ad-cobr-tag">{{ labelPeriodicidade(c.periodicidade) }}</span>
+              <span class="ad-cobr-venc">
+                <ion-icon name="calendar-outline"></ion-icon>
+                Vence em {{ c.vencimento }}
+              </span>
+              <span class="ad-cobr-metodo" *ngIf="c.metodoPagamento">
+                {{ METODO_PAGAMENTO_LABEL[c.metodoPagamento] }}
+              </span>
+            </div>
+          </div>
+
+          <div class="ad-cobr-obs" *ngIf="c.observacao">
+            <ion-icon name="document-text-outline"></ion-icon>
+            <span>{{ c.observacao }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Seção: FINANCEIRO ============ -->
+    <section class="ad-secao" *ngIf="secao === 'financeiro'">
+      <div class="ad-section-head">
+        <h2 class="ad-secao-title">Financeiro</h2>
+        <p class="ad-secao-sub">Métricas de receita do PlacarPro.</p>
+      </div>
+
+      <ng-container *ngIf="financeiro$ | async as f">
+        <!-- KPIs -->
+        <div class="ad-fin-kpis">
+          <div class="ad-fin-kpi mrr">
+            <div class="ad-fin-kpi-label">MRR</div>
+            <div class="ad-fin-kpi-valor">{{ formatarCentavos(f.mrr) }}</div>
+            <div class="ad-fin-kpi-sub">Receita mensal recorrente</div>
+          </div>
+          <div class="ad-fin-kpi arr">
+            <div class="ad-fin-kpi-label">ARR</div>
+            <div class="ad-fin-kpi-valor">{{ formatarCentavos(f.arr) }}</div>
+            <div class="ad-fin-kpi-sub">Receita anual recorrente</div>
+          </div>
+          <div class="ad-fin-kpi ticket">
+            <div class="ad-fin-kpi-label">Ticket médio</div>
+            <div class="ad-fin-kpi-valor">{{ formatarCentavos(f.ticketMedio) }}</div>
+            <div class="ad-fin-kpi-sub">Por cobrança paga</div>
+          </div>
+          <div class="ad-fin-kpi pagantes">
+            <div class="ad-fin-kpi-label">Pagantes</div>
+            <div class="ad-fin-kpi-valor">{{ f.totalPagantes }}</div>
+            <div class="ad-fin-kpi-sub">Usuários com pagamento</div>
+          </div>
+        </div>
+
+        <!-- Receita total + breakdown de status -->
+        <div class="ad-fin-secondary">
+          <div class="ad-fin-total">
+            <div class="ad-fin-total-label">Receita total (lifetime)</div>
+            <div class="ad-fin-total-valor">{{ formatarCentavos(f.receitaTotal) }}</div>
+          </div>
+          <div class="ad-fin-status">
+            <div class="ad-fin-status-item pago">
+              <div class="ad-fin-status-n">{{ f.cobrancasPagas }}</div>
+              <div class="ad-fin-status-l">Pagas</div>
+            </div>
+            <div class="ad-fin-status-item aguardando">
+              <div class="ad-fin-status-n">{{ f.cobrancasAguardando }}</div>
+              <div class="ad-fin-status-l">Aguardando</div>
+            </div>
+            <div class="ad-fin-status-item atrasado">
+              <div class="ad-fin-status-n">{{ f.cobrancasAtrasadas }}</div>
+              <div class="ad-fin-status-l">Atrasadas</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gráfico de barras mensal -->
+        <div class="ad-fin-chart">
+          <h3 class="ad-fin-chart-titulo">Receita por mês (últimos 12 meses)</h3>
+          <div class="ad-fin-chart-bars">
+            <div class="ad-fin-bar" *ngFor="let m of f.mesesGrafico; trackBy: trackByMes">
+              <div class="ad-fin-bar-valor" *ngIf="m.valorCentavos > 0">
+                {{ formatarCentavos(m.valorCentavos) }}
+              </div>
+              <div class="ad-fin-bar-stem" [style.height.%]="m.altura"></div>
+              <div class="ad-fin-bar-label">{{ m.label }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top 10 pagantes -->
+        <div class="ad-fin-top">
+          <h3 class="ad-fin-chart-titulo">Top 10 pagantes</h3>
+          <div class="ad-fin-top-empty" *ngIf="f.topPagantes.length === 0">
+            <p>Ainda não há cobranças pagas no sistema.</p>
+          </div>
+          <div class="ad-fin-top-lista" *ngIf="f.topPagantes.length > 0">
+            <div class="ad-fin-top-row" *ngFor="let t of f.topPagantes; let i = index; trackBy: trackByTop">
+              <div class="ad-fin-top-rank">{{ i + 1 }}</div>
+              <div class="ad-fin-top-nome">
+                <strong>{{ t.nome }}</strong>
+                <span *ngIf="t.email">{{ t.email }}</span>
+              </div>
+              <div class="ad-fin-top-meta">
+                <span class="ad-fin-top-qtd">{{ t.cobrancasCount }} fatura{{ t.cobrancasCount === 1 ? '' : 's' }}</span>
+              </div>
+              <div class="ad-fin-top-total">{{ formatarCentavos(t.totalCentavos) }}</div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </section>
+
+    <!-- ============ Seção: CONFIGURAÇÕES ============ -->
+    <section class="ad-secao" *ngIf="secao === 'configuracoes'">
+      <div class="ad-section-head">
+        <h2 class="ad-secao-title">Configurações globais</h2>
+        <p class="ad-secao-sub">
+          Valores que normalmente ficavam em <code>environment.ts</code>.
+          Edite aqui sem precisar fazer redeploy.
+        </p>
+      </div>
+
+      <!-- Códigos de convite — Organizador -->
+      <div class="ad-cfg-card">
+        <h3 class="ad-cfg-titulo">
+          <ion-icon name="trophy-outline"></ion-icon>
+          Códigos de convite — Organizador
+        </h3>
+        <p class="ad-cfg-hint">
+          Listados como aceitos no <strong>SOU ORGANIZADOR</strong> no /cadastro.
+          Reutilizáveis — qualquer pessoa com o código vale.
+        </p>
+        <div class="ad-cfg-chips">
+          <span
+            class="ad-cfg-chip"
+            *ngFor="let c of configForm.organizadorInviteCodes"
+          >
+            {{ c }}
+            <button type="button" (click)="removerCodigoOrg(c)" aria-label="Remover">
+              <ion-icon name="close-outline"></ion-icon>
+            </button>
+          </span>
+          <span class="ad-cfg-empty" *ngIf="!configForm.organizadorInviteCodes?.length">
+            Nenhum código cadastrado.
+          </span>
+        </div>
+        <div class="ad-cfg-add">
+          <input
+            type="text"
+            class="ad-cfg-input"
+            placeholder="Novo código (ex.: placarpro-2027)"
+            [(ngModel)]="novoCodigoOrg"
+            (keydown.enter)="adicionarCodigoOrg()"
+          />
+          <button class="ad-cfg-btn-add" type="button" (click)="adicionarCodigoOrg()">
+            <ion-icon name="add-outline"></ion-icon>
+            Adicionar
+          </button>
+        </div>
+      </div>
+
+      <!-- Códigos de convite — Moderador -->
+      <div class="ad-cfg-card">
+        <h3 class="ad-cfg-titulo">
+          <ion-icon name="shield-checkmark-outline"></ion-icon>
+          Códigos de convite — Moderador
+        </h3>
+        <p class="ad-cfg-hint">
+          Aceitos no <strong>SOU MODERADOR</strong> no /cadastro.
+        </p>
+        <div class="ad-cfg-chips">
+          <span
+            class="ad-cfg-chip"
+            *ngFor="let c of configForm.moderadorInviteCodes"
+          >
+            {{ c }}
+            <button type="button" (click)="removerCodigoMod(c)" aria-label="Remover">
+              <ion-icon name="close-outline"></ion-icon>
+            </button>
+          </span>
+          <span class="ad-cfg-empty" *ngIf="!configForm.moderadorInviteCodes?.length">
+            Nenhum código cadastrado.
+          </span>
+        </div>
+        <div class="ad-cfg-add">
+          <input
+            type="text"
+            class="ad-cfg-input"
+            placeholder="Novo código (ex.: mod-2027)"
+            [(ngModel)]="novoCodigoMod"
+            (keydown.enter)="adicionarCodigoMod()"
+          />
+          <button class="ad-cfg-btn-add" type="button" (click)="adicionarCodigoMod()">
+            <ion-icon name="add-outline"></ion-icon>
+            Adicionar
+          </button>
+        </div>
+      </div>
+
+      <!-- Modo manutenção + Asaas URL -->
+      <div class="ad-cfg-card">
+        <h3 class="ad-cfg-titulo">
+          <ion-icon name="construct-outline"></ion-icon>
+          Operação
+        </h3>
+        <label class="ad-cfg-toggle">
+          <input type="checkbox" [(ngModel)]="configForm.modoManutencao" />
+          <span>Modo manutenção (bloqueia login de não-admins)</span>
+        </label>
+        <label class="ad-cfg-campo">
+          <span>Mensagem exibida no modo manutenção</span>
+          <textarea
+            rows="2"
+            [(ngModel)]="configForm.mensagemManutencao"
+            placeholder="Estamos atualizando o sistema. Volte em alguns minutos."
+          ></textarea>
+        </label>
+        <label class="ad-cfg-campo">
+          <span>URL base do Asaas</span>
+          <input
+            type="text"
+            [(ngModel)]="configForm.asaasUrl"
+            placeholder="https://www.asaas.com"
+          />
+        </label>
+      </div>
+
+      <!-- Botão salvar fixo no rodapé -->
+      <div class="ad-cfg-rodape">
+        <button
+          class="ad-cfg-btn-salvar"
+          type="button"
+          [disabled]="salvandoConfig"
+          (click)="salvarConfig()"
+        >
+          <ion-icon name="save-outline"></ion-icon>
+          {{ salvandoConfig ? 'Salvando...' : 'Salvar configurações' }}
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ Seção: LOGS ============ -->
+    <section class="ad-secao" *ngIf="secao === 'logs'">
+      <div class="ad-section-head">
+        <h2 class="ad-secao-title">Logs / Auditoria</h2>
+        <p class="ad-secao-sub">
+          Últimas 200 ações registradas. Logs são salvos automaticamente em
+          mudanças de plano, configurações e (no futuro) login/cobranças.
+        </p>
+      </div>
+
+      <!-- Filtros -->
+      <div class="ad-cobr-toolbar">
+        <div class="ad-cobr-chips">
+          <button
+            class="ad-cobr-chip"
+            type="button"
+            [class.on]="filtroAcaoLog === null"
+            (click)="selecionarFiltroAcaoLog(null)"
+          >Todas</button>
+          <button
+            *ngFor="let a of acoesLog"
+            class="ad-cobr-chip"
+            type="button"
+            [class.on]="filtroAcaoLog === a"
+            (click)="selecionarFiltroAcaoLog(a)"
+          >{{ LOG_ACAO_LABEL[a] }}</button>
+        </div>
+        <input
+          type="text"
+          class="ad-cobr-busca"
+          placeholder="Buscar por descrição, usuário..."
+          (input)="onBuscaLogs($any($event))"
+        />
+      </div>
+
+      <!-- Lista -->
+      <div class="ad-logs-lista" *ngIf="logsFiltrados$ | async as logs">
+        <div class="ad-cobr-empty" *ngIf="logs.length === 0">
+          <ion-icon name="time-outline"></ion-icon>
+          <p>Nenhum log encontrado.</p>
+        </div>
+
+        <div
+          class="ad-log-row"
+          *ngFor="let l of logs; trackBy: trackByLog"
+        >
+          <div class="ad-log-acao" [style.background]="LOG_ACAO_COR[l.acao]">
+            {{ LOG_ACAO_LABEL[l.acao] }}
+          </div>
+          <div class="ad-log-meio">
+            <div class="ad-log-desc">{{ l.descricao }}</div>
+            <div class="ad-log-usuario" *ngIf="l.usuarioLabel">
+              <ion-icon name="person-outline"></ion-icon>
+              {{ l.usuarioLabel }}
+            </div>
+          </div>
+          <div class="ad-log-data">{{ formatarTimestampLog(l.criadoEm) }}</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</ion-content>

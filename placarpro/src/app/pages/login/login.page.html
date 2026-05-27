@@ -1,0 +1,187 @@
+<ion-content [fullscreen]="true" class="auth-bg">
+  <div class="auth-shell">
+    <div class="auth-card">
+      <!-- Botão Voltar — sempre leva pra home pública (/). Usar
+           routerLink em vez de history.back() pra evitar voltar pra
+           tela de login se o user chegou direto via deep link. -->
+      <button
+        type="button"
+        class="auth-back-btn"
+        routerLink="/"
+        aria-label="Voltar"
+      >
+        <ion-icon name="chevron-back-outline"></ion-icon>
+        <span>Voltar</span>
+      </button>
+
+      <div class="auth-brand">
+        <a routerLink="/" class="auth-brand-link" title="Voltar para a página inicial">
+          <img
+            src="assets/images/logo1.png"
+            alt="PlacarPro — clique para voltar à página inicial"
+            width="200"
+            height="160"
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
+            onerror="this.onerror=null;this.src='assets/branding/logo-vertical.png';"
+          />
+        </a>
+        <p class="auth-tagline">
+          {{
+            tipoLogin === 'cliente'
+              ? 'Acompanhe seus campeonatos favoritos.'
+              : tipoLogin === 'moderador'
+                ? 'Entre para moderar campeonatos.'
+                : 'Entre para gerenciar seus campeonatos.'
+          }}
+        </p>
+      </div>
+
+      <!-- Seletor de tipo de login (Organizador / Moderador / Racha / Espectador).
+           Layout 2x2 quando há 4 cards. -->
+      <div class="auth-tipo-grid tipo-4col">
+        <button
+          type="button"
+          class="tipo-card"
+          [class.ativo]="tipoLogin === 'organizador'"
+          (click)="selecionarTipo('organizador')"
+          aria-label="Entrar como organizador"
+        >
+          <ion-icon name="trophy-outline"></ion-icon>
+          <div class="tipo-titulo">SOU ORGANIZADOR</div>
+          <div class="tipo-sub">Crio e gerencio campeonatos</div>
+        </button>
+        <button
+          type="button"
+          class="tipo-card"
+          [class.ativo]="tipoLogin === 'moderador'"
+          (click)="selecionarTipo('moderador')"
+          aria-label="Entrar como moderador"
+        >
+          <ion-icon name="shield-checkmark-outline"></ion-icon>
+          <div class="tipo-titulo">SOU MODERADOR</div>
+          <div class="tipo-sub">Ajudo a organizar campeonatos</div>
+        </button>
+        <button
+          type="button"
+          class="tipo-card"
+          [class.ativo]="tipoLogin === 'racha'"
+          (click)="selecionarTipo('racha')"
+          aria-label="Entrar como organizador de racha"
+        >
+          <ion-icon name="football-outline"></ion-icon>
+          <div class="tipo-titulo">SOU RACHA</div>
+          <div class="tipo-sub">Organizo peladas/rachas</div>
+        </button>
+        <button
+          type="button"
+          class="tipo-card"
+          [class.ativo]="tipoLogin === 'cliente'"
+          (click)="selecionarTipo('cliente')"
+          aria-label="Entrar como espectador"
+        >
+          <ion-icon name="eye-outline"></ion-icon>
+          <div class="tipo-titulo">SOU ESPECTADOR</div>
+          <div class="tipo-sub">Acompanho jogos e resultados</div>
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="field-group">
+          <ion-input
+            fill="outline"
+            label="E-mail"
+            labelPlacement="stacked"
+            placeholder="nome@email.com"
+            type="email"
+            inputmode="email"
+            autocomplete="email"
+            mask="email"
+            formControlName="email"
+            required
+            errorText="E-mail inválido."
+          ></ion-input>
+
+          <ion-input
+            fill="outline"
+            label="Senha"
+            labelPlacement="stacked"
+            placeholder="Digite sua senha"
+            [type]="showPassword ? 'text' : 'password'"
+            autocomplete="current-password"
+            formControlName="password"
+            required
+            errorText="Mínimo 6 caracteres."
+          >
+            <ion-button
+              slot="end"
+              fill="clear"
+              color="medium"
+              type="button"
+              aria-label="Alternar senha"
+              [attr.title]="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
+              (click)="togglePassword()"
+            >
+              <ion-icon
+                slot="icon-only"
+                [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+              ></ion-icon>
+            </ion-button>
+          </ion-input>
+        </div>
+
+        <!-- Link de cadastro POSICIONADO LOGO ABAIXO dos inputs (pedido
+             do user). Antes ficava só no rodapé — usuário novo tinha que
+             scrollar por todos os CTAs de login pra perceber. Agora fica
+             à esquerda; "Esqueci minha senha" à direita, mesma linha. -->
+        <div class="auth-row-links">
+          <a class="auth-criar-link" routerLink="/cadastro">
+            Não tem conta? <strong>Criar agora</strong>
+          </a>
+          <a routerLink="/recuperar-senha">Esqueci minha senha</a>
+        </div>
+
+        <ion-button
+          expand="block"
+          type="submit"
+          color="primary"
+          class="auth-submit"
+          [disabled]="loading"
+        >
+          Entrar
+        </ion-button>
+
+        <div class="auth-divider"><span>ou continue com</span></div>
+
+        <!-- Google + Apple LADO A LADO (2 colunas). Em telas estreitas
+             (<= 320px) o ion-button ainda comporta o texto inteiro porque
+             usamos só o nome do provedor (sem "Continuar com"). -->
+        <div class="auth-social-grid">
+          <ion-button
+            expand="block"
+            fill="outline"
+            type="button"
+            class="auth-google"
+            (click)="loginWithGoogle()"
+            [disabled]="loading"
+          >
+            <ion-icon slot="start" name="logo-google"></ion-icon>
+            Google
+          </ion-button>
+
+          <ion-button
+            expand="block"
+            type="button"
+            class="auth-apple"
+            (click)="loginWithApple()"
+            [disabled]="loading"
+          >
+            <ion-icon slot="start" name="logo-apple"></ion-icon>
+            Apple
+          </ion-button>
+        </div>
+      </form>
+    </div>
+  </div>
+</ion-content>

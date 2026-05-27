@@ -1,0 +1,129 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Detalhes do campeonato</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="cd-content">
+  <!-- ============ Cabeçalho ============ -->
+  <section class="cd-head">
+    <div class="cd-logo">
+      <img *ngIf="campeonato.logoUrl; else iconC"
+        [src]="campeonato.logoUrl"
+        [alt]="campeonato.titulo" />
+      <ng-template #iconC><ion-icon name="trophy-outline"></ion-icon></ng-template>
+    </div>
+    <div class="cd-head-info">
+      <h2>{{ campeonato.titulo }}</h2>
+      <div class="cd-sub" *ngIf="campeonato.subtitulo">{{ campeonato.subtitulo }}</div>
+      <div class="cd-chips">
+        <span class="cd-chip" [class.privado]="campeonato.publico === false">
+          <ion-icon [name]="campeonato.publico === false ? 'lock-closed' : 'eye-outline'"></ion-icon>
+          {{ campeonato.publico === false ? 'Privado' : 'Público' }}
+        </span>
+        <span class="cd-chip" *ngIf="campeonato.localizacao">
+          <ion-icon name="location-outline"></ion-icon>
+          {{ campeonato.localizacao }}
+        </span>
+        <span class="cd-chip">
+          <ion-icon name="heart-outline"></ion-icon>
+          {{ campeonato.seguidores ?? 0 }} seguidores
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Cards de totais ============ -->
+  <section class="cd-totals">
+    <div class="cd-total">
+      <ion-icon name="layers-outline"></ion-icon>
+      <div>
+        <div class="cd-total-num">{{ (categorias$ | async)?.length || 0 }}</div>
+        <div class="cd-total-lbl">Categorias</div>
+      </div>
+    </div>
+    <div class="cd-total">
+      <ion-icon name="shield-outline"></ion-icon>
+      <div>
+        <div class="cd-total-num">{{ totalEquipes }}</div>
+        <div class="cd-total-lbl">Equipes</div>
+      </div>
+    </div>
+    <div class="cd-total">
+      <ion-icon name="people-outline"></ion-icon>
+      <div>
+        <div class="cd-total-num">{{ totalJogadores }}</div>
+        <div class="cd-total-lbl">Jogadores</div>
+      </div>
+    </div>
+    <div class="cd-total">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <div>
+        <div class="cd-total-num">{{ totalJogos }}</div>
+        <div class="cd-total-lbl">Jogos</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Lista de categorias ============ -->
+  <section class="cd-secao" *ngIf="categorias$ | async as cats">
+    <h3>Categorias do campeonato</h3>
+    <div class="cd-vazio" *ngIf="cats.length === 0">
+      <ion-icon name="layers-outline"></ion-icon>
+      <p>Nenhuma categoria cadastrada.</p>
+    </div>
+    <div class="cd-cat-lista" *ngIf="cats.length > 0">
+      <button
+        type="button"
+        class="cd-cat"
+        *ngFor="let l of cats"
+        (click)="abrirCategoria(l.categoria)"
+      >
+        <div class="cd-cat-titulo">{{ l.categoria.titulo }}</div>
+        <div class="cd-cat-stats">
+          <span><ion-icon name="shield-outline"></ion-icon> {{ l.equipes }}</span>
+          <span><ion-icon name="people-outline"></ion-icon> {{ l.jogadores }}</span>
+          <span><ion-icon name="calendar-outline"></ion-icon> {{ l.jogos }}</span>
+          <span class="enc" *ngIf="l.jogosEncerrados > 0">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            {{ l.jogosEncerrados }} encerrados
+          </span>
+        </div>
+        <ion-icon class="cd-arrow" name="chevron-forward-outline"></ion-icon>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ Inscrições recentes ============ -->
+  <section class="cd-secao" *ngIf="inscricoes$ | async as inscs">
+    <h3>
+      Inscrições
+      <span class="cd-badge">{{ inscs.length }}</span>
+    </h3>
+    <div class="cd-vazio" *ngIf="inscs.length === 0">
+      <ion-icon name="clipboard-outline"></ion-icon>
+      <p>Nenhuma ficha de inscrição registrada.</p>
+    </div>
+    <div class="cd-insc-lista" *ngIf="inscs.length > 0">
+      <div class="cd-insc" *ngFor="let i of inscs.slice(0, 20)">
+        <div class="cd-insc-body">
+          <div class="cd-insc-titulo">{{ i.nomeEquipe || '—' }}</div>
+          <div class="cd-insc-sub">
+            {{ i.responsavel || '—' }} · {{ i.email || '—' }}
+          </div>
+        </div>
+        <span class="cd-status" [attr.data-status]="corStatus(i.status)">
+          {{ i.status || '—' }}
+        </span>
+      </div>
+      <div class="cd-mais" *ngIf="inscs.length > 20">
+        + {{ inscs.length - 20 }} fichas adicionais
+      </div>
+    </div>
+  </section>
+</ion-content>

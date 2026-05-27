@@ -1,0 +1,158 @@
+<ion-content class="bg">
+  <div class="modal-card">
+    <h2 class="title">Editar informações</h2>
+
+    <form [formGroup]="form" (ngSubmit)="salvar()" class="form-group">
+
+      <!-- ═══════════ Seção: PARTIDA ═══════════ -->
+      <div class="form-section">
+        <div class="form-section-head">
+          <ion-icon name="football-outline"></ion-icon>
+          <span>Dados da partida</span>
+        </div>
+
+        <ion-input
+          fill="outline"
+          label="Título"
+          labelPlacement="stacked"
+          formControlName="titulo"
+          placeholder="Ex.: Decisão do título"
+        ></ion-input>
+
+        <div class="data-hora-row">
+          <ion-icon class="ic-cal" name="calendar-outline"></ion-icon>
+          <ion-input
+            fill="outline"
+            label="Data e hora"
+            labelPlacement="stacked"
+            formControlName="dataHora"
+            inputmode="numeric"
+            placeholder="dd/mm/aaaa hh:mm"
+            mask="datahora"
+          ></ion-input>
+        </div>
+
+        <ion-input
+          fill="outline"
+          label="Local"
+          labelPlacement="stacked"
+          formControlName="local"
+          placeholder="Ex.: Ginásio Municipal"
+        ></ion-input>
+      </div>
+
+      <!-- ═══════════ Seção: TRANSMISSÃO ═══════════
+           Travada por plano. Quando o user logado NÃO tem permissão
+           (`podeTransmissao$ === false`), exibimos card com CTA pra
+           upgrade em vez do input. O `disabled` no input também é
+           controlado pelo stream — assim mesmo quem digitar JS no
+           devtools não consegue alterar (e o save valida de novo). -->
+      <div class="form-section transmissao">
+        <div class="form-section-head">
+          <ion-icon name="logo-youtube" color="danger"></ion-icon>
+          <span>Transmissão ao vivo</span>
+          <span class="form-section-tag" *ngIf="form.value.youtubeUrl && (podeTransmissao$ | async)">🔴 Ativa</span>
+          <span class="form-section-tag bloq" *ngIf="!(podeTransmissao$ | async)">
+            <ion-icon name="lock-closed-outline"></ion-icon> {{ planoMinimo.label }}+
+          </span>
+        </div>
+
+        <ng-container *ngIf="podeTransmissao$ | async; else upgradeCta">
+          <ion-input
+            fill="outline"
+            label="Link do YouTube"
+            labelPlacement="stacked"
+            formControlName="youtubeUrl"
+            placeholder="Cole aqui: https://youtu.be/SEU_VIDEO_ID"
+            helperText="Aceita youtu.be, youtube.com/watch?v= ou youtube.com/live/ — quando salvar, o ícone vermelho do YouTube aparece no header do jogo pra abrir a tela de transmissão com placar overlay e patrocinadores."
+          ></ion-input>
+        </ng-container>
+
+        <!-- Bloqueado: mostra CTA elegante em vez do input -->
+        <ng-template #upgradeCta>
+          <div class="upgrade-card">
+            <div class="upgrade-icon">
+              <ion-icon name="lock-closed-outline"></ion-icon>
+            </div>
+            <div class="upgrade-body">
+              <div class="upgrade-titulo">Disponível no plano {{ planoMinimo.label }}+</div>
+              <div class="upgrade-desc">
+                Vincule a transmissão ao vivo do YouTube à partida — ícone
+                vermelho aparece no card, e a tela "Transmissão" mostra
+                placar + patrocinadores em overlay pro stream.
+              </div>
+              <ion-button
+                fill="solid"
+                color="primary"
+                size="small"
+                routerLink="/app/planos"
+                class="upgrade-btn"
+              >
+                <ion-icon slot="start" name="rocket-outline"></ion-icon>
+                Ver planos
+              </ion-button>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- ═══════════ Seção: OUTROS ═══════════ -->
+      <div class="form-section">
+        <div class="form-section-head">
+          <ion-icon name="document-text-outline"></ion-icon>
+          <span>Comunicação</span>
+        </div>
+
+        <ion-textarea
+          fill="outline"
+          label="Aviso aos times/torcida"
+          labelPlacement="stacked"
+          formControlName="aviso"
+          placeholder="Ex: Levar uniforme reserva. Portões abrem 30min antes."
+          autoGrow="true"
+          rows="3"
+        ></ion-textarea>
+      </div>
+    </form>
+
+    <div class="link-rows">
+      <button type="button" class="link-row" (click)="abrirAnexos()">
+        <ion-icon name="attach-outline"></ion-icon>
+        <span>Anexos</span>
+        <span class="badge" *ngIf="qtdAnexos() > 0">{{ qtdAnexos() }}</span>
+      </button>
+      <button type="button" class="link-row" (click)="emBreve('Pontos Extras')">
+        <ion-icon name="add-circle-outline"></ion-icon>
+        <span>Pontos Extras</span>
+      </button>
+      <button type="button" class="link-row" (click)="abrirArbitragem()">
+        <ion-icon name="person-outline"></ion-icon>
+        <span>Arbitragem</span>
+        <span class="badge" *ngIf="qtdArbitros() > 0">{{ qtdArbitros() }}</span>
+      </button>
+      <button type="button" class="link-row" (click)="emBreve('Enquetes')">
+        <ion-icon name="list-outline"></ion-icon>
+        <span>Enquetes</span>
+      </button>
+      <button type="button" class="link-row" (click)="abrirSumula()">
+        <ion-icon name="document-text-outline"></ion-icon>
+        <span>Súmula</span>
+      </button>
+      <button type="button" class="link-row no-icon" (click)="emBreve('Arte do Jogo')">
+        <span>Arte do Jogo</span>
+      </button>
+    </div>
+
+    <div class="actions">
+      <button
+        type="button"
+        class="btn-salvar"
+        (click)="salvar()"
+        [disabled]="salvando"
+      >
+        <ion-spinner *ngIf="salvando" name="dots"></ion-spinner>
+        <span *ngIf="!salvando">Salvar</span>
+      </button>
+    </div>
+  </div>
+</ion-content>

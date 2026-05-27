@@ -1,0 +1,52 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>{{ plano.label }} — Escolher período</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="cancelar()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="pp-content">
+  <div class="pp-wrap">
+    <p class="pp-intro">
+      Escolha como quer pagar a assinatura. Quanto maior o período, maior o desconto.
+    </p>
+
+    <div class="pp-opcao"
+         *ngFor="let p of opcoes"
+         [class.ativa]="selecionada === p"
+         (click)="selecionar(p)">
+      <div class="pp-radio">
+        <ion-icon [name]="selecionada === p ? 'radio-button-on' : 'radio-button-off'"></ion-icon>
+      </div>
+      <div class="pp-info">
+        <div class="pp-titulo">
+          {{ labelPeriodicidade(p) }}
+          <span class="pp-badge" *ngIf="desconto(p) > 0">-{{ desconto(p) }}%</span>
+        </div>
+        <div class="pp-sub">{{ subPeriodicidade(p) }}</div>
+        <div class="pp-equiv" *ngIf="precoMensal(p)">{{ precoMensal(p) }}</div>
+      </div>
+      <div class="pp-valor">{{ precoTotal(p) }}</div>
+    </div>
+
+    <div class="pp-aviso">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      <span>
+        Uma <strong>cobrança</strong> será gerada e o plano só será ativado
+        após confirmação do pagamento pelo administrador.
+      </span>
+    </div>
+
+    <div class="pp-acoes">
+      <button class="pp-btn ghost" type="button" (click)="cancelar()">Cancelar</button>
+      <button class="pp-btn primary" type="button" (click)="confirmar()">
+        <ion-icon name="card-outline"></ion-icon>
+        Gerar cobrança
+      </button>
+    </div>
+  </div>
+</ion-content>

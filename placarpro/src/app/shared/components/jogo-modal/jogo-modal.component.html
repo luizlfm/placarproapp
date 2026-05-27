@@ -1,0 +1,113 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ titulo }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+
+    <!-- ─── Equipes + Placar ──────────────────────────── -->
+    <div class="placar-edit">
+      <div class="equipe-row">
+        <div class="badge-lado">Mandante</div>
+        <div class="escudo">
+          <img *ngIf="mandanteSelecionado?.logoUrl; else iconM" [src]="mandanteSelecionado!.logoUrl"
+            [alt]="mandanteSelecionado!.nome" />
+          <ng-template #iconM><ion-icon name="shield-outline"></ion-icon></ng-template>
+        </div>
+        <ion-select fill="outline" label="Equipe" labelPlacement="stacked" formControlName="mandanteId"
+          interface="popover" class="select-equipe">
+          <ion-select-option *ngFor="let e of equipes" [value]="e.id">{{ e.nome }}</ion-select-option>
+        </ion-select>
+        <ion-input fill="outline" label="Gols" labelPlacement="stacked" type="number" min="0"
+          formControlName="golsMandante" class="gols-input"></ion-input>
+      </div>
+
+      <div class="separador">
+        <span class="linha"></span>
+        <span class="vs">×</span>
+        <span class="linha"></span>
+      </div>
+
+      <div class="equipe-row">
+        <div class="badge-lado">Visitante</div>
+        <div class="escudo">
+          <img *ngIf="visitanteSelecionado?.logoUrl; else iconV" [src]="visitanteSelecionado!.logoUrl"
+            [alt]="visitanteSelecionado!.nome" />
+          <ng-template #iconV><ion-icon name="shield-outline"></ion-icon></ng-template>
+        </div>
+        <ion-select fill="outline" label="Equipe" labelPlacement="stacked" formControlName="visitanteId"
+          interface="popover" class="select-equipe">
+          <ion-select-option *ngFor="let e of equipes" [value]="e.id">{{ e.nome }}</ion-select-option>
+        </ion-select>
+        <ion-input fill="outline" label="Gols" labelPlacement="stacked" type="number" min="0"
+          formControlName="golsVisitante" class="gols-input"></ion-input>
+      </div>
+    </div>
+
+    <!-- ─── Meta da partida ───────────────────────────── -->
+    <div class="field-group">
+      <div class="row-2">
+        <ion-input fill="outline" label="Fase" labelPlacement="stacked" placeholder="Ex: 1ª Fase"
+          formControlName="fase"></ion-input>
+        <ion-input fill="outline" label="Rodada" labelPlacement="stacked" type="number" min="1" inputmode="numeric"
+          formControlName="rodada" class="rodada-input"></ion-input>
+      </div>
+
+      <div class="data-hora-row">
+        <ion-input fill="outline" label="Data e hora" labelPlacement="stacked" formControlName="dataHora"
+          inputmode="numeric" placeholder="dd/mm/aaaa hh:mm" mask="datahora"></ion-input>
+        <ion-icon class="ic-cal" name="calendar-outline"></ion-icon>
+      </div>
+
+      <ion-input fill="outline" label="Local" labelPlacement="stacked" placeholder="Ex.: Ginásio Municipal"
+        formControlName="local"></ion-input>
+
+      <ion-select fill="outline" label="Status" labelPlacement="stacked" formControlName="status" interface="popover">
+        <ion-select-option value="agendado">Agendado</ion-select-option>
+        <ion-select-option value="em-andamento">Em andamento</ion-select-option>
+        <ion-select-option value="encerrado">Encerrado</ion-select-option>
+        <ion-select-option value="cancelado">Cancelado</ion-select-option>
+        <ion-select-option value="wo">W.O.</ion-select-option>
+      </ion-select>
+
+      <!-- ─── Transmissão YouTube ─── -->
+      <ion-input fill="outline" label="Link do YouTube (transmissão)" labelPlacement="stacked"
+        placeholder="https://youtu.be/ID  ou  https://youtube.com/watch?v=ID" formControlName="youtubeUrl">
+        <ion-icon slot="start" name="logo-youtube" color="danger"></ion-icon>
+      </ion-input>
+    </div>
+
+    <!-- ─── Footer ─────────────────────────────────────── -->
+      <ion-row style="width: 100%;" class="ion-no-padding">
+        <ion-col size="12" size-md="6" size-lg="4">
+          <ion-button class="buttons" *ngIf="jogoExistente" color="danger" type="button" (click)="remover()">
+            <ion-icon slot="start" name="trash-outline"></ion-icon>
+            Remover
+          </ion-button>
+        </ion-col>
+        <ion-col size="12" size-md="6" size-lg="4">
+          <ion-button class="buttons" *ngIf="jogoExistente && form.value.status !== 'encerrado'" color="success"
+            type="button" (click)="encerrar()">
+            <ion-icon slot="start" name="checkmark-done-outline"></ion-icon>
+            Encerrar jogo
+          </ion-button>
+        </ion-col>
+        <ion-col size="12" size-md="6" size-lg="4">
+          <ion-button class="buttons" type="submit" color="primary" [disabled]="loading"
+            [style]="!jogoExistente? 'width: 100% !important;' : ''">
+            <ion-icon slot="start" name="save-outline"></ion-icon>
+            Salvar
+          </ion-button>
+        </ion-col>
+      </ion-row>
+
+
+  </form>
+</ion-content>

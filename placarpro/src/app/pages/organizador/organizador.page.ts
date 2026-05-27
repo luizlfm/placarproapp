@@ -1,0 +1,268 @@
+import { Component, OnInit, inject } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { LoadingController, ModalController, ToastController } from '@ionic/angular';
+import { Observable } from 'rxjs';
+import { User } from '@angular/fire/auth';
+import { AuthService } from '../../auth/auth.service';
+import { UsersService } from '../../users/users.service';
+import { UserProfile } from '../../users/models/user-profile.model';
+import { StorageService } from '../../shared/storage.service';
+import { NavBackService } from '../../shared/nav-back.service';
+import { ImageCropperModalComponent } from '../../shared/components/image-cropper-modal/image-cropper-modal.component';
+import { ThemeService, ThemeMode } from '../../shared/theme.service';
+
+@Component({
+  selector: 'app-organizador',
+  templateUrl: './organizador.page.html',
+  styleUrls: ['./organizador.page.scss'],
+  standalone: false,
+  host: { class: 'ion-page' },
+})
+export class OrganizadorPage implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly auth = inject(AuthService);
+  private readonly usersSrv = inject(UsersService);
+  private readonly storageSrv = inject(StorageService);
+  /** Navegação "voltar" — padrão UX após salvar (histórico + fallback). */
+  private readonly navBack = inject(NavBackService);
+  readonly themeSrv = inject(ThemeService);
+  private readonly modalCtrl = inject(ModalController);
+  private readonly loadingCtrl = inject(LoadingController);
+  private readonly toastCtrl = inject(ToastController);
+
+  setTheme(mode: ThemeMode): void {
+    this.themeSrv.setMode(mode);
+  }
+
+  /** Prefixo do link público (dev: localhost:4200/, prod: domínio real). */
+  get linkPrefix(): string {
+    if (typeof window === 'undefined') return '';
+    return window.location.origin.replace(/^https?:\/\//, '') + '/';
+  }
+
+  readonly user$: Observable<User | null> = this.auth.user$;
+
+  carregado = false;
+  salvando = false;
+
+  readonly form: FormGroup = this.fb.nonNullable.group({
+    nome: ['', [Validators.required, Validators.minLength(2)]],
+    logoUrl: [''],
+    bannerAppUrl: [''],
+    bannerSiteUrl: [''],
+    corPrimaria: ['#1C2E3D'],
+    texto1: ['', [Validators.maxLength(70)]],
+    texto2: ['', [Validators.maxLength(180)]],
+    sobre: [''],
+    slug: [''],
+    visibilidade: ['privado'],
+    tipoEvento: ['presencial'],
+    idioma: ['pt-BR'],
+    sede: ['Brasil'],
+    regiao: [''],
+    localizacao: [''],
+    email: [''],
+    telefone: [''],
+    chatAtivo: [true],
+    facebook: [''],
+    instagram: [''],
+    youtube: [''],
+    twitch: [''],
+    twitter: [''],
+    whatsapp: [''],
+    telegram: [''],
+    site: [''],
+  });
+
+  ngOnInit(): void {
+    this.usersSrv.profile$().subscribe(p => {
+      if (this.carregado) return;
+      const u = this.auth.currentUser;
+      if (p) {
+        this.form.patchValue({
+          nome: p.nome ?? '',
+          logoUrl: p.logoUrl ?? p.fotoUrl ?? '',
+          bannerAppUrl: p.bannerAppUrl ?? '',
+          bannerSiteUrl: p.bannerSiteUrl ?? '',
+          corPrimaria: p.corPrimaria ?? '#1C2E3D',
+          texto1: p.texto1 ?? '',
+          texto2: p.texto2 ?? '',
+          sobre: p.sobre ?? p.bio ?? '',
+          slug: p.slug ?? '',
+          visibilidade: p.visibilidade ?? 'privado',
+          tipoEvento: p.tipoEvento ?? 'presencial',
+          idioma: p.idioma ?? 'pt-BR',
+          sede: p.sede ?? 'Brasil',
+          regiao: p.regiao ?? '',
+          localizacao: p.localizacao ?? '',
+          email: p.email ?? u?.email ?? '',
+          telefone: p.telefone ?? '',
+          chatAtivo: p.chatAtivo ?? true,
+          facebook: p.redes?.facebook ?? '',
+          instagram: p.redes?.instagram ?? '',
+          youtube: p.redes?.youtube ?? '',
+          twitch: p.redes?.twitch ?? '',
+          twitter: p.redes?.twitter ?? '',
+          whatsapp: p.redes?.whatsapp ?? '',
+          telegram: p.redes?.telegram ?? '',
+          site: p.redes?.site ?? '',
+        });
+      } else if (u) {
+        this.form.patchValue({
+          nome: u.displayName ?? '',
+          email: u.email ?? '',
+        });
+      }
+      this.carregado = true;
+    });
+  }
+
+  contador(controlName: string, max: number): string {
+    return `${(this.form.get(controlName)?.value as string ?? '').length}/${max}`;
+  }
+
+  /**
+   * Abre o file picker, depois um modal de crop e finalmente faz upload
+   * para o Firebase Storage. Retorna a URL pública pronta pra setar no form.
+   */
+  async selecionarImagem(
+    campo: 'logoUrl' | 'bannerAppUrl' | 'bannerSiteUrl',
+    aspectRatio: number,
+    titulo: string,
+  ): Promise<void> {
+    // 1) Cria input file dinamicamente
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+
+    const file = await new Promise<File | null>(resolve => {
+      input.onchange = () => {
+        const f = input.files?.[0] ?? null;
+        document.body.removeChild(input);
+        resolve(f);
+      };
+      // Se o user cancelar o file dialog, removemos o input depois de um delay
+      window.addEventListener(
+        'focus',
+        () => setTimeout(() => {
+          if (document.body.contains(input)) {
+            document.body.removeChild(input);
+            resolve(null);
+          }
+        }, 1000),
+        { once: true },
+      );
+      input.click();
+    });
+
+    if (!file) return;
+
+    // 2) Abre modal de crop
+    const modal = await this.modalCtrl.create({
+      component: ImageCropperModalComponent,
+      componentProps: {
+        file,
+        aspectRatio,
+        title: titulo,
+        roundCropper: campo === 'logoUrl',
+      },
+    });
+    await modal.present();
+    const { data } = await modal.onDidDismiss<{ blob?: Blob }>();
+    if (!data?.blob) return;
+
+    // 3) Upload
+    const loader = await this.loadingCtrl.create({ message: 'Enviando imagem...' });
+    await loader.present();
+    try {
+      const tipo: 'avatar' | 'banner-app' | 'banner-site' =
+        campo === 'logoUrl' ? 'avatar' : campo === 'bannerAppUrl' ? 'banner-app' : 'banner-site';
+      const url = await this.storageSrv.uploadUserAsset(tipo, data.blob);
+      this.form.patchValue({ [campo]: url });
+      const t = await this.toastCtrl.create({
+        message: 'Imagem enviada! Não esqueça de salvar.',
+        duration: 2200,
+        color: 'success',
+        position: 'top',
+      });
+      await t.present();
+    } catch (err) {
+      const t = await this.toastCtrl.create({
+        message: 'Erro ao enviar imagem. Verifique as regras do Storage.',
+        duration: 3000,
+        color: 'danger',
+        position: 'top',
+      });
+      await t.present();
+    } finally {
+      await loader.dismiss();
+    }
+  }
+
+  async salvar(): Promise<void> {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    const v = this.form.getRawValue();
+    const profile: Partial<UserProfile> = {
+      nome: v.nome,
+      logoUrl: v.logoUrl,
+      bannerAppUrl: v.bannerAppUrl,
+      bannerSiteUrl: v.bannerSiteUrl,
+      corPrimaria: v.corPrimaria,
+      texto1: v.texto1,
+      texto2: v.texto2,
+      sobre: v.sobre,
+      slug: v.slug,
+      visibilidade: v.visibilidade,
+      tipoEvento: v.tipoEvento,
+      idioma: v.idioma,
+      sede: v.sede,
+      regiao: v.regiao,
+      localizacao: v.localizacao,
+      email: v.email,
+      telefone: v.telefone,
+      chatAtivo: v.chatAtivo,
+      redes: {
+        facebook: v.facebook,
+        instagram: v.instagram,
+        youtube: v.youtube,
+        twitch: v.twitch,
+        twitter: v.twitter,
+        whatsapp: v.whatsapp,
+        telegram: v.telegram,
+        site: v.site,
+      },
+    };
+    const loader = await this.loadingCtrl.create({ message: 'Salvando...' });
+    await loader.present();
+    this.salvando = true;
+    try {
+      await this.usersSrv.saveProfile(profile);
+      const t = await this.toastCtrl.create({
+        message: 'Perfil atualizado!',
+        duration: 2200,
+        color: 'success',
+        position: 'top',
+      });
+      await t.present();
+      // Padrão UX do sistema: salvou → volta. Fallback explícito leva pra
+      // /app/meus-campeonatos quando o user veio direto via URL/refresh.
+      this.navBack.back('/app/meus-campeonatos');
+    } catch {
+      const t = await this.toastCtrl.create({
+        message: 'Erro ao salvar perfil.',
+        duration: 3000,
+        color: 'danger',
+        position: 'top',
+      });
+      await t.present();
+    } finally {
+      this.salvando = false;
+      await loader.dismiss();
+    }
+  }
+}

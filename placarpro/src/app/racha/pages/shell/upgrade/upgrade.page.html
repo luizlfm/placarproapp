@@ -1,0 +1,100 @@
+<div class="r-page ru-page" *ngIf="!loading">
+  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+  </button>
+    <span class="r-toolbar-title">Upgrade Premium</span>
+  </header>
+
+  <!-- ═══════════ Page header ═══════════ -->
+  <header class="r-page-head">
+    <span class="r-page-tag">⚡ DESBLOQUEIE TUDO</span>
+    <h1>Planos para o seu racha</h1>
+    <p>Ativado por qualquer jogador, vale para <strong>todos do racha</strong>.</p>
+  </header>
+
+  <!-- Faixa verde com CTA pra ver planos -->
+  <div class="r-hero-strip">
+    <button type="button" class="r-hero-strip-btn" (click)="scrollParaPlanos()">
+      <ion-icon name="star"></ion-icon>
+      VER PLANOS — A PARTIR DE R$ 19,90/MÊS
+    </button>
+  </div>
+
+  <!-- ═══════════ Uso do racha este mês ═══════════ -->
+  <section class="r-card ru-uso">
+    <h2 class="ru-uso-titulo">
+      <ion-icon name="time-outline"></ion-icon>
+      Uso do racha este mês
+      <ion-icon name="information-circle-outline" class="ru-info" title="Compartilhado por todos os jogadores"></ion-icon>
+    </h2>
+    <p class="ru-uso-sub">Uso compartilhado por todos os jogadores do racha.</p>
+
+    <div class="ru-uso-grid">
+      <div class="ru-uso-item" *ngFor="let u of uso; trackBy: trackByUso">
+        <div class="ru-uso-icone"><ion-icon [name]="u.icon"></ion-icon></div>
+        <div class="ru-uso-info">
+          <strong>{{ u.label }}</strong>
+          <div class="ru-uso-progress">
+            <div class="ru-uso-bar" [style.width.%]="pctUso(u)"></div>
+          </div>
+          <span class="ru-uso-detalhe">{{ formatUso(u) }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ Compare os planos ═══════════ -->
+  <section class="ru-planos-section" id="rp-planos">
+    <h2 class="ru-planos-titulo">
+      <ion-icon name="git-compare-outline"></ion-icon>
+      Compare os planos
+    </h2>
+
+    <div class="ru-planos-grid">
+      <article
+        *ngFor="let p of planos; trackBy: trackByPlano"
+        class="ru-plano"
+        [class.atual]="p.id === planoAtual"
+        [class.pro]="p.id === 'pro'"
+      >
+        <div class="ru-plano-badge" *ngIf="p.badge" [style.background]="p.badge.cor">
+          <ion-icon [name]="p.badge.icon"></ion-icon>
+          {{ p.badge.label }}
+        </div>
+
+        <div class="ru-plano-header">
+          <span class="ru-plano-nome">{{ p.nome }}</span>
+          <div class="ru-plano-preco">
+            <strong>R$ {{ formatPreco(p.precoMes) }}</strong>
+            <small *ngIf="p.precoMes > 0">/mês</small>
+          </div>
+        </div>
+
+        <ul class="ru-plano-features">
+          <li *ngFor="let f of p.features" [class.inativa]="!f.ativo">
+            <ion-icon [name]="f.ativo ? 'checkmark-circle' : 'remove-circle-outline'"></ion-icon>
+            <span>{{ f.label }}</span>
+            <span *ngIf="f.pro" class="ru-feat-pro">PRO</span>
+          </li>
+        </ul>
+
+        <button
+          type="button"
+          class="ru-plano-cta"
+          [class.amarelo]="p.ctaCor === 'amarelo'"
+          [class.lime]="p.ctaCor === 'lime'"
+          [class.atual]="p.id === planoAtual"
+          (click)="escolherPlano(p)"
+        >
+          <ion-icon [name]="p.id === planoAtual ? 'checkmark-circle' : 'arrow-forward-circle'"></ion-icon>
+          {{ p.id === planoAtual ? 'PLANO ATUAL' : p.ctaLabel }}
+        </button>
+        <p class="ru-plano-foot">Cancele quando quiser. Sem fidelidade.</p>
+      </article>
+    </div>
+  </section>
+</div>
+
+<div class="ru-loading" *ngIf="loading">
+  <ion-spinner name="dots"></ion-spinner>
+</div>

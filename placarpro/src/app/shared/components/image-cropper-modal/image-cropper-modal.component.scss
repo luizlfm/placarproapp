@@ -1,0 +1,77 @@
+.bg {
+  --background: #2d2d2d;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  /* Garante que o ion-content se ajuste ao espaço entre header e footer
+     sem deixar o cropper estourar pra fora. Antes ficava com overflow,
+     empurrando o footer pra fora da viewport em mobile. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+image-cropper {
+  display: block;
+  width: 100%;
+  /* Altura máxima limitada pra deixar espaço pro header (~56px) +
+     footer (~64px) + paddings. Antes era 70vh, que somado ao header+footer
+     ultrapassava 100vh em mobile. Agora calc explícito garante caber. */
+  max-height: calc(100vh - 56px - 64px - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  max-width: 100%;
+  background:
+    linear-gradient(45deg, #444 25%, transparent 25%),
+    linear-gradient(-45deg, #444 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #444 75%),
+    linear-gradient(-45deg, transparent 75%, #444 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  border-radius: 8px;
+  /* Permite que o cropper ENCOLHA proporcionalmente em telas pequenas
+     em vez de tentar ocupar a largura cheia e cortar verticalmente. */
+  object-fit: contain;
+}
+
+.empty {
+  text-align: center;
+  padding: 60px 24px;
+  color: #aaa;
+
+  ion-icon {
+    font-size: 64px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+}
+
+ion-footer {
+  background: #1a1a1a;
+  /* Respeita safe-area do iPhone (home indicator) — evita botão "USAR
+     ESTA IMAGEM" colado na barra inferior do sistema. */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 10px 14px;
+  flex-wrap: wrap;
+
+  ion-button {
+    --border-radius: 10px;
+    --padding-start: 18px;
+    --padding-end: 18px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  /* Mobile: botões full-width em duas linhas, mais fáceis de tocar. */
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+    gap: 6px;
+    padding: 10px 12px;
+    ion-button { width: 100%; }
+  }
+}

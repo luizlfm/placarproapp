@@ -1,0 +1,79 @@
+<ion-content class="acm-content">
+  <div class="acm-wrap">
+
+    <!-- Loading -->
+    <div class="acm-state" *ngIf="loading">
+      <ion-spinner name="dots"></ion-spinner>
+      <p>Validando convite...</p>
+    </div>
+
+    <!-- Erro -->
+    <div class="acm-state acm-erro" *ngIf="!loading && erro">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <h2>Convite inválido</h2>
+      <p>{{ errorMsg }}</p>
+      <button class="acm-btn-secondary" type="button" (click)="voltarHome()">
+        Voltar para Home
+      </button>
+    </div>
+
+    <!-- Convite válido -->
+    <div class="acm-card" *ngIf="!loading && !erro && convite">
+      <div class="acm-hero">
+        <div class="acm-shield">
+          <ion-icon name="shield-checkmark-outline"></ion-icon>
+        </div>
+        <h1>Convite de Moderador</h1>
+        <p class="acm-camp" *ngIf="campeonato">
+          <ion-icon name="trophy-outline"></ion-icon>
+          {{ campeonato.titulo }}
+        </p>
+      </div>
+
+      <div class="acm-info">
+        <p>
+          Você foi convidado por <strong>{{ convite.nome || 'um organizador' }}</strong>
+          para moderar este campeonato.
+        </p>
+        <p class="acm-perm">
+          Como moderador, você poderá ajudar a gerenciar o campeonato conforme
+          as permissões definidas pelo organizador (editar dados, registrar
+          resultados, enviar mídias, etc).
+        </p>
+      </div>
+
+      <!-- Já aceito -->
+      <div class="acm-aceito" *ngIf="jaAceito">
+        <ion-icon name="checkmark-circle"></ion-icon>
+        <span>Este convite já foi aceito anteriormente.</span>
+      </div>
+
+      <!-- Usuário logado -->
+      <div class="acm-logged" *ngIf="emailLogado">
+        <ion-icon name="person-circle-outline"></ion-icon>
+        <span>Logado como <strong>{{ emailLogado }}</strong></span>
+      </div>
+
+      <div class="acm-actions">
+        <button
+          class="acm-btn-primary"
+          type="button"
+          [disabled]="aceitando"
+          (click)="aceitar()"
+        >
+          <ion-icon name="checkmark-outline"></ion-icon>
+          {{ aceitando ? 'Processando...' : (emailLogado ? 'Aceitar e entrar' : 'Entrar para aceitar') }}
+        </button>
+        <button class="acm-btn-link" type="button" (click)="voltarHome()">
+          Mais tarde
+        </button>
+      </div>
+
+      <div class="acm-footer">
+        <ion-icon name="lock-closed-outline"></ion-icon>
+        <small>Este link é pessoal. Não compartilhe com ninguém.</small>
+      </div>
+    </div>
+
+  </div>
+</ion-content>

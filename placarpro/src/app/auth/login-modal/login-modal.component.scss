@@ -1,0 +1,219 @@
+:host {
+  display: block;
+  position: fixed;
+  inset: 0;
+}
+
+.bg {
+  --background: transparent;
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* O wrapper interno do ion-content também precisa centralizar */
+::ng-deep ion-content.bg::part(scroll) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.modal-card {
+  background: #fff;
+  color: var(--placar-text);
+  border-radius: 14px;
+  width: 420px;
+  max-width: calc(100vw - 24px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header verde */
+.head {
+  background: var(--ion-color-secondary);
+  color: #fff;
+  text-align: center;
+  padding: 18px 18px 16px;
+  position: relative;
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .close {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    ion-icon { font-size: 22px; }
+    &:hover { background: rgba(255, 255, 255, 0.25); }
+  }
+}
+
+.form {
+  padding: 22px 22px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fld {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .lbl {
+    font-size: 11px;
+    color: var(--placar-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-weight: 600;
+  }
+
+  input {
+    border: 0;
+    border-bottom: 1px solid var(--placar-divider);
+    background: transparent;
+    padding: 8px 0;
+    font-size: 15px;
+    color: var(--placar-text);
+    outline: 0;
+    transition: border-color 120ms ease;
+
+    &:focus { border-bottom-color: var(--ion-color-secondary); }
+    &::placeholder { color: rgba(0, 0, 0, 0.25); }
+  }
+}
+
+.row-links {
+  display: flex;
+  justify-content: space-between;
+  margin: -6px 0 -2px;
+
+  .link {
+    background: none;
+    border: 0;
+    color: var(--ion-color-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 0;
+
+    &:hover { text-decoration: underline; }
+  }
+}
+
+.btn-login,
+.btn-google {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: none;
+  transition: transform 100ms ease, background 120ms ease, box-shadow 120ms ease;
+  min-height: 46px;
+
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+  &:hover:not(:disabled) { transform: translateY(-1px); }
+}
+
+.btn-login {
+  background: var(--ion-color-secondary);
+  color: #fff;
+  align-self: center;
+  min-width: 140px;
+  margin-top: 6px;
+
+  &:hover:not(:disabled) {
+    background: var(--ion-color-secondary-shade);
+    box-shadow: 0 4px 12px rgba(124, 198, 29, 0.35);
+  }
+
+  ion-spinner { --color: #fff; }
+}
+
+.separator {
+  position: relative;
+  text-align: center;
+  margin: 4px 0;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 38%;
+    height: 1px;
+    background: var(--placar-divider);
+  }
+  &::before { left: 0; }
+  &::after { right: 0; }
+
+  span {
+    display: inline-block;
+    background: #fff;
+    padding: 0 12px;
+    font-size: 12px;
+    color: var(--placar-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+}
+
+.btn-google {
+  background: #fff;
+  color: var(--placar-text);
+  border: 1px solid var(--placar-divider);
+
+  &:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.03);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  svg { flex: 0 0 auto; }
+}
+
+.foot {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  padding: 12px 18px 18px;
+  flex-wrap: wrap;
+
+  a {
+    color: var(--ion-color-tertiary, #4dabf7);
+    font-size: 12.5px;
+    text-decoration: none;
+
+    &:hover { text-decoration: underline; }
+  }
+}

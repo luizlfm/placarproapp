@@ -1,0 +1,76 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Reordenar Rodadas</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <div class="wrap" *ngIf="!carregando">
+    <p class="hint">
+      Use as setas pra trocar a ordem das rodadas em <strong>{{ fase.nome }}</strong>.
+      Salvando, todos os jogos são renumerados automaticamente.
+    </p>
+
+    <div class="empty" *ngIf="itens.length === 0">
+      <p>Esta fase ainda não tem rodadas com partidas.</p>
+    </div>
+
+    <div class="lista" *ngIf="itens.length > 0">
+      <div
+        class="row"
+        *ngFor="let it of itens; let i = index; let last = last; trackBy: trackByOriginal"
+      >
+        <div class="rod-num">{{ it.novo }}</div>
+        <div class="info">
+          <strong>Rodada {{ it.novo }}</strong>
+          <span *ngIf="it.original !== it.novo">era Rodada {{ it.original }}</span>
+          <span *ngIf="it.original === it.novo">{{ it.qtdJogos }} jogo{{ it.qtdJogos === 1 ? '' : 's' }}</span>
+        </div>
+        <div class="acts">
+          <ion-button
+            fill="clear"
+            size="small"
+            [disabled]="i === 0"
+            (click)="mover(i, -1)"
+            aria-label="Subir"
+          >
+            <ion-icon slot="icon-only" name="chevron-up-outline"></ion-icon>
+          </ion-button>
+          <ion-button
+            fill="clear"
+            size="small"
+            [disabled]="last"
+            (click)="mover(i, 1)"
+            aria-label="Descer"
+          >
+            <ion-icon slot="icon-only" name="chevron-down-outline"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="carregando" class="loading">
+    <ion-spinner></ion-spinner>
+  </div>
+</ion-content>
+
+<ion-footer *ngIf="!carregando && itens.length > 0">
+  <ion-toolbar>
+    <div class="footer-actions">
+      <ion-button fill="clear" color="medium" (click)="dismiss()" [disabled]="loading">
+        Cancelar
+      </ion-button>
+      <div class="spacer"></div>
+      <ion-button color="primary" (click)="salvar()" [disabled]="loading || !temMudancas">
+        <ion-spinner *ngIf="loading" name="dots" slot="start"></ion-spinner>
+        Salvar ordem
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

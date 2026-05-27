@@ -1,0 +1,518 @@
+/* =========================================================
+   Ficha pública de inscrição de equipe — layout espelhando
+   o formulário impresso oficial (header com logos + tabela
+   de 20 atletas + comissão técnica + termo + representante)
+   ========================================================= */
+
+.ie-content {
+  --background: #eef0f3;
+}
+
+.ie-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  text-align: center;
+  padding: 24px;
+  color: #6b6b70;
+
+  ion-icon { font-size: 64px; opacity: 0.5; margin-bottom: 12px; }
+  h2 { color: #1C2E3D; margin: 0 0 8px; font-size: 20px; }
+  p { font-size: 14px; max-width: 480px; margin: 0; }
+
+  &.ie-erro ion-icon { color: #eb445a; opacity: 0.7; }
+  &.ie-usado ion-icon { color: #7CC61D; opacity: 0.8; }
+}
+
+/* ============ Folha ============ */
+.ie-folha {
+  max-width: 920px;
+  margin: 16px auto;
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px 26px 32px;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.08);
+  color: #1f1f23;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+
+  @media (max-width: 720px) {
+    margin: 8px;
+    padding: 16px 14px 24px;
+  }
+}
+
+/* ============ Login wall ============ */
+.ie-loginwall {
+  max-width: 480px;
+  margin: 24px auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px 28px 28px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  text-align: center;
+
+  .ie-lw-header {
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #ececef;
+
+    .ie-lw-logo {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    }
+    .ie-lw-titulo {
+      font-size: 16px;
+      font-weight: 800;
+      color: #1C2E3D;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      line-height: 1.2;
+    }
+    .ie-lw-equipe {
+      margin-top: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #4DABF7;
+      text-transform: uppercase;
+    }
+  }
+
+  .ie-lw-icone {
+    font-size: 56px;
+    color: #4DABF7;
+    margin-bottom: 12px;
+    opacity: 0.85;
+  }
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    font-weight: 800;
+    color: #1C2E3D;
+  }
+
+  > p {
+    font-size: 13.5px;
+    color: #5a6470;
+    line-height: 1.5;
+    margin: 0 0 22px;
+  }
+
+  .ie-lw-btn {
+    width: 100%;
+    margin-bottom: 14px;
+  }
+
+  .ie-lw-foot {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 0;
+    padding: 10px 12px;
+    background: #f3f4f6;
+    border-radius: 6px;
+    font-size: 11.5px;
+    color: #6b7280;
+    line-height: 1.4;
+    text-align: left;
+    ion-icon { font-size: 14px; color: #9ca3af; flex: 0 0 auto; margin-top: 1px; }
+  }
+}
+
+/* ============ Banner de rascunho restaurado ============ */
+.ie-rascunho {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  background: #e8f5d6;
+  border: 1px solid #b6db8f;
+  border-radius: 6px;
+  color: #4a7e0e;
+  font-size: 13px;
+  line-height: 1.4;
+
+  > ion-icon { font-size: 22px; color: #7CC61D; flex: 0 0 auto; }
+  .ie-rascunho-txt { flex: 1; min-width: 0; }
+  .ie-rascunho-clear {
+    background: none;
+    border: 1px solid #b6db8f;
+    color: #4a7e0e;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    &:hover { background: #d6ecbb; }
+  }
+
+  @media (max-width: 600px) {
+    flex-wrap: wrap;
+    .ie-rascunho-clear { width: 100%; margin-top: 4px; }
+  }
+
+  /* Variante azul pro modo edição (jogadores já existem) */
+  &.edicao {
+    background: #dfeefd;
+    border-color: #91c6f4;
+    color: #1976d2;
+    > ion-icon { color: #4DABF7; }
+  }
+}
+
+/* ============ Header ============ */
+.ie-cabec {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 16px;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #1f1f23;
+  margin-bottom: 16px;
+}
+.ie-logo-camp {
+  width: 80px; height: 80px;
+  display: flex; align-items: center; justify-content: center;
+  img { max-width: 80px; max-height: 80px; object-fit: contain; }
+}
+.ie-titulo-bloco {
+  min-width: 0;
+}
+.ie-titulo {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1C2E3D;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+}
+.ie-sub {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5a6470;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.ie-doc {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #4DABF7;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* ============ Equipe + Contato ============ */
+.ie-bloco-equipe {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  @media (max-width: 600px) { grid-template-columns: 1fr; }
+}
+.ie-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #5a6470;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  input {
+    width: 100%;
+    border: 1px solid #c9cdd4;
+    background: #fff;
+    border-radius: 4px;
+    padding: 7px 9px;
+    font-size: 13.5px;
+    color: #1f1f23;
+    outline: none;
+    transition: border-color 120ms ease;
+    &:focus { border-color: #4DABF7; }
+    &:disabled {
+      background: #f3f4f6;
+      color: #1f1f23;
+      font-weight: 600;
+    }
+  }
+}
+
+/* ============ Tabela ============ */
+.ie-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+  font-size: 12px;
+
+  th, td {
+    border: 1px solid #1f1f23;
+    padding: 4px 6px;
+    vertical-align: middle;
+    text-align: left;
+  }
+  thead th {
+    background: #f3f4f6;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 10.5px;
+    color: #1f1f23;
+    text-align: center;
+    padding: 6px 4px;
+    line-height: 1.15;
+  }
+  tbody tr { background: #fff; }
+
+  /* Inputs dentro das células ficam sem borda visível pra parecer planilha */
+  td input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 6px 4px;
+    font-size: 13px;
+    color: #1f1f23;
+    outline: none;
+    &:focus { background: #fff7d6; }
+    &::placeholder { color: #c0c4cb; font-style: italic; }
+  }
+
+  .w-ordem    { width: 56px;  text-align: center; }
+  .w-doc      { width: 180px; }
+  .w-nasc     { width: 140px; }
+  .w-funcao   { width: 160px; }
+  .w-doc-com  { width: 200px; }
+
+  .cel-ordem {
+    text-align: center;
+    font-weight: 700;
+    background: #f8f9fb;
+    color: #1C2E3D;
+  }
+  .cel-funcao {
+    background: #f8f9fb;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11.5px;
+    letter-spacing: 0.2px;
+  }
+
+  &.comissao {
+    th { background: #1C2E3D; color: #fff; }
+  }
+
+  /* ═════════════════════════════════════════════════════════
+     MOBILE: vira cards empilhados (sem perder dados)
+     ═════════════════════════════════════════════════════════ */
+  @media (max-width: 640px) {
+    border: none;
+    display: block;
+    margin-bottom: 14px;
+
+    thead { display: none; }
+    tbody, tr, td {
+      display: block;
+      border: none;
+      padding: 0;
+    }
+
+    tbody tr {
+      border: 1px solid #c9cdd4;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    /* Cada td vira um bloco com label EM CIMA e input FULL-WIDTH abaixo,
+       maximizando o espaço pro preenchimento (especialmente Nome). */
+    td {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 6px 0;
+      border-bottom: 1px solid #f3f4f6;
+
+      &:last-child { border-bottom: none; }
+
+      /* Pseudo-label acima do input */
+      &::before {
+        content: attr(data-label);
+        font-size: 10.5px;
+        font-weight: 700;
+        color: #5a6470;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+    }
+
+    /* Célula "Nº ordem" como cabeçalho destacado do card */
+    .cel-ordem {
+      grid-template-columns: 1fr;
+      background: #1C2E3D;
+      color: #fff;
+      padding: 6px 10px;
+      margin: -10px -12px 8px;
+      border-radius: 8px 8px 0 0;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: left;
+      border-bottom: none;
+      &::before {
+        content: 'ATLETA Nº';
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 10px;
+        margin-right: 6px;
+        display: inline;
+      }
+    }
+
+    /* Comissão: célula da função fica como header do card */
+    .cel-funcao {
+      grid-template-columns: 1fr;
+      background: #4DABF7;
+      color: #fff;
+      padding: 6px 10px;
+      margin: -10px -12px 8px;
+      border-radius: 8px 8px 0 0;
+      font-size: 13px;
+      text-align: left;
+      border-bottom: none;
+      &::before { content: none; }
+    }
+
+    /* Inputs ficam mais respiráveis no mobile */
+    td input {
+      padding: 8px 8px;
+      font-size: 14px;
+      border: 1px solid #d8d8dd;
+      border-radius: 6px;
+      background: #fafbfc;
+    }
+  }
+}
+
+/* ============ Seção título ============ */
+.ie-secao-titulo {
+  background: #1C2E3D;
+  color: #fff;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 8px 0 0;
+  border-radius: 4px 4px 0 0;
+
+  & + .ie-tabela th {
+    border-radius: 0;
+  }
+}
+
+/* ============ Termo ============ */
+.ie-termo {
+  margin: 18px 0 12px;
+  padding: 14px 16px;
+  background: #fff5e6;
+  border: 1px solid #f5d878;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #5a4500;
+
+  p {
+    margin: 0 0 10px;
+  }
+}
+.ie-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #1C2E3D;
+  font-size: 13px;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: #4DABF7;
+    cursor: pointer;
+  }
+}
+
+/* ============ Representante ============ */
+.ie-bloco-rep {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  @media (max-width: 600px) { grid-template-columns: 1fr; }
+}
+
+/* ============ Ações ============ */
+.ie-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid #ececef;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: stretch;
+    .ie-btn { width: 100%; }
+  }
+}
+.ie-contador {
+  font-size: 13px;
+  color: #5a6470;
+  font-weight: 600;
+}
+.ie-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  transition: background 120ms ease, transform 80ms ease;
+
+  ion-icon { font-size: 18px; }
+
+  &.primary {
+    background: #7CC61D;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(124, 198, 29, 0.35);
+    &:hover:not(:disabled) {
+      background: #5a9912;
+      transform: translateY(-1px);
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}

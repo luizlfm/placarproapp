@@ -1,0 +1,49 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>Alternativas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button strong="true" (click)="salvar()">Salvar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="alt-content">
+  <div class="lista" *ngIf="lista.length > 0; else vazio">
+    <article *ngFor="let a of lista; let i = index; trackBy: trackById" class="alt-row">
+      <span class="alt-num">{{ i + 1 }}</span>
+      <span class="alt-texto" (click)="editar(a)">{{ a.texto }}</span>
+      <span class="alt-votos" *ngIf="(a.votos ?? 0) > 0">
+        {{ a.votos }} voto<ng-container *ngIf="(a.votos ?? 0) !== 1">s</ng-container>
+      </span>
+      <div class="alt-actions">
+        <button type="button" (click)="subir(i)" [disabled]="i === 0" aria-label="Subir">
+          <ion-icon name="chevron-up-outline"></ion-icon>
+        </button>
+        <button type="button" (click)="descer(i)" [disabled]="i === lista.length - 1" aria-label="Descer">
+          <ion-icon name="chevron-down-outline"></ion-icon>
+        </button>
+        <button type="button" (click)="editar(a)" aria-label="Editar">
+          <ion-icon name="create-outline"></ion-icon>
+        </button>
+        <button type="button" class="del" (click)="remover(a)" aria-label="Remover">
+          <ion-icon name="trash-outline"></ion-icon>
+        </button>
+      </div>
+    </article>
+  </div>
+
+  <ng-template #vazio>
+    <div class="vazio">
+      <ion-icon name="list-outline"></ion-icon>
+      <p>Nenhuma alternativa.</p>
+    </div>
+  </ng-template>
+
+  <ion-button expand="block" fill="clear" color="tertiary" (click)="adicionar()" class="btn-add">
+    <ion-icon slot="start" name="add-outline"></ion-icon>
+    Adicionar
+  </ion-button>
+</ion-content>

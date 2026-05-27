@@ -1,0 +1,64 @@
+# ════════════════════════════════════════════════════════════════════
+# PlacarPro — .gitignore da raiz
+# ════════════════════════════════════════════════════════════════════
+# Cada subprojeto (placarpro/, functions/) já tem seu próprio
+# .gitignore. Aqui só listamos coisas que ficam na RAIZ ou foram
+# criadas por engano (pastas duplicadas com nome ProjetoFolder).
+
+# Firebase deploy cache — guarda hashes do último deploy. Não subir.
+.firebase/
+
+# Pastas criadas por engano (typos do nome do projeto)
+placarProfunctions/
+placarProplacarpro/
+
+# Scripts avulsos (Python, debug, etc) — verificar caso a caso.
+# Comente as linhas abaixo se quiser commitar.
+read_sumula.py
+verify_classes.txt
+storage.rules.teste-permissivo
+
+# Logs e dependências comuns
+node_modules/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Builds (Angular já ignora www/, mas listamos por garantia)
+**/dist/
+**/www/
+**/out/
+**/build/
+
+# Cache Angular
+**/.angular/
+**/.sass-cache/
+
+# Functions compiladas
+**/functions/lib/
+
+# Capacitor (mobile native) — gerados pelo build
+android/app/build/
+android/.gradle/
+ios/App/Pods/
+ios/App/build/
+
+# Env files com secrets locais (se existirem)
+.env
+.env.local
+.env.*.local
+
+# Service worker generation (gerado pelo build do Angular)
+**/ngsw-worker.js
+**/ngsw.json
+**/safety-worker.js
+
+# Claude AI — sessões locais
+.claude/projects/

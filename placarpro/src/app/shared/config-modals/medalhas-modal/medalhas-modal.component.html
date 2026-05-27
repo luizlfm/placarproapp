@@ -1,0 +1,98 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>Quadro de medalhas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button strong="true" [disabled]="salvando" (click)="salvar()">Salvar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="med-content">
+  <p class="med-intro">Defina o pódio (🥇 🥈 🥉) de cada categoria. O quadro abaixo agrega tudo num ranking olímpico por equipe.</p>
+
+  <!-- Loading -->
+  <div class="med-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <!-- Sem categorias -->
+  <div class="med-empty" *ngIf="!loading && medalhas.length === 0">
+    <ion-icon name="ribbon-outline"></ion-icon>
+    <p>Nenhuma categoria cadastrada.</p>
+    <span>Crie categorias antes de definir o quadro de medalhas.</span>
+  </div>
+
+  <!-- Editor de medalhas por categoria -->
+  <ng-container *ngIf="!loading && medalhas.length > 0">
+    <section class="med-cards">
+      <h3 class="med-h">Pódio por categoria</h3>
+      <div class="med-cat" *ngFor="let m of medalhas; let i = index; trackBy: trackByCat">
+        <div class="cat-title">{{ m.categoriaTitulo }}</div>
+        <div class="cat-row">
+          <label class="podio podio-ouro">
+            <span class="podio-icon">🥇</span>
+            <select
+              [value]="m.ouro || ''"
+              (change)="setOuro(i, $any($event.target).value)"
+            >
+              <option value="">— sem definir —</option>
+              <option *ngFor="let eq of m.equipes" [value]="eq.id">{{ eq.nome }}</option>
+            </select>
+          </label>
+          <label class="podio podio-prata">
+            <span class="podio-icon">🥈</span>
+            <select
+              [value]="m.prata || ''"
+              (change)="setPrata(i, $any($event.target).value)"
+            >
+              <option value="">— sem definir —</option>
+              <option *ngFor="let eq of m.equipes" [value]="eq.id">{{ eq.nome }}</option>
+            </select>
+          </label>
+          <label class="podio podio-bronze">
+            <span class="podio-icon">🥉</span>
+            <select
+              [value]="m.bronze || ''"
+              (change)="setBronze(i, $any($event.target).value)"
+            >
+              <option value="">— sem definir —</option>
+              <option *ngFor="let eq of m.equipes" [value]="eq.id">{{ eq.nome }}</option>
+            </select>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quadro agregado -->
+    <section class="med-rank" *ngIf="ranking.length > 0">
+      <h3 class="med-h">Quadro geral</h3>
+      <div class="rank-tabela">
+        <div class="rank-header">
+          <span class="col-pos">#</span>
+          <span class="col-eq">Equipe</span>
+          <span class="col-num" title="Ouros">🥇</span>
+          <span class="col-num" title="Pratas">🥈</span>
+          <span class="col-num" title="Bronzes">🥉</span>
+          <span class="col-tot">Total</span>
+        </div>
+        <div class="rank-row" *ngFor="let r of ranking; let idx = index; trackBy: trackByRanking">
+          <span class="col-pos">{{ idx + 1 }}</span>
+          <span class="col-eq">
+            <span class="eq-logo">
+              <img *ngIf="r.equipe.logoUrl; else iconE" [src]="r.equipe.logoUrl" [alt]="r.equipe.nome" />
+              <ng-template #iconE><ion-icon name="shield-outline"></ion-icon></ng-template>
+            </span>
+            <span class="eq-nome">{{ r.equipe.nome }}</span>
+          </span>
+          <span class="col-num">{{ r.ouros }}</span>
+          <span class="col-num">{{ r.pratas }}</span>
+          <span class="col-num">{{ r.bronzes }}</span>
+          <span class="col-tot">{{ r.total }}</span>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</ion-content>

@@ -1,0 +1,104 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">Fechar</ion-button>
+    </ion-buttons>
+    <ion-title>Votação</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="vot-content">
+  <ng-container *ngIf="view$ | async as v">
+    <h2 class="pergunta">{{ v.enquete.pergunta || '—' }}</h2>
+
+    <p class="total">
+      <ion-icon name="people-outline"></ion-icon>
+      {{ v.enquete.totalVotos ?? 0 }} voto<ng-container *ngIf="(v.enquete.totalVotos ?? 0) !== 1">s</ng-container>
+      <span class="status" *ngIf="!v.enquete?.votacaoAberta">
+        <ion-icon name="lock-closed-outline"></ion-icon> Encerrada
+      </span>
+    </p>
+
+    <!-- Aviso pra anônimos -->
+    <div class="aviso anonimo" *ngIf="!estaLogado">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      Faça login pra votar nesta enquete.
+    </div>
+
+    <!-- Status "já votou" pra logado em escolha única -->
+    <div class="aviso ok" *ngIf="estaLogado && jaVotou(v.meusVotos) && !v.enquete.multiplaEscolha">
+      <ion-icon name="checkmark-circle"></ion-icon>
+      Você já votou. Clique em outra opção pra trocar.
+    </div>
+
+    <!-- Botões de voto: aparecem se logado E votação aberta -->
+    <div class="opcoes"
+         *ngIf="estaLogado && v.enquete.votacaoAberta && (v.enquete.alternativas?.length ?? 0) > 0">
+      <button
+        *ngFor="let a of v.enquete.alternativas; trackBy: trackById"
+        type="button"
+        class="alt-btn"
+        [class.selecionada]="votouNessa(v.meusVotos, a.id)"
+        [disabled]="votando"
+        (click)="votar(v.enquete, a.id, v.meusVotos)"
+      >
+        <span class="alt-radio">
+          <ion-icon
+            [name]="votouNessa(v.meusVotos, a.id)
+                    ? (v.enquete.multiplaEscolha ? 'checkbox-outline' : 'radio-button-on-outline')
+                    : (v.enquete.multiplaEscolha ? 'square-outline' : 'radio-button-off-outline')"
+          ></ion-icon>
+        </span>
+        <span class="alt-texto">{{ a.texto }}</span>
+      </button>
+    </div>
+
+    <!-- Resultados em barras (sempre visível) -->
+    <div class="resultados" *ngIf="(v.enquete?.alternativas?.length ?? 0) > 0; else vazio">
+      <h3 class="r-titulo">Resultados</h3>
+      <div *ngFor="let a of v.enquete.alternativas; trackBy: trackById"
+           class="alt-row"
+           [class.minha]="votouNessa(v.meusVotos, a.id)">
+        <div class="alt-head">
+          <span class="alt-nome">
+            <ion-icon
+              *ngIf="votouNessa(v.meusVotos, a.id)"
+              name="checkmark-circle"
+              class="check"
+            ></ion-icon>
+            {{ a.texto }}
+          </span>
+          <span class="alt-stats">{{ a.votos ?? 0 }} ({{ percent(v.enquete, a.votos ?? 0) }}%)</span>
+        </div>
+        <div class="bar">
+          <div class="bar-fill" [style.width.%]="percent(v.enquete, a.votos ?? 0)"></div>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #vazio>
+      <div class="vazio">
+        <ion-icon name="bar-chart-outline"></ion-icon>
+        <p>Nenhuma alternativa cadastrada.</p>
+      </div>
+    </ng-template>
+
+    <!-- Footer com ações de link público -->
+    <div class="rodape">
+      <p class="rodape-hint">
+        <ion-icon name="globe-outline"></ion-icon>
+        Visitantes votam pela página pública desta categoria
+      </p>
+      <div class="rodape-acoes">
+        <ion-button fill="outline" color="primary" (click)="abrirPaginaPublica(v.slugPublico)">
+          <ion-icon slot="start" name="open-outline"></ion-icon>
+          Ver página pública
+        </ion-button>
+        <ion-button fill="outline" color="medium" (click)="copiarLinkPublico(v.slugPublico)">
+          <ion-icon slot="start" name="copy-outline"></ion-icon>
+          Copiar link
+        </ion-button>
+      </div>
+    </div>
+  </ng-container>
+</ion-content>

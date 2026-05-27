@@ -1,0 +1,285 @@
+/* ============================================================
+   Layout do modal — UM scroll só (o do ion-content).
+   Antes existia overflow-y no .modal-card AND scroll nativo do
+   ion-content → barra dupla. Agora ion-content scrolla; o card
+   só centraliza horizontalmente e fica natural verticalmente.
+   ============================================================ */
+.bg {
+  --background: rgba(0, 0, 0, 0);
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  /* Sem flex/align-center — em modais altos, isso travava a
+     visualização do início do form. Deixa fluir do topo. */
+}
+
+.modal-card {
+  background: var(--placar-card-bg);
+  color: var(--placar-text);
+  border-radius: 14px;
+  box-shadow: var(--placar-shadow-md, 0 12px 32px rgba(0, 0, 0, 0.15));
+  width: 540px;
+  max-width: calc(100vw - 32px);
+  /* Sem max-height nem overflow — ion-content cuida do scroll. */
+  padding: 24px 28px 18px;
+  /* Centraliza horizontalmente, dá respiro vertical. */
+  margin: 16px auto;
+}
+
+.title {
+  margin: 0 0 18px;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--placar-text);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+/* Data e hora com ícone calendário ao lado esquerdo */
+.data-hora-row {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  gap: 8px;
+
+  .ic-cal {
+    font-size: 22px;
+    color: var(--placar-text-muted);
+    justify-self: center;
+  }
+
+  ion-input { width: 100%; }
+}
+
+/* Lista de links (Anexos, Pontos Extras, …) */
+.link-rows {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--placar-divider);
+  margin-top: 16px;
+  padding-top: 4px;
+}
+
+.link-row {
+  background: none;
+  border: 0;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 4px;
+  font-size: 15px;
+  color: var(--placar-text);
+  cursor: pointer;
+  border-bottom: 1px solid var(--placar-divider);
+  transition: background 120ms ease;
+  width: 100%;
+
+  &:last-child { border-bottom: 0; }
+
+  > ion-icon {
+    font-size: 22px;
+    color: var(--ion-color-primary);
+    flex-shrink: 0;
+  }
+
+  > span:not(.badge) {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .badge {
+    background: var(--ion-color-secondary);
+    color: #fff;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 11.5px;
+    font-weight: 700;
+    line-height: 1.3;
+    min-width: 22px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  &.no-icon {
+    /* "Arte do Jogo" não tem ícone — usa padding pra alinhar com os outros */
+    padding-left: 40px;
+  }
+
+  &:hover {
+    background: rgba(28, 46, 61, 0.04);
+  }
+}
+
+/* Footer: botão Salvar estilo "link" azul à direita */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--placar-divider);
+}
+
+.btn-salvar {
+  background: none;
+  border: 0;
+  color: var(--ion-color-tertiary, #4dabf7);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 8px 18px;
+  cursor: pointer;
+  border-radius: 8px;
+  text-transform: none;
+  transition: background 120ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  ion-spinner { --color: var(--ion-color-tertiary, #4dabf7); }
+
+  &:hover:not(:disabled) {
+    background: rgba(77, 171, 247, 0.10);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* ═══════════ Seções do formulário (Partida / Transmissão / Outros) ═══════════ */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.015);
+  border: 1px solid #ebeef3;
+  margin-bottom: 10px;
+
+  &.transmissao {
+    background: linear-gradient(135deg, rgba(231, 76, 60, 0.04), rgba(231, 76, 60, 0.01));
+    border-color: rgba(231, 76, 60, 0.25);
+  }
+}
+
+.form-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eef0f3;
+
+  ion-icon {
+    font-size: 18px;
+    color: var(--ion-color-primary, #1C2E3D);
+  }
+  span {
+    font-size: 12.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--placar-text, #2d2d2d);
+  }
+  .form-section-tag {
+    margin-left: auto;
+    padding: 2px 9px;
+    background: #e74c3c;
+    color: #fff;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border: none;
+    animation: pulse-live 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.7; transform: scale(0.96); }
+}
+
+/* ============================================================
+   CTA "Upgrade pro plano X" — substitui o input quando a feature
+   de transmissão está bloqueada pelo plano atual. Mostra ícone
+   de cadeado, descrição e botão "Ver planos".
+   ============================================================ */
+.form-section-tag.bloq {
+  background: rgba(255, 196, 9, 0.18);
+  color: var(--ion-color-warning-shade, #b88d00);
+  border: 1px solid rgba(255, 196, 9, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+
+  ion-icon { font-size: 12px; }
+}
+
+.upgrade-card {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(255, 196, 9, 0.08) 0%, rgba(124, 198, 29, 0.06) 100%);
+  border: 1.5px dashed rgba(255, 196, 9, 0.45);
+  border-radius: 10px;
+}
+
+.upgrade-icon {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 196, 9, 0.18);
+  color: var(--ion-color-warning-shade, #b88d00);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon { font-size: 20px; }
+}
+
+.upgrade-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.upgrade-titulo {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--placar-text, #1C2E3D);
+  letter-spacing: 0.2px;
+}
+
+.upgrade-desc {
+  font-size: 12.5px;
+  color: var(--placar-text-muted, #6b6b70);
+  line-height: 1.4;
+}
+
+.upgrade-btn {
+  margin-top: 4px;
+  align-self: flex-start;
+}

@@ -1,0 +1,309 @@
+// Faixa verde decorativa com botão central
+.hero-strip {
+  background: var(--placar-accent);
+  padding: 18px 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn-novo {
+  --background: var(--ion-color-primary);
+  --background-activated: var(--ion-color-primary-shade);
+  --background-hover: var(--ion-color-primary-shade);
+  --color: #ffffff;
+  --border-radius: 999px;
+  --padding-start: 32px;
+  --padding-end: 32px;
+  height: 44px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  min-width: 280px;
+  max-width: 100%;
+}
+
+.campeonatos-wrap {
+  max-width: 980px;
+  margin: 24px auto 40px;
+  padding: 0 16px;
+}
+
+.campeonatos-card {
+  background: var(--placar-surface);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.campeonato-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid var(--placar-divider);
+  transition: background 120ms ease;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: var(--placar-surface-2); }
+}
+
+.row-logo {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #f5f5f7;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  ion-icon {
+    color: var(--ion-color-medium);
+    font-size: 28px;
+  }
+}
+
+.row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.row-title {
+  color: var(--placar-text);
+  font-size: 14.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  line-height: 1.3;
+}
+
+.row-sub {
+  color: var(--placar-text-muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.row-meta {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.seguidores {
+  color: var(--ion-color-tertiary);
+  font-size: 12px;
+}
+
+.row-action {
+  --color: var(--ion-color-medium);
+  --padding-start: 6px;
+  --padding-end: 6px;
+  margin: 0;
+  height: 28px;
+}
+
+/* Empty + loading */
+.empty-state,
+.loading-state {
+  text-align: center;
+  padding: 64px 24px;
+
+  ion-icon {
+    font-size: 72px;
+    color: var(--ion-color-medium);
+    opacity: 0.5;
+    margin-bottom: 16px;
+  }
+
+  h2 {
+    color: var(--ion-color-primary);
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+
+  p {
+    color: var(--ion-color-medium);
+    font-size: 14.5px;
+    margin: 0;
+  }
+}
+
+.loading-state ion-spinner {
+  --color: var(--ion-color-primary);
+  margin-bottom: 14px;
+}
+
+/* ════════ MODAL DE DIAGNÓSTICO ════════ */
+.diag-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.diag-painel {
+  width: 100%;
+  max-width: 640px;
+  max-height: 86vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.diag-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--ion-color-primary);
+  color: #fff;
+
+  h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    ion-icon { font-size: 18px; }
+  }
+}
+
+.diag-fechar {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  &:hover { background: rgba(255, 255, 255, 0.3); }
+  ion-icon { font-size: 16px; }
+}
+
+.diag-body {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.diag-loading {
+  text-align: center;
+  padding: 20px;
+  color: #6b6b70;
+  ion-spinner { --color: var(--ion-color-primary); margin-bottom: 8px; }
+}
+
+.diag-bloco {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f5f5f7;
+  border-left: 3px solid #d8d8dd;
+  font-size: 13px;
+
+  strong { display: block; margin-bottom: 4px; color: #1c1c1f; font-size: 12.5px; }
+  &.ok { border-left-color: var(--ion-color-secondary, #7CC61D); background: rgba(124, 198, 29, 0.06); }
+  &.fail { border-left-color: #eb445a; background: rgba(235, 68, 90, 0.06); }
+}
+
+.diag-mono {
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 11.5px;
+  color: #6b6b70;
+  margin-top: 4px;
+  word-break: break-all;
+}
+
+.diag-erro {
+  color: #b62436;
+  font-size: 11.5px;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.diag-camp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 0;
+  border-top: 1px dashed #ececef;
+  &:first-of-type { border-top: 0; }
+  ion-icon { font-size: 14px; }
+  &.ok ion-icon { color: var(--ion-color-secondary, #7CC61D); }
+  &.fail ion-icon { color: #eb445a; }
+}
+
+.diag-conclusao {
+  background: rgba(245, 197, 24, 0.1);
+  border-left-color: #f5c518 !important;
+
+  ul {
+    margin: 6px 0;
+    padding-left: 20px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #6b6b70;
+  }
+  p { margin: 6px 0; font-size: 12.5px; color: #2d2d2d; }
+  code {
+    background: rgba(0, 0, 0, 0.08);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: 'SF Mono', 'Consolas', monospace;
+    font-size: 11.5px;
+  }
+}
+
+/* Variante crítica: rules deployadas desatualizadas */
+.diag-rules {
+  background: rgba(235, 68, 90, 0.08) !important;
+  border-left-color: #eb445a !important;
+
+  strong:first-of-type { color: #b62436; font-size: 14px; }
+}
+
+.diag-cmd {
+  background: #1c1c1f;
+  color: #c5e88a;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 8px 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.empty-state ion-button {
+  margin-top: 14px;
+  --border-radius: 999px;
+  text-transform: none;
+}
