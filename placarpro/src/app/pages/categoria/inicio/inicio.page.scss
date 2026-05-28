@@ -173,19 +173,25 @@ app-patrocinadores-faixa {
   border-radius: 12px;
   cursor: pointer;
   transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
-  /* Garante que o card respeita o tamanho da célula do grid, mesmo se
-     o nome da equipe for longo. Sem `min-width: 0` + `box-sizing: border-box`
-     o conteúdo wide podia empurrar o card além da largura do grid. */
+  /* `box-sizing: border-box` + `min-width: 0` garantem que o card respeita
+     o tamanho da célula do grid mesmo com nomes longos de equipe. */
   box-sizing: border-box;
   min-width: 0;
 
-  /* Em mobile (≤600px, mesmo breakpoint onde o `.eq-grid` vira 1 coluna),
-     limita a 90% pra deixar uma respiração lateral e impedir que o card
-     visualmente vaze além do viewport quando algum ancestral está mais
-     largo. Mantém centralizado com `margin: 0 auto`. */
-  @media (max-width: 600px) {
-    width: 90%;
-    margin: 0 auto;
+  /* Default = MOBILE: 90% da largura + margin auto pra centralizar.
+     Dá uma respiração lateral e impede que o card vaze visualmente
+     quando algum ancestral está mais largo que a viewport. Aplicado
+     como base (sem media query) pra cobrir QUALQUER tamanho mobile —
+     evita problemas de cache/specificity em breakpoints específicos. */
+  width: 90%;
+  margin: 0 auto;
+
+  /* Desktop (≥601px, quando o `.eq-grid` vira múltiplas colunas): cada
+     card preenche 100% da célula do grid — sem respiração lateral que
+     ficaria estranha em layout multi-coluna. */
+  @media (min-width: 601px) {
+    width: 100%;
+    margin: 0;
   }
 
   &:hover {
