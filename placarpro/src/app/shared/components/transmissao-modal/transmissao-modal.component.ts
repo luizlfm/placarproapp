@@ -715,28 +715,20 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
         : (f >= 60 ? 3_500_000 : 2_500_000);
 
       this.room = new Room({
-        // `adaptiveStream` desligado — evita o servidor renegociar
-        // qualidade pra cada viewer (causa delay perceptível).
-        adaptiveStream: false,
-        // `dynacast` desligado — evita o broadcaster pausar/retomar
-        // simulcast layers conforme viewers assistem (causa stutter).
-        dynacast: false,
+        // Volta pros defaults SEGUROS — mexer em adaptive/dynacast/codec
+        // pode causar incompatibilidade com viewers conectando.
+        adaptiveStream: true,
+        dynacast: true,
         publishDefaults: {
           videoEncoding: {
             maxBitrate: bitrate,
             maxFramerate: f,
             priority: 'high',
           },
-          // Áudio: 192 kbps stereo HD.
           audioPreset: { maxBitrate: 192_000 },
-          // Simulcast LIGADO de volta — manda 3 qualidades (alta, média,
-          // baixa) pro servidor. Viewers com banda ruim recebem versão
-          // menor automaticamente. NÃO adiciona delay perceptível no
-          // broadcaster (encoder roda paralelo). Trade-off bom.
           simulcast: true,
           degradationPreference: 'maintain-resolution',
-          // H.264 — decoder mais rápido em iOS Safari (vs VP9/AV1).
-          videoCodec: 'h264',
+          // Sem forçar codec — deixa o browser escolher o melhor.
         },
       });
 
