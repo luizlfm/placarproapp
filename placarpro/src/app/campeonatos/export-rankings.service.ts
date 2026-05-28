@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
+import type { ModalController, ToastController } from '@ionic/angular';
 import { LinhaRanking, TipoRanking } from './rankings.service';
 import { Campeonato } from './campeonato.model';
 import { Categoria } from './categoria.model';
@@ -49,7 +50,11 @@ export class ExportRankingsService {
   }
 
   /** Gera e baixa um PDF A4 com layout limpo. */
-  async exportarPdf(ctx: ExportContext): Promise<void> {
+  async exportarPdf(
+    ctx: ExportContext,
+    toastCtrl?: ToastController,
+    modalCtrl?: ModalController,
+  ): Promise<void> {
     const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
@@ -150,7 +155,7 @@ export class ExportRankingsService {
 
     const fname = this.fileName(ctx, 'pdf');
     // iOS Safari abre PDF inline — salvarPdf usa Web Share API no iOS.
-    await salvarPdf(pdf, fname);
+    await salvarPdf(pdf, fname, toastCtrl, modalCtrl);
   }
 
   /** Gera imagem PNG estilo poster (canva-like) renderizando um template off-screen. */

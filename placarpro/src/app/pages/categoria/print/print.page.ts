@@ -331,7 +331,7 @@ export class PrintPage implements OnInit {
         window.open(blobUrl, '_blank');
       } else {
         // iOS Safari abre PDF inline — salvarPdf usa Web Share API no iOS.
-        await salvarPdf(pdf, this.nomeArquivoPdf());
+        await salvarPdf(pdf, this.nomeArquivoPdf(), this.toastCtrl, this.modalCtrl);
       }
     } catch (err) {
       console.error(`[print/${destino}] erro`, err);

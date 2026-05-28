@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { LoadingController, ToastController } from '@ionic/angular';
+import { LoadingController, ModalController, ToastController } from '@ionic/angular';
 import { Observable, combineLatest, of } from 'rxjs';
 import { catchError, map, startWith } from 'rxjs/operators';
 import { jsPDF } from 'jspdf';
@@ -65,6 +65,7 @@ export class ImprimirJogosPage implements OnInit {
   private readonly navBack = inject(NavBackService);
   private readonly loadingCtrl = inject(LoadingController);
   private readonly toastCtrl = inject(ToastController);
+  private readonly modalCtrl = inject(ModalController);
 
   readonly campeonatoId = this.lerParam('id');
   readonly categoriaId = this.lerParam('catId');
@@ -215,7 +216,7 @@ export class ImprimirJogosPage implements OnInit {
         window.open(blobUrl, '_blank');
       } else {
         // iOS Safari abre PDF inline — salvarPdf usa Web Share API no iOS.
-        await salvarPdf(pdf, 'tabela-partidas.pdf');
+        await salvarPdf(pdf, 'tabela-partidas.pdf', this.toastCtrl, this.modalCtrl);
       }
     } catch (err) {
       console.error(`[ImprimirJogos/${destino}] erro`, err);

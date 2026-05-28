@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { LoadingController, ToastController } from '@ionic/angular';
+import { LoadingController, ModalController, ToastController } from '@ionic/angular';
 import { firstValueFrom } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import domtoimage from 'dom-to-image-more';
@@ -50,6 +50,7 @@ export class CarteirinhasPreviewPage implements OnInit, AfterViewInit {
   private readonly navBack = inject(NavBackService);
   private readonly loadingCtrl = inject(LoadingController);
   private readonly toastCtrl = inject(ToastController);
+  private readonly modalCtrl = inject(ModalController);
   private readonly host: ElementRef<HTMLElement> = inject(ElementRef);
 
   readonly campeonatoId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -534,7 +535,7 @@ export class CarteirinhasPreviewPage implements OnInit, AfterViewInit {
       } else {
         // iOS Safari abre PDF inline em vez de baixar — salvarPdf usa
         // Web Share API pra dar a opção "Salvar em Arquivos" no iOS.
-        await salvarPdf(pdf, `carteirinhas-${this.categoriaId}.pdf`);
+        await salvarPdf(pdf, `carteirinhas-${this.categoriaId}.pdf`, this.toastCtrl, this.modalCtrl);
       }
     } catch (err) {
       console.error(`[carteirinhas/${destino}] erro`, err);

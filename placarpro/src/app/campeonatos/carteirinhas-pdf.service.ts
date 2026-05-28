@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import jsPDF from 'jspdf';
+import type { ModalController, ToastController } from '@ionic/angular';
 import { Equipe } from './models/equipe.model';
 import { Jogador } from './models/jogador.model';
 import { salvarPdf } from '../shared/pdf-download.helper';
@@ -92,6 +93,8 @@ export class CarteirinhasPdfService {
     jogadores: Jogador[],
     equipes: Equipe[],
     cfg: CarteirinhaConfig,
+    toastCtrl?: ToastController,
+    modalCtrl?: ModalController,
   ): Promise<void> {
     if (jogadores.length === 0) {
       throw new Error('Nenhum jogador selecionado.');
@@ -149,7 +152,7 @@ export class CarteirinhasPdfService {
 
     const fileName = `carteirinhas-${this.slugify(cfg.subtitulo || cfg.nomeCampeonato)}.pdf`;
     // iOS Safari abre PDF inline — salvarPdf usa Web Share API no iOS.
-    await salvarPdf(pdf, fileName);
+    await salvarPdf(pdf, fileName, toastCtrl, modalCtrl);
   }
 
   private desenharLote(

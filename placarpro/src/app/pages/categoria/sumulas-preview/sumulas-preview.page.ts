@@ -407,7 +407,7 @@ export class SumulasPreviewPage implements OnInit {
         // No iOS Safari, salvarPdf() usa Web Share API pra abrir share sheet
         // nativo (com opção "Salvar em Arquivos") em vez de abrir PDF inline.
         const nome = `sumulas-${this.campeonato?.titulo?.replace(/\s+/g, '_') || 'campeonato'}.pdf`;
-        await salvarPdf(pdf, nome);
+        await salvarPdf(pdf, nome, this.toastCtrl, this.modalCtrl);
       }
     } catch (err) {
       console.error(`[${destino}] erro`, err);

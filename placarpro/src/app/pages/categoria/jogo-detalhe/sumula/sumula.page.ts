@@ -753,7 +753,7 @@ ${folha.outerHTML}
 
       pdf.addImage(dataUrl, 'PNG', 0, 0, imgWidth, imgHeight);
 
-      await salvarPdf(pdf, `sumula-${this.jogoId}.pdf`);
+      await salvarPdf(pdf, `sumula-${this.jogoId}.pdf`, this.toastCtrl, this.modalCtrl);
     } catch (err) {
       console.error('[baixarPdf] erro', err);
       const t = await this.toastCtrl.create({

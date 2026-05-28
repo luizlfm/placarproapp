@@ -215,7 +215,7 @@ export class ImprimirClassificacaoPage implements OnInit {
         window.open(blobUrl, '_blank');
       } else {
         // iOS Safari abre PDF inline — salvarPdf usa Web Share API no iOS.
-        await salvarPdf(pdf, 'classificacao.pdf');
+        await salvarPdf(pdf, 'classificacao.pdf', this.toastCtrl, this.modalCtrl);
       }
     } catch (err) {
       console.error(`[ImprimirClassif/${destino}] erro`, err);

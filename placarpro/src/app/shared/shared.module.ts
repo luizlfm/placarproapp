@@ -45,6 +45,7 @@ import { DateInputComponent } from './components/date-input/date-input.component
 import { ActionModalComponent } from './components/action-modal/action-modal.component';
 import { ImgSkeletonDirective } from './directives/img-skeleton.directive';
 import { IosPwaTutorialModalComponent } from './components/ios-pwa-tutorial-modal/ios-pwa-tutorial-modal.component';
+import { PdfViewerModalComponent } from './components/pdf-viewer-modal/pdf-viewer-modal.component';
 
 /**
  * Componentes/diretivas/pipes reutilizáveis pelo app inteiro.
@@ -89,6 +90,7 @@ import { IosPwaTutorialModalComponent } from './components/ios-pwa-tutorial-moda
     ActionModalComponent,
     ImgSkeletonDirective,
     IosPwaTutorialModalComponent,
+    PdfViewerModalComponent,
   ],
   exports: [
     CampeonatoMobileHeaderComponent,
@@ -127,6 +129,7 @@ import { IosPwaTutorialModalComponent } from './components/ios-pwa-tutorial-moda
     ActionModalComponent,
     ImgSkeletonDirective,
     IosPwaTutorialModalComponent,
+    PdfViewerModalComponent,
   ],
 })
 export class SharedModule {}

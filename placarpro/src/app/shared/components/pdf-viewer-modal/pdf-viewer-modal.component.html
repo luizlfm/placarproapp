@@ -1,0 +1,33 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="fechar()">
+        <ion-icon name="close" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title class="ion-text-nowrap">{{ fileName }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <iframe
+    *ngIf="safeBlobUrl"
+    [src]="safeBlobUrl"
+    class="pdf-iframe"
+    title="Pré-visualização do PDF"
+  ></iframe>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-button
+      expand="block"
+      color="primary"
+      class="ion-margin"
+      (click)="salvar()"
+    >
+      <ion-icon name="download-outline" slot="start"></ion-icon>
+      Salvar PDF
+    </ion-button>
+  </ion-toolbar>
+</ion-footer>

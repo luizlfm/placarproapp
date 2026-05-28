@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { LoadingController, ToastController } from '@ionic/angular';
+import { LoadingController, ModalController, ToastController } from '@ionic/angular';
 import { BehaviorSubject, Observable, firstValueFrom, of, switchMap } from 'rxjs';
 import { catchError, startWith } from 'rxjs/operators';
 import { LinhaRanking, RankingsService, TipoRanking } from '../../../campeonatos/rankings.service';
@@ -38,6 +38,7 @@ export class RankingsPage {
   private readonly enqSrv = inject(EnquetesService);
   private readonly loadingCtrl = inject(LoadingController);
   private readonly toastCtrl = inject(ToastController);
+  private readonly modalCtrl = inject(ModalController);
   private readonly modPerms = inject(ModeradorPermissoesService);
   exportando = false;
 
@@ -157,7 +158,7 @@ export class RankingsPage {
         categoria,
       );
       if (formato === 'pdf') {
-        await this.exportSrv.exportarPdf(ctx);
+        await this.exportSrv.exportarPdf(ctx, this.toastCtrl, this.modalCtrl);
       } else {
         await this.exportSrv.exportarImagem(ctx);
       }

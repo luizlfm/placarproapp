@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { LoadingController, ToastController } from '@ionic/angular';
+import { LoadingController, ModalController, ToastController } from '@ionic/angular';
 import { Observable, combineLatest, firstValueFrom, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { jsPDF } from 'jspdf';
@@ -51,6 +51,7 @@ export class TermoMenorPage implements OnInit, AfterViewInit {
   private readonly navBack = inject(NavBackService);
   private readonly loadingCtrl = inject(LoadingController);
   private readonly toastCtrl = inject(ToastController);
+  private readonly modalCtrl = inject(ModalController);
   private readonly host: ElementRef<HTMLElement> = inject(ElementRef);
 
   /**
@@ -296,7 +297,7 @@ export class TermoMenorPage implements OnInit, AfterViewInit {
       } else {
         // iOS Safari abre PDF inline — salvarPdf usa Web Share API no iOS
         // pra dar a opção "Salvar em Arquivos" e voltar pra tela do app.
-        await salvarPdf(pdf, `termo-autorizacao-${this.categoriaId}.pdf`);
+        await salvarPdf(pdf, `termo-autorizacao-${this.categoriaId}.pdf`, this.toastCtrl, this.modalCtrl);
       }
     } catch (err) {
       console.error('[termo-menor] PDF erro', err);
