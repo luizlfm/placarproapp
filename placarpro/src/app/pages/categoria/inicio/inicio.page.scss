@@ -179,6 +179,15 @@ app-patrocinadores-faixa {
   box-sizing: border-box;
   min-width: 0;
 
+  /* Em mobile (≤600px, mesmo breakpoint onde o `.eq-grid` vira 1 coluna),
+     limita a 90% pra deixar uma respiração lateral e impedir que o card
+     visualmente vaze além do viewport quando algum ancestral está mais
+     largo. Mantém centralizado com `margin: 0 auto`. */
+  @media (max-width: 600px) {
+    width: 90%;
+    margin: 0 auto;
+  }
+
   &:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
