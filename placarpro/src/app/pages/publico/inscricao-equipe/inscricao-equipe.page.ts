@@ -434,9 +434,12 @@ export class InscricaoEquipePage implements OnInit {
       // Helper: monta payload do atleta SEM campos `undefined` (Firestore
       // rejeita undefined em qualquer campo do doc).
       const montarPayloadAtleta = (a: LinhaAtleta, incluirEquipe: boolean): Record<string, unknown> => {
+        // O `numeroCamisa` NÃO é setado pela ficha de inscrição pública —
+        // a numeração é responsabilidade do organizador (tela de equipe).
+        // Antes esta função gravava `numeroCamisa: String(a.ordem)` que
+        // sobrescrevia o número definido pelo admin a cada salvamento.
         const p: Record<string, unknown> = {
           nome: a.nome.trim(),
-          numeroCamisa: String(a.ordem),
           inscricaoToken: this.token,
         };
         if (incluirEquipe) p['equipeId'] = equipeId;
@@ -590,12 +593,18 @@ export class InscricaoEquipePage implements OnInit {
     const alert = await this.alertCtrl.create({
       header: 'Inscrição enviada!',
       message:
-        'A ficha foi recebida e os atletas cadastrados no sistema. Você pode ' +
-        'fechar esta janela.',
+        'A ficha foi recebida e os atletas cadastrados no sistema. ' +
+        'Você será redirecionado em instantes.',
       buttons: ['OK'],
     });
     await alert.present();
     await alert.onDidDismiss();
+
+    // Redirect pós-sucesso:
+    //  - logado     → área do espectador (sua tela principal)
+    //  - deslogado  → home pública do site
+    const destino = this.authSrv.currentUser ? '/espectador' : '/';
+    await this.router.navigateByUrl(destino, { replaceUrl: true });
   }
 
   private async toast(message: string, color: 'success' | 'danger' | 'medium' = 'success'): Promise<void> {

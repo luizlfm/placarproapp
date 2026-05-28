@@ -13,6 +13,7 @@ import { EquipesService } from '../../../campeonatos/equipes.service';
 import { JogadoresService } from '../../../campeonatos/jogadores.service';
 import { JogosService } from '../../../campeonatos/jogos.service';
 import { NavBackService } from '../../../shared/nav-back.service';
+import { RefreshService } from '../../../shared/refresh.service';
 
 interface JogoView extends Jogo {
   nomeMandante: string;
@@ -50,6 +51,7 @@ export class PublicoJogoPage implements OnInit {
   private readonly jogadoresSrv = inject(JogadoresService);
   private readonly jogosSrv = inject(JogosService);
   private readonly navBack = inject(NavBackService);
+  private readonly refreshSrv = inject(RefreshService);
 
   campeonato?: Campeonato;
   categoria?: Categoria;
@@ -215,14 +217,9 @@ export class PublicoJogoPage implements OnInit {
       });
   }
 
-  /** Pull-to-refresh — arrasta pra baixo pra recarregar a tela. */
+  /** Pull-to-refresh — recarrega APENAS esta rota via Angular Router. */
   async onRefresh(ev: CustomEvent): Promise<void> {
-    try {
-      window.location.reload();
-    } finally {
-      const target = ev?.target as { complete?: () => void } | null;
-      target?.complete?.();
-    }
+    await this.refreshSrv.refreshAtual(ev);
   }
 
   voltar(): void {

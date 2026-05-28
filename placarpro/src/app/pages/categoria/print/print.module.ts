@@ -9,6 +9,7 @@ import { ExportarEquipesPopoverComponent } from './exportar-equipes-popover/expo
 import { ColunasEquipesModalComponent } from './colunas-equipes-modal/colunas-equipes-modal.component';
 import { FaseEquipesModalComponent } from './fase-equipes-modal/fase-equipes-modal.component';
 import { ColunasJogadoresModalComponent } from './colunas-jogadores-modal/colunas-jogadores-modal.component';
+import { EquipesJogadoresModalComponent } from './equipes-jogadores-modal/equipes-jogadores-modal.component';
 
 @NgModule({
   imports: [
@@ -23,6 +24,7 @@ import { ColunasJogadoresModalComponent } from './colunas-jogadores-modal/coluna
     ColunasEquipesModalComponent,
     FaseEquipesModalComponent,
     ColunasJogadoresModalComponent,
+    EquipesJogadoresModalComponent,
   ],
 })
 export class PrintPageModule {}

@@ -191,6 +191,30 @@ export class EspectadorPage implements OnInit, OnDestroy {
     this.router.navigate(['/', slug]);
   }
 
+  /**
+   * Navega DIRETO pra tela pública da transmissão ao vivo —
+   * `/transmissao/{campId}/{catId}/{jogoId}`.
+   *
+   * Lê os IDs da flag `transmissaoLiveAtiva` no campeonato (denormalizada
+   * pelo broadcaster ao iniciar). `stopPropagation` impede o clique de
+   * subir pro card pai e abrir a home do campeonato.
+   *
+   * Mesma lógica do `home-publica.page.ts` — espelhar comportamento entre
+   * as duas telas públicas pra UX consistente.
+   */
+  assistirAoVivo(camp: Campeonato, ev: Event): void {
+    ev.stopPropagation();
+    ev.preventDefault();
+    const live = camp.transmissaoLiveAtiva;
+    if (!live || !camp.id) return;
+    this.router.navigate([
+      '/transmissao',
+      camp.id,
+      live.categoriaId,
+      live.jogoId,
+    ]);
+  }
+
   // ============== Geral ==============
 
   async sair(): Promise<void> {

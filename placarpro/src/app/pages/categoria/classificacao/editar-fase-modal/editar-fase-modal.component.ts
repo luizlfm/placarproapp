@@ -1,11 +1,18 @@
 import { Component, Input, OnInit, inject } from '@angular/core';
 import { AlertController, LoadingController, ModalController, ToastController } from '@ionic/angular';
 import { firstValueFrom } from 'rxjs';
-import { Fase, PosicaoDestaque } from '../../../../campeonatos/models/fase.model';
+import {
+  CRITERIOS_PADRAO,
+  CriterioId,
+  FASE_TIPO_LABEL,
+  Fase,
+  PosicaoDestaque,
+} from '../../../../campeonatos/models/fase.model';
 import { Equipe } from '../../../../campeonatos/models/equipe.model';
 import { FasesService } from '../../../../campeonatos/fases.service';
 import { EquipesService } from '../../../../campeonatos/equipes.service';
 import { DestacarPosicoesModalComponent } from '../destacar-posicoes-modal/destacar-posicoes-modal.component';
+import { CriteriosModalComponent } from '../criterios-modal/criterios-modal.component';
 
 @Component({
   selector: 'app-editar-fase-modal',
@@ -30,24 +37,44 @@ export class EditarFaseModalComponent implements OnInit {
   destaques: PosicaoDestaque[] = [];
   equipesSelecionadas: string[] = [];
   continuarDeFaseId?: string;
+  turnos: 1 | 2 = 1;
+  pontosVitoria = 3;
+  pontosEmpate = 1;
+  pontosDerrota = 0;
+  criterios: CriterioId[] = [];
 
   fases: Fase[] = [];
   equipes: Equipe[] = [];
   loading = false;
 
   async ngOnInit(): Promise<void> {
-    this.titulo = this.fase.nome;
-    this.classificacaoAtiva = this.fase.classificacaoAtiva ?? this.fase.tipo !== 'eliminatorias';
-    this.destaques = [...(this.fase.destaques ?? [])];
-    this.equipesSelecionadas = [...(this.fase.equipesSelecionadas ?? [])];
-    this.continuarDeFaseId = this.fase.continuarDeFaseId;
+    this.aplicarFaseLocal(this.fase);
 
     this.fases = await firstValueFrom(this.fasesSrv.list$(this.campeonatoId, this.categoriaId));
     this.equipes = await firstValueFrom(this.equipesSrv.list$(this.campeonatoId, this.categoriaId));
   }
 
+  /** Hidrata as variáveis locais a partir do doc da fase. Usado no init e
+   *  depois que o sub-modal de critérios salva (pra refletir mudanças). */
+  private aplicarFaseLocal(f: Fase): void {
+    this.titulo = f.nome;
+    this.classificacaoAtiva = f.classificacaoAtiva ?? f.tipo !== 'eliminatorias';
+    this.destaques = [...(f.destaques ?? [])];
+    this.equipesSelecionadas = [...(f.equipesSelecionadas ?? [])];
+    this.continuarDeFaseId = f.continuarDeFaseId;
+    this.turnos = (f.turnos === 2 ? 2 : 1) as 1 | 2;
+    this.pontosVitoria = f.pontosVitoria ?? 3;
+    this.pontosEmpate = f.pontosEmpate ?? 1;
+    this.pontosDerrota = f.pontosDerrota ?? 0;
+    this.criterios = f.criterios?.length ? [...f.criterios] : [...CRITERIOS_PADRAO];
+  }
+
   get isEliminatoria(): boolean {
     return this.fase.tipo === 'eliminatorias';
+  }
+
+  get tipoLabel(): string {
+    return FASE_TIPO_LABEL[this.fase.tipo] ?? this.fase.tipo;
   }
 
   get equipesResumo(): string {
@@ -65,6 +92,11 @@ export class EditarFaseModalComponent implements OnInit {
     return `${this.destaques.length} faixa(s)`;
   }
 
+  get criteriosResumo(): string {
+    if (!this.criterios.length) return 'Padrão';
+    return `${this.criterios.length} ativos`;
+  }
+
   dismiss(role: 'cancel' | 'saved' | 'removed' = 'cancel'): Promise<boolean> {
     return this.modalCtrl.dismiss(undefined, role);
   }
@@ -80,6 +112,31 @@ export class EditarFaseModalComponent implements OnInit {
     await modal.present();
     const { data } = await modal.onDidDismiss<{ destaques?: PosicaoDestaque[] }>();
     if (data?.destaques) this.destaques = data.destaques;
+  }
+
+  /**
+   * Abre o modal de critérios de desempate. Esse modal também salva a
+   * pontuação V/E/D direto no doc da fase, então depois precisamos
+   * recarregar o doc local pra não sobrescrever ao salvar daqui.
+   */
+  async editarCriterios(): Promise<void> {
+    const modal = await this.modalCtrl.create({
+      component: CriteriosModalComponent,
+      componentProps: {
+        campeonatoId: this.campeonatoId,
+        categoriaId: this.categoriaId,
+        fase: this.fase,
+      },
+    });
+    await modal.present();
+    await modal.onDidDismiss();
+    // Recarrega a fase do Firestore — o modal de critérios já persistiu.
+    const todas = await firstValueFrom(this.fasesSrv.list$(this.campeonatoId, this.categoriaId));
+    const atual = todas.find(f => f.id === this.fase.id);
+    if (atual) {
+      this.fase = atual;
+      this.aplicarFaseLocal(atual);
+    }
   }
 
   async editarEquipes(): Promise<void> {
@@ -168,6 +225,11 @@ export class EditarFaseModalComponent implements OnInit {
         destaques: this.destaques,
         equipesSelecionadas: this.equipesSelecionadas,
         continuarDeFaseId: this.continuarDeFaseId,
+        turnos: this.turnos,
+        pontosVitoria: this.pontosVitoria,
+        pontosEmpate: this.pontosEmpate,
+        pontosDerrota: this.pontosDerrota,
+        criterios: this.criterios,
       });
       await this.toast('Fase atualizada.', 'success');
       await this.dismiss('saved');

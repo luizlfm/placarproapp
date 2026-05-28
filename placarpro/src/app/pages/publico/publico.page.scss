@@ -531,20 +531,23 @@
   background: #1C2E3D;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   margin-bottom: 20px;
+  /* Reserva altura enquanto a img (skel) carrega — evita layout
+     "pular" quando a capa aparece. */
+  min-height: 200px;
+
+  @media (max-width: 767px) {
+    min-height: 140px;
+  }
 }
 
 .hero-img {
   display: block;
   width: 100%;
-  height: auto;
-  /* Trava altura máxima pro hero não estourar a viewport quando a capa
-     for muito alta (proporções quadradas/verticais). Mantém aspect ratio
-     usando `object-fit: cover` quando a imagem é cortada pelo max-height. */
-  max-height: 320px;
+  height: 220px;
   object-fit: cover;
 
   @media (max-width: 640px) {
-    max-height: 220px;
+    height: 160px;
   }
 }
 

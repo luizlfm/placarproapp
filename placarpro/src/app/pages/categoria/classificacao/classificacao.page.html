@@ -128,17 +128,22 @@
                       <thead>
                         <tr>
                           <th class="th-pos">Pos</th>
-                          <th class="th-eq">Equipes</th>
+                          <th class="th-eq">
+                            <span class="th-eq-full">Equipes</span>
+                            <span class="th-eq-short">EQ.</span>
+                          </th>
                           <th>P</th>
                           <th>J</th>
                           <th>V</th>
                           <th>E</th>
                           <th>D</th>
                           <th>GP</th>
+                          <th class="th-ult th-ult-mobile">ÚLT. JOGOS</th>
                           <th>GC</th>
                           <th>SG</th>
                           <th>%</th>
                           <th>PE</th>
+                          <th class="th-ult th-ult-desktop">ÚLT. JOGOS</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -147,18 +152,35 @@
                           <td class="td-pos">
                             <span class="pos-bola" [class.has-destaque]="corDaPosicao(l.pos)"
                               [style.background]="corDaPosicao(l.pos) || null"
-                              [style.color]="corDaPosicao(l.pos) ? '#fff' : null">f
+                              [style.color]="corDaPosicao(l.pos) ? '#fff' : null">
                               {{ l.pos }}
+                            </span>
+                            <!-- Indicador de variação de posição vs rodada
+                                 anterior. ↑ verde = subiu, ↓ vermelho = caiu,
+                                 — cinza = manteve / sem histórico. Sempre
+                                 visível pra mostrar status de movimentação. -->
+                            <span
+                              class="variacao"
+                              [class.subiu]="(l.variacao ?? 0) > 0"
+                              [class.caiu]="(l.variacao ?? 0) < 0"
+                              [class.manteve]="(l.variacao ?? 0) === 0"
+                              [title]="(l.variacao ?? 0) > 0 ? 'Subiu ' + l.variacao + ' posição(ões)' : (l.variacao ?? 0) < 0 ? 'Caiu ' + (-(l.variacao ?? 0)) + ' posição(ões)' : 'Manteve posição'"
+                            >
+                              <ion-icon *ngIf="(l.variacao ?? 0) > 0" name="caret-up"></ion-icon>
+                              <ion-icon *ngIf="(l.variacao ?? 0) < 0" name="caret-down"></ion-icon>
+                              <ion-icon *ngIf="(l.variacao ?? 0) === 0" name="remove-outline"></ion-icon>
+                              <span class="var-num" *ngIf="(l.variacao ?? 0) !== 0">{{ (l.variacao ?? 0) > 0 ? l.variacao : -(l.variacao ?? 0) }}</span>
                             </span>
                           </td>
                           <td class="td-eq">
                             <div class="eq-cell">
                               <div class="eq-logo">
-                                <img *ngIf="l.equipe.logoUrl; else iconF" [src]="l.equipe.logoUrl"
+                                <img skel *ngIf="l.equipe.logoUrl; else iconF" [src]="l.equipe.logoUrl"
                                   [alt]="l.equipe.nome" />
                                 <ng-template #iconF><ion-icon name="shield-outline"></ion-icon></ng-template>
                               </div>
                               <span class="eq-nome">{{ l.equipe.nome }}</span>
+                              <span class="eq-sigla">{{ gerarSigla(l.equipe.nome) }}</span>
                             </div>
                           </td>
                           <td class="td-num td-pontos">{{ l.pontos }}</td>
@@ -167,6 +189,28 @@
                           <td class="td-num">{{ l.empates }}</td>
                           <td class="td-num">{{ l.derrotas }}</td>
                           <td class="td-num">{{ l.golsPro }}</td>
+                          <td class="td-ult td-ult-mobile">
+                            <!-- ÚLT.JOGOS no mobile: aparece logo após GP.
+                                 Mostra bolinhas dos jogos encerrados. Se a
+                                 equipe ainda NÃO jogou nada (0 encerrados),
+                                 exibe 5 slots vazios placeholder pra coluna
+                                 não ficar em branco. -->
+                            <div class="ult-dots">
+                              <ng-container *ngIf="l.ultimosResultados.length > 0; else vazioMobile">
+                                <span
+                                  *ngFor="let r of l.ultimosResultados"
+                                  class="ult-dot"
+                                  [class.v]="r === 'V'"
+                                  [class.e]="r === 'E'"
+                                  [class.d]="r === 'D'"
+                                  [title]="r === 'V' ? 'Vitória' : r === 'E' ? 'Empate' : 'Derrota'"
+                                ></span>
+                              </ng-container>
+                              <ng-template #vazioMobile>
+                                <span *ngFor="let _ of vazios(5)" class="ult-dot vazio"></span>
+                              </ng-template>
+                            </div>
+                          </td>
                           <td class="td-num">{{ l.golsContra }}</td>
                           <td class="td-num" [class.neg]="l.saldoGols < 0" [class.pos]="l.saldoGols > 0">
                             {{ l.saldoGols > 0 ? '+' : '' }}{{ l.saldoGols }}
@@ -181,6 +225,27 @@
                             [title]="p.editarCampeonato ? 'Clique para editar penalização' : ''">
                             {{ l.penalizacao }}
                           </td>
+                          <td class="td-ult td-ult-desktop">
+                            <!-- ÚLT.JOGOS no desktop: no final da linha.
+                                 Mostra bolinhas dos jogos encerrados. Se a
+                                 equipe ainda NÃO jogou nada (0 encerrados),
+                                 exibe 5 slots vazios placeholder. -->
+                            <div class="ult-dots">
+                              <ng-container *ngIf="l.ultimosResultados.length > 0; else vazioDesktop">
+                                <span
+                                  *ngFor="let r of l.ultimosResultados"
+                                  class="ult-dot"
+                                  [class.v]="r === 'V'"
+                                  [class.e]="r === 'E'"
+                                  [class.d]="r === 'D'"
+                                  [title]="r === 'V' ? 'Vitória' : r === 'E' ? 'Empate' : 'Derrota'"
+                                ></span>
+                              </ng-container>
+                              <ng-template #vazioDesktop>
+                                <span *ngFor="let _ of vazios(5)" class="ult-dot vazio"></span>
+                              </ng-template>
+                            </div>
+                          </td>
                         </tr>
                       </tbody>
                     </table>
@@ -191,6 +256,34 @@
                       <p>Adicione equipes acima para começar.</p>
                     </div>
                   </ng-template>
+                </div>
+
+                <!-- Legenda das abreviações + indicadores de variação.
+                     Mostra ao final de todos os grupos. Os 3 últimos itens
+                     (subiu/caiu/manteve) explicam os ícones da coluna POS. -->
+                <div class="tabela-legenda">
+                  <span><strong>P</strong> - Pontos</span>
+                  <span><strong>J</strong> - Jogos</span>
+                  <span><strong>V</strong> - Vitórias</span>
+                  <span><strong>E</strong> - Empate</span>
+                  <span><strong>D</strong> - Derrotas</span>
+                  <span><strong>GP</strong> - Gols Pró</span>
+                  <span><strong>GC</strong> - Gols Contra</span>
+                  <span><strong>SG</strong> - Saldo de Gols</span>
+                  <span><strong>%</strong> - Aproveitamento</span>
+                  <span><strong>PE</strong> - Pontos Extras</span>
+                  <span class="leg-var">
+                    <ion-icon name="caret-up" class="ico subiu"></ion-icon>
+                    subiu
+                  </span>
+                  <span class="leg-var">
+                    <ion-icon name="caret-down" class="ico caiu"></ion-icon>
+                    caiu
+                  </span>
+                  <span class="leg-var">
+                    <ion-icon name="remove-outline" class="ico manteve"></ion-icon>
+                    manteve
+                  </span>
                 </div>
               </ng-container>
 
@@ -238,7 +331,7 @@
                         (click)="p.editarResultados && selecionarEquipeNoJogo($event, j.id!, 'mandante')"
                         [title]="p.editarResultados ? 'Clique para selecionar mandante' : ''">
                         <span class="t-logo" [class.vazio]="!j.mandanteId">
-                          <img *ngIf="j.logoMandante; else iconM" [src]="j.logoMandante" alt="" />
+                          <img skel *ngIf="j.logoMandante; else iconM" [src]="j.logoMandante" alt="" />
                           <ng-template #iconM>
                             <ion-icon [name]="j.mandanteId ? 'shield-outline' : 'shield-half-outline'"></ion-icon>
                           </ng-template>
@@ -264,7 +357,7 @@
                         (click)="p.editarResultados && selecionarEquipeNoJogo($event, j.id!, 'visitante')"
                         [title]="p.editarResultados ? 'Clique para selecionar visitante' : ''">
                         <span class="t-logo" [class.vazio]="!j.visitanteId">
-                          <img *ngIf="j.logoVisitante; else iconV" [src]="j.logoVisitante" alt="" />
+                          <img skel *ngIf="j.logoVisitante; else iconV" [src]="j.logoVisitante" alt="" />
                           <ng-template #iconV>
                             <ion-icon [name]="j.visitanteId ? 'shield-outline' : 'shield-half-outline'"></ion-icon>
                           </ng-template>
@@ -275,7 +368,16 @@
                     <div class="jogo-fase" *ngIf="j.fase || j.rodada">
                       <span *ngIf="j.fase">{{ j.fase }}</span>
                       <span *ngIf="j.fase && j.rodada"> · </span>
-                      <span *ngIf="j.rodada">Rodada {{ j.rodada }}</span>
+                      <span
+                        *ngIf="j.rodada"
+                        class="rodada-chip"
+                        [class.editavel]="p.editarResultados"
+                        (click)="p.editarResultados && abrirEditarRodada($event, j.fase, j.rodada)"
+                        [title]="p.editarResultados ? 'Editar rodada' : ''"
+                      >
+                        Rodada {{ j.rodada }}
+                        <ion-icon *ngIf="p.editarResultados" name="create-outline" class="rodada-edit-icon"></ion-icon>
+                      </span>
                     </div>
                     <div class="jogo-meta-extra" *ngIf="j.dataHora || j.local">
                       <span *ngIf="j.dataHora" class="meta-item">

@@ -28,6 +28,7 @@ import { GerarPartidasModalComponent } from './gerar-partidas-modal/gerar-partid
 import { ReordenarModalComponent } from './reordenar-modal/reordenar-modal.component';
 import { NovaRodadaModalComponent } from './nova-rodada-modal/nova-rodada-modal.component';
 import { EditarRodadaModalComponent } from './editar-rodada-modal/editar-rodada-modal.component';
+import { ImprimirClassificacaoPage } from './imprimir/imprimir-classificacao.page';
 import { dataHoraIsoParaBr } from '../../../shared/directives/mask.directive';
 import { ReordenarRodadasModalComponent } from './reordenar-rodadas-modal/reordenar-rodadas-modal.component';
 import { JogoModalComponent } from '../../../shared/components/jogo-modal/jogo-modal.component';
@@ -205,13 +206,24 @@ export class ClassificacaoPage implements OnInit, OnDestroy {
         }
       });
 
-    // Auto-abertura de modal via query param (vindo da página de Configurações).
+    // Auto-abertura de modal via query param (vindo de Configurações ou
+    // da página /jogos quando o usuário escolhe uma ação que precisa dos
+    // modais declarados aqui em classificacao).
     const abrir = this.route.snapshot.queryParamMap.get('abrir');
     if (abrir) {
       // Espera um pouco para o snapshot de fases chegar e o this.faseAtual estar setado.
       setTimeout(() => {
-        if (abrir === 'fases')     this.abrirFases();
-        if (abrir === 'criterios') this.abrirCriterios();
+        if (abrir === 'fases')     { this.abrirFases(); return; }
+        if (abrir === 'criterios') { this.abrirCriterios(); return; }
+        // Ações de gerenciamento dos jogos — dispatcha pra mesma lógica
+        // do popover "+".
+        const acoesJogos: JogosAcao[] = [
+          'add-rodada', 'add-partida', 'editar-rodada',
+          'reordenar-rodadas', 'gerar-partidas', 'exportar',
+        ];
+        if ((acoesJogos as string[]).includes(abrir)) {
+          this.executarAcaoJogos(abrir as JogosAcao);
+        }
       }, 250);
     }
   }
@@ -383,16 +395,20 @@ export class ClassificacaoPage implements OnInit, OnDestroy {
     await this.toast('CSV exportado.', 'success');
   }
 
-  imprimirTabela(): void {
+  async imprimirTabela(): Promise<void> {
     this.fecharMenu();
-    this.router.navigate([
-      '/app/campeonato',
-      this.campeonatoId,
-      'categoria',
-      this.categoriaId,
-      'classificacao',
-      'imprimir',
-    ]);
+    // Abre como modal (mesmo padrão de Critério de classificação) em vez
+    // de navegar pra rota. O componente ImprimirClassificacaoPage aceita
+    // os IDs via @Input quando `modoModal=true`.
+    const modal = await this.modalCtrl.create({
+      component: ImprimirClassificacaoPage,
+      componentProps: {
+        campeonatoId: this.campeonatoId,
+        categoriaId: this.categoriaId,
+        modoModal: true,
+      },
+    });
+    await modal.present();
   }
 
   // ─── Jogos sidebar ──────────────────────────────────────────
@@ -446,6 +462,79 @@ export class ClassificacaoPage implements OnInit, OnDestroy {
   }
 
   /** Clique no card de jogo → abre popover de ações (Ver/Selecionar/Editar/Restaurar/Remover). */
+  /**
+   * Fluxo do item "Editar Rodada" do menu global — como o menu não sabe
+   * qual rodada editar, mostra um alert com radio das rodadas existentes
+   * na fase atual. Se só tem uma rodada, vai direto. Vazio = aviso.
+   */
+  private async escolherRodadaEEditar(): Promise<void> {
+    if (!this.faseAtual) {
+      await this.toast('Selecione uma fase primeiro.', 'danger');
+      return;
+    }
+    const todos = await firstValueFrom(
+      this.jogosSrv.list$(this.campeonatoId, this.categoriaId),
+    );
+    const numeros = Array.from(new Set(
+      todos
+        .filter(j => (j.fase ?? '') === (this.faseAtual?.nome ?? '') && j.rodada)
+        .map(j => j.rodada as number),
+    )).sort((a, b) => a - b);
+
+    if (numeros.length === 0) {
+      await this.toast('Nenhuma rodada na fase atual.', 'danger');
+      return;
+    }
+    if (numeros.length === 1) {
+      await this.abrirEditarRodada(new Event('click'), this.faseAtual.nome, numeros[0]);
+      return;
+    }
+
+    const alert = await this.alertCtrl.create({
+      header: 'Editar qual rodada?',
+      inputs: numeros.map(n => ({
+        type: 'radio' as const,
+        label: `Rodada ${n}`,
+        value: n,
+        checked: n === numeros[0],
+      })),
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Editar',
+          handler: (value: number) => {
+            if (value && this.faseAtual) {
+              this.abrirEditarRodada(new Event('click'), this.faseAtual.nome, value);
+            }
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  /**
+   * Abre o modal pequeno de edição de rodada. Disparado pelo ícone de
+   * lápis no chip "Rodada N" do card de jogo. Para a fase, usa o nome
+   * gravado no Jogo (mesmo campo usado pra agrupar).
+   */
+  async abrirEditarRodada(ev: Event, faseNome: string | undefined, numero: number | undefined): Promise<void> {
+    ev.stopPropagation();
+    if (!numero) return;
+    const modal = await this.modalCtrl.create({
+      component: EditarRodadaModalComponent,
+      componentProps: {
+        campeonatoId: this.campeonatoId,
+        categoriaId: this.categoriaId,
+        faseNome: faseNome ?? '',
+        numero,
+      },
+      cssClass: 'modal-editar-rodada',
+      backdropDismiss: true,
+    });
+    await modal.present();
+  }
+
   async abrirJogo(ev: Event, jogoId: string): Promise<void> {
     ev.stopPropagation();
     const [todosJogos, equipes, perms] = await Promise.all([
@@ -640,9 +729,10 @@ export class ClassificacaoPage implements OnInit, OnDestroy {
 
   /** Abre o modal de novo jogo direto (sem passar pela rodada). */
   async novoJogoAvulso(): Promise<void> {
-    const equipes = await firstValueFrom(
-      this.equipesSrv.list$(this.campeonatoId, this.categoriaId),
-    );
+    const [equipes, jogosExistentes] = await Promise.all([
+      firstValueFrom(this.equipesSrv.list$(this.campeonatoId, this.categoriaId)),
+      firstValueFrom(this.jogosSrv.list$(this.campeonatoId, this.categoriaId)),
+    ]);
     if (equipes.length < 2) {
       await this.toast('Cadastre ao menos 2 equipes.', 'danger');
       return;
@@ -653,6 +743,8 @@ export class ClassificacaoPage implements OnInit, OnDestroy {
         campeonatoId: this.campeonatoId,
         categoriaId: this.categoriaId,
         equipes,
+        fases: this.fases,
+        jogosExistentes,
         faseDefault: this.faseAtual?.nome,
       },
       backdropDismiss: true,
@@ -667,19 +759,17 @@ export class ClassificacaoPage implements OnInit, OnDestroy {
   async abrirPopoverJogos(ev: Event): Promise<void> {
     ev.stopPropagation();
     this.menuJogosAberto = false;
+    // Ancora EMBAIXO do botão com alinhamento CENTER — o popover fica
+    // centralizado horizontalmente sob o "+", sem vazar pra esquerda ou
+    // direita como `alignment: 'end'` causava em telas estreitas.
     const pop = await this.popoverCtrl.create({
       component: JogosAcoesPopoverComponent,
       event: ev,
       showBackdrop: true,
       dismissOnSelect: false,
       cssClass: 'popover-jogos-acoes',
-      // Abre EMBAIXO do botão (não em cima/sobreposto). `alignment: end`
-      // alinha a borda direita do popover com a borda direita do botão —
-      // assim o menu não vaza pra fora da tela em mobile.
-      // `arrow: false` remove a "pontinha" que apontava pro botão e
-      // criava aquelas bordas brancas estranhas nas pontas.
       side: 'bottom',
-      alignment: 'end',
+      alignment: 'center',
       arrow: false,
     });
     await pop.present();
@@ -701,16 +791,7 @@ export class ClassificacaoPage implements OnInit, OnDestroy {
         await this.adicionarPartidaVazia();
         return;
       case 'editar-rodada': {
-        const modal = await this.modalCtrl.create({
-          component: EditarRodadaModalComponent,
-          componentProps: {
-            campeonatoId: this.campeonatoId,
-            categoriaId: this.categoriaId,
-            fase: this.faseAtual,
-          },
-          backdropDismiss: true,
-        });
-        await modal.present();
+        await this.escolherRodadaEEditar();
         return;
       }
       case 'reordenar-rodadas': {
@@ -814,6 +895,56 @@ export class ClassificacaoPage implements OnInit, OnDestroy {
 
   trackByLinhaId(_i: number, l: { equipe: Equipe }): string {
     return l.equipe.id ?? '';
+  }
+
+  /** Gera um array de N elementos pra renderizar slots vazios (placeholder)
+   *  da coluna "ÚLT. JOGOS" quando a equipe ainda não jogou os 5 jogos. */
+  vazios(n: number): unknown[] {
+    return n > 0 ? new Array(n) : [];
+  }
+
+  /**
+   * Gera sigla de 3 letras a partir do nome da equipe. Usado na tabela
+   * compacta do mobile no lugar do nome completo.
+   *
+   * Algoritmo:
+   *  1. Remove conteúdo entre parênteses (ex: "(BOM DESPACHO/MG)")
+   *  2. Remove acentos e caracteres não-letras
+   *  3. Ignora palavras genéricas (FC, EC, CLUBE, DE, DA, etc.)
+   *  4. Se sobrar 1 palavra → 3 primeiras letras dela
+   *     Se sobrarem 2+ palavras → primeira letra das 3 primeiras
+   *  5. Fallback: 3 primeiras letras do nome original
+   *
+   * Ex: "Palmeiras" → "PAL"
+   *     "Atlético Mineiro" → "ATL" (palavra única significativa)
+   *     "Cruz Azul Football Club" → "CAF" (3 palavras significativas)
+   *     "ATALANTA - LAGOA DA PRATA/MG" → "ATA"
+   */
+  gerarSigla(nome: string | undefined | null): string {
+    if (!nome) return '???';
+    let clean = nome.replace(/\([^)]*\)/g, '');
+    // Remove acentos via NFD + faixa Unicode de combining marks (̀-ͯ)
+    clean = clean.normalize('NFD').replace(/[̀-ͯ]/g, '');
+    clean = clean.replace(/[^a-zA-Z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!clean) return '???';
+
+    const ignorar = new Set([
+      'FC', 'CF', 'EC', 'SC', 'AC', 'CD', 'CR', 'CA', 'CB', 'AA', 'AAB',
+      'CLUBE', 'CLUB', 'ESPORTE', 'ESPORTES', 'SPORT', 'SPORTS', 'SPORTING',
+      'ASSOCIACAO', 'ATLETICO', 'ATLETICA', 'FUTEBOL', 'TIME',
+      'DE', 'DO', 'DA', 'DOS', 'DAS', 'E', 'AS', 'OS',
+      'MG', 'SP', 'RJ', 'RS', 'PR', 'SC', 'BA', 'CE', 'PE', 'GO', 'DF',
+    ]);
+
+    const palavras = clean.toUpperCase().split(' ').filter(p => p && !ignorar.has(p));
+    if (palavras.length === 0) {
+      return clean.toUpperCase().replace(/\s/g, '').substring(0, 3) || '???';
+    }
+    if (palavras.length === 1) {
+      return palavras[0].substring(0, 3);
+    }
+    // 2+ palavras: pega a 1ª letra das 3 primeiras
+    return palavras.slice(0, 3).map(p => p[0]).join('');
   }
 
   trackByJogo(_i: number, j: JogoView): string {

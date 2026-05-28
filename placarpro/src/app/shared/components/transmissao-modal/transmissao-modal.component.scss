@@ -75,6 +75,172 @@
   overflow: hidden;
 }
 
+/* ═══ Controles OVERLAY (mostra SÓ em fullscreen) ═══
+   No estado normal os controles ficam ABAIXO do vídeo (.tx-controles).
+   Quando o `.tx-video-wrap` entra em fullscreen, esses ficam ocultos
+   (fora da tela cheia) — pra suprir isso, exibimos esses overlay
+   posicionados sobre o vídeo, com glass-effect e sombras.
+
+   Default: oculto (some quando NÃO está em fullscreen). */
+.tx-controles-overlay {
+  display: none;
+}
+
+/* Quando o `.tx-video-wrap` está em fullscreen (real OU simulado),
+   mostra os controles overlay sobrepostos no canto inferior do vídeo. */
+.tx-video-wrap:fullscreen .tx-controles-overlay,
+.tx-video-wrap:-webkit-full-screen .tx-controles-overlay,
+.tx-video-wrap.simulado-fullscreen .tx-controles-overlay {
+  display: flex;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 16px 20px calc(20px + env(safe-area-inset-bottom));
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.75) 70%);
+  pointer-events: auto;
+}
+
+/* Fullscreen REAL: wrap ocupa viewport via Fullscreen API. */
+.tx-video-wrap:fullscreen,
+.tx-video-wrap:-webkit-full-screen {
+  max-height: none;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Fullscreen SIMULADO: `position: fixed; inset: 0` cobre TODA a tela
+   por cima de qualquer modal/header (z-index altíssimo). Funciona em
+   iOS Safari, Android Chrome, PWA — qualquer browser que renderize
+   CSS. NÃO depende de Fullscreen API (que iOS rejeita pra <video>
+   com UI custom).
+
+   Usa `100dvw/dvh` (dynamic viewport units) que se ajustam quando a
+   barra do Safari está visível — sem isso, em landscape no iOS o
+   conteúdo ficaria atrás da barra de URL. */
+.tx-video-wrap.simulado-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  width: 100dvw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: none !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  z-index: 99999 !important;
+  background: #000 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Em LANDSCAPE com simulado fullscreen, garante que o vídeo expande
+   pra preencher tudo (sem letterbox). object-fit: cover preenche a
+   tela cortando bordas; mude pra `contain` se quiser ver inteiro. */
+@media (orientation: landscape) {
+  .tx-video-wrap.simulado-fullscreen .tx-video {
+    width: 100vw !important;
+    width: 100dvw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    object-fit: contain;
+  }
+}
+
+.tx-video-wrap:fullscreen .tx-video,
+.tx-video-wrap:-webkit-full-screen .tx-video,
+.tx-video-wrap.simulado-fullscreen .tx-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Botão "sair da tela cheia" no canto superior direito */
+.tx-sair-cheia {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top));
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 101;
+
+  ion-icon { font-size: 22px; }
+  &:active { transform: scale(0.95); }
+}
+
+/* Botões overlay */
+.tx-ov-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  transition: transform 120ms ease, background 120ms ease;
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:not(:disabled):active { transform: scale(0.96); }
+
+  ion-icon { font-size: 22px; }
+}
+
+.tx-ov-btn-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  justify-content: center;
+
+  &:not(:disabled):hover { background: rgba(255, 255, 255, 0.25); }
+  &.ativo { background: rgba(211, 47, 47, 0.85); border-color: #d32f2f; }
+}
+
+.tx-ov-btn-iniciar {
+  background: #d32f2f;
+  color: #fff;
+  padding: 14px 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(211, 47, 47, 0.45);
+
+  &:not(:disabled):hover { background: #b71c1c; }
+}
+
+.tx-ov-btn-parar {
+  background: rgba(255, 255, 255, 0.95);
+  color: #1a1a1a;
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-size: 13px;
+  text-transform: uppercase;
+
+  &:not(:disabled):hover { background: #fff; }
+}
+
 .tx-video {
   width: 100%;
   height: 100%;
@@ -140,6 +306,52 @@
   font-weight: 700;
 
   ion-icon { font-size: 14px; }
+}
+
+/* ═══ Chip da resolução capturada (canto INFERIOR ESQUERDO do vídeo) ═══
+   Mostra a resolução real que a câmera entregou — sem precisar de
+   DevTools. Verde se 4K, laranja se caiu pra qualidade menor.
+   Posicionado embaixo à esquerda pra ficar longe do header (badge AO VIVO,
+   expandir) e do canto superior direito. */
+.tx-chip-resolucao {
+  position: absolute !important;
+  bottom: 16px;
+  left: 16px;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  color: #fff;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 1000;
+  text-transform: uppercase;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+
+  ion-icon { font-size: 18px; }
+
+  /* 4K — destaque verde com glow forte */
+  &.tx-chip-4k {
+    background: rgba(124, 198, 29, 0.95);
+    box-shadow: 0 4px 20px rgba(124, 198, 29, 0.6), 0 0 0 2px rgba(255,255,255,0.3);
+    animation: tx-chip-pulse 2s ease-in-out infinite;
+  }
+
+  /* Caiu pra 1080p / 720p — laranja brilhante */
+  &.tx-chip-degradado {
+    background: rgba(255, 152, 0, 0.95);
+    box-shadow: 0 4px 20px rgba(255, 152, 0, 0.6), 0 0 0 2px rgba(255,255,255,0.3);
+  }
+}
+
+@keyframes tx-chip-pulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(124, 198, 29, 0.6), 0 0 0 2px rgba(255,255,255,0.3); }
+  50%      { box-shadow: 0 4px 28px rgba(124, 198, 29, 0.85), 0 0 0 3px rgba(255,255,255,0.5); }
 }
 
 /* ============ Controles abaixo do vídeo ============ */

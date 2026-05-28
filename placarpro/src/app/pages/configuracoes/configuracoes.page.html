@@ -1,5 +1,14 @@
 <ion-header>
   <ion-toolbar color="primary">
+    <!-- Botão voltar — só aparece quando chegamos via "Alterar dados
+         pessoais" da Página do Organizador. Como tem `ion-buttons[slot="start"]`,
+         a regra global em global.scss esconde automaticamente o hamburger
+         do shell — fluxo focado no edit de dados. -->
+    <ion-buttons slot="start" *ngIf="vindoDoOrganizador">
+      <ion-button (click)="voltar()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
     <ion-title>Configurações</ion-title>
     <!-- Atalho "Salvar" no header — sincronizado com o botão do rodapé
          via flag `salvando`. Útil em forms longos pra não rolar até o fim. -->
@@ -243,13 +252,13 @@
         <button type="button" class="link-row" (click)="abrirWhatsApp()">
           <ion-icon name="logo-whatsapp"></ion-icon>
           <span class="link-text">WhatsApp</span>
-          <span class="link-action">+55 82 99102-7052</span>
+          <span class="link-action">+55 37 99956-2903</span>
         </button>
 
         <button type="button" class="link-row" (click)="abrirSuporte()">
           <ion-icon name="mail-outline"></ion-icon>
           <span class="link-text">Email</span>
-          <span class="link-action">suporte&#64;placarpro.app</span>
+          <span class="link-action">placarproapp&#64;gmail.com</span>
         </button>
       </section>
 

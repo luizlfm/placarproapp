@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { FASE_TIPO_LABEL, Fase, FaseTipo } from '../../../../campeonatos/models/fase.model';
 import { FasesService } from '../../../../campeonatos/fases.service';
 import { EditarFaseModalComponent } from '../editar-fase-modal/editar-fase-modal.component';
+import { NovaFaseModalComponent } from '../nova-fase-modal/nova-fase-modal.component';
 
 @Component({
   selector: 'app-fases-modal',
@@ -34,31 +35,19 @@ export class FasesModalComponent implements OnInit {
   }
 
   async novaFase(): Promise<void> {
-    const alert = await this.alertCtrl.create({
-      header: 'Nova fase',
-      cssClass: 'alert-nova-fase',
-      buttons: [
-        {
-          text: 'Pontos corridos',
-          cssClass: 'alert-btn-tipo',
-          handler: () => {
-            this.criarFase('pontos-corridos');
-          },
-        },
-        {
-          text: 'Eliminatórias',
-          cssClass: 'alert-btn-tipo',
-          handler: () => {
-            this.criarFase('eliminatorias');
-          },
-        },
-        { text: 'Cancelar', role: 'cancel', cssClass: 'alert-btn-cancel' },
-      ],
+    const modal = await this.modalCtrl.create({
+      component: NovaFaseModalComponent,
+      cssClass: 'modal-nova-fase',
+      backdropDismiss: true,
     });
-    await alert.present();
+    await modal.present();
+    const { data } = await modal.onDidDismiss<{ tipo?: FaseTipo }>();
+    if (data?.tipo) {
+      await this.criarFase(data.tipo);
+    }
   }
 
-  async editar(f: Fase): Promise<void> {
+  async editar(f: Fase): Promise<string | undefined> {
     const modal = await this.modalCtrl.create({
       component: EditarFaseModalComponent,
       componentProps: {
@@ -70,8 +59,9 @@ export class FasesModalComponent implements OnInit {
       backdropDismiss: true,
     });
     await modal.present();
-    await modal.onDidDismiss();
+    const { role } = await modal.onDidDismiss();
     await this.recarregar();
+    return role;
   }
 
   trackById(_i: number, f: Fase): string {
@@ -91,7 +81,15 @@ export class FasesModalComponent implements OnInit {
       });
       await this.recarregar();
       const nova = this.fases.find(f => f.id === id);
-      if (nova) await this.editar(nova);
+      if (!nova) return;
+      // Abre Editar fase pra customizar. Se o usuário fechar SEM salvar
+      // (role !== 'saved' e !== 'removed'), apaga a fase recém-criada — o
+      // X é interpretado como "desistir de criar", não como "manter rascunho".
+      const role = await this.editar(nova);
+      if (role !== 'saved' && role !== 'removed') {
+        await this.fasesSrv.remover(this.campeonatoId, this.categoriaId, id);
+        await this.recarregar();
+      }
     } catch (err) {
       console.error('[Fases] criar erro', err);
       await this.toast('Erro ao criar fase.', 'danger');

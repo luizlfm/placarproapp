@@ -1,63 +1,82 @@
-<ion-header class="ion-no-border">
+<!-- Header: só título + botão fechar (X). Os botões de ação ficam no
+     rodapé fixo abaixo, seguindo o padrão dos outros modais. -->
+<ion-header class="ion-no-border pat-header">
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
-      <ion-button (click)="dismiss()">Cancelar</ion-button>
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
     </ion-buttons>
     <ion-title>Apoios e Patrocinadores</ion-title>
-    <ion-buttons slot="end">
-      <ion-button strong="true" [disabled]="salvando" (click)="salvar()">Salvar</ion-button>
-    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="pat-content">
-  <p class="pat-intro">Logos e links dos patrocinadores que aparecem no rodapé da página pública.</p>
+  <div class="pat-wrap">
+    <p class="pat-intro">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      Logos e links dos patrocinadores que aparecem no rodapé da página pública.
+    </p>
 
-  <ion-button expand="block" color="secondary" class="pat-add" (click)="adicionar()">
-    <ion-icon slot="start" name="add-outline"></ion-icon>
-    Adicionar patrocinador
-  </ion-button>
+    <button type="button" class="pat-add" (click)="adicionar()">
+      <ion-icon name="add-circle-outline"></ion-icon>
+      <span>Adicionar patrocinador</span>
+    </button>
 
-  <div class="pat-lista" *ngIf="patrocinadores.length > 0; else vazio">
-    <div class="pat-card" *ngFor="let p of patrocinadores; let i = index">
-      <button type="button" class="pat-logo" (click)="acionarUploadLogo(i)">
-        <img *ngIf="p.logoUrl; else iconePlaceholder" [src]="p.logoUrl" [alt]="p.nome" />
-        <ng-template #iconePlaceholder>
-          <ion-icon name="image-outline"></ion-icon>
-          <span>Logo</span>
-        </ng-template>
-      </button>
+    <div class="pat-lista" *ngIf="patrocinadores.length > 0; else vazio">
+      <div class="pat-card" *ngFor="let p of patrocinadores; let i = index">
+        <!-- Linha 1: logo + remover -->
+        <div class="pat-card-head">
+          <button type="button" class="pat-logo" (click)="acionarUploadLogo(i)">
+            <img *ngIf="p.logoUrl; else iconePlaceholder" [src]="p.logoUrl" [alt]="p.nome" />
+            <ng-template #iconePlaceholder>
+              <ion-icon name="image-outline"></ion-icon>
+              <span>Logo</span>
+            </ng-template>
+          </button>
+          <div class="pat-card-info">
+            <div class="pat-card-titulo">Patrocinador {{ i + 1 }}</div>
+            <div class="pat-card-hint">Toque na logo pra carregar imagem</div>
+          </div>
+          <button type="button" class="pat-remove" (click)="remover(i)" aria-label="Remover">
+            <ion-icon name="trash-outline"></ion-icon>
+          </button>
+        </div>
 
-      <div class="pat-campos">
-        <input
-          type="text"
-          class="pat-input"
-          [value]="p.nome"
-          (input)="setNome(i, $any($event.target).value)"
-          placeholder="Nome do patrocinador *"
-        />
-        <input
-          type="url"
-          class="pat-input"
-          [value]="p.url || ''"
-          (input)="setUrl(i, $any($event.target).value)"
-          placeholder="Link do site (opcional) — https://..."
-        />
+        <!-- Linha 2: nome + url (campos abaixo do header do card) -->
+        <div class="pat-campos">
+          <label class="pat-field">
+            <span class="pat-field-lbl">Nome <em>*</em></span>
+            <input
+              type="text"
+              class="pat-input"
+              [value]="p.nome"
+              (input)="setNome(i, $any($event.target).value)"
+              placeholder="Ex.: Pizzaria do João"
+            />
+          </label>
+          <label class="pat-field">
+            <span class="pat-field-lbl">Link (opcional)</span>
+            <input
+              type="url"
+              class="pat-input"
+              [value]="p.url || ''"
+              (input)="setUrl(i, $any($event.target).value)"
+              placeholder="https://..."
+            />
+          </label>
+        </div>
       </div>
-
-      <button type="button" class="pat-remove" (click)="remover(i)" aria-label="Remover">
-        <ion-icon name="trash-outline"></ion-icon>
-      </button>
     </div>
+
+    <ng-template #vazio>
+      <div class="pat-empty">
+        <ion-icon name="megaphone-outline"></ion-icon>
+        <p>Nenhum patrocinador cadastrado</p>
+        <span>Toque em "Adicionar patrocinador" para começar.</span>
+      </div>
+    </ng-template>
   </div>
-
-  <ng-template #vazio>
-    <div class="pat-empty">
-      <ion-icon name="megaphone-outline"></ion-icon>
-      <p>Nenhum patrocinador cadastrado.</p>
-      <span>Toque em "Adicionar patrocinador" para começar.</span>
-    </div>
-  </ng-template>
 
   <input
     #logoPicker
@@ -67,3 +86,31 @@
     (change)="onLogoEscolhida($event)"
   />
 </ion-content>
+
+<!-- Rodapé fixo com os botões padrão: Cancelar (vermelho) + Salvar (navy)
+     lado a lado, com ícones. Padrão dos outros modais do app. -->
+<ion-footer class="ion-no-border pat-footer">
+  <ion-toolbar>
+    <div class="pat-acoes">
+      <ion-button
+        size="small"
+        expand="block"
+        color="danger"
+        (click)="dismiss()"
+        class="pat-btn">
+        <ion-icon slot="start" name="close-circle-outline"></ion-icon>
+        Cancelar
+      </ion-button>
+      <ion-button
+        size="small"
+        expand="block"
+        color="primary"
+        [disabled]="salvando"
+        (click)="salvar()"
+        class="pat-btn">
+        <ion-icon slot="start" name="checkmark-circle-outline"></ion-icon>
+        Salvar
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

@@ -1,0 +1,602 @@
+.bg {
+  --background: var(--placar-bg, #f5f5f7);
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --padding-top: 12px;
+  --padding-bottom: 16px;
+}
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 480px;
+  margin: 0 auto;
+
+  /* Desktop: 2 colunas (preview à esquerda fixo, form à direita rolando)
+     pra aproveitar o full-screen. Mobile mantém empilhamento natural. */
+  @media (min-width: 900px) {
+    display: grid;
+    grid-template-columns: minmax(420px, 520px) minmax(360px, 480px);
+    gap: 24px;
+    align-items: start;
+    max-width: 1080px;
+
+    /* Tabs e tamanho continuam acima do preview (coluna esquerda) */
+    .opcoes-tabs,
+    .tamanho-tabs,
+    .arte { grid-column: 1; }
+
+    /* Form vai pra coluna direita, span de 3 linhas (depois das tabs) */
+    .form-edit,
+    .cta { grid-column: 2; }
+  }
+}
+
+/* ── Seletor de tamanho de fonte (A- / A / A+) ────────── */
+.tamanho-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 2px;
+
+  .tam-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b6b70;
+    margin-right: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .tam-tab {
+    width: 32px;
+    height: 32px;
+    background: #fff;
+    border: 1px solid #d8d8dd;
+    border-radius: 8px;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2d2d2d;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    sup {
+      font-size: 9px;
+      margin-left: 1px;
+    }
+
+    &:hover { background: #fafafb; }
+
+    &.ativo {
+      background: var(--ion-color-primary, #1C2E3D);
+      border-color: var(--ion-color-primary, #1C2E3D);
+      color: #fff;
+    }
+
+    &:nth-child(2) { font-size: 12px; }
+    &:nth-child(3) { font-size: 14px; }
+    &:nth-child(4) { font-size: 16px; }
+  }
+}
+
+/* ── Tabs das opções ─────────────────────────────────── */
+.opcoes-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+
+  .opt-tab {
+    background: #fff;
+    border: 1px solid #d8d8dd;
+    border-radius: 10px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2d2d2d;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover { background: #fafafb; }
+
+    &.ativo {
+      background: var(--ion-color-warning, #ffc409);
+      border-color: var(--ion-color-warning, #ffc409);
+      color: #2d2d2d;
+    }
+  }
+}
+
+/* ── Preview ─────────────────────────────────────────────
+   Formato Instagram FEED (1080x1080 quadrado). Exportado por
+   html2canvas no botão Compartilhar. `container-type: inline-size`
+   nas opções permite usar `cqi` (1cqi = 1% da largura do .arte)
+   pras fontes escalarem sozinhas. */
+.arte {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════
+   FUNDOS PADRÃO (5 opções estilo Canva)
+   Aplicados via [data-fundo="<id>"] no container .arte. */
+
+@mixin fundo-gramado {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.06) 0 40px,
+      transparent 40px 80px
+    ),
+    linear-gradient(180deg, #1d3a1d 0%, #2a5f2a 60%, #3d8a3d 100%);
+}
+
+@mixin fundo-estadio {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.08) 0%, transparent 60%),
+    linear-gradient(180deg, #0e1820 0%, #1c2e3d 100%);
+}
+
+@mixin fundo-quadra {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.05) 0 30px,
+      transparent 30px 60px
+    ),
+    linear-gradient(180deg, #1862a8 0%, #2e8bd3 100%);
+}
+
+@mixin fundo-gradient {
+  background: linear-gradient(135deg, #6B47C9 0%, #4DABF7 50%, #7CC61D 100%);
+}
+
+@mixin fundo-liso {
+  background: #fff;
+  color: #1c1c1f;
+}
+
+.arte[data-fundo="gramado"]  .opt-1,
+.arte[data-fundo="gramado"]  .opt-2 { @include fundo-gramado; }
+
+.arte[data-fundo="estadio"]  .opt-1,
+.arte[data-fundo="estadio"]  .opt-2 { @include fundo-estadio; }
+
+.arte[data-fundo="quadra"]   .opt-1,
+.arte[data-fundo="quadra"]   .opt-2 { @include fundo-quadra; }
+
+.arte[data-fundo="gradient"] .opt-1,
+.arte[data-fundo="gradient"] .opt-2 { @include fundo-gradient; }
+
+.arte[data-fundo="liso"]     .opt-1,
+.arte[data-fundo="liso"]     .opt-2 { @include fundo-liso; }
+
+/* ═══════════ OPÇÃO 1: RODADA DECISIVA — dark + acento roxo ═══════════ */
+.opt-1 {
+  container-type: inline-size;
+  width: 100%;
+  height: 100%;
+  background: #15131a;
+  color: #fff;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto auto;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  --acento: #8a2be2;
+
+  .splash {
+    color: var(--acento);
+    line-height: 0;
+
+    svg {
+      width: 100%;
+      height: 7%;
+      display: block;
+    }
+  }
+
+  .splash-topo { grid-row: 1; }
+  .splash-baixo { grid-row: 6; transform: scaleY(-1); }
+
+  .opt1-cta {
+    margin: 5% auto 0;
+    padding: 1.5cqi 4cqi;
+    background: var(--acento);
+    color: #fff;
+    border-radius: 999px;
+    font-size: calc(clamp(11px, 3cqi, 18px) * var(--font-scale, 1));
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    text-align: center;
+    max-width: 90%;
+    word-break: break-word;
+  }
+
+  .opt1-placar {
+    grid-row: 3;
+    align-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5%;
+
+    .escudo {
+      width: 24%;
+      aspect-ratio: 1 / 1;
+      background: #fff;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      color: var(--acento);
+      img { width: 80%; height: 80%; object-fit: contain; }
+      ion-icon { font-size: calc(clamp(28px, 12cqi, 72px) * var(--font-scale, 1)); }
+    }
+
+    .vs {
+      font-size: calc(clamp(20px, 7cqi, 42px) * var(--font-scale, 1));
+      font-weight: 900;
+      color: var(--acento);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+  }
+
+  .opt1-times {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2cqi;
+    margin: 4% 4% 0;
+    flex-wrap: wrap;
+
+    .time-pill {
+      background: var(--acento);
+      color: #fff;
+      padding: 1cqi 3cqi;
+      border-radius: 999px;
+      font-size: calc(clamp(11px, 3.2cqi, 20px) * var(--font-scale, 1));
+      font-weight: 800;
+      font-style: italic;
+    }
+    .x-sep {
+      color: var(--acento);
+      font-size: calc(clamp(11px, 3cqi, 18px) * var(--font-scale, 1));
+      font-weight: 700;
+      font-style: italic;
+    }
+    .time-nome {
+      color: var(--acento);
+      font-size: calc(clamp(13px, 3.8cqi, 22px) * var(--font-scale, 1));
+      font-weight: 800;
+      font-style: italic;
+      max-width: 100%;
+      word-break: break-word;
+    }
+  }
+
+  .opt1-titulo {
+    text-align: center;
+    padding: 0 6% 3%;
+
+    .t-main {
+      font-size: calc(clamp(34px, 14cqi, 110px) * var(--font-scale, 1));
+      font-weight: 900;
+      line-height: 0.95;
+      letter-spacing: -1px;
+      color: #fff;
+      text-transform: uppercase;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      word-break: break-word;
+      hyphens: auto;
+    }
+
+    .t-sub {
+      font-size: calc(clamp(12px, 4cqi, 24px) * var(--font-scale, 1));
+      font-weight: 800;
+      color: var(--acento);
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      margin-top: -2px;
+    }
+  }
+}
+
+/* ═══════════ OPÇÃO 2: GRANDE FINAL — dark + acento teal ═══════════ */
+.opt-2 {
+  container-type: inline-size;
+  width: 100%;
+  height: 100%;
+  background: #0f1318;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  padding: 6% 6%;
+  display: grid;
+  grid-template-rows: auto auto auto auto auto;
+  gap: 3%;
+  --acento: #2ee5b8;
+
+  .halftone {
+    position: absolute;
+    width: 22%;
+    aspect-ratio: 1 / 1;
+    background-image: radial-gradient(circle, var(--acento) 1.5px, transparent 2px);
+    background-size: 2.2cqi 2.2cqi;
+    opacity: 0.6;
+  }
+
+  .halftone-tl { top: 4%; left: 4%; }
+  .halftone-br { bottom: 4%; right: 4%; }
+
+  .opt2-titulo {
+    text-align: center;
+    z-index: 2;
+
+    .t-small {
+      font-size: calc(clamp(14px, 4.5cqi, 28px) * var(--font-scale, 1));
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: #fff;
+      text-transform: uppercase;
+      margin-bottom: -2cqi;
+    }
+
+    .t-big {
+      font-size: calc(clamp(40px, 16cqi, 120px) * var(--font-scale, 1));
+      font-weight: 900;
+      line-height: 0.95;
+      color: var(--acento);
+      letter-spacing: -2px;
+      font-style: italic;
+      word-break: break-word;
+      hyphens: auto;
+    }
+  }
+
+  .opt2-confronto {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5cqi;
+    z-index: 2;
+
+    .linha {
+      display: flex;
+      align-items: center;
+      gap: 3cqi;
+      min-width: 0;
+
+      &:last-child { flex-direction: row-reverse; }
+
+      .escudo {
+        width: 14%;
+        aspect-ratio: 1 / 1;
+        background: #fff;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        color: var(--acento);
+        flex-shrink: 0;
+        img { width: 80%; height: 80%; object-fit: contain; }
+        ion-icon { font-size: calc(clamp(16px, 6cqi, 36px) * var(--font-scale, 1)); }
+      }
+
+      .nome {
+        font-size: calc(clamp(14px, 5cqi, 32px) * var(--font-scale, 1));
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #fff;
+        line-height: 1.1;
+        flex: 1;
+        min-width: 0;
+        word-break: break-word;
+      }
+    }
+
+    .vs-row {
+      display: flex;
+      align-items: center;
+      gap: 2cqi;
+      padding-left: 4%;
+
+      .dash {
+        width: 8cqi;
+        height: 2px;
+        background: repeating-linear-gradient(90deg, var(--acento) 0 4px, transparent 4px 8px);
+      }
+
+      .vs {
+        font-size: calc(clamp(12px, 4cqi, 22px) * var(--font-scale, 1));
+        font-weight: 900;
+        color: var(--acento);
+        letter-spacing: 1px;
+      }
+    }
+  }
+
+  .opt2-slogan {
+    font-size: calc(clamp(11px, 3.2cqi, 20px) * var(--font-scale, 1));
+    font-weight: 600;
+    color: #fff;
+    font-style: italic;
+    line-height: 1.2;
+    z-index: 2;
+  }
+
+  .opt2-data {
+    display: inline-block;
+    padding: 2cqi 3cqi;
+    border: 2px solid var(--acento);
+    border-radius: 8px;
+    align-self: start;
+    z-index: 2;
+
+    .data {
+      font-size: calc(clamp(14px, 4.5cqi, 26px) * var(--font-scale, 1));
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.1;
+    }
+    .hora {
+      font-size: calc(clamp(14px, 4.5cqi, 26px) * var(--font-scale, 1));
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.1;
+    }
+  }
+
+  .opt2-cta {
+    font-size: calc(clamp(11px, 3.2cqi, 20px) * var(--font-scale, 1));
+    font-weight: 700;
+    color: var(--acento);
+    font-style: italic;
+    z-index: 2;
+  }
+}
+
+/* ── Form de edição ─────────────────────────────────── */
+.form-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.cor-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+
+  ion-icon { font-size: 18px; color: var(--placar-text-muted, #6b6b70); }
+  .cor-label {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2d2d2d;
+  }
+  .cor-input {
+    width: 38px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid #d8d8dd;
+    border-radius: 6px;
+    cursor: pointer;
+    background: transparent;
+  }
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13.5px;
+  color: #2d2d2d;
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--ion-color-tertiary, #4DABF7);
+  }
+}
+
+/* ── Seletor de fundos (5 thumbnails clicáveis) ────────── */
+.fundo-section {
+  margin-top: 4px;
+
+  .fundo-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b6b70;
+    margin: 0 0 6px 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .fundo-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+
+  .fundo-thumb {
+    background: none;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+
+    &.ativo {
+      border-color: var(--ion-color-tertiary, #4DABF7);
+      background: rgba(77, 171, 247, 0.08);
+    }
+
+    &:hover:not(.ativo) {
+      background: #fafafb;
+    }
+
+    .thumb-preview {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+
+      &[data-fundo="gramado"]  { @include fundo-gramado; }
+      &[data-fundo="estadio"]  { @include fundo-estadio; }
+      &[data-fundo="quadra"]   { @include fundo-quadra; }
+      &[data-fundo="gradient"] { @include fundo-gradient; }
+      &[data-fundo="liso"]     { @include fundo-liso; }
+    }
+
+    .thumb-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #6b6b70;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+    }
+  }
+}
+
+/* ── Botão Compartilhar ─────────────────────────────── */
+.cta {
+  padding: 4px 0 8px;
+
+  ion-button {
+    --border-radius: 999px;
+    font-weight: 700;
+    text-transform: none;
+    height: 44px;
+  }
+}

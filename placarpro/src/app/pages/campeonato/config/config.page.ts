@@ -15,6 +15,7 @@ import { CampeonatoThemeService } from '../../../shared/campeonato-theme.service
 import { ImageCropperModalComponent } from '../../../shared/components/image-cropper-modal/image-cropper-modal.component';
 import { ListaSimplesModalComponent, CampoListaStr } from '../../../shared/config-modals/lista-simples-modal/lista-simples-modal.component';
 import { LocaisCadastradosModalComponent } from '../../../shared/config-modals/locais-cadastrados-modal/locais-cadastrados-modal.component';
+import { ArbitragemPage } from '../../arbitragem/arbitragem.page';
 import { ExibicaoModalComponent } from '../../../shared/config-modals/exibicao-modal/exibicao-modal.component';
 import { InfoModalComponent, InfoTipo } from '../../../shared/config-modals/info-modal/info-modal.component';
 import { AnexosModalComponent } from '../../../shared/config-modals/anexos-modal/anexos-modal.component';
@@ -465,9 +466,17 @@ export class ConfigPage implements OnInit {
   // ═══════════════════════ Modais de configuração ═══════════════════════
 
   /**
-   * Abre o modal de lista simples (arbitros) ou o modal especializado de
-   * Locais (com geolocalização). Mantido o mesmo nome de método pra não
-   * quebrar o template HTML existente.
+   * Abre o modal correspondente ao campo clicado:
+   * - 'arbitros'           → ArbitragemPage (modal — catálogo global de
+   *                          árbitros do usuário, com form rico: nome,
+   *                          documento, telefone, federação). Mesma
+   *                          tela da rota /app/arbitragem, reusada
+   *                          aqui como modal pra não tirar o user do
+   *                          contexto da config.
+   * - 'locaisCadastrados'  → LocaisCadastradosModalComponent (com
+   *                          geolocalização)
+   *
+   * Mantido o mesmo nome de método pra não quebrar o template HTML.
    */
   async abrirListaSimples(campo: CampoListaStr): Promise<void> {
     if (campo === 'locaisCadastrados') {
@@ -478,8 +487,18 @@ export class ConfigPage implements OnInit {
       await modal.present();
       return;
     }
-    // Árbitros (string[] simples)
-    const meta = { titulo: 'Arbitragem', singular: 'árbitro', icone: 'person-outline' };
+    if (campo === 'arbitros') {
+      // Reusa ArbitragemPage como modal (mesmo componente da rota
+      // /app/arbitragem). Form rico com nome+documento+telefone+federação.
+      const modal = await this.modalCtrl.create({
+        component: ArbitragemPage,
+        componentProps: { modoModal: true },
+      });
+      await modal.present();
+      return;
+    }
+    // Fallback genérico — qualquer outro CampoListaStr usa o modal simples.
+    const meta = { titulo: 'Lista', singular: 'item', icone: 'list-outline' };
     const modal = await this.modalCtrl.create({
       component: ListaSimplesModalComponent,
       componentProps: { campeonatoId: this.campeonatoId, campo, ...meta },
@@ -505,13 +524,9 @@ export class ConfigPage implements OnInit {
     await modal.present();
   }
 
-  /** Modal de Patrocinadores. */
+  /** Navega pra página de Patrocinadores em vez de abrir modal. */
   async abrirPatrocinadores(): Promise<void> {
-    const modal = await this.modalCtrl.create({
-      component: PatrocinadoresModalComponent,
-      componentProps: { campeonatoId: this.campeonatoId },
-    });
-    await modal.present();
+    await this.router.navigate(['/app/patrocinadores']);
   }
 
   /** Modal de Moderadores. */

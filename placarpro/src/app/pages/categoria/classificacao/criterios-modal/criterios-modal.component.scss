@@ -124,19 +124,51 @@
   font-size: 13.5px;
 }
 
-.footer-actions {
+/* Footer padrão do sistema — Cancelar (lixeira vermelho) + Salvar (check navy)
+   lado a lado, pill. Altura controlada pelo `size="small"` do Ionic. */
+ion-footer ion-toolbar {
+  --background: #fff;
+  --border-color: #ececef;
+}
+
+.acoes-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+  background: #fff;
+
+  .btn-acao {
+    margin: 0;
+    width: 100%;
+    --border-radius: 999px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+/* Link discreto "Restaurar padrão" acima dos botões — ação secundária
+   sem competir visualmente com Cancelar/Salvar. */
+.link-restaurar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 4px 12px;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  padding: 8px 10px 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ion-color-medium, #6b6b70);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  transition: color 120ms ease;
 
-  .spacer { flex: 1; }
+  ion-icon { font-size: 14px; }
 
-  ion-button[color="primary"] {
-    --border-radius: 10px;
-    --padding-start: 26px;
-    --padding-end: 26px;
-    font-weight: 600;
-    text-transform: none;
-  }
+  &:hover:not(:disabled) { color: var(--ion-color-primary); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }

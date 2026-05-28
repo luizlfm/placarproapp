@@ -1,0 +1,198 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Tutorial "Adicionar à Tela de Início" (iOS PWA install)
+   Mostra passos ilustrados pra o user instalar o app como PWA.
+   ═════════════════════════════════════════════════════════════════════ */
+
+.ipwa-header ion-toolbar {
+  --min-height: 52px;
+}
+
+.ipwa-content {
+  --background: var(--placar-bg, #f5f5f7);
+}
+
+.ipwa-wrap {
+  padding: 20px 18px 40px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ── Hero ── */
+.ipwa-hero {
+  text-align: center;
+  padding: 24px 16px 20px;
+}
+
+.ipwa-hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #1C2E3D 0%, #4DABF7 100%);
+  margin-bottom: 14px;
+  box-shadow: 0 6px 20px rgba(28, 46, 61, 0.25);
+
+  ion-icon { font-size: 38px; color: #fff; }
+}
+
+.ipwa-titulo {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #1C2E3D;
+  line-height: 1.2;
+}
+
+.ipwa-subtitulo {
+  margin: 0;
+  font-size: 14px;
+  color: #6b6b70;
+  line-height: 1.5;
+}
+
+/* ── Benefícios ── */
+.ipwa-benefits {
+  list-style: none;
+  padding: 14px 16px;
+  margin: 18px 0;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #ececef;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+    color: #1f1f23;
+
+    ion-icon {
+      color: var(--ion-color-secondary, #7CC61D);
+      font-size: 20px;
+      flex: 0 0 auto;
+    }
+  }
+}
+
+/* ── Passos ── */
+.ipwa-passos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  h3 {
+    margin: 8px 0 4px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #1C2E3D;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+}
+
+.ipwa-passo {
+  display: flex;
+  gap: 14px;
+  padding: 14px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #ececef;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+
+  &.destaque {
+    background: linear-gradient(135deg, rgba(124, 198, 29, 0.12) 0%, rgba(77, 171, 247, 0.10) 100%);
+    border-color: rgba(124, 198, 29, 0.3);
+  }
+}
+
+.ipwa-num {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #1C2E3D;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+
+  ion-icon { font-size: 18px; }
+}
+
+.ipwa-passo.destaque .ipwa-num {
+  background: var(--ion-color-secondary, #7CC61D);
+}
+
+.ipwa-passo-conteudo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1f1f23;
+
+    strong { color: #1C2E3D; }
+  }
+}
+
+.ipwa-icon-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  padding: 2px 6px;
+  background: #f0f1f3;
+  border-radius: 6px;
+  margin: 0 3px;
+
+  svg { display: block; }
+}
+
+/* ── Aviso final ── */
+.ipwa-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-top: 16px;
+  background: rgba(77, 171, 247, 0.08);
+  border-left: 3px solid #4DABF7;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #1f1f23;
+  line-height: 1.4;
+
+  ion-icon {
+    font-size: 18px;
+    color: #4DABF7;
+    flex: 0 0 auto;
+    margin-top: 1px;
+  }
+}
+
+/* ── Footer ── */
+.ipwa-footer ion-toolbar {
+  --background: #fff;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 10px;
+  --padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid #ececef;
+}
+
+.ipwa-btn {
+  --border-radius: 999px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}

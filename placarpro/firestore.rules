@@ -138,16 +138,21 @@ service cloud.firestore {
 
     // ============ users ============
     match /users/{uid} {
-      // GET de um doc específico: o próprio usuário OU o admin master.
-      allow get: if isSelf(uid) || isMaster();
+      // GET público: qualquer um pode ler dados do organizador.
+      // Necessário pra:
+      //  - Página pública /org/:slug (perfil + galeria/sobre/contatos)
+      //  - Patrocinadores-faixa que exibe banners nos campeonatos públicos
+      //  - Compartilhamento via link (sem login)
+      // Antes só o próprio user ou admin podia ler — bloqueava o site público.
+      allow get: if true;
 
-      // LIST (queries no `users`): só o admin master. Importante separar
-      // de `get` porque `list` é avaliado como uma única predicate sobre
-      // a query inteira — `isSelf(uid)` não pode ser usada em list (o
-      // engine não sabe o uid de cada doc em tempo de query).
-      allow list: if isMaster();
+      // LIST (queries no `users`): também pública, pra resolver slug via
+      // `where('slug', '==', ...)` na PublicoOrganizadorPage. Mantém o
+      // mesmo modelo dos campeonatos (queries abertas, doc-level
+      // permissions decidem o que volta).
+      allow list: if true;
 
-      // Escrita: dono OU admin master (pra alterar plano, marcar isMaster, etc.).
+      // Escrita: só o dono ou admin master.
       allow write: if isSelf(uid) || isMaster();
 
       // Patrocinadores: leitura pública (qualquer um pode listar os

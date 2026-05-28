@@ -19,6 +19,10 @@ import { EquipesService } from '../../../campeonatos/equipes.service';
 import { FasesService } from '../../../campeonatos/fases.service';
 import { Fase } from '../../../campeonatos/models/fase.model';
 import { JogoModalComponent } from '../../../shared/components/jogo-modal/jogo-modal.component';
+import { EditarResultadoModalComponent } from '../../../shared/components/editar-resultado-modal/editar-resultado-modal.component';
+import { SelecionarEquipesModalComponent } from '../../../shared/components/selecionar-equipes-modal/selecionar-equipes-modal.component';
+import { EditarInformacoesModalComponent } from '../jogo-detalhe/editar-informacoes-modal/editar-informacoes-modal.component';
+import { GruposService } from '../../../campeonatos/grupos.service';
 import {
   JogoAcao,
   JogoAcoesPopoverComponent,
@@ -49,6 +53,7 @@ export class JogosPage {
   private readonly categoriasSrv = inject(CategoriasService);
   private readonly jogosSrv = inject(JogosService);
   private readonly equipesSrv = inject(EquipesService);
+  private readonly gruposSrv = inject(GruposService);
   private readonly fasesSrv = inject(FasesService);
   private readonly modalCtrl = inject(ModalController);
   private readonly popoverCtrl = inject(PopoverController);
@@ -166,6 +171,27 @@ export class JogosPage {
     this.filtroRodada$.next(value);
   }
 
+  /** Limpa ambos os filtros (fase + rodada). Usado no empty state. */
+  limparFiltros(): void {
+    this.filtroFase$.next('');
+    this.filtroRodada$.next('');
+  }
+
+  /**
+   * Atalho do empty state: vai pra /classificacao da categoria, onde
+   * ficam os modais de "Gerar partidas" e "Adicionar rodada" (a página
+   * /jogos não declara esses modais pra evitar dependência cruzada).
+   */
+  irParaClassificacao(): void {
+    this.router.navigate([
+      '/app/campeonato',
+      this.campeonatoId,
+      'categoria',
+      this.categoriaId,
+      'classificacao',
+    ]);
+  }
+
   /** Popover "+" do header — abre as 6 ações de gerenciamento. */
   async abrirPopoverJogos(ev: Event): Promise<void> {
     ev.stopPropagation();
@@ -175,10 +201,12 @@ export class JogosPage {
       showBackdrop: true,
       dismissOnSelect: false,
       cssClass: 'popover-jogos-acoes',
-      // Abre EMBAIXO do botão sem seta nem cantos brancos.
-      // Veja classificacao.page.ts pra explicação completa.
+      // Abre EMBAIXO do botão centralizado horizontalmente — em mobile
+      // alignment='end' empurrava o menu pra esquerda da tela porque o "+"
+      // fica no centro do card. 'center' alinha o meio do popover com o
+      // meio do botão, garantindo que fique sob o "+" em qualquer largura.
       side: 'bottom',
-      alignment: 'end',
+      alignment: 'center',
       arrow: false,
     });
     await pop.present();
@@ -188,19 +216,19 @@ export class JogosPage {
   }
 
   private async executarAcaoJogos(acao: JogosAcao): Promise<void> {
-    // Por simplicidade, todas as ações redirecionam pra Classificação,
-    // onde os modais ficam declarados.
+    // add-partida pode ser feito local (já temos o modal aqui).
     if (acao === 'add-partida') {
       await this.novoJogo();
       return;
     }
-    this.router.navigate([
-      '/app/campeonato',
-      this.campeonatoId,
-      'categoria',
-      this.categoriaId,
-      'classificacao',
-    ]);
+    // Demais ações precisam dos modais declarados em classificacao.module
+    // (Nova rodada, Editar rodada, Reordenar rodadas, Gerar partidas,
+    // Exportar). Passa `?abrir=<acao>` pra Classificação detectar e abrir
+    // o modal correspondente automaticamente no ngOnInit dela.
+    this.router.navigate(
+      ['/app/campeonato', this.campeonatoId, 'categoria', this.categoriaId, 'classificacao'],
+      { queryParams: { abrir: acao } },
+    );
   }
 
   async novoJogo(): Promise<void> {
@@ -214,12 +242,17 @@ export class JogosPage {
       await t.present();
       return;
     }
+    const jogosExistentes = await firstValueFrom(
+      this.jogosSrv.list$(this.campeonatoId, this.categoriaId),
+    );
     const modal = await this.modalCtrl.create({
       component: JogoModalComponent,
       componentProps: {
         campeonatoId: this.campeonatoId,
         categoriaId: this.categoriaId,
         equipes: this.equipes,
+        fases: this.fases,
+        jogosExistentes,
         faseDefault: this.filtroFase$.value || this.fases[0]?.nome,
       },
       backdropDismiss: true,
@@ -256,19 +289,54 @@ export class JogosPage {
       case 'ver':
         this.router.navigate(baseRoute);
         return;
-      case 'equipes':
-      case 'resultado':
-      case 'informacoes': {
+      case 'resultado': {
+        // Componente dedicado: equipes read-only lado a lado + só placar.
         const equipes = await firstValueFrom(
           this.equipesSrv.list$(this.campeonatoId, this.categoriaId),
         );
         const modal = await this.modalCtrl.create({
-          component: JogoModalComponent,
+          component: EditarResultadoModalComponent,
           componentProps: {
             campeonatoId: this.campeonatoId,
             categoriaId: this.categoriaId,
             equipes,
-            jogoExistente: jogo,
+            jogo,
+          },
+          backdropDismiss: true,
+        });
+        await modal.present();
+        return;
+      }
+      case 'equipes': {
+        // Modal dedicado pra selecionar mandante/visitante (cards de
+        // equipe lado a lado). Filtra pelas equipes do grupo do jogo.
+        const [equipes, grupos] = await Promise.all([
+          firstValueFrom(this.equipesSrv.list$(this.campeonatoId, this.categoriaId)),
+          firstValueFrom(this.gruposSrv.list$(this.campeonatoId, this.categoriaId)),
+        ]);
+        const modal = await this.modalCtrl.create({
+          component: SelecionarEquipesModalComponent,
+          componentProps: {
+            campeonatoId: this.campeonatoId,
+            categoriaId: this.categoriaId,
+            jogo,
+            equipes,
+            grupos,
+          },
+          backdropDismiss: true,
+        });
+        await modal.present();
+        return;
+      }
+      case 'informacoes': {
+        // Modal dedicado: Título, Data, Local, Aviso + atalhos (Anexos,
+        // Pontos Extras, Arbitragem, Enquetes, Súmula, Arte do Jogo).
+        const modal = await this.modalCtrl.create({
+          component: EditarInformacoesModalComponent,
+          componentProps: {
+            campeonatoId: this.campeonatoId,
+            categoriaId: this.categoriaId,
+            jogo,
           },
           backdropDismiss: true,
         });

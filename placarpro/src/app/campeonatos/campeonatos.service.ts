@@ -812,6 +812,30 @@ export class CampeonatosService {
     });
   }
 
+  /**
+   * Lista os campeonatos públicos de um organizador específico (ownerId).
+   * Usado pela página pública do organizador (`/org/:slug`).
+   */
+  listPublicosDoOwner$(ownerId: string): Observable<Campeonato[]> {
+    return runInInjectionContext(this.injector, () => {
+      const q = query(
+        this.col,
+        where('ownerId', '==', ownerId),
+        where('publico', '==', true),
+        limit(60),
+      );
+      return (collectionData(q, { idField: 'id' }) as Observable<Campeonato[]>).pipe(
+        map(arr =>
+          arr.sort((a, b) => {
+            const ta = (a.criadoEm as { toMillis?: () => number } | undefined)?.toMillis?.() ?? 0;
+            const tb = (b.criadoEm as { toMillis?: () => number } | undefined)?.toMillis?.() ?? 0;
+            return tb - ta;
+          }),
+        ),
+      );
+    });
+  }
+
   /** Stream de campeonatos públicos (todos os com `publico: true`), mais recentes primeiro.
    *  Usado pela landing pública. Não exige autenticação. */
   listPublicos$(): Observable<Campeonato[]> {

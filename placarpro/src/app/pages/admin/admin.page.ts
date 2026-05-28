@@ -27,6 +27,7 @@ import { Jogo } from '../../campeonatos/models/jogo.model';
 import { UserDetailModalComponent } from './user-detail-modal/user-detail-modal.component';
 import { CampeonatoDetailModalComponent } from './campeonato-detail-modal/campeonato-detail-modal.component';
 import { AdminNavigationService } from '../../shared/admin-navigation.service';
+import { RefreshService } from '../../shared/refresh.service';
 import { PlanosService, PlanoDef, PlanoId, Periodicidade } from '../../users/planos.service';
 import { CobrancasService } from '../../users/cobrancas.service';
 import { ConfigGlobalService, ConfigGlobal } from '../../users/config-global.service';
@@ -160,6 +161,7 @@ export class AdminPage implements OnInit {
   private readonly injector = inject(Injector);
   private readonly modalCtrl = inject(ModalController);
   private readonly adminNav = inject(AdminNavigationService);
+  private readonly refreshSrv = inject(RefreshService);
   private readonly planosSrv = inject(PlanosService);
   private readonly cobrancasSrv = inject(CobrancasService);
   private readonly configSrv = inject(ConfigGlobalService);
@@ -964,14 +966,9 @@ export class AdminPage implements OnInit {
     this.secao = s;
   }
 
-  /** Pull-to-refresh — recarrega a página inteira. */
+  /** Pull-to-refresh — recarrega APENAS esta rota via Angular Router. */
   async onRefresh(ev: CustomEvent): Promise<void> {
-    try {
-      window.location.reload();
-    } finally {
-      const target = ev?.target as { complete?: () => void } | null;
-      target?.complete?.();
-    }
+    await this.refreshSrv.refreshAtual(ev);
   }
 
   /** Busca por seção — atualiza o BehaviorSubject correspondente. */

@@ -1,4 +1,4 @@
-<ion-header class="no-print">
+<ion-header class="no-print force-mobile-header">
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
       <ion-button (click)="voltar()" aria-label="Voltar">
@@ -10,7 +10,21 @@
       <ion-button class="btn-painel" (click)="togglePainel()" aria-label="Opções">
         <ion-icon slot="icon-only" name="options-outline"></ion-icon>
       </ion-button>
-      <ion-button (click)="imprimir()" [disabled]="cartoes.length === 0" aria-label="Imprimir">
+
+      <!-- Mobile: botões icon-only compactos -->
+      <ion-button class="hide-desktop" (click)="baixarPdf()" [disabled]="cartoes.length === 0" aria-label="Baixar PDF">
+        <ion-icon slot="icon-only" name="download-outline"></ion-icon>
+      </ion-button>
+      <ion-button class="hide-desktop" (click)="imprimir()" [disabled]="cartoes.length === 0" aria-label="Imprimir">
+        <ion-icon slot="icon-only" name="print-outline"></ion-icon>
+      </ion-button>
+
+      <!-- Desktop: botões com texto + ícone -->
+      <ion-button class="hide-mobile" (click)="baixarPdf()" [disabled]="cartoes.length === 0" aria-label="Baixar PDF">
+        <ion-icon slot="start" name="download-outline"></ion-icon>
+        PDF
+      </ion-button>
+      <ion-button class="hide-mobile" (click)="imprimir()" [disabled]="cartoes.length === 0" aria-label="Imprimir">
         <ion-icon slot="start" name="print-outline"></ion-icon>
         Imprimir
       </ion-button>
@@ -37,7 +51,7 @@
         <!-- Tamanho -->
         <label class="campo">
           <span class="campo-label">Tamanho</span>
-          <select class="campo-select" [(ngModel)]="tamanhoId">
+          <select class="campo-select" [(ngModel)]="tamanhoId" (ngModelChange)="scheduleGerarPreview()">
             <option *ngFor="let t of tamanhos" [value]="t.id">
               {{ t.label }} — {{ t.descricao }}
             </option>
@@ -47,13 +61,13 @@
         <!-- Nome do campeonato -->
         <label class="campo">
           <span class="campo-label">Nome do campeonato</span>
-          <input class="campo-input" type="text" [(ngModel)]="nomeCampeonato" />
+          <input class="campo-input" type="text" [(ngModel)]="nomeCampeonato" (ngModelChange)="scheduleGerarPreview(800)" />
         </label>
 
         <!-- Subtítulo / Categoria -->
         <label class="campo">
           <span class="campo-label">Subtítulo / Categoria</span>
-          <input class="campo-input" type="text" [(ngModel)]="subtitulo" />
+          <input class="campo-input" type="text" [(ngModel)]="subtitulo" (ngModelChange)="scheduleGerarPreview(800)" />
         </label>
 
         <!-- Organização -->
@@ -64,32 +78,40 @@
             type="text"
             placeholder="Ex: JOGA10SPORTS"
             [(ngModel)]="organizacao"
+            (ngModelChange)="scheduleGerarPreview(800)"
           />
         </label>
 
         <!-- Toggles -->
         <div class="campo-check">
           <span>Incluir escudo da equipe</span>
-          <ion-checkbox [(ngModel)]="incluirEscudo"></ion-checkbox>
+          <ion-checkbox [(ngModel)]="incluirEscudo" (ngModelChange)="scheduleGerarPreview()"></ion-checkbox>
         </div>
         <div class="campo-check">
           <span>Imprimir verso (clube/endereço/contato)</span>
-          <ion-checkbox [(ngModel)]="incluirVerso"></ion-checkbox>
+          <ion-checkbox [(ngModel)]="incluirVerso" (ngModelChange)="scheduleGerarPreview()"></ion-checkbox>
         </div>
 
         <!-- Dados do verso (só quando ativado) -->
         <ng-container *ngIf="incluirVerso">
           <label class="campo">
             <span class="campo-label">Endereço do clube</span>
-            <input class="campo-input" type="text" [(ngModel)]="endereco" />
+            <input class="campo-input" type="text"
+                   [(ngModel)]="endereco"
+                   (ngModelChange)="scheduleGerarPreview(800)" />
           </label>
           <label class="campo">
             <span class="campo-label">Cidade</span>
-            <input class="campo-input" type="text" [(ngModel)]="cidade" />
+            <input class="campo-input" type="text"
+                   [(ngModel)]="cidade"
+                   (ngModelChange)="scheduleGerarPreview(800)" />
           </label>
           <label class="campo">
             <span class="campo-label">Telefone</span>
-            <input class="campo-input" type="tel" inputmode="numeric" mask="telefone" placeholder="(11) 99999-9999" [(ngModel)]="telefone" />
+            <input class="campo-input" type="tel" inputmode="numeric" mask="telefone"
+                   placeholder="(11) 99999-9999"
+                   [(ngModel)]="telefone"
+                   (ngModelChange)="scheduleGerarPreview(800)" />
           </label>
         </ng-container>
 
@@ -121,6 +143,40 @@
         </div>
       </div>
     </aside>
+
+    <!-- ═══ Mobile: preview renderizado como IMAGEM (pixel-perfect ao PDF).
+         Substitui o HTML cru em mobile pra dar a visão exata do que vai
+         sair impresso. Em desktop, o HTML normal continua sendo exibido. ═══ -->
+    <div class="cp-preview-mobile no-print"
+         *ngIf="!loading && cartoes.length > 0"
+         [class.tem-preview]="!!previewImagemUrl"
+         [class.gerando]="gerandoPreviewMobile">
+      <img *ngIf="previewImagemUrl"
+           class="cp-preview-img"
+           [src]="previewImagemUrl"
+           alt="Carteirinhas renderizadas" />
+      <!-- Loading aparece SEMPRE que `gerandoPreviewMobile` está true
+           — inclusive quando já existe uma img anterior (regeneração).
+           Sem isso, ao editar campos o user não tinha feedback que algo
+           estava acontecendo e parecia "travado". -->
+      <div *ngIf="gerandoPreviewMobile" class="cp-preview-loading">
+        <ion-spinner name="crescent"></ion-spinner>
+        <span>Renderizando carteirinhas...</span>
+      </div>
+      <!-- Estado: nada gerado, sem loading, com possível erro — mostra
+           botão "Atualizar" pra usuário disparar manualmente. -->
+      <div *ngIf="!previewImagemUrl && !gerandoPreviewMobile" class="cp-preview-loading">
+        <ion-icon name="image-outline" style="font-size: 48px; opacity: 0.4;"></ion-icon>
+        <span *ngIf="previewErro" style="color: #d33; font-size: 12px; text-align: center; max-width: 260px;">
+          {{ previewErro }}
+        </span>
+        <span *ngIf="!previewErro">Aguardando renderização...</span>
+        <ion-button size="small" fill="solid" color="primary" (click)="gerarPreviewMobile()">
+          <ion-icon slot="start" name="refresh-outline"></ion-icon>
+          Gerar preview
+        </ion-button>
+      </div>
+    </div>
 
     <!-- ============ Área de preview (imprime) ============ -->
     <main class="cp-main">

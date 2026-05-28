@@ -1,7 +1,9 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ModalController, PopoverController, ToastController } from '@ionic/angular';
+import { LoadingController, ModalController, PopoverController, ToastController } from '@ionic/angular';
 import { BehaviorSubject, Observable, combineLatest, firstValueFrom, of } from 'rxjs';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { catchError, map, startWith, switchMap } from 'rxjs/operators';
 import { CampeonatosService } from '../../../campeonatos/campeonatos.service';
 import { CategoriasService } from '../../../campeonatos/categorias.service';
@@ -22,6 +24,7 @@ import { Jogador } from '../../../campeonatos/models/jogador.model';
 import { Jogo } from '../../../campeonatos/models/jogo.model';
 import { Fase } from '../../../campeonatos/models/fase.model';
 import { NavBackService } from '../../../shared/nav-back.service';
+import { salvarPdf } from '../../../shared/pdf-download.helper';
 import {
   ExportarEquipesPopoverComponent,
   AcaoExportarEquipes,
@@ -37,6 +40,11 @@ import {
   ColunaJogador,
   COLUNAS_JOGADORES_PADRAO,
 } from './colunas-jogadores-modal/colunas-jogadores-modal.component';
+import {
+  EquipesJogadoresModalComponent,
+  EquipeSelecaoJog,
+} from './equipes-jogadores-modal/equipes-jogadores-modal.component';
+import domtoimage from 'dom-to-image-more';
 
 export type TipoRelatorio =
   | 'equipes'
@@ -125,6 +133,7 @@ export class PrintPage implements OnInit {
   private readonly popCtrl = inject(PopoverController);
   private readonly modalCtrl = inject(ModalController);
   private readonly toastCtrl = inject(ToastController);
+  private readonly loadingCtrl = inject(LoadingController);
 
   readonly campeonatoId = this.route.snapshot.paramMap.get('id') ?? '';
   readonly categoriaId  = this.route.snapshot.paramMap.get('catId') ?? '';
@@ -180,8 +189,211 @@ export class PrintPage implements OnInit {
     ]);
   }
 
-  imprimir(): void {
-    window.print();
+  /**
+   * "Imprimir" → gera PDF via dom-to-image-more + jsPDF e abre em nova
+   * aba com `autoPrint()` (diálogo de impressão dispara automático).
+   * Substitui o `window.print()` direto, que esbarrava no shell do app
+   * e dependia de @media print frágil.
+   */
+  async imprimir(): Promise<void> {
+    return this.gerarPdfRelatorio('print');
+  }
+
+  /** "Baixar PDF" → mesma pipeline mas faz `pdf.save()` (download direto). */
+  async baixarPdfRelatorio(): Promise<void> {
+    return this.gerarPdfRelatorio('download');
+  }
+
+  /**
+   * Núcleo compartilhado: captura `.print-folha` via dom-to-image-more,
+   * monta PDF A4 retrato e ou imprime ou baixa.
+   */
+  private async gerarPdfRelatorio(destino: 'print' | 'download'): Promise<void> {
+    const folha = document.querySelector('.print-folha') as HTMLElement | null;
+    if (!folha) {
+      const t = await this.toastCtrl.create({
+        message: 'Conteúdo ainda não está pronto.',
+        duration: 1800,
+        color: 'warning',
+        position: 'top',
+      });
+      await t.present();
+      return;
+    }
+
+    const loading = await this.loadingCtrl.create({
+      message: destino === 'print' ? 'Preparando impressão...' : 'Gerando PDF...',
+      spinner: 'crescent',
+    });
+    await loading.present();
+
+    // Container off-screen pra clonar e gerar fora do shell.
+    const offscreen = document.createElement('div');
+    offscreen.style.cssText = `
+      position: fixed;
+      top: -10000px;
+      left: 0;
+      width: 210mm;
+      background: #ffffff;
+      pointer-events: none;
+      z-index: -1;
+    `;
+
+    try {
+      // 1) Inline imgs na ORIGINAL pra que o clone já saia com base64.
+      await this.inlineImagens(folha);
+
+      // 2) Clone profundo + bordas finas inline (igual sumula).
+      const folhaClone = folha.cloneNode(true) as HTMLElement;
+      folhaClone.style.transform = 'none';
+      folhaClone.style.position = 'static';
+      folhaClone.style.top = 'auto';
+      folhaClone.style.left = 'auto';
+      folhaClone.style.margin = '0';
+      folhaClone.style.boxShadow = 'none';
+      // ANULA o zoom mobile no clone — o PDF/impressão deve sair sempre
+      // com layout DESKTOP (210mm A4 natural). O zoom em `@media (max-width)`
+      // afeta a folha ORIGINAL na tela, mas o clone tem `zoom: 1` forçado
+      // pra capturar em escala 1:1 sem distorção.
+      folhaClone.style.setProperty('zoom', '1', 'important');
+      folhaClone.style.width = '210mm';
+      folhaClone.style.maxWidth = '210mm';
+
+      folhaClone.style.setProperty('border-width', '0.5px', 'important');
+      folhaClone.querySelectorAll<HTMLElement>('*').forEach(el => {
+        el.style.setProperty('border-width', '0.5px', 'important');
+        // Reseta zoom em qualquer descendente que possa ter herdado/aplicado.
+        el.style.setProperty('zoom', '1', 'important');
+      });
+
+      offscreen.appendChild(folhaClone);
+      document.body.appendChild(offscreen);
+
+      // 3) Aguarda layout + imgs do clone decodificarem.
+      await new Promise<void>(r => requestAnimationFrame(() => r()));
+      await new Promise<void>(r => requestAnimationFrame(() => r()));
+      const imgsClone = Array.from(folhaClone.querySelectorAll('img')) as HTMLImageElement[];
+      await Promise.all(
+        imgsClone.map(img => {
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+          return new Promise<void>(resolve => {
+            const fin = (): void => resolve();
+            img.addEventListener('load', fin, { once: true });
+            img.addEventListener('error', fin, { once: true });
+            setTimeout(fin, 2000);
+          });
+        }),
+      );
+
+      const rect = folhaClone.getBoundingClientRect();
+
+      // 4) Captura PNG via dom-to-image-more (bordas hairline).
+      const dataUrl = await domtoimage.toPng(folhaClone, {
+        bgcolor: '#ffffff',
+        width: Math.ceil(rect.width),
+        height: Math.ceil(rect.height),
+        scale: 3,
+        cacheBust: false,
+      });
+
+      // 5) Mede o PNG.
+      const tmpImg = new Image();
+      await new Promise<void>((resolve, reject) => {
+        tmpImg.onload = () => resolve();
+        tmpImg.onerror = () => reject(new Error('falha png'));
+        tmpImg.src = dataUrl;
+      });
+
+      // 6) Monta PDF A4 retrato com paginação automática.
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgW = pageW;
+      const imgH = (tmpImg.naturalHeight * imgW) / tmpImg.naturalWidth;
+      if (imgH <= pageH) {
+        pdf.addImage(dataUrl, 'PNG', 0, 0, imgW, imgH);
+      } else {
+        let restante = imgH;
+        let offsetY = 0;
+        while (restante > 0) {
+          pdf.addImage(dataUrl, 'PNG', 0, -offsetY, imgW, imgH);
+          restante -= pageH;
+          if (restante > 0) {
+            pdf.addPage();
+            offsetY += pageH;
+          }
+        }
+      }
+
+      if (destino === 'print') {
+        pdf.autoPrint();
+        const blobUrl = pdf.output('bloburl');
+        window.open(blobUrl, '_blank');
+      } else {
+        // iOS Safari abre PDF inline — salvarPdf usa Web Share API no iOS.
+        await salvarPdf(pdf, this.nomeArquivoPdf());
+      }
+    } catch (err) {
+      console.error(`[print/${destino}] erro`, err);
+      const t = await this.toastCtrl.create({
+        message: 'Erro ao gerar PDF.',
+        duration: 2400,
+        color: 'danger',
+        position: 'top',
+      });
+      await t.present();
+    } finally {
+      try {
+        if (offscreen.parentNode) offscreen.parentNode.removeChild(offscreen);
+      } catch { /* ignore */ }
+      await loading.dismiss();
+    }
+  }
+
+  /** Sugere nome do arquivo PDF baseado no tipo de relatório. */
+  private nomeArquivoPdf(): string {
+    const slug = this.tipo || 'relatorio';
+    return `relacao-${slug}.pdf`;
+  }
+
+  /**
+   * Abre modal de seleção de equipes (tipo jogadores).
+   * Recebe `grupos` direto do template (`v2.gruposJogadores`) — evita
+   * `firstValueFrom(view$)` que esbarrava em timing do combineLatest e
+   * abria a modal com lista vazia.
+   */
+  async abrirModalEquipesJog(grupos: GrupoJogadores[]): Promise<void> {
+    // Garante que `equipesJogadoresIds` está inicializado.
+    if (this.equipesJogadoresIds === null) {
+      this.equipesJogadoresIds = new Set(
+        grupos.map(g => g.equipe.id).filter((id): id is string => !!id),
+      );
+    }
+
+    const equipes: EquipeSelecaoJog[] = grupos
+      .filter(g => !!g.equipe.id)
+      .map(g => ({
+        id: g.equipe.id!,
+        nome: g.equipe.nome,
+        logoUrl: g.equipe.logoUrl,
+        qtd: g.jogadores.length,
+        selecionado: this.equipesJogadoresIds!.has(g.equipe.id!),
+      }));
+
+    const modal = await this.modalCtrl.create({
+      component: EquipesJogadoresModalComponent,
+      componentProps: { equipes },
+      cssClass: 'equipes-jogadores-modal',
+    });
+    await modal.present();
+    const { data, role } = await modal.onDidDismiss<{ equipes?: EquipeSelecaoJog[] }>();
+    if (role === 'save' && data?.equipes) {
+      const novo = new Set<string>();
+      data.equipes.forEach(e => {
+        if (e.selecionado) novo.add(e.id);
+      });
+      this.equipesJogadoresIds = novo;
+    }
   }
 
   // ====================== POPOVER + MODAIS DE EQUIPES ======================
@@ -205,12 +417,14 @@ export class PrintPage implements OnInit {
     }
   }
 
-  private async abrirModalColunas(): Promise<void> {
+  /**
+   * Abre modal de seleção de colunas pra Relação de Equipes.
+   * Público pra ser chamado também direto do template (botão mobile).
+   */
+  async abrirModalColunas(): Promise<void> {
     const modal = await this.modalCtrl.create({
       component: ColunasEquipesModalComponent,
       componentProps: { colunas: this.colunas.map(c => ({ ...c })) },
-      breakpoints: [0, 0.85, 1],
-      initialBreakpoint: 0.85,
       cssClass: 'colunas-equipes-modal',
     });
     await modal.present();
@@ -256,8 +470,6 @@ export class PrintPage implements OnInit {
     const modal = await this.modalCtrl.create({
       component: ColunasJogadoresModalComponent,
       componentProps: { colunas: this.colunasJogadores.map(c => ({ ...c })) },
-      breakpoints: [0, 0.85, 1],
-      initialBreakpoint: 0.85,
       cssClass: 'colunas-jogadores-modal',
     });
     await modal.present();
@@ -318,6 +530,23 @@ export class PrintPage implements OnInit {
     this.equipesJogadoresIds = new Set(this.equipesJogadoresIds);
   }
 
+  /** Conta quantas equipes estão marcadas pra exibir no botão de seleção. */
+  qtdEquipesJogSelecionadas(grupos: GrupoJogadores[]): number {
+    if (!this.equipesJogadoresIds) return grupos.length;
+    return grupos.filter(g => g.equipe.id && this.equipesJogadoresIds!.has(g.equipe.id)).length;
+  }
+
+  /** Conta quantas colunas estão marcadas — usado no contador do botão
+   *  "Selecionar colunas (X/Y)" do mobile. */
+  qtdColunasJogSelecionadas(): number {
+    return this.colunasJogadores.filter(c => c.selecionado).length;
+  }
+
+  /** Conta colunas marcadas pro relatório de equipes (contador mobile). */
+  qtdColunasEqSelecionadas(): number {
+    return this.colunas.filter(c => c.selecionado).length;
+  }
+
   /** Marca/desmarca TODAS as equipes (atalho da barra). */
   marcarTodasEquipesJog(grupos: GrupoJogadores[], marcar: boolean): void {
     if (marcar) {
@@ -363,6 +592,77 @@ export class PrintPage implements OnInit {
   /** Wrapper público para o botão "Excel" da barra superior. */
   exportarCsvPublico(): void {
     void this.exportarCsv();
+  }
+
+  // baixarPdf() removido — substituído pelo `baixarPdfRelatorio()` que
+  // usa a mesma pipeline do relatório de jogadores (clone offscreen em
+  // 210mm + dom-to-image-more + jsPDF). Resolve corte do PDF no mobile.
+
+  /**
+   * Converte todas as `<img>` do container em data URLs (base64) ANTES
+   * do html2canvas capturar — sem isso os logos saem em branco no PDF
+   * por causa de CORS no Firebase Storage. Mesma lógica da sumula.
+   */
+  private async inlineImagens(container: HTMLElement): Promise<void> {
+    const imgs = Array.from(container.querySelectorAll('img')) as HTMLImageElement[];
+    await Promise.all(
+      imgs.map(async imgEl => {
+        const src = imgEl.getAttribute('src') || '';
+        if (!src || src.startsWith('data:')) return;
+        try {
+          const dataUrl = await this.urlParaDataUrl(src);
+          if (dataUrl) {
+            imgEl.src = dataUrl;
+            if (imgEl.decode) await imgEl.decode().catch(() => undefined);
+          }
+        } catch {
+          /* segue sem essa imagem */
+        }
+      }),
+    );
+  }
+
+  /**
+   * Carrega URL como data URL (base64). Tenta 2 caminhos:
+   *  1) `fetch(src, { mode: 'cors', cache: 'no-store' })` — força CORS
+   *     fresco (não cache opaque que possa ter ficado da 1ª carga).
+   *  2) Fallback: `<Image>` com `crossOrigin = 'anonymous'` + canvas
+   *     → toDataURL.
+   */
+  private async urlParaDataUrl(src: string): Promise<string | null> {
+    try {
+      const res = await fetch(src, { mode: 'cors', cache: 'no-store' });
+      if (res.ok) {
+        const blob = await res.blob();
+        return await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result as string);
+          r.onerror = () => reject(r.error);
+          r.readAsDataURL(blob);
+        });
+      }
+    } catch {
+      /* fallback abaixo */
+    }
+    return await new Promise<string | null>(resolve => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth;
+          c.height = img.naturalHeight;
+          const ctx = c.getContext('2d');
+          if (!ctx) return resolve(null);
+          ctx.drawImage(img, 0, 0);
+          resolve(c.toDataURL('image/png'));
+        } catch {
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
   }
 
   // ====================== RANKINGS — seleção ======================

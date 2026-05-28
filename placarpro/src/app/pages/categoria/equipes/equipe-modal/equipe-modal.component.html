@@ -1,39 +1,57 @@
+<!-- ════════ HEADER ════════
+     Padrão Ionic igual ao jogador-modal: botão voltar à esquerda,
+     título centralizado, compartilhar à direita (só em edição). -->
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Voltar">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ equipeExistente ? 'Editar equipe' : 'Nova equipe' }}</ion-title>
+    <ion-buttons slot="end" *ngIf="equipeExistente">
+      <ion-button (click)="compartilhar()" aria-label="Compartilhar">
+        <ion-icon slot="icon-only" name="share-social-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
 <ion-content class="bg">
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="modal-card">
-
-    <!-- ════════ HEADER ════════
-         Title bar fixo no topo: título + X. Padronizado com modais
-         modernos (Linear, Notion). Substitui o hero navy pesado por
-         um header bar limpo. -->
-    <header class="modal-header">
-      <h2>{{ equipeExistente ? 'Editar equipe' : 'Nova equipe' }}</h2>
-      <div class="header-actions">
-        <button *ngIf="equipeExistente" type="button" class="header-btn" (click)="compartilhar()"
-          aria-label="Compartilhar" title="Compartilhar">
-          <ion-icon name="share-social-outline"></ion-icon>
-        </button>
-        <button type="button" class="header-btn" (click)="dismiss()" aria-label="Fechar">
-          <ion-icon name="close-outline"></ion-icon>
-        </button>
-      </div>
-    </header>
 
     <!-- ════════ BODY ════════ -->
     <div class="modal-body">
 
-      <!-- Escudo + nome do time (centralizado, identidade visual) -->
+      <!-- Escudo + ações (foto em cima, texto + botões embaixo —
+           mesmo padrão do jogador-modal). -->
       <section class="team-identity">
         <button type="button" class="logo-circle" (click)="selecionarLogo()" [disabled]="enviandoLogo"
           aria-label="Selecionar escudo">
-          <img *ngIf="form.value.logoUrl; else iconF" [src]="form.value.logoUrl" alt="Logo" />
+          <img skel *ngIf="form.value.logoUrl; else iconF" [src]="form.value.logoUrl" alt="Logo" />
           <ng-template #iconF>
             <ion-icon name="shield-outline"></ion-icon>
           </ng-template>
           <span *ngIf="enviandoLogo" class="overlay">
             <ion-spinner color="light"></ion-spinner>
           </span>
-
         </button>
+
+        <div class="logo-hint">
+          <strong>Escudo da equipe</strong>
+          <span>Imagem quadrada ou redonda</span>
+          <div class="logo-actions">
+            <ion-button size="small" color="primary" type="button" (click)="selecionarLogo()" [disabled]="enviandoLogo">
+              <ion-icon slot="start" name="camera-outline"></ion-icon>
+              {{ form.value.logoUrl ? 'Trocar' : 'Enviar' }}
+            </ion-button>
+            <ion-button *ngIf="form.value.logoUrl" size="small" color="danger" type="button"
+              (click)="removerLogo()">
+              <ion-icon slot="start" name="trash-outline"></ion-icon>
+              Remover
+            </ion-button>
+          </div>
+        </div>
       </section>
 
       <!-- Formulário identificação -->
@@ -154,20 +172,21 @@
           <ion-icon class="nav-chev" name="chevron-forward-outline"></ion-icon>
         </button>
       </div>
-    </div>
 
-    <!-- ════════ FOOTER ════════ -->
-    <footer class="modal-footer">
-      <button *ngIf="equipeExistente" type="button" class="btn btn-danger" (click)="remover()">
-        <ion-icon name="trash-outline"></ion-icon>
-        <span>Remover</span>
-      </button>
-      <div class="spacer"></div>
-      <button type="submit" class="btn btn-primary" [disabled]="loading || form.invalid">
-        <ion-spinner *ngIf="loading" name="dots"></ion-spinner>
-        <ion-icon *ngIf="!loading" name="checkmark-outline"></ion-icon>
-        <span>{{ equipeExistente ? 'Salvar' : 'Criar equipe' }}</span>
-      </button>
-    </footer>
+      <!-- Ações (Remover / Salvar) — antes ficavam num footer sticky.
+           Agora vivem dentro do content, logo abaixo do "Reabrir ficha",
+           e rolam junto com o conteúdo. -->
+      <div class="form-actions">
+        <button *ngIf="equipeExistente" type="button" class="btn btn-danger" (click)="remover()">
+          <ion-icon name="trash-outline"></ion-icon>
+          <span>Remover</span>
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="loading || form.invalid">
+          <ion-spinner *ngIf="loading" name="dots"></ion-spinner>
+          <ion-icon *ngIf="!loading" name="checkmark-outline"></ion-icon>
+          <span>{{ equipeExistente ? 'Salvar' : 'Criar equipe' }}</span>
+        </button>
+      </div>
+    </div>
   </form>
 </ion-content>

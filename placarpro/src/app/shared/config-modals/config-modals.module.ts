@@ -14,6 +14,7 @@ import { MedalhasModalComponent } from './medalhas-modal/medalhas-modal.componen
 import { EnquetesModalComponent } from './enquetes-modal/enquetes-modal.component';
 import { ResultadoModalComponent } from './resultado-modal/resultado-modal.component';
 import { MapaPickerModalComponent } from '../components/mapa-picker-modal/mapa-picker-modal.component';
+import { MapaPickerComponent } from '../components/mapa-picker/mapa-picker.component';
 
 /**
  * Modais compartilhados das telas de Configuração do Campeonato:
@@ -34,6 +35,7 @@ import { MapaPickerModalComponent } from '../components/mapa-picker-modal/mapa-p
     EnquetesModalComponent,
     ResultadoModalComponent,
     MapaPickerModalComponent,
+    MapaPickerComponent,
   ],
   exports: [
     ListaSimplesModalComponent,
@@ -47,6 +49,7 @@ import { MapaPickerModalComponent } from '../components/mapa-picker-modal/mapa-p
     EnquetesModalComponent,
     ResultadoModalComponent,
     MapaPickerModalComponent,
+    MapaPickerComponent,
   ],
 })
 export class ConfigModalsModule {}

@@ -16,6 +16,13 @@
   border-radius: 14px;
   overflow: hidden;
   background: #1C2E3D;
+  /* Reserva altura mínima ENQUANTO a img (skel) carrega — sem isso o
+     card colapsa e o layout pula quando a capa aparece. */
+  min-height: 200px;
+
+  @media (max-width: 767px) {
+    min-height: 140px;
+  }
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 
   @media (max-width: 640px) {
@@ -37,15 +44,11 @@ app-patrocinadores-faixa {
 .hero-img {
   display: block;
   width: 100%;
-  height: auto;
-  /* Trava altura máxima pro hero não estourar a viewport quando a capa
-     for muito alta (proporções verticais). Mesma trava da
-     publico-categoria — visual idêntico. */
-  max-height: 320px;
+  height: 220px;
   object-fit: cover;
 
   @media (max-width: 767px) {
-    max-height: 220px;
+    height: 160px;
   }
 }
 

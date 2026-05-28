@@ -747,20 +747,23 @@
   background: #1C2E3D;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   margin-bottom: 16px;
+  /* Reserva altura mínima enquanto a img (skel) carrega — evita que o
+     card colapse e o layout "pule" quando a capa aparece. */
+  min-height: 200px;
+
+  @media (max-width: 767px) {
+    min-height: 140px;
+  }
 }
 
 .hero-img {
   display: block;
   width: 100%;
-  height: auto;
-  /* Trava altura máxima pro hero não estourar a viewport quando a capa
-     for muito alta (proporções quadradas/verticais). Mantém o `height:
-     auto` pra preservar aspect ratio em capas naturalmente largas. */
-  max-height: 320px;
+  height: 220px;
   object-fit: cover;
 
   @media (max-width: 767px) {
-    max-height: 220px;
+    height: 160px;
   }
 }
 

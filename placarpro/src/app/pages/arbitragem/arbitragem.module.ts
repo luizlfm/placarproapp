@@ -16,5 +16,10 @@ import { SharedModule } from '../../shared/shared.module';
     SharedModule,
   ],
   declarations: [ArbitragemPage],
+  /* Exportado pra permitir abrir ArbitragemPage como MODAL a partir de
+     outros módulos (ex: Configurações do Campeonato > Arbitragem).
+     Mesmo componente serve como rota /app/arbitragem (modo página) e
+     como modal (modo modoModal=true). */
+  exports: [ArbitragemPage],
 })
 export class ArbitragemPageModule {}

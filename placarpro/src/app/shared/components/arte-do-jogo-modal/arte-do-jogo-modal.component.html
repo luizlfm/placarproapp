@@ -1,0 +1,187 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Arte do Jogo</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <div class="wrap">
+    <!-- ─── Seletor de opção ─── -->
+    <div class="opcoes-tabs">
+      <button type="button" class="opt-tab" [class.ativo]="opcao === 1" (click)="trocarOpcao(1)">Opção 1</button>
+      <button type="button" class="opt-tab" [class.ativo]="opcao === 2" (click)="trocarOpcao(2)">Opção 2</button>
+    </div>
+
+    <!-- ─── Tamanho da fonte (escala global do preview via --font-scale) ─── -->
+    <div class="tamanho-tabs">
+      <span class="tam-label">Tamanho:</span>
+      <button type="button" class="tam-tab" [class.ativo]="tamanhoFonte === 'pequeno'" (click)="trocarTamanho('pequeno')">
+        A<sup>-</sup>
+      </button>
+      <button type="button" class="tam-tab" [class.ativo]="tamanhoFonte === 'medio'" (click)="trocarTamanho('medio')">
+        A
+      </button>
+      <button type="button" class="tam-tab" [class.ativo]="tamanhoFonte === 'grande'" (click)="trocarTamanho('grande')">
+        A<sup>+</sup>
+      </button>
+    </div>
+
+    <!-- ─── Preview da arte (renderizado pelo html2canvas no compartilhar) ─── -->
+    <div
+      #preview
+      class="arte"
+      [attr.data-opcao]="opcao"
+      [attr.data-fundo]="form.value.fundo"
+      [style.--font-scale]="fontScale"
+    >
+      <ng-container [ngSwitch]="opcao">
+        <!-- ══════════ OPÇÃO 1: RODADA DECISIVA — dark + acento roxo ══════════ -->
+        <div *ngSwitchCase="1" class="opt-1">
+          <!-- Splash topo (SVG grunge) -->
+          <div class="splash splash-topo" aria-hidden="true">
+            <svg viewBox="0 0 100 12" preserveAspectRatio="none">
+              <path d="M0,4 L10,8 L20,2 L30,9 L40,3 L50,7 L60,2 L70,8 L80,3 L90,7 L100,4 L100,12 L0,12 Z" fill="currentColor"/>
+            </svg>
+          </div>
+
+          <!-- CTA topo -->
+          <div class="opt1-cta">{{ form.value.subtitulo || 'Cada gol importa!' }}</div>
+
+          <!-- Escudos + vs -->
+          <div class="opt1-placar">
+            <div class="escudo">
+              <img *ngIf="mandante?.logoUrl; else iconM1" [src]="mandante!.logoUrl" alt="" />
+              <ng-template #iconM1><ion-icon name="shield"></ion-icon></ng-template>
+            </div>
+            <div class="vs">vs</div>
+            <div class="escudo">
+              <img *ngIf="visitante?.logoUrl; else iconV1" [src]="visitante!.logoUrl" alt="" />
+              <ng-template #iconV1><ion-icon name="shield"></ion-icon></ng-template>
+            </div>
+          </div>
+
+          <!-- Pílula com nomes das equipes -->
+          <div class="opt1-times">
+            <span class="time-pill">{{ form.value.nomeMandante }}</span>
+            <span class="x-sep">x</span>
+            <span class="time-nome">{{ form.value.nomeVisitante }}</span>
+          </div>
+
+          <!-- Título principal HUGE -->
+          <div class="opt1-titulo">
+            <div class="t-main">{{ form.value.titulo || 'RODADA' }}</div>
+            <div class="t-sub">{{ form.value.diaSemana || 'DECISIVA' }}</div>
+          </div>
+
+          <!-- Splash bottom -->
+          <div class="splash splash-baixo" aria-hidden="true">
+            <svg viewBox="0 0 100 12" preserveAspectRatio="none">
+              <path d="M0,0 L0,4 L10,8 L20,2 L30,9 L40,3 L50,7 L60,2 L70,8 L80,3 L90,7 L100,4 L100,0 Z" fill="currentColor"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- ══════════ OPÇÃO 2: GRANDE FINAL — dark + acento teal ══════════ -->
+        <div *ngSwitchCase="2" class="opt-2">
+          <!-- Halftone deco esquerda topo -->
+          <div class="halftone halftone-tl" aria-hidden="true"></div>
+
+          <!-- Big title -->
+          <div class="opt2-titulo">
+            <div class="t-small">{{ form.value.subtitulo || 'GRANDE' }}</div>
+            <div class="t-big">{{ form.value.titulo || 'Final' }}</div>
+          </div>
+
+          <!-- Confronto centralizado: escudo + nome / VS / nome + escudo -->
+          <div class="opt2-confronto">
+            <div class="linha">
+              <div class="escudo">
+                <img *ngIf="mandante?.logoUrl; else iconM2" [src]="mandante!.logoUrl" alt="" />
+                <ng-template #iconM2><ion-icon name="shield"></ion-icon></ng-template>
+              </div>
+              <div class="nome">{{ form.value.nomeMandante }}</div>
+            </div>
+            <div class="vs-row">
+              <span class="dash"></span>
+              <span class="vs">VS</span>
+              <span class="dash"></span>
+            </div>
+            <div class="linha">
+              <div class="nome">{{ form.value.nomeVisitante }}</div>
+              <div class="escudo">
+                <img *ngIf="visitante?.logoUrl; else iconV2" [src]="visitante!.logoUrl" alt="" />
+                <ng-template #iconV2><ion-icon name="shield"></ion-icon></ng-template>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slogan -->
+          <div class="opt2-slogan" *ngIf="form.value.endereco">duelam pelo título</div>
+
+          <!-- Data pill -->
+          <div class="opt2-data" *ngIf="form.value.data || form.value.hora">
+            <div class="data" *ngIf="form.value.data">{{ form.value.data }}</div>
+            <div class="hora" *ngIf="form.value.hora">ÀS {{ form.value.hora }}</div>
+          </div>
+
+          <!-- CTA final -->
+          <div class="opt2-cta">Não dá pra perder!</div>
+
+          <!-- Halftone deco direita inferior -->
+          <div class="halftone halftone-br" aria-hidden="true"></div>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- ─── Form de edição ─── -->
+    <form [formGroup]="form" class="form-edit">
+      <ion-input fill="outline" label="Nome da equipe" labelPlacement="stacked" formControlName="nomeMandante"></ion-input>
+      <ion-input fill="outline" label="Nome da equipe" labelPlacement="stacked" formControlName="nomeVisitante"></ion-input>
+      <ion-input fill="outline" label="Título" labelPlacement="stacked" formControlName="titulo"></ion-input>
+      <ion-input fill="outline" label="Subtítulo" labelPlacement="stacked" formControlName="subtitulo"></ion-input>
+      <ion-input fill="outline" label="Endereço" labelPlacement="stacked" formControlName="endereco"></ion-input>
+
+      <ion-input *ngIf="opcao === 1" fill="outline" label="Texto secundário (sob título)" labelPlacement="stacked" formControlName="diaSemana" placeholder="DECISIVA"></ion-input>
+      <ion-input fill="outline" label="Data" labelPlacement="stacked" formControlName="data" placeholder="12/5"></ion-input>
+      <ion-input fill="outline" label="Hora" labelPlacement="stacked" formControlName="hora" placeholder="18:45"></ion-input>
+
+      <!-- Seletor de fundo (5 opções padrão estilo Canva) -->
+      <div class="fundo-section">
+        <label class="fundo-label">Fundo</label>
+        <div class="fundo-grid">
+          <button
+            *ngFor="let f of fundos"
+            type="button"
+            class="fundo-thumb"
+            [attr.data-fundo]="f.id"
+            [class.ativo]="form.value.fundo === f.id"
+            (click)="form.patchValue({ fundo: f.id })"
+          >
+            <div class="thumb-preview" [attr.data-fundo]="f.id"></div>
+            <span class="thumb-label">{{ f.label }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Brasão do campeonato (todas) -->
+      <label class="check-row">
+        <input type="checkbox" formControlName="addBrasao" />
+        <span>Adicionar brasão do campeonato</span>
+      </label>
+    </form>
+
+    <!-- ─── Compartilhar ─── -->
+    <div class="cta">
+      <ion-button color="secondary" expand="block" (click)="compartilhar()" [disabled]="gerando">
+        <ion-spinner *ngIf="gerando" name="dots" slot="start"></ion-spinner>
+        <ion-icon *ngIf="!gerando" slot="start" name="share-social-outline"></ion-icon>
+        Compartilhar
+      </ion-button>
+    </div>
+  </div>
+</ion-content>

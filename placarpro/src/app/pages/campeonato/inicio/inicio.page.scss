@@ -33,12 +33,24 @@
   background: #1C2E3D;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   margin-bottom: 16px;
+  /* Reserva altura mínima enquanto a img (skel) carrega — evita layout
+     "pular" quando a capa aparece. */
+  min-height: 200px;
+
+  @media (max-width: 767px) {
+    min-height: 140px;
+  }
 }
 
 .hero-img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 220px;
+  object-fit: cover;
+
+  @media (max-width: 767px) {
+    height: 160px;
+  }
 }
 
 .hero-info {

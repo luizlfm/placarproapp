@@ -1,0 +1,49 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Nova fase</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <div class="wrap">
+    <p class="sub">Escolha o tipo da nova fase do campeonato.</p>
+
+    <button type="button" class="tipo-card" (click)="escolher('pontos-corridos')">
+      <div class="ico ico-pc">
+        <ion-icon name="repeat-outline"></ion-icon>
+      </div>
+      <div class="txt">
+        <strong>Pontos corridos</strong>
+        <span>Todos contra todos — uma tabela única.</span>
+      </div>
+      <ion-icon class="chev" name="chevron-forward-outline"></ion-icon>
+    </button>
+
+    <button type="button" class="tipo-card" (click)="escolher('pontos-corridos-grupos')">
+      <div class="ico ico-pcg">
+        <ion-icon name="grid-outline"></ion-icon>
+      </div>
+      <div class="txt">
+        <strong>Pontos corridos por grupos</strong>
+        <span>Equipes divididas em grupos com classificação separada.</span>
+      </div>
+      <ion-icon class="chev" name="chevron-forward-outline"></ion-icon>
+    </button>
+
+    <button type="button" class="tipo-card" (click)="escolher('eliminatorias')">
+      <div class="ico ico-el">
+        <ion-icon name="git-network-outline"></ion-icon>
+      </div>
+      <div class="txt">
+        <strong>Eliminatórias</strong>
+        <span>Mata-mata — quem perde está fora.</span>
+      </div>
+      <ion-icon class="chev" name="chevron-forward-outline"></ion-icon>
+    </button>
+  </div>
+</ion-content>

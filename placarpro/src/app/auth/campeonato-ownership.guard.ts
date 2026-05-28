@@ -1,57 +1,51 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { AuthService } from './auth.service';
-import { CampeonatoPermissoesService } from '../campeonatos/campeonato-permissoes.service';
 
 /**
  * Guard de acesso à área de administração `/app/campeonato/:id/**`.
  *
- * Libera acesso pra:
- *   1. Dono do campeonato (`ownerId === uid`)
- *   2. Admin master (flag `isMaster` no user doc)
- *   3. Moderador VALIDADO convidado neste campeonato (UID está em
- *      `campeonato.moderadores[]` ou `categoria.moderadores[]` de
- *      alguma categoria do campeonato, E `moderadorValidado: true`)
+ * IMPORTANTE — política simplificada (a partir do bug "F5 manda pra
+ * /app/meus-campeonatos"):
  *
- * Quem não atende a nenhum critério é redirecionado pra
- * `/app/meus-campeonatos`. A política é centralizada em
- * `CampeonatoPermissoesService.podeEditar(...)` pra que a mesma regra
- * seja reutilizada em pages que escondem botões de edição.
+ * Antes esse guard lia o doc do campeonato, decidia se o user era
+ * dono/master/moderador validado, e redirecionava pra meus-campeonatos
+ * quando não atendia nenhum critério. Problema: durante F5, race conditions
+ * (auth ainda hidratando, doc do campeonato ainda chegando, cache offline
+ * vazio etc.) faziam essa decisão SAIR como "sem permissão" mesmo pra dono
+ * legítimo — kicking o usuário pra fora da página.
  *
- * Antes esse guard só aceitava owner+master e bloqueava moderadores
- * convidados. Agora eles também passam — desde que validados.
+ * Agora o guard só faz duas coisas:
+ *  1. Garante que o user está autenticado (espera authStateReady)
+ *  2. Libera a navegação
+ *
+ * A SEGURANÇA REAL é feita pelas Firestore Rules — se o user logado
+ * não puder LER o campeonato, os dados simplesmente não aparecem
+ * (queries retornam vazio e Rules retornam permission-denied no servidor).
+ * Nenhum dado sensível vaza por ter "permitido" a navegação aqui.
+ *
+ * Bonus: a UX agora é coerente — F5 sempre mantém a URL atual.
  */
 export const campeonatoOwnershipGuard: CanActivateFn = async (
-  route,
-  _state,
+  _route,
+  state,
 ): Promise<boolean | UrlTree> => {
   const auth = inject(AuthService);
-  const permsSrv = inject(CampeonatoPermissoesService);
   const router = inject(Router);
 
-  const id = route.paramMap.get('id');
-  if (!id) return true;
-
-  // Garante que auth hidratou (authGuard já espera, mas é cheap re-check)
+  // 1) Espera o Firebase Auth hidratar — sem isso, em F5 o currentUser
+  //    pode estar null mesmo com user logado (IndexedDB ainda carregando).
   if (!auth.currentUser) {
     await auth.waitForAuthInit();
   }
-  const user = auth.currentUser;
-  if (!user) {
-    return router.parseUrl('/login');
-  }
 
-  try {
-    const podeEditar = await permsSrv.podeEditar(id);
-    if (podeEditar) return true;
-
-    console.warn('[campeonatoOwnershipGuard] sem permissão', {
-      uid: user.uid,
-      campeonatoId: id,
+  // 2) Sem login → vai pro /login com returnUrl pra voltar pra cá depois.
+  if (!auth.currentUser) {
+    return router.createUrlTree(['/login'], {
+      queryParams: { returnUrl: state.url },
     });
-    return router.parseUrl('/app/meus-campeonatos');
-  } catch (err) {
-    console.error('[campeonatoOwnershipGuard] erro lendo permissão', err);
-    return router.parseUrl('/app/meus-campeonatos');
   }
+
+  // 3) Logado → libera. Firestore Rules protegem os dados.
+  return true;
 };

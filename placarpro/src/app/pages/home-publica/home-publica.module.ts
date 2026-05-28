@@ -5,6 +5,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 
 import { HomePublicaPage } from './home-publica.page';
+import { SharedModule } from '../../shared/shared.module';
 
 const routes: Routes = [{ path: '', component: HomePublicaPage }];
 
@@ -14,6 +15,7 @@ const routes: Routes = [{ path: '', component: HomePublicaPage }];
     FormsModule,
     IonicModule,
     RouterModule.forChild(routes),
+    SharedModule,
   ],
   declarations: [HomePublicaPage],
 })

@@ -8,6 +8,7 @@ import { CategoriasService } from '../../../campeonatos/categorias.service';
 import { CampeonatosService } from '../../../campeonatos/campeonatos.service';
 import { EquipesService } from '../../../campeonatos/equipes.service';
 import { getModalidade } from '../../../campeonatos/modalidades';
+import { RefreshService } from '../../../shared/refresh.service';
 
 @Component({
   selector: 'app-cat-inicio',
@@ -21,6 +22,7 @@ export class InicioPage implements OnInit, OnDestroy {
   private readonly categoriasSrv = inject(CategoriasService);
   private readonly campeonatosSrv = inject(CampeonatosService);
   private readonly equipesSrv = inject(EquipesService);
+  private readonly refreshSrv = inject(RefreshService);
 
   /** Viewport mobile? Sincronizado via matchMedia. Usado pra escolher
    *  entre logo/capa web vs mobile da categoria (mesmo padrão do
@@ -44,10 +46,13 @@ export class InicioPage implements OnInit, OnDestroy {
   /** Retorna a capa apropriada — mobile-first fallback chain:
    *  mobile-variant → web-variant → banner legacy. Espelha `capaCamp` da
    *  publico-categoria pra dar consistência. */
-  capaCategoria(c: Categoria | null | undefined): string | null {
-    if (!c) return null;
+  /** Banner padrão exibido quando a categoria/campeonato não tem capa. */
+  readonly bannerPadrao = 'assets/branding/banner-default.svg';
+
+  capaCategoria(c: Categoria | null | undefined): string {
+    if (!c) return this.bannerPadrao;
     if (this.ehMobile && c.capaMobileUrl) return c.capaMobileUrl;
-    return c.capaUrl ?? c.bannerUrl ?? null;
+    return c.capaUrl || c.bannerUrl || this.bannerPadrao;
   }
 
   readonly campeonatoId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -75,14 +80,9 @@ export class InicioPage implements OnInit, OnDestroy {
       ? this.equipesSrv.list$(this.campeonatoId, this.categoriaId)
       : of([]);
 
-  /** Pull-to-refresh — arrasta pra baixo pra recarregar. */
+  /** Pull-to-refresh — recarrega APENAS esta rota via Angular Router. */
   async onRefresh(ev: CustomEvent): Promise<void> {
-    try {
-      window.location.reload();
-    } finally {
-      const target = ev?.target as { complete?: () => void } | null;
-      target?.complete?.();
-    }
+    await this.refreshSrv.refreshAtual(ev);
   }
 
   modalidadeOf(c: Categoria | undefined) {

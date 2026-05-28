@@ -1,7 +1,10 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { LoadingController, ToastController } from '@ionic/angular';
 import { Observable, combineLatest, of } from 'rxjs';
 import { catchError, map, startWith } from 'rxjs/operators';
+import { jsPDF } from 'jspdf';
+import domtoimage from 'dom-to-image-more';
 import { CampeonatosService } from '../../../../campeonatos/campeonatos.service';
 import { NavBackService } from '../../../../shared/nav-back.service';
 import { CategoriasService } from '../../../../campeonatos/categorias.service';
@@ -12,6 +15,7 @@ import { Jogo } from '../../../../campeonatos/models/jogo.model';
 import { Campeonato } from '../../../../campeonatos/campeonato.model';
 import { Categoria } from '../../../../campeonatos/categoria.model';
 import { dataHoraIsoParaBr } from '../../../../shared/directives/mask.directive';
+import { salvarPdf } from '../../../../shared/pdf-download.helper';
 
 interface JogoLinha {
   jogo: Jogo;
@@ -59,6 +63,8 @@ export class ImprimirJogosPage implements OnInit {
   private readonly jogosSrv = inject(JogosService);
   private readonly equipesSrv = inject(EquipesService);
   private readonly navBack = inject(NavBackService);
+  private readonly loadingCtrl = inject(LoadingController);
+  private readonly toastCtrl = inject(ToastController);
 
   readonly campeonatoId = this.lerParam('id');
   readonly categoriaId = this.lerParam('catId');
@@ -83,8 +89,200 @@ export class ImprimirJogosPage implements OnInit {
     ]);
   }
 
-  imprimir(): void {
-    window.print();
+  /** Imprime — gera PDF via dom-to-image-more + jsPDF e abre em nova aba
+   *  com `autoPrint()` (diálogo de impressão aparece automático). */
+  async imprimir(): Promise<void> {
+    return this.gerarPdf('print');
+  }
+
+  /** Baixar PDF — mesma pipeline mas faz `pdf.save()` direto. */
+  async baixarPdf(): Promise<void> {
+    return this.gerarPdf('download');
+  }
+
+  /**
+   * Núcleo compartilhado: captura `.folha` via dom-to-image-more clonando
+   * pra container offscreen de 210mm (resolve corte no viewport mobile),
+   * monta PDF A4 retrato com paginação e ou imprime ou baixa.
+   */
+  private async gerarPdf(destino: 'print' | 'download'): Promise<void> {
+    const folha = document.querySelector('.folha') as HTMLElement | null;
+    if (!folha) {
+      const t = await this.toastCtrl.create({
+        message: 'Conteúdo ainda não está pronto.',
+        duration: 1800,
+        color: 'warning',
+        position: 'top',
+      });
+      await t.present();
+      return;
+    }
+
+    const loading = await this.loadingCtrl.create({
+      message: destino === 'print' ? 'Preparando impressão...' : 'Gerando PDF...',
+      spinner: 'crescent',
+    });
+    await loading.present();
+
+    const offscreen = document.createElement('div');
+    offscreen.style.cssText = `
+      position: fixed;
+      top: -10000px;
+      left: 0;
+      width: 210mm;
+      background: #ffffff;
+      pointer-events: none;
+      z-index: -1;
+    `;
+
+    try {
+      // 1) Inline imgs originais como data URL (CORS-safe)
+      await this.inlineImagens(folha);
+
+      // 2) Clone profundo + bordas finas
+      const clone = folha.cloneNode(true) as HTMLElement;
+      clone.style.transform = 'none';
+      clone.style.position = 'static';
+      clone.style.margin = '0';
+      clone.style.boxShadow = 'none';
+      clone.style.setProperty('border-width', '0.5px', 'important');
+      clone.querySelectorAll<HTMLElement>('*').forEach(el => {
+        el.style.setProperty('border-width', '0.5px', 'important');
+      });
+
+      offscreen.appendChild(clone);
+      document.body.appendChild(offscreen);
+
+      // 3) Aguarda layout + imgs do clone decodificarem
+      await new Promise<void>(r => requestAnimationFrame(() => r()));
+      await new Promise<void>(r => requestAnimationFrame(() => r()));
+      const imgsClone = Array.from(clone.querySelectorAll('img')) as HTMLImageElement[];
+      await Promise.all(
+        imgsClone.map(img => {
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+          return new Promise<void>(resolve => {
+            const fin = (): void => resolve();
+            img.addEventListener('load', fin, { once: true });
+            img.addEventListener('error', fin, { once: true });
+            setTimeout(fin, 2000);
+          });
+        }),
+      );
+
+      const rect = clone.getBoundingClientRect();
+
+      // 4) Captura PNG via dom-to-image-more
+      const dataUrl = await domtoimage.toPng(clone, {
+        bgcolor: '#ffffff',
+        width: Math.ceil(rect.width),
+        height: Math.ceil(rect.height),
+        scale: 3,
+        cacheBust: false,
+      });
+
+      // 5) Mede o PNG
+      const tmpImg = new Image();
+      await new Promise<void>((resolve, reject) => {
+        tmpImg.onload = () => resolve();
+        tmpImg.onerror = () => reject(new Error('falha ao carregar PNG'));
+        tmpImg.src = dataUrl;
+      });
+
+      // 6) Monta PDF A4 retrato com paginação automática
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgW = pageW;
+      const imgH = (tmpImg.naturalHeight * imgW) / tmpImg.naturalWidth;
+      if (imgH <= pageH) {
+        pdf.addImage(dataUrl, 'PNG', 0, 0, imgW, imgH);
+      } else {
+        let restante = imgH;
+        let offsetY = 0;
+        while (restante > 0) {
+          pdf.addImage(dataUrl, 'PNG', 0, -offsetY, imgW, imgH);
+          restante -= pageH;
+          if (restante > 0) {
+            pdf.addPage();
+            offsetY += pageH;
+          }
+        }
+      }
+
+      if (destino === 'print') {
+        pdf.autoPrint();
+        const blobUrl = pdf.output('bloburl');
+        window.open(blobUrl, '_blank');
+      } else {
+        // iOS Safari abre PDF inline — salvarPdf usa Web Share API no iOS.
+        await salvarPdf(pdf, 'tabela-partidas.pdf');
+      }
+    } catch (err) {
+      console.error(`[ImprimirJogos/${destino}] erro`, err);
+      const t = await this.toastCtrl.create({
+        message: 'Erro ao gerar PDF.',
+        duration: 2400,
+        color: 'danger',
+        position: 'top',
+      });
+      await t.present();
+    } finally {
+      try {
+        if (offscreen.parentNode) offscreen.parentNode.removeChild(offscreen);
+      } catch { /* ignore */ }
+      await loading.dismiss();
+    }
+  }
+
+  /** Converte `<img>` do container em data URL (base64) — evita CORS no
+   *  Firebase Storage durante captura. Mesma lógica usada em outras pages. */
+  private async inlineImagens(container: HTMLElement): Promise<void> {
+    const imgs = Array.from(container.querySelectorAll('img')) as HTMLImageElement[];
+    await Promise.all(
+      imgs.map(async imgEl => {
+        const src = imgEl.getAttribute('src') || '';
+        if (!src || src.startsWith('data:')) return;
+        try {
+          const dataUrl = await this.urlParaDataUrl(src);
+          if (dataUrl) {
+            imgEl.src = dataUrl;
+            if (imgEl.decode) await imgEl.decode().catch(() => undefined);
+          }
+        } catch { /* ignore */ }
+      }),
+    );
+  }
+
+  private async urlParaDataUrl(src: string): Promise<string | null> {
+    try {
+      const res = await fetch(src, { mode: 'cors', cache: 'no-store' });
+      if (res.ok) {
+        const blob = await res.blob();
+        return await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result as string);
+          r.onerror = () => reject(r.error);
+          r.readAsDataURL(blob);
+        });
+      }
+    } catch { /* fallback */ }
+    return await new Promise<string | null>(resolve => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth;
+          c.height = img.naturalHeight;
+          const ctx = c.getContext('2d');
+          if (!ctx) return resolve(null);
+          ctx.drawImage(img, 0, 0);
+          resolve(c.toDataURL('image/png'));
+        } catch { resolve(null); }
+      };
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
   }
 
   formatarDataBr(iso?: string | null): string {

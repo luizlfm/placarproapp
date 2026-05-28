@@ -8,12 +8,14 @@ import { Jogo, parseYoutubeVideoId } from '../../../../campeonatos/models/jogo.m
 import { JogosService } from '../../../../campeonatos/jogos.service';
 import { PlanosService, PlanoDef } from '../../../../users/planos.service';
 import { Observable } from 'rxjs';
-import {
-  dataHoraBrParaIso,
-  dataHoraIsoParaBr,
-} from '../../../../shared/directives/mask.directive';
 import { ArbitragemJogoModalComponent } from '../../../../shared/components/arbitragem-jogo-modal/arbitragem-jogo-modal.component';
 import { AnexosJogoModalComponent } from '../../../../shared/components/anexos-jogo-modal/anexos-jogo-modal.component';
+import { PontosExtrasModalComponent } from '../../../../shared/components/pontos-extras-modal/pontos-extras-modal.component';
+import { ArteDoJogoModalComponent } from '../../../../shared/components/arte-do-jogo-modal/arte-do-jogo-modal.component';
+import { SumulaPage } from '../sumula/sumula.page';
+import { EquipesService } from '../../../../campeonatos/equipes.service';
+import { CampeonatosService } from '../../../../campeonatos/campeonatos.service';
+import { CategoriasService } from '../../../../campeonatos/categorias.service';
 
 @Component({
   selector: 'app-editar-informacoes-modal',
@@ -28,6 +30,9 @@ export class EditarInformacoesModalComponent implements OnInit {
 
   private readonly fb = inject(FormBuilder);
   private readonly jogosSrv = inject(JogosService);
+  private readonly equipesSrv = inject(EquipesService);
+  private readonly campeonatosSrv = inject(CampeonatosService);
+  private readonly categoriasSrv = inject(CategoriasService);
   private readonly modalCtrl = inject(ModalController);
   private readonly toastCtrl = inject(ToastController);
   private readonly router = inject(Router);
@@ -43,7 +48,10 @@ export class EditarInformacoesModalComponent implements OnInit {
 
   readonly form: FormGroup = this.fb.nonNullable.group({
     titulo: [''],
-    dataHora: [''],
+    /** Data isolada — YYYY-MM-DD. Setada pelo app-date-input mode='date'. */
+    data: [''],
+    /** Hora isolada — HH:mm. Setada pelo app-date-input mode='time'. */
+    hora: [''],
     local: [''],
     aviso: [''],
     /** Link do YouTube — pode ser URL completa ou só o video ID.
@@ -53,11 +61,29 @@ export class EditarInformacoesModalComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.jogo) {
-      // Converte ISO (YYYY-MM-DDTHH:mm) → BR (dd/mm/aaaa hh:mm) ao carregar.
-      const dataBr = dataHoraIsoParaBr(this.jogo.dataHora) || this.jogo.dataHora || '';
+      // O Jogo.dataHora pode vir como ISO completo (YYYY-MM-DDTHH:mm) ou como
+      // BR (dd/mm/aaaa hh:mm) em registros antigos. Normaliza pra ISO e quebra
+      // em `data` (YYYY-MM-DD) + `hora` (HH:mm) pra alimentar os 2 pickers.
+      const dh = this.jogo.dataHora ?? '';
+      let dataIso = '';
+      let horaIso = '';
+      if (dh) {
+        // Tenta detectar formato BR primeiro pra converter pra ISO.
+        const brMatch = /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/.exec(dh);
+        if (brMatch) {
+          dataIso = `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
+          if (brMatch[4]) horaIso = `${brMatch[4]}:${brMatch[5]}`;
+        } else {
+          // Assume ISO YYYY-MM-DD[THH:mm]
+          const [d, h] = dh.split('T');
+          if (d) dataIso = d.slice(0, 10);
+          if (h) horaIso = h.slice(0, 5);
+        }
+      }
       this.form.patchValue({
         titulo: this.jogo.titulo ?? '',
-        dataHora: dataBr,
+        data: dataIso,
+        hora: horaIso,
         local: this.jogo.local ?? '',
         aviso: this.jogo.aviso ?? '',
         youtubeUrl: this.jogo.youtubeVideoId
@@ -74,14 +100,19 @@ export class EditarInformacoesModalComponent implements OnInit {
   async salvar(): Promise<void> {
     if (!this.jogo?.id) return;
     const v = this.form.getRawValue();
-    // Tenta converter BR → ISO; se a entrada estiver incompleta, mantém o
-    // texto digitado para que o usuário não perca o que escreveu.
-    const dataDigitada = (v.dataHora as string).trim();
-    const dataIso = dataHoraBrParaIso(dataDigitada);
+    // Os campos `data` (YYYY-MM-DD) e `hora` (HH:mm) vêm dos pickers
+    // dedicados. Combina pra montar o ISO armazenado em jogo.dataHora.
+    const dataIsoCampo = (v.data as string).trim();
+    const horaIsoCampo = (v.hora as string).trim();
+    let dataHora = '';
+    if (dataIsoCampo && horaIsoCampo) {
+      dataHora = `${dataIsoCampo}T${horaIsoCampo}`;
+    } else if (dataIsoCampo) {
+      dataHora = dataIsoCampo;
+    }
     // Firestore NÃO aceita `undefined` em updateDoc — construímos o patch
     // só com valores definidos. Pra REMOVER um campo, usa `deleteField()`.
     const titulo = (v.titulo as string).trim();
-    const dataHora = dataIso || dataDigitada;
     const local = (v.local as string).trim();
     const aviso = (v.aviso as string).trim();
     // YouTube: só processa se o user TEM plano com transmissão ao vivo.
@@ -149,6 +180,60 @@ export class EditarInformacoesModalComponent implements OnInit {
     }
   }
 
+  /**
+   * Abre o modal "Arte do Jogo" — gera arte visual em 3 layouts. Carrega
+   * equipes (pra escudo + nome) + campeonato + categoria (pra título e
+   * subtítulo padrão).
+   */
+  async abrirArteDoJogo(): Promise<void> {
+    if (!this.jogo?.id) return;
+    const [equipes, campeonato, categoria] = await Promise.all([
+      firstValueFrom(this.equipesSrv.list$(this.campeonatoId, this.categoriaId)),
+      firstValueFrom(this.campeonatosSrv.get$(this.campeonatoId)),
+      firstValueFrom(this.categoriasSrv.get$(this.campeonatoId, this.categoriaId)),
+    ]);
+    const mandante = equipes.find(e => e.id === this.jogo.mandanteId);
+    const visitante = equipes.find(e => e.id === this.jogo.visitanteId);
+    const modal = await this.modalCtrl.create({
+      component: ArteDoJogoModalComponent,
+      componentProps: {
+        jogo: this.jogo,
+        mandante,
+        visitante,
+        campeonato,
+        categoria,
+      },
+      cssClass: 'modal-arte-jogo',
+      backdropDismiss: true,
+    });
+    await modal.present();
+  }
+
+  /** Abre o modal de Pontos Extras (bônus/penalidades manuais do jogo). */
+  async abrirPontosExtras(): Promise<void> {
+    if (!this.jogo?.id) return;
+    const equipes = await firstValueFrom(
+      this.equipesSrv.list$(this.campeonatoId, this.categoriaId),
+    );
+    const modal = await this.modalCtrl.create({
+      component: PontosExtrasModalComponent,
+      componentProps: {
+        campeonatoId: this.campeonatoId,
+        categoriaId: this.categoriaId,
+        jogo: this.jogo,
+        equipes,
+      },
+      backdropDismiss: true,
+    });
+    await modal.present();
+    await modal.onDidDismiss();
+    // Recarrega o jogo pra refletir mudanças no modal pai
+    const fresh = await firstValueFrom(
+      this.jogosSrv.get$(this.campeonatoId, this.categoriaId, this.jogo.id!),
+    );
+    if (fresh) this.jogo = fresh;
+  }
+
   /** Abre modal de Arbitragem do jogo. */
   async abrirArbitragem(): Promise<void> {
     if (!this.jogo?.id) return;
@@ -174,16 +259,22 @@ export class EditarInformacoesModalComponent implements OnInit {
   /** Navega para a página de súmula imprimível do jogo. */
   async abrirSumula(): Promise<void> {
     if (!this.jogo?.id) return;
-    await this.modalCtrl.dismiss();
-    this.router.navigate([
-      '/app/campeonato',
-      this.campeonatoId,
-      'categoria',
-      this.categoriaId,
-      'jogo',
-      this.jogo.id,
-      'sumula',
-    ]);
+    // Abre a SumulaPage como MODAL (em vez de navegar pra rota dedicada)
+    // — UX consistente com os outros itens da lista (Anexos, Arbitragem
+    // etc). A própria página detecta `isModal=true` e troca o botão
+    // "Voltar" por "Fechar modal", preservando a opção de imprimir.
+    const modal = await this.modalCtrl.create({
+      component: SumulaPage,
+      cssClass: 'sumula-modal',
+      componentProps: {
+        isModal: true,
+        campeonatoIdInput: this.campeonatoId,
+        categoriaIdInput: this.categoriaId,
+        jogoIdInput: this.jogo.id,
+      },
+      backdropDismiss: true,
+    });
+    await modal.present();
   }
 
   /** Contadores pra badge nos botões da lista. */

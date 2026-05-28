@@ -5,6 +5,7 @@ import { IonicModule } from '@ionic/angular';
 import { ConfigPageRoutingModule } from './config-routing.module';
 import { SharedModule } from '../../../shared/shared.module';
 import { ConfigModalsModule } from '../../../shared/config-modals/config-modals.module';
+import { ArbitragemPageModule } from '../../arbitragem/arbitragem.module';
 import { ConfigPage } from './config.page';
 
 @NgModule({
@@ -16,6 +17,10 @@ import { ConfigPage } from './config.page';
     ConfigPageRoutingModule,
     SharedModule,
     ConfigModalsModule,
+    /* Importado pra reaproveitar o ArbitragemPage como MODAL aqui em
+       Configurações > Arbitragem. O mesmo componente serve como rota
+       global /app/arbitragem e como modal contextual. */
+    ArbitragemPageModule,
   ],
   declarations: [ConfigPage],
 })

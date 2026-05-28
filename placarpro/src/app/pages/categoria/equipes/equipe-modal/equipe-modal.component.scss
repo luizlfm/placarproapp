@@ -148,10 +148,45 @@ ion-content.bg .modal-card {
 }
 
 /* ─── Identity (escudo centralizado) ─── */
+/* Escudo centralizado em cima + texto/ações embaixo (mesmo padrão
+   do .foto-block do jogador-modal). */
 .team-identity {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
   padding: 4px 0 0;
+}
+
+.logo-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  font-size: 13px;
+  gap: 2px;
+
+  strong {
+    color: var(--placar-text, #1c2e3d);
+    font-size: 14px;
+  }
+
+  > span {
+    color: var(--ion-color-medium, #6b6b70);
+  }
+
+  .logo-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+
+    ion-button {
+      margin: 0;
+      --padding-start: 12px;
+      --padding-end: 12px;
+    }
+  }
 }
 
 .logo-circle {
@@ -567,21 +602,39 @@ ion-content.bg .modal-card {
   }
 }
 
-/* ─── Botões base ─── (button nativos, sem ion-button) */
+/* ─── Form actions (Remover / Salvar) em 2 colunas ─── */
+.form-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+
+  /* Quando só há um botão (criar equipe nova — sem "Remover"), ele
+     ocupa as 2 colunas pra não ficar com largura pela metade. */
+  > .btn:only-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ─── Botões base ─── padronizados com o jogador-modal (REMOVER/SALVAR) */
 .btn {
   display: inline-flex;
+  flex: 1;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 0 16px;
-  height: 40px;
-  border-radius: 10px;
+  gap: 8px;
+  padding: 0 18px;
+  height: 48px;
+  border-radius: 12px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
   font-family: inherit;
   cursor: pointer;
   border: 1.5px solid transparent;
-  transition: background 140ms ease, border-color 140ms ease, transform 100ms ease;
+  transition: background 140ms ease, border-color 140ms ease, transform 100ms ease, box-shadow 140ms ease;
 
   ion-icon {
     font-size: 18px;
@@ -616,8 +669,8 @@ ion-content.bg .modal-card {
 .btn-primary:not([class*="ion-"]):not(.btn-icon):not(.btn-icon-sm):not([data-compact]) {
   background: var(--ion-color-primary, #1c2e3d);
   color: #fff;
-  box-shadow: 0 2px 6px rgba(28, 46, 61, 0.22);
-  border: 1.5px solid #fff;
+  box-shadow: 0 4px 12px rgba(28, 46, 61, 0.28);
+  border: none;
 
   &:hover:not(:disabled) {
     background: #2d4a63;
@@ -627,19 +680,13 @@ ion-content.bg .modal-card {
     box-shadow: none;
     background: var(--ion-color-primary, #1c2e3d);
   }
-
-  /* Botões nativos (HTML <button>) — garantia de touch target.
-     `ion-button` já tem `min-height` via tokens, este alvo é pra
-     <button> puro que aparece em listas/cards customizados. */
-
-  min-height: 36px;
-  width: 100% !important;
-
 }
 
 .btn-danger:not([class*="ion-"]):not(.btn-icon):not(.btn-icon-sm):not([data-compact]) {
   background: var(--ion-color-danger, #eb445a);
   color: #fff;
+  box-shadow: 0 4px 12px rgba(235, 68, 90, 0.28);
+  border: none;
 
   &:hover:not(:disabled) {
     background: #ff4747;
@@ -649,14 +696,6 @@ ion-content.bg .modal-card {
     box-shadow: none;
     background: var(--ion-color-danger, #eb445a);
   }
-
-  /* Botões nativos (HTML <button>) — garantia de touch target.
-     `ion-button` já tem `min-height` via tokens, este alvo é pra
-     <button> puro que aparece em listas/cards customizados. */
-
-  min-height: 36px;
-  width: 100% !important;
-
 }
 
 /* ═══════ MOBILE (≤ 600px) ═══════ */

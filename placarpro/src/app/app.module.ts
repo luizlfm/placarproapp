@@ -1,6 +1,7 @@
 import { NgModule, isDevMode } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouteReuseStrategy } from '@angular/router';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 import { IonicModule, IonicRouteStrategy } from '@ionic/angular';
 
@@ -33,7 +34,11 @@ import { environment } from '../environments/environment';
     // IMPORTANTE: não interpole INPUT DO USUÁRIO direto em alert.message — sanitize antes,
     // pra não abrir janela de XSS. Use o helper `AlertService` em vez do AlertController
     // direto sempre que possível (ele sanitiza por default).
-    IonicModule.forRoot({ innerHTMLTemplatesEnabled: true }),
+    // `mode: 'md'` força Material Design em iOS também — garante visual
+    // consistente dos componentes (inputs outline, botões, etc) em todas
+    // as plataformas. Sem isso, no Safari/iOS o ion-input fill="outline"
+    // renderiza diferente (sem a borda rounded esperada).
+    IonicModule.forRoot({ innerHTMLTemplatesEnabled: true, mode: 'md' }),
     AppRoutingModule,
     ServiceWorkerModule.register('ngsw-worker.js', {
       enabled: !isDevMode(),
@@ -42,6 +47,9 @@ import { environment } from '../environments/environment';
   ],
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    // HttpClient global — usado pelo autocomplete de endereço (Nominatim/OSM)
+    // na tela de Locais, e disponível pra qualquer service futuro.
+    provideHttpClient(withInterceptorsFromDi()),
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     provideAuth(() => getAuth()),
     provideFirestore(() => getFirestore()),

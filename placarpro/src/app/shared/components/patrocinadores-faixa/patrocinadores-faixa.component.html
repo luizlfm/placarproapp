@@ -26,7 +26,7 @@
           <div class="pf-banner" [class.eh-mobile]="ehMobile">
             <ng-container *ngIf="bannerAppParaViewport(p) as src; else iconP1">
               <div class="pf-banner-bg" [style.backgroundImage]="'url(' + src + ')'"></div>
-              <img [src]="src" [alt]="p.nome" (error)="onImgErro($event)" loading="lazy" />
+              <img skel [src]="src" [alt]="p.nome" (error)="onImgErro($event)" loading="lazy" />
             </ng-container>
             <ng-template #iconP1>
               <div class="pf-banner-placeholder"><ion-icon name="megaphone-outline"></ion-icon></div>
@@ -34,7 +34,7 @@
           </div>
           <div class="pf-rodape">
             <div class="pf-logo-mini" *ngIf="p.logoUrl && p.bannerAppUrl">
-              <img [src]="p.logoUrl" [alt]="p.nome" loading="lazy" />
+              <img skel [src]="p.logoUrl" [alt]="p.nome" loading="lazy" />
             </div>
             <div class="pf-info">
               <div class="pf-nome">{{ p.nome }}</div>
@@ -57,7 +57,7 @@
           <div class="pf-banner" [class.eh-mobile]="ehMobile">
             <ng-container *ngIf="bannerAppParaViewport(p) as src; else iconP2">
               <div class="pf-banner-bg" [style.backgroundImage]="'url(' + src + ')'"></div>
-              <img [src]="src" [alt]="p.nome" (error)="onImgErro($event)" loading="lazy" />
+              <img skel [src]="src" [alt]="p.nome" (error)="onImgErro($event)" loading="lazy" />
             </ng-container>
             <ng-template #iconP2>
               <div class="pf-banner-placeholder"><ion-icon name="megaphone-outline"></ion-icon></div>
@@ -65,7 +65,7 @@
           </div>
           <div class="pf-rodape">
             <div class="pf-logo-mini" *ngIf="p.logoUrl && p.bannerAppUrl">
-              <img [src]="p.logoUrl" [alt]="p.nome" loading="lazy" />
+              <img skel [src]="p.logoUrl" [alt]="p.nome" loading="lazy" />
             </div>
             <div class="pf-info">
               <div class="pf-nome">{{ p.nome }}</div>
@@ -93,7 +93,7 @@
           <div class="pf-banner" [class.eh-mobile]="ehMobile">
             <ng-container *ngIf="bannerAppParaViewport(p) as src; else iconP3">
               <div class="pf-banner-bg" [style.backgroundImage]="'url(' + src + ')'"></div>
-              <img [src]="src" [alt]="p.nome" (error)="onImgErro($event)" loading="lazy" />
+              <img skel [src]="src" [alt]="p.nome" (error)="onImgErro($event)" loading="lazy" />
             </ng-container>
             <ng-template #iconP3>
               <div class="pf-banner-placeholder"><ion-icon name="megaphone-outline"></ion-icon></div>
@@ -101,7 +101,7 @@
           </div>
           <div class="pf-rodape">
             <div class="pf-logo-mini" *ngIf="p.logoUrl && p.bannerAppUrl">
-              <img [src]="p.logoUrl" [alt]="p.nome" loading="lazy" />
+              <img skel [src]="p.logoUrl" [alt]="p.nome" loading="lazy" />
             </div>
             <div class="pf-info">
               <div class="pf-nome">{{ p.nome }}</div>

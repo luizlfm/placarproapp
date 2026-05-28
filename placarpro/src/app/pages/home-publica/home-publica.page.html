@@ -370,6 +370,7 @@
                     [srcset]="c.capaMobileUrl"
                   />
                   <img
+                    skel
                     [src]="c.capaUrl || c.bannerUrl || c.capaMobileUrl"
                     [alt]="c.titulo"
                     loading="lazy"
@@ -391,7 +392,7 @@
                    + footer com seguidores e CTA. -->
               <div class="info">
                 <div class="logo-float" *ngIf="c.logoUrl || true">
-                  <img *ngIf="c.logoUrl; else logoIc" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
+                  <img *ngIf="c.logoUrl; else logoIc" skel [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
                   <ng-template #logoIc><ion-icon name="trophy-outline"></ion-icon></ng-template>
                 </div>
 
@@ -643,7 +644,7 @@
       <div class="col">
         <h4>Contato</h4>
         <p><ion-icon name="mail-outline"></ion-icon> contato&#64;placarproapp.com</p>
-        <p><ion-icon name="logo-whatsapp"></ion-icon> +55 82 99102-7052</p>
+        <p><ion-icon name="logo-whatsapp"></ion-icon> +55 37 99956-2903</p>
       </div>
 
       <div class="col">

@@ -2,7 +2,9 @@ import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NavBackService } from '../../../../shared/nav-back.service';
-import { Subscription } from 'rxjs';
+import { AddressAutocompleteService, SugestaoEndereco } from '../../../../shared/address-autocomplete.service';
+import { Subject, Subscription, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { LoadingController, ToastController } from '@ionic/angular';
 import { RachaService } from '../../../racha.service';
 import { DiaSemana, Racha, TipoCampo } from '../../../models/racha.model';
@@ -41,6 +43,14 @@ export class RachaMeuRachaPage implements OnInit, OnDestroy {
   private readonly loadingCtrl = inject(LoadingController);
   private readonly toastCtrl = inject(ToastController);
   private readonly navBack = inject(NavBackService);
+  private readonly addressSrv = inject(AddressAutocompleteService);
+
+  // ─── Autocomplete de endereço (Nominatim/OSM) ───
+  sugestoes: SugestaoEndereco[] = [];
+  buscandoEndereco = false;
+  enderecoFocado = false;
+  private readonly buscaEndereco$ = new Subject<string>();
+  private ignorarProximaBusca = false;
 
   racha?: Racha;
   rachaId = '';
@@ -97,6 +107,7 @@ export class RachaMeuRachaPage implements OnInit, OnDestroy {
     estado: [''],
     municipio: [''],
     endereco: [''],
+    numero: [''],
     // Toggles
     exibirNotas: [false],
     codigoIndicacao: [''],
@@ -113,7 +124,56 @@ export class RachaMeuRachaPage implements OnInit, OnDestroy {
 
   private sub?: Subscription;
 
+  /** Dispara busca quando o user digita no campo de endereço. */
+  onDigitarEndereco(termo: string | null | undefined): void {
+    this.enderecoFocado = true;
+    this.buscaEndereco$.next(termo ?? '');
+  }
+
+  /** Aplica os campos da sugestão escolhida pelo user. */
+  selecionarSugestao(s: SugestaoEndereco): void {
+    this.ignorarProximaBusca = true;
+    // Cidade vem "Município / UF" — separa de volta nos campos individuais.
+    const [municipio, uf] = (s.cidade ?? '').split('/').map(x => x.trim());
+    this.form.patchValue({
+      endereco: s.endereco,
+      numero: s.numero,
+      municipio: municipio || '',
+      estado: uf || '',
+    });
+    this.form.markAsDirty();
+    this.sugestoes = [];
+    this.enderecoFocado = false;
+  }
+
+  onBlurEndereco(): void {
+    setTimeout(() => { this.enderecoFocado = false; }, 200);
+  }
+
   ngOnInit(): void {
+    // Pipeline do autocomplete de endereço (debounce 350ms + Nominatim/OSM).
+    this.buscaEndereco$
+      .pipe(
+        debounceTime(350),
+        distinctUntilChanged(),
+        switchMap(termo => {
+          if (this.ignorarProximaBusca) {
+            this.ignorarProximaBusca = false;
+            return of([] as SugestaoEndereco[]);
+          }
+          if (!termo || termo.length < 4) {
+            this.buscandoEndereco = false;
+            return of([] as SugestaoEndereco[]);
+          }
+          this.buscandoEndereco = true;
+          return this.addressSrv.search(termo);
+        }),
+      )
+      .subscribe(arr => {
+        this.buscandoEndereco = false;
+        this.sugestoes = arr;
+      });
+
     this.rachaId = this.route.snapshot.parent?.paramMap.get('id') ?? '';
     if (!this.rachaId) {
       this.router.navigateByUrl('/racha');
@@ -171,6 +231,7 @@ export class RachaMeuRachaPage implements OnInit, OnDestroy {
       estado: r.estado ?? '',
       municipio: r.municipio ?? '',
       endereco: r.endereco ?? '',
+      numero: r.numero ?? '',
       exibirNotas: r.exibirNotas ?? false,
       codigoIndicacao: r.codigoIndicacao ?? '',
     }, { emitEvent: false });
@@ -249,6 +310,7 @@ export class RachaMeuRachaPage implements OnInit, OnDestroy {
         estado: v.estado || '',
         municipio: v.municipio || '',
         endereco: v.endereco || '',
+        numero: v.numero || '',
         exibirNotas: !!v.exibirNotas,
         codigoIndicacao: (v.codigoIndicacao || '').trim() || undefined,
         avaliacao: {

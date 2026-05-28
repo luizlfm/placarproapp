@@ -211,6 +211,35 @@ ion-content { --background: #f3f4f6; }
       }
     }
   }
+
+  /* Outline navy — variante usada pelo botão "Baixar PDF" pra
+     parecer secundário ao lado do "Imprimir" (que é solid). */
+  &.outline {
+    background: #ffffff;
+    color: #1C2E3D;
+    border: 1.5px solid #1C2E3D;
+
+    &:hover {
+      background: rgba(28, 46, 61, 0.06);
+    }
+  }
+}
+
+/* Chip que abre modal (Equipes) — fica como um "item clicável" largo
+   com o contador "selecionadas/total" no canto direito. */
+.ctrl-chip-modal {
+  padding-right: 10px !important;
+
+  .cce-qtd {
+    background: rgba(28, 46, 61, 0.12);
+    color: #1C2E3D;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 2px 8px;
+    min-width: 32px;
+    text-align: center;
+    margin-left: 4px;
+  }
 }
 
 /* =========================================================
@@ -284,6 +313,12 @@ ion-content { --background: #f3f4f6; }
   font-family: 'Arial', 'Helvetica', sans-serif;
   font-size: 11px;
   line-height: 1.3;
+
+  /* Responsividade mobile: o layout `.ph-tabela` em
+     `@media (max-width: 760px)` mais abaixo já trata o scroll horizontal
+     das tabelas largas (display: block + overflow-x: auto). NÃO usar
+     `zoom` aqui — `zoom` aplica em TUDO (header, cabeçalho, tabela)
+     e espreme as colunas a ponto de ficar ilegível. */
 }
 
 /* ============ Cabeçalho ============ */
@@ -907,6 +942,31 @@ ion-content { --background: #f3f4f6; }
 /* =========================================================
    PRINT
    ========================================================= */
+/* ─── Força layout de tabela normal durante geração de PDF ────────
+   A regra `@media (max-width: 760px)` transforma .ph-tabela em
+   `display: block; overflow-x: auto; white-space: nowrap`. Quando o
+   user clica "Baixar PDF" do mobile, o `dom-to-image` captura nesse
+   estado (não em @media print), gerando uma tabela cortada/quebrada.
+   Solução: durante a captura, adicionamos a classe `.pdf-rendering`
+   ao .print-folha que sobrescreve essas regras pra forçar table layout. */
+.print-folha.pdf-rendering .ph-tabela {
+  display: table !important;
+  width: 100% !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  table-layout: auto !important;
+  font-size: 10px !important;
+}
+.print-folha.pdf-rendering .ph-tabela thead { display: table-header-group !important; }
+.print-folha.pdf-rendering .ph-tabela tbody { display: table-row-group !important; }
+.print-folha.pdf-rendering .ph-tabela tr { display: table-row !important; }
+.print-folha.pdf-rendering .ph-tabela th,
+.print-folha.pdf-rendering .ph-tabela td {
+  display: table-cell !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+
 @media print {
   @page {
     size: A4 portrait;
@@ -921,6 +981,31 @@ ion-content { --background: #f3f4f6; }
     padding: 0;
     width: 100%;
   }
+
+  /* Mesmas regras pra impressão direta (Ctrl+P / botão Imprimir) */
+  .ph-tabela {
+    display: table !important;
+    width: 100% !important;
+    overflow: visible !important;
+    white-space: normal !important;
+    table-layout: auto !important;
+    font-size: 10px !important;
+  }
+  .ph-tabela thead,
+  .ph-tabela tbody,
+  .ph-tabela tr {
+    display: table-row-group !important;
+    width: auto !important;
+  }
+  .ph-tabela thead { display: table-header-group !important; }
+  .ph-tabela tr { display: table-row !important; }
+  .ph-tabela th,
+  .ph-tabela td {
+    display: table-cell !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+
   .ph-tabela thead th {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
@@ -945,11 +1030,32 @@ ion-content { --background: #f3f4f6; }
    ========================================================= */
 @media (max-width: 760px) {
   .print-folha {
-    width: auto;
-    margin: 8px 8px;
-    padding: 14px 12px;
+    /* PDF-LIKE PREVIEW: largura aumentada pra 263mm para a tabela
+       preencher melhor a folha no mobile (compensa o padding lateral
+       sem deixar gap branco à direita). `zoom: 0.45` encolhe TUDO
+       proporcionalmente. */
+    width: 263mm;
+    max-width: none;
+    margin: 8px auto;
+    padding: 12mm 10mm;
     font-size: 11px;
     border-radius: 8px;
+    zoom: 0.45;
+  }
+  @media (max-width: 480px) {
+    .print-folha { zoom: 0.42; }
+  }
+  @media (max-width: 380px) {
+    .print-folha { zoom: 0.36; }
+  }
+
+  /* Tabela preenchendo 100% da largura disponível. `table-layout: auto`
+     distribui o espaço extra entre as colunas (em vez de deixar branco
+     à direita). As linhas continuam alinhadas porque o tbody renderiza
+     todas com as mesmas larguras do thead. */
+  .ph-tabela {
+    width: 100% !important;
+    table-layout: auto !important;
   }
 
   /* Cabeçalho: vira coluna empilhada */
@@ -989,33 +1095,11 @@ ion-content { --background: #f3f4f6; }
     .ph-grupo-meta { width: 100%; margin-left: 0; margin-top: 2px; }
   }
 
-  /* Tabelas: scroll horizontal quando passar da largura */
-  .ph-tabela {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    white-space: nowrap;
-    -webkit-overflow-scrolling: touch;
-    font-size: 10.5px;
-
-    thead, tbody, tr { /* mantém estrutura de tabela ao rolar */
-      display: table;
-      width: 100%;
-      table-layout: auto;
-    }
-
-    th, td {
-      padding: 4px 6px;
-      font-size: 10.5px;
-    }
-
-    .w-foto {
-      .foto-mini {
-        width: 24px;
-        height: 24px;
-      }
-    }
-  }
+  /* NÃO transforma a tabela em mobile — mantém o mesmo layout do
+     desktop/PDF (table-layout fixo das definições base). O wrapper
+     scrolla horizontalmente se a tabela exceder a viewport, MANTENDO
+     o alinhamento das colunas. Sem isso (com display: block, etc.) as
+     colunas viravam de tamanhos variáveis e desalinhavam entre linhas. */
 
   /* Wrapper de tabela quando existe */
   .ph-tabela-wrap {

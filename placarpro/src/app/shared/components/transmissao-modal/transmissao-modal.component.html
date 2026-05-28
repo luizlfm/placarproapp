@@ -37,8 +37,13 @@
 
   <!-- ============ ESTADO: IDLE / LIVE — preview + controles ============ -->
   <div class="tx-corpo" *ngIf="estado === 'idle' || estado === 'connecting' || estado === 'live'">
-    <!-- Preview da câmera (sempre visível enquanto não tem erro). -->
-    <div class="tx-video-wrap">
+    <!-- Preview da câmera (sempre visível enquanto não tem erro).
+         É O elemento que vai pra fullscreen (via `requestFullscreen` em
+         `.tx-video-wrap`), levando junto os controles overlay abaixo.
+         A classe `simulado-fullscreen` é toggled pelo TS quando o user
+         clica no botão expandir — aplica CSS `position: fixed; inset: 0`. -->
+    <div class="tx-video-wrap" #videoWrap
+         [class.simulado-fullscreen]="modoTelaCheiaSimulada">
       <video #videoPreview autoplay playsinline muted class="tx-video"></video>
 
       <!-- Overlay quando câmera está desligada -->
@@ -63,6 +68,99 @@
           <ion-icon name="people-outline"></ion-icon>
           <span>{{ viewersConectados }}</span>
         </div>
+      </div>
+
+      <!-- Chip da resolução capturada — SEMPRE visível quando há vídeo.
+           Posicionado no canto inferior esquerdo do vídeo (longe do
+           header e dos controles) com tamanho grande e impossível de
+           perder. Verde se 4K, laranja se degradado. -->
+      <div class="tx-chip-resolucao"
+           *ngIf="localVideoTrack"
+           [class.tx-chip-4k]="resolucaoAtual.width >= 3840"
+           [class.tx-chip-degradado]="resolucaoAtual.width < 3840">
+        <ion-icon [name]="resolucaoAtual.width >= 3840 ? 'sparkles' : 'videocam-outline'"></ion-icon>
+        <span>{{ rotuloResolucao }}</span>
+      </div>
+
+      <!-- ═══ Controles OVERLAY (aparecem só em fullscreen) ═══
+           Sobrepostos no canto inferior do vídeo quando o wrap está em
+           fullscreen — assim o broadcaster pode iniciar/parar/girar a
+           câmera sem sair da tela cheia.
+
+           IDLE: botão flip (esquerda) + INICIAR TRANSMISSÃO (centro-direita)
+           LIVE: mute mic + toggle cam + flip + ENCERRAR
+           Visibilidade controlada por `.tx-video-wrap:fullscreen` no SCSS. -->
+      <!-- Botão "sair da tela cheia" (canto superior direito do wrap) —
+           aparece SÓ em tela cheia simulada. -->
+      <button
+        type="button"
+        class="tx-sair-cheia"
+        *ngIf="modoTelaCheiaSimulada"
+        (click)="modoTelaCheiaSimulada = false; $event.stopPropagation()"
+        aria-label="Sair da tela cheia"
+      >
+        <ion-icon name="contract-outline"></ion-icon>
+      </button>
+
+      <div class="tx-controles-overlay">
+        <ng-container *ngIf="estado === 'idle'">
+          <button
+            type="button"
+            class="tx-ov-btn tx-ov-btn-icon"
+            [disabled]="trocandoCamera"
+            (click)="flipCamera(); $event.stopPropagation()"
+            aria-label="Girar câmera"
+          >
+            <ion-icon name="camera-reverse-outline"></ion-icon>
+          </button>
+          <button
+            type="button"
+            class="tx-ov-btn tx-ov-btn-iniciar"
+            [disabled]="trocandoCamera"
+            (click)="iniciar(); $event.stopPropagation()"
+          >
+            <ion-icon name="radio-outline"></ion-icon>
+            <span>INICIAR TRANSMISSÃO</span>
+          </button>
+        </ng-container>
+
+        <ng-container *ngIf="estado === 'live'">
+          <button
+            type="button"
+            class="tx-ov-btn tx-ov-btn-icon"
+            [class.ativo]="micMutado"
+            (click)="toggleMic(); $event.stopPropagation()"
+            aria-label="Microfone"
+          >
+            <ion-icon [name]="micMutado ? 'mic-off-outline' : 'mic-outline'"></ion-icon>
+          </button>
+          <button
+            type="button"
+            class="tx-ov-btn tx-ov-btn-icon"
+            [class.ativo]="cameraDesligada"
+            (click)="toggleCamera(); $event.stopPropagation()"
+            aria-label="Câmera"
+          >
+            <ion-icon [name]="cameraDesligada ? 'videocam-off-outline' : 'videocam-outline'"></ion-icon>
+          </button>
+          <button
+            type="button"
+            class="tx-ov-btn tx-ov-btn-icon"
+            [disabled]="trocandoCamera || cameraDesligada"
+            (click)="flipCamera(); $event.stopPropagation()"
+            aria-label="Girar câmera"
+          >
+            <ion-icon name="camera-reverse-outline"></ion-icon>
+          </button>
+          <button
+            type="button"
+            class="tx-ov-btn tx-ov-btn-parar"
+            (click)="pararComConfirmacao(); $event.stopPropagation()"
+          >
+            <ion-icon name="stop-circle-outline"></ion-icon>
+            <span>ENCERRAR</span>
+          </button>
+        </ng-container>
       </div>
     </div>
 

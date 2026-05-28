@@ -225,7 +225,7 @@ export class ShellPage {
       ? `/app/campeonato/${id}/config`
       : `${base}/config`;
 
-    return [
+    const items: MenuItem[] = [
       { label: 'Início', icon: 'home-outline', path: `${base}/inicio` },
       {
         label: 'Equipes',
@@ -248,13 +248,32 @@ export class ShellPage {
         requirePerm: 'enviarMidias',
       },
       { label: 'Relatórios', icon: 'print-outline', path: `${base}/relatorios` },
-      {
-        label: 'Configurações',
-        icon: 'settings-outline',
-        path: configPath,
-        requirePerm: 'editarCampeonato',
-      },
     ];
+
+    // Quando o campeonato é "único", o `menuCampeonato` retorna [] —
+    // o user navega tudo pelo menu da categoria. Por isso "Apoios e
+    // Patrocinadores" (que normalmente vive no menu campeonato) precisa
+    // aparecer aqui também, senão fica inacessível pela sidebar nesse
+    // tipo de campeonato. Em "com-categorias" o item continua só no
+    // menuCampeonato pra não duplicar.
+    if (tipo === 'unico') {
+      items.push({
+        label: 'Apoios e Patrocinadores',
+        icon: 'megaphone-outline',
+        path: '/app/patrocinadores',
+        queryParams: { campeonatoId: id },
+        requirePerm: 'editarCampeonato',
+      });
+    }
+
+    items.push({
+      label: 'Configurações',
+      icon: 'settings-outline',
+      path: configPath,
+      requirePerm: 'editarCampeonato',
+    });
+
+    return items;
   });
 
   /** Stream das permissões do user logado no campeonato atual. Atualiza

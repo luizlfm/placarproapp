@@ -7,13 +7,15 @@ import { IonicModule } from '@ionic/angular';
 import { SeguindoPageRoutingModule } from './seguindo-routing.module';
 
 import { SeguindoPage } from './seguindo.page';
+import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
   imports: [
     CommonModule,
     FormsModule,
     IonicModule,
-    SeguindoPageRoutingModule
+    SeguindoPageRoutingModule,
+    SharedModule,
   ],
   declarations: [SeguindoPage]
 })

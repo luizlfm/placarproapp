@@ -62,27 +62,54 @@
               • Transmitir agora   (modal broadcaster LiveKit / câmera)
              O kebab "⋮" foi removido daqui — admin acessa pelo toolbar. -->
         <section class="tx-quick">
+          <!-- ═══ Card "Abrir transmissão" (YouTube) — só se há vídeo
+               configurado E user pode ver transmissão ═══ -->
           <button
             type="button"
             *ngIf="j.youtubeVideoId && (podeTransmissao$ | async)"
-            class="sb-tx-btn sb-tx-yt"
+            class="tx-card tx-card-youtube"
             (click)="abrirTransmissao()"
             title="Abrir transmissão ao vivo"
           >
-            <ion-icon name="logo-youtube"></ion-icon>
-            <span class="sb-tx-txt-full">Abrir transmissão</span>
-            <span class="sb-tx-txt-mini">Transmissão</span>
+            <div class="tx-card-icon">
+              <ion-icon name="logo-youtube"></ion-icon>
+            </div>
+            <div class="tx-card-info">
+              <div class="tx-card-title">Abrir transmissão</div>
+              <div class="tx-card-sub">YouTube ao vivo</div>
+            </div>
+            <ion-icon class="tx-card-chevron" name="chevron-forward-outline"></ion-icon>
           </button>
+
+          <!-- ═══ Card "Transmitir agora" (LiveKit/câmera) — só pra
+               organizador/moderador com permissão ═══ -->
           <button
             type="button"
             *ngIf="p.enviarMidias || p.editarResultados"
-            class="sb-tx-btn sb-tx-live"
+            class="tx-card tx-card-camera"
+            [class.ativa]="(transmissaoLiveAtiva$ | async)"
             (click)="iniciarTransmissaoLive()"
             title="Transmitir com sua câmera"
           >
-            <ion-icon name="radio-outline"></ion-icon>
-            <span class="sb-tx-txt-full">Transmitir agora</span>
-            <span class="sb-tx-txt-mini">Câmera</span>
+            <div class="tx-card-icon">
+              <!-- Quando NÃO está transmitindo: ícone de câmera comum.
+                   Quando transmitindo: SÓ a badge "AO VIVO" ocupa o espaço
+                   (sem ion-icon por baixo pra não sobrepor). -->
+              <ion-icon *ngIf="!(transmissaoLiveAtiva$ | async)" name="videocam-outline"></ion-icon>
+              <span class="tx-card-live-badge" *ngIf="(transmissaoLiveAtiva$ | async)">
+                <span class="tx-card-live-dot"></span>
+                AO<br/>VIVO
+              </span>
+            </div>
+            <div class="tx-card-info">
+              <div class="tx-card-title">
+                {{ (transmissaoLiveAtiva$ | async) ? 'Transmitindo' : 'Transmitir agora' }}
+              </div>
+              <div class="tx-card-sub">
+                {{ (transmissaoLiveAtiva$ | async) ? 'Toque pra abrir player' : 'Sua câmera ao vivo' }}
+              </div>
+            </div>
+            <ion-icon class="tx-card-chevron" name="chevron-forward-outline"></ion-icon>
           </button>
         </section>
 
@@ -130,7 +157,7 @@
             >
               <!-- Preview: mesma proporção (16:9) e tamanho do .tr-pat-stage desktop -->
               <div class="patjogo-preview">
-                <img
+                <img skel
                   *ngIf="pat.logoUrl; else iconPat"
                   [src]="pat.logoUrl"
                   [alt]="pat.nome"
@@ -242,14 +269,22 @@
             <span class="live-tempo-atual">
               {{ labelTempo(j.tempoAtual) }}
             </span>
-            <span class="live-time" aria-label="Tempo decorrido" [class.pausado]="j.tempoPausado">
+            <button
+              type="button"
+              class="live-time live-time-btn"
+              aria-label="Editar tempo decorrido"
+              title="Tocar pra editar o tempo"
+              [class.pausado]="j.tempoPausado"
+              (click)="editarTempoDecorrido()"
+            >
               <ion-icon [name]="j.tempoPausado ? 'pause-outline' : 'time-outline'"></ion-icon>
               {{ tempoDecorrido() }}
               <span class="live-acrescimo" *ngIf="(j.acrescimoAtualMin || 0) > 0">
                 +{{ j.acrescimoAtualMin }}
               </span>
               <span class="live-pausa-chip" *ngIf="j.tempoPausado">PAUSADO</span>
-            </span>
+              <ion-icon class="live-time-edit-icon" name="create-outline"></ion-icon>
+            </button>
           </header>
 
           <!-- ────────── Tempos / fases (segmented horizontal) ──────────
@@ -345,7 +380,7 @@
               <div class="pen-historico">
                 <div class="pen-hist-linha">
                   <span class="pen-hist-lbl">
-                    <img *ngIf="j.logoMandante" [src]="j.logoMandante" [alt]="j.nomeMandante" />
+                    <img skel *ngIf="j.logoMandante" [src]="j.logoMandante" [alt]="j.nomeMandante" />
                     {{ j.nomeMandante }}
                   </span>
                   <div class="pen-hist-chips">
@@ -382,7 +417,7 @@
                 </div>
                 <div class="pen-hist-linha">
                   <span class="pen-hist-lbl">
-                    <img *ngIf="j.logoVisitante" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
+                    <img skel *ngIf="j.logoVisitante" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
                     {{ j.nomeVisitante }}
                   </span>
                   <div class="pen-hist-chips">
@@ -645,7 +680,7 @@
               <div class="ld-sb-main">
                 <div class="ld-sb-team mandante">
                   <div class="ld-sb-escudo">
-                    <img *ngIf="j.logoMandante; else iconSBM" [src]="j.logoMandante" [alt]="j.nomeMandante" />
+                    <img skel *ngIf="j.logoMandante; else iconSBM" [src]="j.logoMandante" [alt]="j.nomeMandante" />
                     <ng-template #iconSBM><ion-icon name="shield-outline"></ion-icon></ng-template>
                   </div>
                   <div class="ld-sb-nome">{{ j.nomeMandante }}</div>
@@ -666,7 +701,7 @@
                 <div class="ld-sb-team visitante">
                   <div class="ld-sb-nome">{{ j.nomeVisitante }}</div>
                   <div class="ld-sb-escudo">
-                    <img *ngIf="j.logoVisitante; else iconSBV" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
+                    <img skel *ngIf="j.logoVisitante; else iconSBV" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
                     <ng-template #iconSBV><ion-icon name="shield-outline"></ion-icon></ng-template>
                   </div>
                 </div>
@@ -698,7 +733,7 @@
             <div class="qa-col">
               <div class="qa-col-head">
                 <span class="qa-logo">
-                  <img *ngIf="j.logoMandante; else iqM" [src]="j.logoMandante" alt="" />
+                  <img skel *ngIf="j.logoMandante; else iqM" [src]="j.logoMandante" alt="" />
                   <ng-template #iqM><ion-icon name="shield-outline"></ion-icon></ng-template>
                 </span>
                 <span class="qa-time-nome">{{ j.nomeMandante }}</span>
@@ -723,7 +758,7 @@
             <div class="qa-col">
               <div class="qa-col-head">
                 <span class="qa-logo">
-                  <img *ngIf="j.logoVisitante; else iqV" [src]="j.logoVisitante" alt="" />
+                  <img skel *ngIf="j.logoVisitante; else iqV" [src]="j.logoVisitante" alt="" />
                   <ng-template #iqV><ion-icon name="shield-outline"></ion-icon></ng-template>
                 </span>
                 <span class="qa-time-nome">{{ j.nomeVisitante }}</span>
@@ -802,7 +837,7 @@
               (click)="selecionarLadoEscalacao('mandante')"
             >
               <span class="esc-seg-logo">
-                <img *ngIf="j.logoMandante; else iSegEm" [src]="j.logoMandante" alt="" />
+                <img skel *ngIf="j.logoMandante; else iSegEm" [src]="j.logoMandante" alt="" />
                 <ng-template #iSegEm><ion-icon name="shield-outline"></ion-icon></ng-template>
               </span>
               <span class="esc-seg-nome">{{ j.nomeMandante }}</span>
@@ -814,7 +849,7 @@
               (click)="selecionarLadoEscalacao('visitante')"
             >
               <span class="esc-seg-logo">
-                <img *ngIf="j.logoVisitante; else iSegEv" [src]="j.logoVisitante" alt="" />
+                <img skel *ngIf="j.logoVisitante; else iSegEv" [src]="j.logoVisitante" alt="" />
                 <ng-template #iSegEv><ion-icon name="shield-outline"></ion-icon></ng-template>
               </span>
               <span class="esc-seg-nome">{{ j.nomeVisitante }}</span>
@@ -841,7 +876,7 @@
                 <div class="escala-lista" *ngIf="esc.length > 0; else escVazia1">
                   <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado">
                     <div class="foto">
-                      <img *ngIf="e.jogador.fotoUrl; else fic1" [src]="e.jogador.fotoUrl" alt="" />
+                      <img skel *ngIf="e.jogador.fotoUrl; else fic1" [src]="e.jogador.fotoUrl" alt="" />
                       <ng-template #fic1><ion-icon name="person-circle-outline"></ion-icon></ng-template>
                     </div>
                     <span class="nome">
@@ -895,7 +930,7 @@
                 <div class="escala-lista" *ngIf="esc.length > 0; else escVazia2">
                   <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado">
                     <div class="foto">
-                      <img *ngIf="e.jogador.fotoUrl; else fic2" [src]="e.jogador.fotoUrl" alt="" />
+                      <img skel *ngIf="e.jogador.fotoUrl; else fic2" [src]="e.jogador.fotoUrl" alt="" />
                       <ng-template #fic2><ion-icon name="person-circle-outline"></ion-icon></ng-template>
                     </div>
                     <span class="nome">
@@ -977,12 +1012,12 @@
                sem disputar espaço com o título e o botão "Adicionar". -->
           <div class="lances-escudos-bar">
             <span class="lances-escudo lances-escudo-mand">
-              <img *ngIf="j.logoMandante; else iLEMb" [src]="j.logoMandante" [alt]="j.nomeMandante" />
+              <img skel *ngIf="j.logoMandante; else iLEMb" [src]="j.logoMandante" [alt]="j.nomeMandante" />
               <ng-template #iLEMb><ion-icon name="shield-outline"></ion-icon></ng-template>
             </span>
             <span class="lances-escudos-vs">vs</span>
             <span class="lances-escudo lances-escudo-vis">
-              <img *ngIf="j.logoVisitante; else iLEVb" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
+              <img skel *ngIf="j.logoVisitante; else iLEVb" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
               <ng-template #iLEVb><ion-icon name="shield-outline"></ion-icon></ng-template>
             </span>
           </div>
@@ -1148,7 +1183,7 @@
               <div class="jogo-row">
                 <div class="jt mand">
                   <div class="t-logo">
-                    <img *ngIf="o.logoMandante; else om" [src]="o.logoMandante" alt="" />
+                    <img skel *ngIf="o.logoMandante; else om" [src]="o.logoMandante" alt="" />
                     <ng-template #om><ion-icon name="shield-outline"></ion-icon></ng-template>
                   </div>
                   <span class="t-nome">{{ o.nomeMandante }}</span>
@@ -1166,7 +1201,7 @@
 
                 <div class="jt vis">
                   <div class="t-logo">
-                    <img *ngIf="o.logoVisitante; else ov" [src]="o.logoVisitante" alt="" />
+                    <img skel *ngIf="o.logoVisitante; else ov" [src]="o.logoVisitante" alt="" />
                     <ng-template #ov><ion-icon name="shield-outline"></ion-icon></ng-template>
                   </div>
                   <span class="t-nome">{{ o.nomeVisitante }}</span>

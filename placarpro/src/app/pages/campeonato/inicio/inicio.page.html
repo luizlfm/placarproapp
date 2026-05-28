@@ -29,10 +29,9 @@
       <!-- HERO CARD: imagem real + overlay compacto (mesmo padrão
            das telas públicas). -->
       <article class="hero-card">
-        <img
-          *ngIf="capaCamp(camp) as cap"
+        <img skel
           class="hero-img"
-          [src]="cap"
+          [src]="capaCamp(camp)"
           [alt]="camp.titulo"
         />
         <div class="hero-info">
@@ -87,7 +86,7 @@
                 [style.background]="modalidadeOf(c)?.color ? modalidadeOf(c)!.color + '26' : null"
                 [style.color]="modalidadeOf(c)?.color || null"
               >
-                <img *ngIf="c.logoUrl; else catFallback" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
+                <img skel *ngIf="c.logoUrl; else catFallback" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
                 <ng-template #catFallback>
                   <ion-icon [name]="modalidadeOf(c)?.icon || 'grid-outline'"></ion-icon>
                 </ng-template>

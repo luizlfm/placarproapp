@@ -1,0 +1,122 @@
+:host {
+  display: block;
+  --background: transparent;
+  background: transparent;
+}
+
+.dialog {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px 18px 14px;
+  width: 100%;
+}
+
+.titulo {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ion-color-primary, #1C2E3D);
+}
+
+.campo {
+  margin-bottom: 14px;
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--placar-text-muted, #6b6b70);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+}
+
+.ipt-select {
+  width: 100%;
+  height: 38px;
+  padding: 0 32px 0 12px;
+  border-radius: 8px;
+  border: 1px solid #d8d8dd;
+  background: #fff
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%231C2E3D' d='M0 0l5 6 5-6z'/></svg>")
+    right 10px center no-repeat;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #2d2d2d;
+  appearance: none;
+  cursor: pointer;
+}
+
+.pontos-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+
+  .opt {
+    background: #f0f0f3;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 8px 0;
+    font-weight: 700;
+    font-size: 14px;
+    color: #2d2d2d;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+    transition: all 0.12s ease;
+
+    &:hover { background: #e6e6ea; }
+
+    &.neg { color: var(--ion-color-danger, #EB445A); }
+    &.pos { color: #4a7e0e; }
+
+    &.ativo {
+      background: var(--ion-color-primary, #1C2E3D);
+      color: #fff;
+      border-color: var(--ion-color-primary);
+
+      &.neg { background: var(--ion-color-danger, #EB445A); border-color: var(--ion-color-danger); }
+      &.pos { background: #4a7e0e; border-color: #4a7e0e; }
+    }
+  }
+}
+
+.ipt-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d8d8dd;
+  background: #fff;
+  font-size: 13.5px;
+  color: #2d2d2d;
+  resize: vertical;
+  outline: none;
+  font-family: inherit;
+
+  &:focus {
+    border-color: var(--ion-color-tertiary, #4DABF7);
+  }
+}
+
+/* Footer padronizado (mesmo padrão dos outros modais) */
+.acoes-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 18px;
+
+  .btn-acao {
+    margin: 0;
+    --border-radius: 999px;
+    --padding-start: 14px;
+    --padding-end: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    height: 42px;
+    font-size: 13px;
+    min-height: 42px;
+
+    ion-icon { font-size: 16px; }
+  }
+}

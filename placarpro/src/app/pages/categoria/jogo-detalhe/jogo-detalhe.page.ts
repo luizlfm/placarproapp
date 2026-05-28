@@ -35,6 +35,11 @@ import {
 } from '../../../shared/moderador-permissoes.service';
 import { PlanosService } from '../../../users/planos.service';
 import { PwaInstallService } from '../../../shared/pwa-install.service';
+import {
+  precisaTutorialPwaIos,
+  marcarTutorialPwaVisto,
+} from '../../../shared/utils/pwa.utils';
+import { IosPwaTutorialModalComponent } from '../../../shared/components/ios-pwa-tutorial-modal/ios-pwa-tutorial-modal.component';
 
 interface EventoView extends EventoJogo {
   jogadorNome?: string;
@@ -567,6 +572,8 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
 
   /** Abre a tela de transmissão (player YouTube + placar overlay). */
   abrirTransmissao(): void {
+    // Abre direto — sem tutorial. A tela `/transmissao` é responsável
+    // por mostrar a UX em tela cheia simulada quando aplicável.
     this.router.navigate([
       '/app/campeonato',
       this.campeonatoId,
@@ -577,6 +584,7 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
       'transmissao',
     ]);
   }
+
 
   /**
    * Abre o modal de BROADCASTER LiveKit DIRETO — preview de câmera +
@@ -592,10 +600,29 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
    * `transmissaoLiveAtiva$` e mostra o player no lugar do YouTube.
    */
   async iniciarTransmissaoLive(): Promise<void> {
-    // Antes de abrir o modal da câmera, oferecemos instalar como PWA —
-    // é o jeito de ter tela cheia REAL no iOS (sem barras do Safari) e
-    // experiência app-like no Android. O service decide se mostra
-    // (não importuna quem já instalou ou dispensou recentemente).
+    // ── iOS Safari não-PWA: BLOQUEIA o modal de câmera ──
+    // Em iOS Safari sem PWA instalado, transmitir não vale a pena
+    // (sem fullscreen real). Em vez de abrir o modal, mostramos APENAS
+    // o tutorial-modal ensinando a instalar como PWA. Depois de instalar
+    // e abrir pelo ícone, ele cai já nesta tela em PWA standalone e
+    // pode clicar em "Transmitir agora" pra abrir o modal normal.
+    if (precisaTutorialPwaIos()) {
+      const urlAtual = window.location.pathname + window.location.search;
+      const modal = await this.modalCtrl.create({
+        component: IosPwaTutorialModalComponent,
+        componentProps: {
+          redirectUrl: urlAtual,
+          contextoLabel: 'tela cheia da transmissão',
+        },
+        backdropDismiss: false,
+      });
+      await modal.present();
+      marcarTutorialPwaVisto();
+      return; // NÃO segue pra abrir modal de câmera
+    }
+
+    // Outros browsers (Android Chrome, PWA, Capacitor, desktop):
+    // mostra prompt nativo de install (se houver) e abre o modal.
     await this.pwaInstall.mostrarPromptSeRelevante();
 
     const dados = await this.carregarJogoComEquipes();
@@ -954,6 +981,114 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
     } catch (err) {
       console.error('[JogoDetalhe] togglePausa erro', err);
       await this.toast('Falha ao alternar pausa.', 'danger');
+    }
+  }
+
+  /**
+   * Permite o admin EDITAR o tempo decorrido do cronômetro manualmente
+   * (clicando no MM:SS no live-head). Útil quando o admin esqueceu de
+   * dar play no início, ou quando precisa corrigir o tempo após um
+   * problema na partida.
+   *
+   * Estratégia:
+   *  - Pede MM:SS em um alert prompt (formato livre: "12:34" ou só "12").
+   *  - Recalcula `tempoAtualIniciadoEm = agora - MM:SS em ms`.
+   *  - Se está PAUSADO, atualiza `tempoPausadoSegundos` ao invés
+   *    (pra manter o relógio congelado no novo valor).
+   */
+  async editarTempoDecorrido(): Promise<void> {
+    const jogo = await firstValueFrom(
+      this.jogosSrv.get$(this.campeonatoId, this.categoriaId, this.jogoId),
+    );
+    if (!jogo?.id) return;
+
+    // Pré-preenche com o tempo atual (mm:ss).
+    const valorAtual = this.tempoDecorrido();
+
+    const alert = await this.alertCtrl.create({
+      header: 'Editar tempo',
+      message: 'Digite o tempo no formato MM:SS (ex: 12:34) ou só minutos (ex: 12)',
+      inputs: [
+        {
+          name: 'tempo',
+          type: 'text',
+          placeholder: '00:00',
+          value: valorAtual,
+          attributes: {
+            inputmode: 'text',
+            autocomplete: 'off',
+            maxlength: 5,
+          },
+        },
+      ],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Salvar',
+          handler: async (data) => {
+            const raw = (data?.tempo as string ?? '').trim();
+            const parsed = this.parseTempoMmSs(raw);
+            if (parsed === null) {
+              await this.toast(
+                'Tempo inválido. Use MM:SS (ex: 12:34) ou só minutos.',
+                'danger',
+              );
+              return false; // mantém alert aberto
+            }
+            await this.aplicarNovoTempoDecorrido(parsed);
+            return true;
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  /**
+   * Converte string "MM:SS" ou "MM" pra total de segundos.
+   * Aceita formatos: "12", "12:34", "1:2" etc. Retorna `null` se inválido.
+   */
+  private parseTempoMmSs(raw: string): number | null {
+    if (!raw) return null;
+    // Aceita só dígitos e dois-pontos.
+    if (!/^\d{1,3}(:\d{1,2})?$/.test(raw)) return null;
+    const partes = raw.split(':');
+    const mm = parseInt(partes[0], 10);
+    const ss = partes.length > 1 ? parseInt(partes[1], 10) : 0;
+    if (isNaN(mm) || isNaN(ss) || mm < 0 || ss < 0 || ss > 59) return null;
+    return mm * 60 + ss;
+  }
+
+  /**
+   * Aplica o novo tempo decorrido no Firestore — recalcula a base do
+   * cronômetro (`tempoAtualIniciadoEm`) ou atualiza `tempoPausadoSegundos`
+   * conforme o estado atual da partida.
+   */
+  private async aplicarNovoTempoDecorrido(novoTotalSeg: number): Promise<void> {
+    const jogo = await firstValueFrom(
+      this.jogosSrv.get$(this.campeonatoId, this.categoriaId, this.jogoId),
+    );
+    if (!jogo?.id) return;
+
+    try {
+      if (jogo.tempoPausado) {
+        // Pausado: congelado no novo valor.
+        await this.jogosSrv.atualizar(this.campeonatoId, this.categoriaId, jogo.id, {
+          tempoPausadoSegundos: novoTotalSeg,
+        });
+      } else {
+        // Em andamento: define `tempoAtualIniciadoEm = agora - novoTotal`.
+        // Resultado: cronômetro continua contando, mas a partir do novo valor.
+        const agoraMs = Date.now();
+        const novoInicioMs = agoraMs - novoTotalSeg * 1000;
+        await this.jogosSrv.atualizar(this.campeonatoId, this.categoriaId, jogo.id, {
+          tempoAtualIniciadoEm: Timestamp.fromMillis(novoInicioMs),
+        });
+      }
+      await this.toast(`Tempo ajustado pra ${Math.floor(novoTotalSeg / 60)}:${String(novoTotalSeg % 60).padStart(2, '0')}.`, 'success');
+    } catch (err) {
+      console.error('[JogoDetalhe] editar tempo erro', err);
+      await this.toast('Falha ao salvar novo tempo.', 'danger');
     }
   }
 

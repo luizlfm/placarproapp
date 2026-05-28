@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   AlertController,
   LoadingController,
@@ -51,6 +51,12 @@ export class ConfiguracoesPage implements OnInit {
    *  Padrão UX adotado em todo o sistema: após salvar com sucesso, volta
    *  pra tela anterior em vez de deixar o user re-clicar no botão voltar. */
   private readonly navBack = inject(NavBackService);
+  private readonly route = inject(ActivatedRoute);
+
+  /** Foi aberto via "Alterar dados pessoais" na Página do Organizador?
+   *  Quando true: exibe botão de voltar no header e esconde o hamburger
+   *  da sidebar (UX focada no flow de edição). */
+  vindoDoOrganizador = false;
   private readonly alertCtrl = inject(AlertController);
   private readonly loadingCtrl = inject(LoadingController);
   private readonly toastCtrl = inject(ToastController);
@@ -126,6 +132,12 @@ export class ConfiguracoesPage implements OnInit {
   private carregado = false;
 
   ngOnInit(): void {
+    // Detecta se chegamos via "Alterar dados pessoais" da Página do
+    // Organizador (?from=organizador) — usado pra exibir botão voltar
+    // e esconder hamburger do shell.
+    this.vindoDoOrganizador =
+      this.route.snapshot.queryParamMap.get('from') === 'organizador';
+
     this.profile$.subscribe(p => {
       if (this.carregado) return;
       const u = this.auth.currentUser;
@@ -197,6 +209,12 @@ export class ConfiguracoesPage implements OnInit {
     } finally {
       await loader.dismiss();
     }
+  }
+
+  /** Volta pra origem — usado pelo botão voltar do header quando
+   *  o user chegou aqui via "Alterar dados pessoais" do Organizador. */
+  voltar(): void {
+    this.navBack.back('/app/organizador');
   }
 
   // ============ Salvar form ============
@@ -336,11 +354,11 @@ export class ConfiguracoesPage implements OnInit {
 
   // ============ Suporte ============
   abrirSuporte(): void {
-    window.open('mailto:suporte@placarpro.app?subject=Suporte%20PlacarPro', '_blank');
+    window.open('mailto:placarproapp@gmail.com?subject=Suporte%20PlacarPro', '_blank');
   }
 
   abrirWhatsApp(): void {
-    window.open('https://wa.me/5582991027052?text=Olá!%20Preciso%20de%20suporte%20no%20PlacarPro.', '_blank');
+    window.open('https://wa.me/5537999562903?text=Olá!%20Preciso%20de%20suporte%20no%20PlacarPro.', '_blank');
   }
 
   // ============ Helpers ============

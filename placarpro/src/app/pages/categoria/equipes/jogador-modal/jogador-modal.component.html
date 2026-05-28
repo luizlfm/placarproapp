@@ -77,7 +77,7 @@
         <div class="lista" *ngIf="lista.length > 0; else empty">
           <button *ngFor="let j of lista; trackBy: trackById" type="button" class="jog-row" (click)="editar(j)">
             <div class="jog-avatar">
-              <img *ngIf="j.fotoUrl; else avF" [src]="j.fotoUrl" [alt]="j.nome" />
+              <img skel *ngIf="j.fotoUrl; else avF" [src]="j.fotoUrl" [alt]="j.nome" />
               <ng-template #avF>{{ inicial(j) }}</ng-template>
             </div>
             <div class="jog-info">
@@ -121,7 +121,7 @@
     <!-- Cabeçalho da equipe -->
     <div class="eq-header">
       <div class="eq-logo">
-        <img *ngIf="equipe.logoUrl; else iconF" [src]="equipe.logoUrl" [alt]="equipe.nome" />
+        <img skel *ngIf="equipe.logoUrl; else iconF" [src]="equipe.logoUrl" [alt]="equipe.nome" />
         <ng-template #iconF><ion-icon name="shield-outline"></ion-icon></ng-template>
       </div>
       <div class="eq-info">
@@ -134,7 +134,7 @@
     <div class="foto-block">
       <button type="button" class="foto-preview" (click)="selecionarFoto()" [disabled]="enviandoFoto"
         aria-label="Selecionar foto">
-        <img *ngIf="form.value.fotoUrl; else fotoIcon" [src]="form.value.fotoUrl" alt="Foto" />
+        <img skel *ngIf="form.value.fotoUrl; else fotoIcon" [src]="form.value.fotoUrl" alt="Foto" />
         <ng-template #fotoIcon>
           <ion-icon name="cloud-upload-outline"></ion-icon>
         </ng-template>
@@ -331,7 +331,7 @@
       <button *ngFor="let e of equipesDisponiveis; trackBy: trackByEquipeId" type="button" class="transf-row"
         [class.atual]="e.id === jogadorEditando.equipeId" (click)="transferirPara(e)" [disabled]="loading">
         <div class="transf-logo">
-          <img *ngIf="e.logoUrl; else logoF" [src]="e.logoUrl" [alt]="e.nome" />
+          <img skel *ngIf="e.logoUrl; else logoF" [src]="e.logoUrl" [alt]="e.nome" />
           <ng-template #logoF><ion-icon name="shield-outline"></ion-icon></ng-template>
         </div>
         <div class="transf-info">

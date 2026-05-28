@@ -1,0 +1,914 @@
+.po-content {
+  --background: #f5f5f7;
+}
+
+.po-state {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  padding: 32px;
+
+  ion-icon {
+    font-size: 48px;
+    color: var(--ion-color-medium);
+  }
+  h2 { margin: 0; font-size: 18px; color: var(--placar-text); }
+  p { margin: 0; color: var(--ion-color-medium); }
+}
+
+/* ═══ Hero banner — grande, com overlay gradient ═══ */
+.po-hero-banner {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  background-color: var(--ion-color-primary);
+  overflow: hidden;
+
+  &.sem-imagem {
+    background-image: linear-gradient(135deg, var(--ion-color-primary) 0%, #2d4a63 50%, #4a6580 100%);
+  }
+
+  @media (max-width: 768px) {
+    height: 220px;
+  }
+  @media (max-width: 480px) {
+    height: 170px;
+  }
+}
+
+/* Banner como <img> real pra permitir `skel` (esconde enquanto carrega).
+   Preenche o container inteiro, igual `background-size: cover`. */
+.po-hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.po-hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.15) 0%,
+    rgba(0, 0, 0, 0.05) 40%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+}
+
+/* ═══ Header do perfil — sobrepõe o banner com logo flutuante ═══ */
+.po-profile {
+  background: #fff;
+  position: relative;
+  margin-top: -70px;
+  z-index: 2;
+
+  @media (max-width: 600px) {
+    margin-top: -50px;
+  }
+}
+
+.po-profile-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 24px;
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+
+  @media (max-width: 720px) {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0 20px 20px;
+    gap: 12px;
+  }
+}
+
+.po-profile-logo {
+  width: 140px;
+  height: 140px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #fff;
+  border: 5px solid #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ion-color-secondary);
+
+  @media (max-width: 600px) {
+    width: 110px;
+    height: 110px;
+    border-width: 4px;
+  }
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  ion-icon { font-size: 56px; }
+}
+
+.po-profile-info {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 8px;
+
+  @media (max-width: 720px) {
+    padding-bottom: 0;
+  }
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--placar-text);
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+
+    @media (max-width: 600px) {
+      font-size: 24px;
+    }
+  }
+}
+
+.po-tagline {
+  margin: 0 0 10px;
+  font-size: 15px;
+  color: var(--ion-color-medium);
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+/* Meta chips (localização / sede / modalidade) */
+.po-meta-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+
+  @media (max-width: 720px) {
+    justify-content: center;
+  }
+}
+
+.po-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: rgba(28, 46, 61, 0.06);
+  color: var(--placar-text);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+
+  ion-icon {
+    font-size: 14px;
+    color: var(--ion-color-secondary, #7CC61D);
+  }
+}
+
+/* Redes sociais no header — círculos discretos */
+.po-profile-redes {
+  display: flex;
+  gap: 6px;
+
+  @media (max-width: 720px) {
+    justify-content: center;
+  }
+
+  a {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(28, 46, 61, 0.06);
+    color: var(--ion-color-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: background 140ms ease, transform 100ms ease, color 140ms ease;
+
+    ion-icon { font-size: 18px; }
+
+    &:hover {
+      background: var(--ion-color-primary);
+      color: #fff;
+      transform: translateY(-2px);
+    }
+  }
+}
+
+/* ═══ Tabs com indicador animado ═══ */
+.po-tabs {
+  background: #fff;
+  border-bottom: 1px solid var(--placar-divider);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
+}
+
+.po-tabs-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  gap: 4px;
+  padding: 0 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+
+  @media (max-width: 600px) {
+    padding: 0 12px;
+    justify-content: space-around;
+  }
+}
+
+.po-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 16px 18px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  position: relative;
+  transition: color 200ms ease;
+
+  ion-icon {
+    font-size: 18px;
+    transition: transform 200ms ease;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px 8px;
+    font-size: 12.5px;
+    flex-direction: column;
+    gap: 4px;
+
+    ion-icon { font-size: 20px; }
+  }
+
+  &:hover {
+    color: var(--placar-text);
+
+    ion-icon { transform: translateY(-1px); }
+  }
+
+  &.ativa {
+    color: var(--ion-color-primary);
+    border-bottom-color: var(--ion-color-secondary, #7CC61D);
+
+    ion-icon { color: var(--ion-color-secondary, #7CC61D); }
+  }
+}
+
+.po-section {
+  padding: 24px 20px 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+
+  @media (max-width: 600px) {
+    padding: 20px 16px 32px;
+  }
+}
+
+.po-section-title {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--placar-text);
+}
+
+/* ── Aba SOBRE ── */
+.po-sobre-wrap {
+  /* container já tem padding via .po-section */
+}
+
+.po-sobre-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid var(--placar-divider);
+  box-shadow: 0 2px 8px rgba(28, 46, 61, 0.06);
+}
+
+.po-sobre-texto {
+  margin: 0 0 18px;
+  color: var(--placar-text);
+  line-height: 1.6;
+  font-size: 14.5px;
+  white-space: pre-wrap;
+}
+
+.po-empty-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ion-color-medium);
+  margin: 0 0 18px;
+  font-size: 14px;
+
+  ion-icon { font-size: 20px; flex-shrink: 0; }
+}
+
+.po-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--placar-divider);
+}
+
+.po-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  > ion-icon {
+    font-size: 22px;
+    color: var(--ion-color-primary);
+    flex: 0 0 auto;
+  }
+  > div {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    strong {
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--ion-color-medium);
+      font-weight: 700;
+    }
+    span {
+      font-size: 14px;
+      color: var(--placar-text);
+      font-weight: 500;
+    }
+  }
+}
+
+/* ── Aba GALERIA ── */
+.po-galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.po-gal-item {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--placar-divider);
+  box-shadow: 0 2px 6px rgba(28, 46, 61, 0.06);
+
+  img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    display: block;
+    background: var(--ion-color-primary);
+  }
+
+  span {
+    display: block;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    color: var(--ion-color-medium);
+    font-weight: 500;
+  }
+}
+
+/* ── Aba CONTATOS ── */
+.po-contato-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 32px;
+  align-items: start;
+
+  @media (max-width: 820px) {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+.po-contato-redes {
+  h3 {
+    margin: 0 0 14px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--placar-text);
+  }
+}
+
+/* Squares de redes sociais — quadrados coloridos com a primary do tema */
+.po-redes-squares {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+
+  a {
+    width: 44px;
+    height: 44px;
+    border-radius: 6px;
+    background: var(--ion-color-primary);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: transform 120ms ease, background 120ms ease;
+
+    ion-icon { font-size: 22px; }
+
+    &:hover {
+      background: var(--ion-color-primary-shade, #2d4a63);
+      transform: translateY(-2px);
+    }
+  }
+}
+
+.po-contato-direto {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Card "Fale Conosco" — fundo branco com shadow, à direita */
+.po-fale-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 28px;
+  box-shadow: 0 6px 20px rgba(28, 46, 61, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  @media (max-width: 600px) {
+    padding: 20px;
+  }
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ion-color-primary);
+    text-align: center;
+  }
+}
+
+.po-fc-input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 14.5px;
+  font-family: inherit;
+  outline: none;
+  background: #fff;
+  color: var(--placar-text);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+  box-sizing: border-box;
+
+  &::placeholder { color: #9ca3af; }
+
+  &:focus {
+    border-color: var(--ion-color-primary);
+    box-shadow: 0 0 0 3px rgba(28, 46, 61, 0.12);
+  }
+}
+
+.po-fc-textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+}
+
+.po-fc-btn {
+  width: 100%;
+  background: var(--ion-color-secondary, #7CC61D);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: background 140ms ease, transform 100ms ease;
+
+  &:hover {
+    background: var(--ion-color-secondary-shade, #6db417);
+  }
+  &:active { transform: scale(0.98); }
+}
+
+/* Reuso (também usado em "Contato direto" embaixo das redes) */
+
+.po-contato-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--placar-divider);
+  box-shadow: 0 2px 6px rgba(28, 46, 61, 0.05);
+  text-decoration: none;
+  color: var(--placar-text);
+  transition: transform 140ms ease, border-color 140ms ease;
+
+  > ion-icon {
+    font-size: 24px;
+    color: var(--ion-color-primary);
+    flex: 0 0 auto;
+  }
+  > div {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    strong {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--ion-color-medium);
+      font-weight: 700;
+    }
+    span {
+      font-size: 14.5px;
+      color: var(--placar-text);
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: var(--ion-color-primary);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Card de campeonato — mesmo padrão da home-publica (.camp-card)
+   Capa + logo flutuante + chips + rodápé com CTA.
+   ════════════════════════════════════════════════════════════════════ */
+.camp-card {
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(28, 46, 61, 0.08);
+  box-shadow: 0 2px 10px rgba(28, 46, 61, 0.05);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 400ms cubic-bezier(.2, .8, .3, 1),
+              box-shadow 400ms ease,
+              border-color 250ms ease;
+
+  /* Acento verde no topo — fininho, só visível em hover */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #9BE36A 0%, var(--ion-color-secondary, #7CC61D) 100%);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 400ms cubic-bezier(.2, .8, .3, 1);
+    z-index: 4;
+  }
+
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow:
+      0 22px 50px rgba(28, 46, 61, 0.18),
+      0 0 0 1px rgba(124, 198, 29, 0.25);
+    border-color: rgba(124, 198, 29, 0.35);
+
+    &::before { transform: scaleX(1); }
+
+    .capa::after { opacity: 0.55; }
+    .capa picture img { transform: scale(1.04); }
+    .logo-float { transform: translateY(-2px) rotate(-4deg); }
+    .rodape-cta {
+      background: var(--ion-color-secondary, #7CC61D);
+      color: #fff;
+      ion-icon { transform: translateX(3px); }
+    }
+  }
+
+  /* ─── CAPA ─── altura natural da imagem (sem corte, sem fundo).
+     Cards SEM imagem mantêm aspect-ratio 16:9 com gradient navy. */
+  .capa {
+    position: relative;
+    overflow: hidden;
+    line-height: 0;
+  }
+
+  .capa:not(:has(picture)) {
+    /* Cards SEM imagem usam aspect-ratio mais panorâmico (4:1) pra
+       casar com a altura típica das capas COM imagem dos banners
+       de campeonato (mais largos que altos). Sem isso, o placeholder
+       16:9 fazia o card sem imagem ficar bem mais alto que os com
+       imagem panorâmica. */
+    aspect-ratio: 4 / 1;
+    min-height: 80px;
+    background-color: var(--ion-color-primary);
+    background-image: linear-gradient(135deg, var(--ion-color-primary) 0%, #2d4a63 100%);
+  }
+
+  .capa picture {
+    display: block;
+    width: 100%;
+    height: 100%;
+    line-height: 0;
+  }
+  .capa picture img {
+    display: block;
+    width: 100%;
+    height: auto;
+    transition: transform 600ms cubic-bezier(.2, .8, .3, 1);
+  }
+  .capa::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
+    opacity: 0.4;
+    transition: opacity 300ms ease;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* ─── INFO ─── altura natural (sem stretch). Evita espaço vazio
+     quando o card vizinho tem capa maior. */
+  .info {
+    padding: 14px 18px 16px;
+    position: relative;
+  }
+
+  .logo-float {
+    position: absolute;
+    top: -28px;
+    right: 18px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 3px solid #fff;
+    box-shadow: 0 6px 18px rgba(28, 46, 61, 0.22);
+    z-index: 4;
+    transition: transform 350ms cubic-bezier(.2, .8, .3, 1);
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+    ion-icon { font-size: 26px; color: var(--ion-color-secondary, #7CC61D); }
+  }
+
+  .textos {
+    padding-right: 68px;
+  }
+  .titulo {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ion-color-primary, #1C2E3D);
+    line-height: 1.3;
+    letter-spacing: -0.2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    /* Reserva 2 linhas mesmo quando o título é curto — uniformiza
+       altura entre cards com títulos longos/curtos. */
+    min-height: calc(14px * 1.3 * 2);
+  }
+  .subtitulo {
+    margin-top: 4px;
+    font-size: 12.5px;
+    color: rgba(28, 46, 61, 0.55);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    background: rgba(28, 46, 61, 0.06);
+    color: var(--ion-color-primary, #1C2E3D);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    max-width: 100%;
+
+    ion-icon {
+      font-size: 13px;
+      color: var(--ion-color-secondary, #7CC61D);
+      flex-shrink: 0;
+    }
+    > span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .rodape {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(28, 46, 61, 0.10);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .rodape-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: rgba(28, 46, 61, 0.65);
+    font-weight: 500;
+    min-width: 0;
+
+    ion-icon { font-size: 14px; color: var(--ion-color-secondary, #7CC61D); }
+    strong { color: var(--ion-color-primary); font-weight: 800; }
+  }
+  .rodape-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: rgba(28, 46, 61, 0.06);
+    color: var(--ion-color-primary);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+    transition: background 200ms ease, color 200ms ease;
+
+    ion-icon {
+      font-size: 14px;
+      transition: transform 200ms ease;
+    }
+  }
+}
+
+.po-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  /* `start` evita que cards esticam pra altura do mais alto — assim
+     cada card respeita o tamanho natural da sua capa + texto, sem
+     espaço vazio embaixo. */
+  align-items: start;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.po-card {
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(28, 46, 61, 0.08);
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  border: 1px solid var(--placar-divider);
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(28, 46, 61, 0.14);
+  }
+}
+
+.po-card-capa {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--ion-color-primary);
+
+  &.sem-capa {
+    background-image: linear-gradient(135deg, var(--ion-color-primary), #2d4a63);
+  }
+}
+
+.po-card-logo {
+  position: absolute;
+  bottom: -22px;
+  left: 16px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  object-fit: cover;
+}
+
+.po-card-body {
+  padding: 28px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  strong {
+    font-size: 15px;
+    color: var(--placar-text);
+    font-weight: 700;
+    line-height: 1.3;
+  }
+  > span {
+    font-size: 12.5px;
+    color: var(--ion-color-medium);
+  }
+}
+
+.po-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--ion-color-medium);
+  margin-top: 6px;
+
+  ion-icon { font-size: 14px; }
+}
+
+.po-empty {
+  grid-column: 1 / -1;
+  background: #fff;
+  border: 2px dashed var(--placar-border);
+  border-radius: 14px;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--ion-color-medium);
+
+  ion-icon {
+    font-size: 40px;
+    margin-bottom: 8px;
+  }
+  p { margin: 0; }
+}
+
+.po-footer {
+  text-align: center;
+  padding: 24px 16px 32px;
+
+  .po-brand {
+    color: var(--ion-color-medium);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+}

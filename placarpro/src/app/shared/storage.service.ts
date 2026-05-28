@@ -77,6 +77,15 @@ export class StorageService {
     return this.upload(path, blob);
   }
 
+  /** Helper: upload da foto de um local de jogo (subcoleção users/{uid}/locais). */
+  async uploadLocalFoto(localId: string, blob: Blob): Promise<string> {
+    const uid = this.auth.currentUser?.uid;
+    if (!uid) throw new Error('Não autenticado');
+    const ext = this.guessExt(blob.type);
+    const path = `users/${uid}/locais/${localId}/foto.${ext}`;
+    return this.upload(path, blob);
+  }
+
   /** Helper: upload do escudo (logo) de uma equipe. */
   async uploadEquipeLogo(
     campeonatoId: string,

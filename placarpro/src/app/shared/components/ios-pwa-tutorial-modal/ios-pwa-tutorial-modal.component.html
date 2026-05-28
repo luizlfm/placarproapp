@@ -1,0 +1,125 @@
+<ion-header class="ion-no-border ipwa-header">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Instalar app</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ipwa-content">
+  <div class="ipwa-wrap">
+    <!-- Hero -->
+    <div class="ipwa-hero">
+      <div class="ipwa-hero-icon">
+        <ion-icon name="phone-portrait-outline"></ion-icon>
+      </div>
+      <h2 class="ipwa-titulo">Pra usar {{ contextoLabel }}</h2>
+      <p class="ipwa-subtitulo">
+        Em iPhones, o Safari não permite tela cheia em sites comuns.
+        Instale o PlacarPro na sua Tela de Início — leva 10 segundos.
+      </p>
+    </div>
+
+    <!-- Benefícios -->
+    <ul class="ipwa-benefits">
+      <li>
+        <ion-icon name="checkmark-circle"></ion-icon>
+        <span>Tela cheia sem barra do navegador</span>
+      </li>
+      <li>
+        <ion-icon name="checkmark-circle"></ion-icon>
+        <span>Abre direto pelo ícone, como qualquer app</span>
+      </li>
+      <li>
+        <ion-icon name="checkmark-circle"></ion-icon>
+        <span>Continua exatamente desta tela após instalar</span>
+      </li>
+    </ul>
+
+    <!-- Passos com ilustrações -->
+    <div class="ipwa-passos">
+      <h3>Como instalar:</h3>
+
+      <div class="ipwa-passo">
+        <div class="ipwa-num">1</div>
+        <div class="ipwa-passo-conteudo">
+          <p>
+            Toque no botão <strong>Compartilhar</strong>
+            <span class="ipwa-icon-inline">
+              <svg width="18" height="22" viewBox="0 0 18 22" fill="none">
+                <path d="M9 1L9 14M9 1L5 5M9 1L13 5M3 9L3 19C3 20.1046 3.89543 21 5 21L13 21C14.1046 21 15 20.1046 15 19L15 9"
+                      stroke="#007AFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            na barra inferior do Safari.
+          </p>
+        </div>
+      </div>
+
+      <div class="ipwa-passo">
+        <div class="ipwa-num">2</div>
+        <div class="ipwa-passo-conteudo">
+          <p>
+            Role e toque em <strong>"Adicionar à Tela de Início"</strong>
+            <span class="ipwa-icon-inline">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="3" width="18" height="18" rx="4" stroke="#1C2E3D" stroke-width="2"/>
+                <path d="M12 8V16M8 12H16" stroke="#1C2E3D" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <div class="ipwa-passo">
+        <div class="ipwa-num">3</div>
+        <div class="ipwa-passo-conteudo">
+          <p>
+            Toque em <strong>"Adicionar"</strong> no canto superior direito.
+            O ícone aparecerá na sua tela de início.
+          </p>
+        </div>
+      </div>
+
+      <div class="ipwa-passo destaque">
+        <div class="ipwa-num">
+          <ion-icon name="rocket-outline"></ion-icon>
+        </div>
+        <div class="ipwa-passo-conteudo">
+          <p>
+            Toque no novo ícone do <strong>PlacarPro</strong> na sua tela
+            inicial. O app abrirá <strong>já nesta mesma tela</strong>,
+            sem barra do navegador, em tela cheia. 🎉
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aviso final -->
+    <div class="ipwa-aviso">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      <span>
+        Você não vai perder o login — vai abrir já autenticado e na tela
+        de transmissão.
+      </span>
+    </div>
+  </div>
+</ion-content>
+
+<ion-footer class="ipwa-footer">
+  <ion-toolbar>
+    <ion-button
+      expand="block"
+      color="primary"
+      size="small"
+      class="ipwa-btn"
+      (click)="fechar()"
+    >
+      <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+      Entendi
+    </ion-button>
+  </ion-toolbar>
+</ion-footer>

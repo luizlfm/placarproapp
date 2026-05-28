@@ -31,7 +31,7 @@
             : ['/app/campeonato', c.id]"
         >
           <div class="row-logo">
-            <img *ngIf="c.logoUrl; else logoFallback" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
+            <img skel *ngIf="c.logoUrl; else logoFallback" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
             <ng-template #logoFallback>
               <ion-icon name="trophy-outline"></ion-icon>
             </ng-template>

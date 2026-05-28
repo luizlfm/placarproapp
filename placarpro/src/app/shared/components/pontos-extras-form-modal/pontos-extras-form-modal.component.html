@@ -1,0 +1,53 @@
+<div class="dialog">
+  <h2 class="titulo">Pontos Extras</h2>
+
+  <!-- Seleção de equipe (mandante / visitante) -->
+  <div class="campo">
+    <label>Equipe</label>
+    <select class="ipt-select" [(ngModel)]="equipeLado">
+      <option value="mandante">{{ mandante?.nome || 'Mandante' }}</option>
+      <option value="visitante">{{ visitante?.nome || 'Visitante' }}</option>
+    </select>
+  </div>
+
+  <!-- Pontos (radio horizontal: -3..+3) -->
+  <div class="campo">
+    <label>Pontos</label>
+    <div class="pontos-grid">
+      <button
+        *ngFor="let v of opcoes"
+        type="button"
+        class="opt"
+        [class.ativo]="pontos === v"
+        [class.neg]="v < 0"
+        [class.pos]="v > 0"
+        (click)="pontos = v"
+      >
+        {{ v > 0 ? '+' : '' }}{{ v }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Observação (motivo) -->
+  <div class="campo">
+    <label>Observação</label>
+    <textarea
+      class="ipt-textarea"
+      rows="3"
+      [(ngModel)]="motivo"
+      placeholder="Ex.: W.O. por descumprimento de regulamento"
+    ></textarea>
+  </div>
+
+  <!-- Botões padronizados (Cancelar vermelho lixeira + Salvar navy check) -->
+  <div class="acoes-footer">
+    <ion-button class="btn-acao" color="danger" expand="block" (click)="dismiss()">
+      <ion-icon slot="start" name="trash-outline"></ion-icon>
+      Cancelar
+    </ion-button>
+    <ion-button class="btn-acao" color="primary" expand="block" (click)="salvar()">
+      <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+      Salvar
+    </ion-button>
+  </div>
+</div>

@@ -1,4 +1,9 @@
-<ion-header class="no-print">
+<!-- `force-mobile-header` força exibir esse ion-header também no mobile,
+     mesmo quando o `shell-mobile-header` global está renderizado (que
+     normalmente esconde ion-headers de child pages pra não duplicar
+     a barra navy). Necessário aqui pra o user ter acesso aos botões
+     Baixar PDF e Imprimir no mobile. -->
+<ion-header class="no-print force-mobile-header">
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
       <ion-button (click)="voltar()" aria-label="Voltar">
@@ -7,6 +12,10 @@
     </ion-buttons>
     <ion-title>Tabela de Partidas</ion-title>
     <ion-buttons slot="end">
+      <ion-button (click)="baixarPdf()" aria-label="Baixar PDF">
+        <ion-icon slot="start" name="document-text-outline"></ion-icon>
+        <span class="tb-label">PDF</span>
+      </ion-button>
       <ion-button (click)="imprimir()" aria-label="Imprimir">
         <ion-icon slot="start" name="print-outline"></ion-icon>
         <span class="tb-label">Imprimir</span>

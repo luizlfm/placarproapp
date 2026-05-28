@@ -1230,6 +1230,10 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
   gap: 20px;
+  /* `start` evita que cards estiquem pra altura do maior — cada card
+     respeita a altura natural da sua capa + texto (padrão replicado
+     da página do organizador). */
+  align-items: start;
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1483,13 +1487,18 @@
 
   /* ─── HERO / CAPA ─── */
   .capa {
-    min-height: 130px; /* fallback quando sem imagem */
     background-color: var(--navy);
     background-image: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%);
     position: relative;
     overflow: hidden;
   }
-  .capa:has(picture) { min-height: 0; }
+
+  /* Cards SEM imagem: aspect-ratio 4:1 panorâmico (parecido com banners
+     típicos) — antes era min-height 130px que ficava muito alto. */
+  .capa:not(:has(picture)) {
+    aspect-ratio: 4 / 1;
+    min-height: 80px;
+  }
 
   .capa picture {
     display: block;

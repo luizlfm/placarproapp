@@ -14,7 +14,7 @@ import {
   signOut,
   updateProfile,
 } from '@angular/fire/auth';
-import { Observable, firstValueFrom } from 'rxjs';
+import { Observable, defer, from, switchMap } from 'rxjs';
 
 /**
  * AuthService — wrapper único sobre @angular/fire/auth.
@@ -35,10 +35,33 @@ export class AuthService {
   private readonly auth = inject(Auth);
   private readonly injector = inject(Injector);
 
-  /** Stream do usuário atual (null quando deslogado). */
+  /**
+   * Stream do usuário atual (null quando deslogado).
+   *
+   * Importante: SEMPRE espera o Firebase terminar de hidratar o estado
+   * persistido (IndexedDB) ANTES de emitir o primeiro valor. Sem isso, em
+   * F5 o `authState` emite `null` síncrono na subscription e só depois
+   * emite o user real — o que fazia `combineLatest` em services
+   * (ex: ModeradorPermissoesService) calcular permissões com `uid =
+   * undefined`, resultando em "sem acesso" e guards redirecionando o
+   * usuário pra `/app/meus-campeonatos`. Defer + authStateReady garante
+   * que a primeira emissão já é o estado hidratado.
+   */
   readonly user$: Observable<User | null> = runInInjectionContext(
     this.injector,
-    () => authState(this.auth),
+    () =>
+      defer(() => from(this.auth.authStateReady())).pipe(
+        /* `authState` precisa rodar DENTRO do injection context (usa
+           DI interno do @angular/fire). Como `defer + switchMap`
+           atrasam a execução pra fora do contexto inicial, encapsulamos
+           o `authState(...)` em `runInInjectionContext` no callback do
+           switchMap. Sem isso, console mostra warning "API called
+           outside injection context: authState" toda vez que algo se
+           inscreve em `user$`. */
+        switchMap(() =>
+          runInInjectionContext(this.injector, () => authState(this.auth)),
+        ),
+      ),
   );
 
   /** Snapshot síncrono do usuário (pode ser null). */
@@ -46,9 +69,22 @@ export class AuthService {
     return this.auth.currentUser;
   }
 
-  /** Aguarda a primeira emissão do authState — útil em guards. */
-  waitForAuthInit(): Promise<User | null> {
-    return firstValueFrom(this.user$);
+  /**
+   * Aguarda o Firebase Auth terminar de hidratar o estado persistido
+   * (IndexedDB). Usa `authStateReady()` — método oficial do Firebase v10+
+   * que resolve QUANDO o SDK finaliza a restauração inicial.
+   *
+   * Antes usávamos `firstValueFrom(authState(...))`, mas o `authState`
+   * emite o user ATUAL no momento da subscription (que em F5 pode ser
+   * `null` antes da hidratação concluir). Resultado: guards chamavam
+   * isso, recebiam `null`, e mandavam o usuário pro `/login` mesmo
+   * estando logado. Esse era o motivo de F5 em `/app/campeonato/:id/...`
+   * cair em `/app/meus-campeonatos` (guard de ownership não achava o
+   * user). `authStateReady` resolve a race condition pra sempre.
+   */
+  async waitForAuthInit(): Promise<User | null> {
+    await this.auth.authStateReady();
+    return this.auth.currentUser;
   }
 
   signInWithEmail(email: string, password: string): Promise<User> {

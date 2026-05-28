@@ -1,0 +1,175 @@
+.ejm-header ion-toolbar {
+  --background: var(--ion-color-primary, #1C2E3D);
+  --color: #fff;
+}
+
+.ejm-content {
+  --background: #f7f8fa;
+  --padding-top: 12px;
+  --padding-bottom: 16px;
+}
+
+/* Atalhos no topo */
+.ejm-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px 4px;
+  font-size: 12.5px;
+  color: var(--ion-color-primary, #1C2E3D);
+  flex-wrap: wrap;
+}
+
+.ejm-link {
+  background: none;
+  border: none;
+  color: var(--ion-color-primary, #1C2E3D);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 12.5px;
+  padding: 4px 2px;
+  letter-spacing: 0.2px;
+
+  &:hover { text-decoration: underline; }
+}
+
+.ejm-sep {
+  color: #c7c8cc;
+}
+
+.ejm-count {
+  margin-left: auto;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.ejm-hint {
+  margin: 4px 16px 12px;
+  font-size: 12.5px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.ejm-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ejm-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+
+  &:hover { border-color: #c1c5cc; }
+  &.on {
+    border-color: var(--ion-color-primary, #1C2E3D);
+    background: rgba(28, 46, 61, 0.04);
+  }
+}
+
+.ejm-shield {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #f1f2f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  ion-icon {
+    font-size: 18px;
+    color: #9ca3af;
+  }
+}
+
+.ejm-nome {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1f2937;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ejm-qtd {
+  flex: 0 0 auto;
+  background: #eef0f3;
+  color: #4b5563;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  min-width: 26px;
+  text-align: center;
+}
+
+.ejm-check {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid #c1c5cc;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease, border-color 120ms ease;
+
+  &.on {
+    background: var(--ion-color-primary, #1C2E3D);
+    border-color: var(--ion-color-primary, #1C2E3D);
+    color: #fff;
+  }
+  ion-icon { font-size: 16px; }
+}
+
+.ejm-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.ejm-footer ion-toolbar {
+  --background: #fff;
+  --border-color: #e5e7eb;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
+}
+
+/* Footer com 2 botões em 2 colunas iguais (50%/50%) — padrão do sistema:
+   Cancelar (danger outline) à esquerda + Salvar (primary solid) à direita.
+   Mesma estética dos modais de editar-informações, anexos, pontos extras etc. */
+.ejm-footer-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+
+  .btn-acao {
+    margin: 0;
+    --padding-start: 12px;
+    --padding-end: 12px;
+    font-weight: 700;
+  }
+}

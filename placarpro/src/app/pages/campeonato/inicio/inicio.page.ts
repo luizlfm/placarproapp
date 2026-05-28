@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { ActionModalService } from '../../../shared/components/action-modal/action-modal.service';
+import { RefreshService } from '../../../shared/refresh.service';
 import { Observable, of, switchMap } from 'rxjs';
 import { Campeonato } from '../../../campeonatos/campeonato.model';
 import { Categoria } from '../../../campeonatos/categoria.model';
@@ -29,6 +30,7 @@ export class InicioPage {
   private readonly campeonatosSrv = inject(CampeonatosService);
   private readonly categoriasSrv = inject(CategoriasService);
   private readonly usersSrv = inject(UsersService);
+  private readonly refreshSrv = inject(RefreshService);
 
   /** Pega o :id da rota pai (CampeonatoPage). */
   readonly campeonatoId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -47,10 +49,13 @@ export class InicioPage {
   }
 
   /** Retorna a capa apropriada pra viewport (mobile → mobile com fallback web). */
-  capaCamp(c: Campeonato | null | undefined): string | null {
-    if (!c) return null;
+  /** Banner padrão exibido quando o campeonato ainda não tem capa. */
+  readonly bannerPadrao = 'assets/branding/banner-default.svg';
+
+  capaCamp(c: Campeonato | null | undefined): string {
+    if (!c) return this.bannerPadrao;
     if (this.ehMobile && c.capaMobileUrl) return c.capaMobileUrl;
-    return c.capaUrl ?? c.bannerUrl ?? null;
+    return c.capaUrl || c.bannerUrl || this.bannerPadrao;
   }
 
   /** Retorna o logo apropriado pra viewport. */
@@ -77,14 +82,9 @@ export class InicioPage {
     ? this.usersSrv.segue$(this.campeonatoId)
     : of(false);
 
-  /** Pull-to-refresh — arrasta pra baixo pra recarregar. */
+  /** Pull-to-refresh — recarrega APENAS esta rota via Angular Router. */
   async onRefresh(ev: CustomEvent): Promise<void> {
-    try {
-      window.location.reload();
-    } finally {
-      const target = ev?.target as { complete?: () => void } | null;
-      target?.complete?.();
-    }
+    await this.refreshSrv.refreshAtual(ev);
   }
 
   async novaCategoria(): Promise<void> {

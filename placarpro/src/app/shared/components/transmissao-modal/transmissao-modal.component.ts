@@ -9,6 +9,10 @@ import {
   inject,
 } from '@angular/core';
 import { ModalController, ToastController, AlertController } from '@ionic/angular';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar } from '@capacitor/status-bar';
+import { precisaTutorialPwaIos, tutorialPwaJaVisto, marcarTutorialPwaVisto } from '../../utils/pwa.utils';
+import { IosPwaTutorialModalComponent } from '../ios-pwa-tutorial-modal/ios-pwa-tutorial-modal.component';
 import {
   LocalAudioTrack,
   LocalVideoTrack,
@@ -101,10 +105,28 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
   trocandoCamera = false;
 
   @ViewChild('videoPreview') videoPreviewRef?: ElementRef<HTMLVideoElement>;
+  /** Container `.tx-video-wrap` que envolve o vídeo + overlays. É O
+   *  elemento que vai pra fullscreen — assim os botões overlay
+   *  (INICIAR/girar câmera) ficam visíveis dentro da tela cheia. */
+  @ViewChild('videoWrap') videoWrapRef?: ElementRef<HTMLElement>;
+
+  /**
+   * Flag de "tela cheia SIMULADA via CSS" — quando true, aplica
+   * `position: fixed; inset: 0; z-index: 99999` no `.tx-video-wrap`.
+   *
+   * Por que existe (além da Fullscreen API real):
+   *   - iOS Safari NÃO permite controles HTML custom em fullscreen de
+   *     `<video>` (webkitEnterFullscreen vira o player nativo do iOS).
+   *   - A Fullscreen API spec do `<html>` exige user-gesture e às vezes
+   *     é bloqueada em iframes / PWAs.
+   *
+   * Solução: simulamos a tela cheia via CSS. Funciona em QUALQUER browser,
+   * mantém os botões custom visíveis e suporta `flipCamera`/`iniciar`. */
+  modoTelaCheiaSimulada = false;
 
   // ============ LiveKit state ============
   private room?: Room;
-  private localVideoTrack?: LocalVideoTrack;
+  localVideoTrack?: LocalVideoTrack;
   private localAudioTrack?: LocalAudioTrack;
 
   private readonly modalCtrl = inject(ModalController);
@@ -119,6 +141,28 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
   async ngAfterViewInit(): Promise<void> {
     // Pequeno delay pra garantir que o ViewChild `videoPreviewRef` está renderizado.
     setTimeout(() => this.prepararPreview(), 50);
+
+    // ── Auto-tela cheia simulada em iOS Safari não-PWA ──
+    // Quando o user abre o modal pelos botões "Transmitir agora" (card)
+    // ou pelo FAB "TRANSMITIR" em iOS Safari sem PWA instalado, ATIVA
+    // automaticamente o `modoTelaCheiaSimulada` (CSS `position: fixed;
+    // inset: 0; z-index: 99999`). Resultado: o vídeo + controles ocupam
+    // toda a área HTML possível desde o início, sem o user precisar
+    // tocar no botão "expandir".
+    // Em PWA standalone OU app Capacitor nativo OU outros browsers
+    // (que têm Fullscreen API real), NÃO ativa automaticamente — o
+    // modal abre normal e o user pode clicar em expandir se quiser.
+    setTimeout(() => {
+      if (precisaTutorialPwaIos()) {
+        this.modoTelaCheiaSimulada = true;
+        this.aplicarHackBodyHeight();
+        try {
+          window.scrollTo(0, 1);
+          requestAnimationFrame(() => window.scrollTo(0, 1));
+          setTimeout(() => window.scrollTo(0, 1), 200);
+        } catch { /* ignore */ }
+      }
+    }, 150);
 
     // ── Auto-fullscreen ao rotacionar pra paisagem ──
     // Em mobile, quando o broadcaster vira o celular pra horizontal, faz
@@ -163,6 +207,12 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
       document.removeEventListener('touchstart', this._pendingFullscreenHandler);
       document.removeEventListener('click', this._pendingFullscreenHandler);
     }
+    // Restaura body/html height se estavam em fullscreen simulado.
+    this.removerHackBodyHeight();
+    // Restaura status bar no Capacitor native (caso o modal feche em FS).
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.show().catch(() => undefined);
+    }
     this.sairFullscreenIgnorandoErro();
   }
 
@@ -178,6 +228,17 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
    */
   private async aoMudarOrientacao(ehLandscape: boolean): Promise<void> {
     if (ehLandscape) {
+      // SEMPRE ativa a tela cheia SIMULADA via CSS — funciona em iOS
+      // Safari (que não permite Fullscreen API real). Cobre todo o
+      // conteúdo HTML (header, modal, etc) com `position: fixed; inset: 0`.
+      // A barra de URL do Safari pode continuar visível no topo (única
+      // forma de esconder é PWA instalado na home screen), mas o vídeo
+      // + controles overlay já ocupam toda a área HTML disponível.
+      this.modoTelaCheiaSimulada = true;
+
+      // Best-effort: também tenta Fullscreen API real (esconde a barra
+      // do browser em Android Chrome / desktop). Em iOS Safari falha,
+      // mas o simulado já cobre o conteúdo.
       const ok = await this.entrarFullscreen();
       if (!ok && !this._pendingFullscreenHandler) {
         // Browser exigiu gesture. Aguarda o próximo toque pra tentar.
@@ -196,7 +257,8 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
         document.addEventListener('click', this._pendingFullscreenHandler, { once: true });
       }
     } else {
-      // Portrait — sai do fullscreen pra a UX padrão voltar.
+      // Portrait — sai do fullscreen (simulado + real) pra UX padrão.
+      this.modoTelaCheiaSimulada = false;
       this.sairFullscreenIgnorandoErro();
     }
   }
@@ -214,39 +276,246 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
    *  2. Demais browsers: `requestFullscreen()` no `<html>` (oculta
    *     toolbar + tabs do navegador, mantém UI do modal visível).
    */
-  async entrarTelaCheia(): Promise<void> {
-    // 1) iOS Safari — videoEl.webkitEnterFullscreen
-    const video = this.videoPreviewRef?.nativeElement as
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | undefined;
-    if (video?.webkitEnterFullscreen && !document.fullscreenEnabled) {
+  /**
+   * Entra em tela cheia tentando EM PARALELO todas as técnicas conhecidas
+   * pra esconder a barra de URL do iOS Safari:
+   *
+   *   1. `Element.requestFullscreen()` no wrap (Fullscreen API moderna)
+   *   2. `Element.webkitRequestFullscreen()` no wrap (webkit legacy)
+   *   3. `requestFullscreen()` no document.body (alternativa)
+   *   4. `requestFullscreen()` no document.documentElement (HTML inteiro)
+   *   5. Hack do body height (força scroll → iOS oculta URL bar)
+   *   6. `screen.orientation.lock('landscape')` (se disponível)
+   *   7. Scroll trick (`window.scrollTo(0, 1)`) repetido em RAF
+   *   8. CSS simulado (`position: fixed; inset: 0; z-index: 99999`)
+   *   9. Force window resize (`window.dispatchEvent(new Event('resize'))`)
+   *
+   * Pelo menos UMA dessas funcionará no browser/versão do usuário.
+   */
+  entrarTelaCheia(): void {
+    // Toggle: se já está em fullscreen simulado, sai.
+    if (this.modoTelaCheiaSimulada) {
+      this.modoTelaCheiaSimulada = false;
+      this.removerHackBodyHeight();
+      this.sairFullscreenIgnorandoErro();
+      // Restaura status bar no Capacitor native.
+      if (Capacitor.isNativePlatform()) {
+        StatusBar.show().catch(() => undefined);
+      }
+      return;
+    }
+
+    // ───── 0) iOS Safari não-PWA: oferece tutorial de install ─────
+    // Detecta o ÚNICO cenário onde fullscreen real é IMPOSSÍVEL via APIs
+    // web (iOS Safari sem PWA + sem Capacitor native). Em vez de tentar
+    // hacks que não funcionam, mostra o tutorial pra instalar como PWA.
+    // Depois de instalado, abrir pelo ícone redireciona pra esta tela.
+    if (precisaTutorialPwaIos()) {
+      this.abrirTutorialPwaIos();
+      // Ainda ativa o simulado pra dar feedback visual imediato.
+      this.modoTelaCheiaSimulada = true;
+      this.aplicarHackBodyHeight();
       try {
-        video.webkitEnterFullscreen();
-        return;
-      } catch (err) {
-        console.info('[Transmissao] webkitEnterFullscreen falhou', err);
+        window.scrollTo(0, 1);
+        requestAnimationFrame(() => window.scrollTo(0, 1));
+      } catch { /* ignore */ }
+      return;
+    }
+
+    // ───── 1) Fullscreen API SÍNCRONA (várias variantes em paralelo) ─────
+    // Tentamos múltiplos elementos pra maximizar chance de pelo menos um
+    // funcionar. Todas SÍNCRONAS dentro do user gesture click handler.
+    const wrap = this.videoWrapRef?.nativeElement;
+    const candidatosFs: HTMLElement[] = [];
+    if (wrap) candidatosFs.push(wrap);
+    candidatosFs.push(document.body, document.documentElement);
+
+    let pediuFullscreenReal = false;
+    for (const el of candidatosFs) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const anyEl = el as any;
+      const fn =
+        anyEl.requestFullscreen ||
+        anyEl.webkitRequestFullscreen ||
+        anyEl.webkitRequestFullScreen || // variante antiga do Safari
+        anyEl.mozRequestFullScreen ||
+        anyEl.msRequestFullscreen;
+      if (typeof fn === 'function') {
+        try {
+          const p = fn.call(el);
+          if (p && typeof p.catch === 'function') {
+            p.catch((err: unknown) => console.info('[Transmissao] FS rejeitado em', el.tagName, err));
+          }
+          pediuFullscreenReal = true;
+          break; // primeira que aceitou — não tenta as outras
+        } catch (err) {
+          console.info('[Transmissao] FS erro em', el.tagName, err);
+        }
       }
     }
-    // 2) Fluxo padrão (Chrome/Firefox/Safari macOS desktop/etc)
-    const ok = await this.entrarFullscreen();
-    if (!ok) {
-      // Último recurso: tenta no <video> direto mesmo em browsers
-      // não-iOS (alguns Android browsers só permitem em video element)
-      if (video?.webkitEnterFullscreen) {
-        try { video.webkitEnterFullscreen(); } catch { /* ignore */ }
-      } else {
-        this.toast(
-          'Seu navegador não permite tela cheia. Adicione o app à tela inicial pra experiência completa.',
-          'warning',
-        );
-      }
+
+    // ───── 2) CSS simulado (sempre ativa como fallback) ─────
+    this.modoTelaCheiaSimulada = true;
+
+    // ───── 3) Body height hack pra esconder URL bar em iOS Safari ─────
+    // Esticar body além do viewport faz iOS Safari ENTENDER que a página
+    // é "scrollable" e ELE PRÓPRIO esconde a URL bar pra dar mais espaço.
+    // Combinado com `scrollTo(0, 1)` força o iOS a entrar em modo
+    // "compacto" da barra. SEM essa técnica, scrollTo(0,1) não funciona
+    // se o body cabe inteiro no viewport.
+    this.aplicarHackBodyHeight();
+
+    // ───── 4) Scroll trick (várias vezes pra garantir) ─────
+    try {
+      window.scrollTo(0, 1);
+      requestAnimationFrame(() => {
+        window.scrollTo(0, 1);
+        // Mais uma vez após 100ms (alguns iOS resetam scrollTop).
+        setTimeout(() => window.scrollTo(0, 1), 100);
+        // E novamente após 500ms (caso o layout demore a estabilizar).
+        setTimeout(() => window.scrollTo(0, 1), 500);
+      });
+    } catch { /* ignore */ }
+
+    // ───── 5) Screen orientation lock (só PWA / Android Chrome) ─────
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const screenAny = window.screen as any;
+    if (screenAny?.orientation?.lock) {
+      screenAny.orientation
+        .lock('landscape')
+        .catch((err: unknown) => console.info('[Transmissao] orientation.lock falhou', err));
     }
+
+    // ───── 6) Force resize event pra reposicionar elementos ─────
+    setTimeout(() => {
+      try { window.dispatchEvent(new Event('resize')); } catch { /* ignore */ }
+    }, 50);
+
+    // ───── 7) Capacitor StatusBar.hide() ─────
+    // Quando o app está rodando NATIVO via Capacitor (iOS/Android build),
+    // o plugin nativo esconde a status bar real (relógio, notch, bateria).
+    // Em browser web (Safari/Chrome) esse plugin não faz nada — cai em
+    // `Capacitor.isNativePlatform() === false` e ignora.
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.hide().catch(err =>
+        console.info('[Transmissao] StatusBar.hide falhou', err),
+      );
+    }
+
+    // ───── 8) iOS PWA detection ─────
+    // Se rodando como PWA standalone (app instalado na home screen),
+    // a barra do Safari já está escondida — mas o `apple-mobile-web-app-status-bar-style`
+    // pode ainda mostrar uma faixa preta no topo. Vamos avisar.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const isStandalone = (window.navigator as any).standalone ||
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: fullscreen)').matches;
+
+    if (!pediuFullscreenReal && !isStandalone && !Capacitor.isNativePlatform()) {
+      this.toast(
+        'iOS Safari não permite tela cheia REAL em web. Pra esconder a barra, adicione o app à Tela Inicial (Compartilhar → Adicionar à Tela de Início).',
+        'warning',
+      );
+    }
+  }
+
+  /** Estado anterior do body pra restaurar quando sai do fullscreen. */
+  private _bodyOriginalHeight = '';
+  private _bodyOriginalMinHeight = '';
+  private _htmlOriginalHeight = '';
+
+  /**
+   * Hack iOS Safari: força body/html a ter altura > viewport pra iOS
+   * detectar que a página é "scrollable" e esconder a URL bar quando
+   * combinamos com `scrollTo(0, 1)`. Sem altura maior, iOS ignora o
+   * scrollTo (já está no topo absoluto = não precisa ocultar barra).
+   */
+  private aplicarHackBodyHeight(): void {
+    try {
+      this._bodyOriginalHeight = document.body.style.height;
+      this._bodyOriginalMinHeight = document.body.style.minHeight;
+      this._htmlOriginalHeight = document.documentElement.style.height;
+      // Altura maior que viewport força iOS a tratar como scrollable.
+      const altura = window.innerHeight + 100;
+      document.body.style.minHeight = altura + 'px';
+      document.documentElement.style.minHeight = altura + 'px';
+    } catch { /* ignore */ }
+  }
+
+  /**
+   * Abre o modal-tutorial ensinando o user a instalar o app como PWA
+   * (iOS Safari "Adicionar à Tela de Início"). O modal salva a URL
+   * atual no localStorage — quando o user instalar e abrir pelo ícone
+   * PWA, navega direto pra essa rota já logado.
+   */
+  private async abrirTutorialPwaIos(): Promise<void> {
+    // Captura a URL atual incluindo path + query — pra reabrir no PWA.
+    const urlAtual = window.location.pathname + window.location.search;
+    const modal = await this.modalCtrl.create({
+      component: IosPwaTutorialModalComponent,
+      componentProps: {
+        redirectUrl: urlAtual,
+        contextoLabel: 'tela cheia da transmissão',
+      },
+      backdropDismiss: false,
+    });
+    await modal.present();
+    // Marca que o user viu — não exibimos de novo automaticamente.
+    marcarTutorialPwaVisto();
+  }
+
+  /**
+   * Decide se vale exibir o tutorial PWA antes de o user iniciar a
+   * transmissão. Critérios cumulativos:
+   *   - Está em iOS Safari não-PWA não-Capacitor (única forma do
+   *     fullscreen real não funcionar);
+   *   - Ainda NÃO viu o tutorial (`tutorialPwaJaVisto() === false`).
+   *
+   * Se já viu uma vez, não repete — assume que o user escolheu não
+   * instalar e prefere a UX com barra do Safari.
+   */
+  private async deveExibirTutorialAntesDeIniciar(): Promise<boolean> {
+    return precisaTutorialPwaIos() && !tutorialPwaJaVisto();
+  }
+
+  /**
+   * Exibe o tutorial e AGUARDA o user fechá-lo antes de retornar.
+   * Diferente do `abrirTutorialPwaIos()` que não espera — esse usa
+   * `onDidDismiss()` pra bloquear o iniciar() até o tutorial sair.
+   */
+  private async exibirTutorialPwaBloqueante(): Promise<void> {
+    const urlAtual = window.location.pathname + window.location.search;
+    const modal = await this.modalCtrl.create({
+      component: IosPwaTutorialModalComponent,
+      componentProps: {
+        redirectUrl: urlAtual,
+        contextoLabel: 'tela cheia da transmissão',
+      },
+      backdropDismiss: false,
+    });
+    await modal.present();
+    await modal.onDidDismiss();
+    marcarTutorialPwaVisto();
+  }
+
+  /** Restaura body height ao sair do fullscreen. */
+  private removerHackBodyHeight(): void {
+    try {
+      document.body.style.height = this._bodyOriginalHeight;
+      document.body.style.minHeight = this._bodyOriginalMinHeight;
+      document.documentElement.style.height = this._htmlOriginalHeight;
+      document.documentElement.style.minHeight = '';
+    } catch { /* ignore */ }
   }
 
   private async entrarFullscreen(): Promise<boolean> {
     try {
       if (document.fullscreenElement) return true;
-      const el = document.documentElement;
+      // PRIORIZA o container `.tx-video-wrap` (em vez do `<html>` inteiro)
+      // pra que os controles overlay (INICIAR TRANSMISSÃO + flip câmera)
+      // que estão dentro do wrap sejam exibidos DENTRO do fullscreen.
+      // Fallback pra documentElement se o ref não estiver disponível.
+      const el = this.videoWrapRef?.nativeElement ?? document.documentElement;
       // Safari iOS usa webkitRequestFullscreen — eslint não conhece
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const anyEl = el as any;
@@ -277,6 +546,73 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
    * Solicita permissão de câmera/microfone e mostra preview local antes da
    * conexão com o LiveKit. Se o usuário negar, mostra mensagem clara.
    */
+  /**
+   * Resolução atualmente em uso pelo broadcaster (preenchida após
+   * `createLocalVideoTrack` resolver). Usado pra ajustar o bitrate
+   * de publish proporcionalmente. Default 4K — se cair pra menor,
+   * o `criarVideoTrackComFallback()` atualiza.
+   */
+  resolucaoAtual: { width: number; height: number } = { width: 3840, height: 2160 };
+
+  /**
+   * Tenta criar o video track na MAIOR resolução possível (cascata 4K
+   * → 1080p → 720p). Cada tentativa falha silenciosamente se a câmera
+   * não suportar; a próxima é tentada. Sempre cai em 720p como último
+   * recurso (suportado por qualquer câmera moderna). Se ainda assim
+   * falhar, propaga o erro.
+   */
+  /** Framerate atual capturado pela câmera. Default 60fps — se a câmera
+   *  não suportar, cai pra 30 no fallback. */
+  framerateAtual = 60;
+
+  /** Label legível da resolução atual ("4K @ 60fps", "1080p @ 30fps", etc).
+   *  Usado no chip visual da tela do broadcaster pra mostrar a qualidade
+   *  que conseguiu capturar — sem precisar abrir DevTools. */
+  get rotuloResolucao(): string {
+    const w = this.resolucaoAtual.width;
+    const f = this.framerateAtual;
+    const res = w >= 3840 ? '4K' : w >= 1920 ? '1080p' : w >= 1280 ? '720p' : `${w}×${this.resolucaoAtual.height}`;
+    return `${res}@${f}fps`;
+  }
+
+  private async criarVideoTrackComFallback(): Promise<LocalVideoTrack> {
+    // Cascata de tentativas — vai do MELHOR pro mais conservador.
+    // Tenta SEMPRE 60fps primeiro em cada resolução (iPhone 15 captura
+    // 4K@60 nativamente). Se não conseguir 60, tenta 30fps.
+    const tentativas: { width: number; height: number; fps: number; rotulo: string }[] = [
+      { width: 3840, height: 2160, fps: 60, rotulo: '4K @ 60fps' },
+      { width: 3840, height: 2160, fps: 30, rotulo: '4K @ 30fps' },
+      { width: 1920, height: 1080, fps: 60, rotulo: '1080p @ 60fps' },
+      { width: 1920, height: 1080, fps: 30, rotulo: '1080p @ 30fps' },
+      { width: 1280, height: 720,  fps: 60, rotulo: '720p @ 60fps' },
+      { width: 1280, height: 720,  fps: 30, rotulo: '720p @ 30fps' },
+    ];
+
+    let ultimoErro: unknown = null;
+    for (const t of tentativas) {
+      try {
+        const track = await createLocalVideoTrack({
+          resolution: { width: t.width, height: t.height, frameRate: t.fps },
+          facingMode: this.facingMode,
+        });
+        this.resolucaoAtual = { width: t.width, height: t.height };
+        this.framerateAtual = t.fps;
+        console.log(`[Transmissao] vídeo capturado em ${t.rotulo}`);
+        if (t.width !== 3840 || t.fps !== 60) {
+          this.toast(
+            `Câmera não suporta 4K@60fps — usando ${t.rotulo}.`,
+            'success',
+          );
+        }
+        return track;
+      } catch (err) {
+        console.warn(`[Transmissao] ${t.rotulo} indisponível, tentando próxima`, err);
+        ultimoErro = err;
+      }
+    }
+    throw ultimoErro ?? new Error('Nenhuma resolução suportada pela câmera.');
+  }
+
   private async prepararPreview(): Promise<void> {
     if (this.livekit.naoConfigurado) {
       this.estado = 'erro';
@@ -288,12 +624,16 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
 
     try {
       // Cria tracks locais (NÃO publica ainda — só pra preview).
-      // Resolução: 720p a 30fps é o sweet spot mobile→mobile.
-      // Bitrate fica controlado pelo LiveKit automático.
-      this.localVideoTrack = await createLocalVideoTrack({
-        resolution: { width: 1280, height: 720, frameRate: 30 },
-        facingMode: this.facingMode,
-      });
+      //
+      // Resolução: tenta 4K (3840×2160) PRIMEIRO. Se a câmera não
+      // suportar, faz FALLBACK automático pra 1080p e depois 720p.
+      // 4K só é entregue se a câmera do device + browser conseguirem
+      // capturar nessa resolução (iPhones modernos sim, Androids
+      // top-de-linha sim, Androids antigos provavelmente não).
+      //
+      // Bitrate (configurado no publishDefaults abaixo) é ajustado
+      // proporcionalmente: 4K precisa de ~6Mbps, 1080p ~3Mbps.
+      this.localVideoTrack = await this.criarVideoTrackComFallback();
       this.localAudioTrack = await createLocalAudioTrack({
         noiseSuppression: true,
         echoCancellation: true,
@@ -334,6 +674,11 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
+    // Tutorial PWA removido daqui — o modal já abre em tela cheia
+    // simulada automaticamente no `ngAfterViewInit` quando detecta iOS
+    // Safari, então o user já tem a UX correta sem ser interrompido
+    // antes de transmitir.
+
     this.estado = 'connecting';
     this.cdr.detectChanges();
 
@@ -347,16 +692,51 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
       });
 
       // 2) Cria Room + conecta.
+      //
+      // ═══ BALANCEADO: QUALIDADE + BAIXA LATÊNCIA ═══
+      // Bitrate em nível "broadcasting decente" (entre o profissional de
+      // 20 Mbps que era pesado demais e os 8 Mbps que ficaram embaçados):
+      //   - 4K @ 60fps:   14 Mbps (sweet spot — nítido sem saturar upload)
+      //   - 4K @ 30fps:   10 Mbps
+      //   - 1080p @ 60:   7 Mbps
+      //   - 1080p @ 30:   5 Mbps
+      //   - 720p @ 60:    3.5 Mbps
+      //   - 720p @ 30:    2.5 Mbps
+      //
+      // O que mantém latência baixa é DESLIGAR adaptive/dynacast (não o
+      // bitrate reduzido). Bitrate alto NÃO causa delay sozinho — o que
+      // causa é o servidor adaptando qualidade pra cada viewer (dynacast)
+      // ou o encoder ficando esperando feedback (adaptive).
+      const w = this.resolucaoAtual.width;
+      const f = this.framerateAtual;
+      const bitrate =
+        w >= 3840 ? (f >= 60 ? 14_000_000 : 10_000_000)
+        : w >= 1920 ? (f >= 60 ? 7_000_000 : 5_000_000)
+        : (f >= 60 ? 3_500_000 : 2_500_000);
+
       this.room = new Room({
-        adaptiveStream: true,    // ajusta qualidade auto pros viewers
-        dynacast: true,          // economiza banda — só envia o que tá assistindo
+        // `adaptiveStream` desligado — evita o servidor renegociar
+        // qualidade pra cada viewer (causa delay perceptível).
+        adaptiveStream: false,
+        // `dynacast` desligado — evita o broadcaster pausar/retomar
+        // simulcast layers conforme viewers assistem (causa stutter).
+        dynacast: false,
         publishDefaults: {
           videoEncoding: {
-            maxBitrate: 1_500_000, // 1.5 Mbps — bom pra mobile
-            maxFramerate: 30,
+            maxBitrate: bitrate,
+            maxFramerate: f,
+            priority: 'high',
           },
-          audioPreset: { maxBitrate: 64_000 },
-          simulcast: true,       // múltiplas resoluções → fallback automático em rede ruim
+          // Áudio: 192 kbps stereo HD.
+          audioPreset: { maxBitrate: 192_000 },
+          // Simulcast LIGADO de volta — manda 3 qualidades (alta, média,
+          // baixa) pro servidor. Viewers com banda ruim recebem versão
+          // menor automaticamente. NÃO adiciona delay perceptível no
+          // broadcaster (encoder roda paralelo). Trade-off bom.
+          simulcast: true,
+          degradationPreference: 'maintain-resolution',
+          // H.264 — decoder mais rápido em iOS Safari (vs VP9/AV1).
+          videoCodec: 'h264',
         },
       });
 
@@ -442,8 +822,42 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
       // ao mesmo tempo, ele pode abrir outra aba/dispositivo na URL pública.
     } catch (err: unknown) {
       console.error('[Transmissao] erro ao iniciar', err);
+      // Log COMPLETO em alert pra debugar em mobile (sem DevTools).
+      // Mostra: code, message, details, name, stack truncado.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const e = err as any;
+      const debug = {
+        code: e?.code,
+        message: e?.message,
+        details: e?.details,
+        name: e?.name,
+        type: typeof err,
+      };
+      console.error('[Transmissao] erro DEBUG completo:', JSON.stringify(debug));
+
       this.estado = 'erro';
-      this.mensagemErro = (err instanceof Error) ? err.message : 'Falha desconhecida ao iniciar transmissão.';
+      const msg = (err instanceof Error) ? err.message : String(err);
+      const code = e?.code as string | undefined;
+
+      if (msg === 'internal' || code === 'internal' || code === 'functions/internal') {
+        // Mensagem expandida com possíveis causas + details (se existir).
+        const detalheExtra = e?.details ? ` (detalhe: ${JSON.stringify(e.details)})` : '';
+        this.mensagemErro =
+          'Erro interno servidor (code: internal)' + detalheExtra + '. ' +
+          'Possíveis causas: (1) LiveKit API keys não configuradas, ' +
+          '(2) Cloud Function com bug, (3) timeout LiveKit Cloud. ' +
+          'Verifique logs via "firebase functions:log --only gerarTokenLiveKit".';
+      } else if (code === 'unauthenticated' || code === 'functions/unauthenticated') {
+        this.mensagemErro = 'Login expirado. Faça logout e login de novo.';
+      } else if (code === 'permission-denied' || code === 'functions/permission-denied') {
+        this.mensagemErro = 'Sem permissão pra transmitir este jogo.';
+      } else if (code === 'unavailable' || code === 'functions/unavailable' || msg.toLowerCase().includes('network')) {
+        this.mensagemErro = 'Servidor temporariamente indisponível. Tente novamente.';
+      } else if (msg.toLowerCase().includes('not configured') || msg.toLowerCase().includes('livekit')) {
+        this.mensagemErro = 'LiveKit não configurado. Contate admin.';
+      } else {
+        this.mensagemErro = `Erro: ${msg || code || 'desconhecido'}`;
+      }
       this.cdr.detectChanges();
     }
   }
@@ -588,8 +1002,14 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
       // 1) Cria o novo track ANTES de matar o antigo — se a criação
       // falhar (sem câmera traseira no device, permissão revogada),
       // o usuário não fica com transmissão parada.
+      // Usa a MESMA resolução E framerate (4K@60 se disponível) —
+      // garante continuidade visual ao virar a câmera durante o broadcast.
       const novoTrack = await createLocalVideoTrack({
-        resolution: { width: 1280, height: 720, frameRate: 30 },
+        resolution: {
+          width: this.resolucaoAtual.width,
+          height: this.resolucaoAtual.height,
+          frameRate: this.framerateAtual,
+        },
         facingMode: novo,
       });
 

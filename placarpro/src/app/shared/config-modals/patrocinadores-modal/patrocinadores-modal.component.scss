@@ -1,57 +1,132 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Modal "Apoios e Patrocinadores"
+   - Header: título + botão X (fechar)
+   - Conteúdo: intro + botão adicionar + lista de cards
+   - Rodapé fixo: botões Cancelar (vermelho) + Salvar (navy) lado a lado
+   ═════════════════════════════════════════════════════════════════════ */
+
+.pat-header ion-toolbar {
+  --min-height: 52px;
+  --padding-start: 4px;
+  --padding-end: 8px;
+}
+
 .pat-content {
   --background: var(--placar-bg, #f5f5f7);
-  --padding-start: 20px;
-  --padding-end: 20px;
-  --padding-top: 18px;
-  --padding-bottom: 28px;
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
 }
 
+.pat-wrap {
+  padding: 16px 18px 24px;
+}
+
+/* ───── Intro com ícone ───── */
 .pat-intro {
-  margin: 0 0 16px;
-  font-size: 14px;
+  margin: 0 0 14px;
+  font-size: 13px;
   color: var(--ion-color-medium);
   line-height: 1.5;
-}
-
-.pat-add {
-  --border-radius: 12px;
-  margin-bottom: 18px;
-  height: 46px;
-  font-weight: 600;
-}
-
-.pat-lista {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(77, 171, 247, 0.08);
+  border-radius: 10px;
+  border-left: 3px solid #4DABF7;
 
-.pat-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-
-  @media (max-width: 540px) {
-    flex-wrap: wrap;
-    gap: 10px;
+  ion-icon {
+    flex: 0 0 auto;
+    font-size: 18px;
+    color: #4DABF7;
+    margin-top: 1px;
   }
 }
 
-.pat-logo {
-  width: 72px;
-  height: 72px;
+/* ───── Botão "Adicionar patrocinador" ───── */
+.pat-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 16px;
+  background: var(--ion-color-secondary, #7CC61D);
+  color: #fff;
+  border: none;
   border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(124, 198, 29, 0.25);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+
+  ion-icon { font-size: 20px; }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(124, 198, 29, 0.35);
+  }
+  &:active { transform: translateY(0); }
+}
+
+/* ───── Lista de cards ───── */
+.pat-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pat-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid #ececef;
+  overflow: hidden;
+}
+
+.pat-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fafafb;
+  border-bottom: 1px solid #ececef;
+}
+
+.pat-card-info {
+  flex: 1;
+  min-width: 0;
+}
+.pat-card-titulo {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1C2E3D;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.pat-card-hint {
+  font-size: 11px;
+  color: var(--ion-color-medium);
+  margin-top: 2px;
+}
+
+.pat-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
   border: 2px dashed rgba(28, 46, 61, 0.18);
   background: var(--placar-surface-2, #f5f5f7);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   cursor: pointer;
   overflow: hidden;
   flex: 0 0 auto;
@@ -68,57 +143,134 @@
     object-fit: cover; display: block;
   }
 
-  ion-icon { font-size: 24px; }
-  span { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-}
-
-.pat-campos {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-
-  @media (max-width: 540px) { width: 100%; }
-}
-
-.pat-input {
-  border: 1px solid var(--placar-divider, #ececec);
-  background: #fff;
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 14px;
-  color: var(--placar-text);
-  outline: none;
-  transition: border-color 120ms ease;
-
-  &:focus { border-color: var(--ion-color-primary); }
-  &::placeholder { color: var(--ion-color-medium); }
+  ion-icon { font-size: 22px; }
+  span {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
 }
 
 .pat-remove {
   background: transparent;
-  border: none;
+  border: 1px solid #ececef;
   color: var(--ion-color-medium);
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   flex: 0 0 auto;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
 
-  &:hover { background: rgba(235, 68, 90, 0.1); color: var(--ion-color-danger); }
-  ion-icon { font-size: 19px; }
+  &:hover {
+    background: rgba(235, 68, 90, 0.12);
+    color: var(--ion-color-danger);
+    border-color: var(--ion-color-danger);
+  }
+  ion-icon { font-size: 17px; }
 }
 
+/* ───── Campos do card ───── */
+.pat-campos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px 14px;
+}
+
+.pat-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pat-field-lbl {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #6b6b70;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+
+  em {
+    color: var(--ion-color-danger);
+    font-style: normal;
+    margin-left: 2px;
+  }
+}
+
+.pat-input {
+  width: 100%;
+  border: 1px solid var(--placar-divider, #ececec);
+  background: #fff;
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-size: 13.5px;
+  color: var(--placar-text);
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: var(--ion-color-primary);
+    box-shadow: 0 0 0 3px rgba(28, 46, 61, 0.08);
+  }
+  &::placeholder { color: #b0b3b8; }
+}
+
+/* ───── Empty state ───── */
 .pat-empty {
   text-align: center;
-  padding: 48px 16px;
+  padding: 56px 20px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px dashed #ececef;
   color: var(--ion-color-medium);
 
-  > ion-icon { font-size: 56px; opacity: 0.35; margin-bottom: 10px; }
-  p { margin: 0 0 4px; font-weight: 600; color: var(--ion-color-primary); }
-  span { font-size: 13px; }
+  > ion-icon {
+    font-size: 56px;
+    opacity: 0.4;
+    margin-bottom: 10px;
+    color: var(--ion-color-primary);
+  }
+  p {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--placar-text);
+  }
+  span { font-size: 12.5px; }
+}
+
+/* ───── Footer com botões Cancelar + Salvar ───── */
+.pat-footer ion-toolbar {
+  --background: #fff;
+  --border-color: #ececef;
+  --min-height: 0;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  border-top: 1px solid #ececef;
+}
+
+.pat-acoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pat-btn {
+  --border-radius: 999px;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
+  margin: 0;
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+
+  ion-icon { font-size: 16px; }
 }

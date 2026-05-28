@@ -12,10 +12,10 @@
 
 .page-head {
   margin-bottom: 18px;
-  /* No mobile, reserva espaço pro hambúrguer global (fixed, 40x40 @10px) */
   @media (max-width: 767px) {
-    padding-left: 56px;
-    min-height: 40px;
+    padding: 5px;
+    /* padding-left: 56px; */
+    /* min-height: 40px; */
   }
 }
 .page-title {

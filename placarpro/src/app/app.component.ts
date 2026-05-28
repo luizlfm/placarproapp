@@ -5,6 +5,9 @@ import { ToastController } from '@ionic/angular';
 import { filter } from 'rxjs/operators';
 import { AuthService } from './auth/auth.service';
 import { ThemeService } from './shared/theme.service';
+import { CampeonatoThemeService } from './shared/campeonato-theme.service';
+import { UsersService } from './users/users.service';
+import { consumirRedirectPendente, isPwaStandalone } from './shared/utils/pwa.utils';
 
 @Component({
   selector: 'app-root',
@@ -20,10 +23,14 @@ export class AppComponent {
   private readonly router = inject(Router);
   private readonly swUpdate = inject(SwUpdate, { optional: true });
   private readonly toastCtrl = inject(ToastController);
+  private readonly campTheme = inject(CampeonatoThemeService);
+  private readonly usersSrv = inject(UsersService);
 
   constructor() {
     this.silenciarBugIonicAriaChanged();
     this.monitorarAtualizacoes();
+    this.aplicarCorDoOrganizador();
+    this.aplicarRedirectPosInstalacaoPwa();
 
     // No Safari/iOS, `signInWithGoogle()` usa `signInWithRedirect` por causa
     // do bloqueio de popup + cookies de terceiros (ITP). Ao voltar do provider,
@@ -92,6 +99,54 @@ export class AppComponent {
    * `optional: true` na injeção porque SwUpdate só está disponível com
    * ServiceWorkerModule ativo (production); em dev o inject retorna null.
    */
+  /**
+   * Aplica a `corPrimaria` salva no profile do organizador como CSS vars
+   * globais — afeta toolbar primary, botões primary etc. em todo o app.
+   *
+   * Atualizado em tempo real via observable: ao mudar e salvar a cor na
+   * Página do Organizador, o `users/{uid}` é re-emitido e a cor é
+   * reaplicada sem precisar de F5.
+   */
+  private aplicarCorDoOrganizador(): void {
+    this.usersSrv.profile$().subscribe(p => {
+      this.campTheme.setCor(p?.corPrimaria ?? null);
+    });
+  }
+
+  /**
+   * Auto-redirect pós-instalação PWA.
+   *
+   * Fluxo:
+   *  1. User está no Safari numa tela (ex: transmissão de um jogo).
+   *  2. Abre o modal `IosPwaTutorialModal` — esse modal salva a URL atual
+   *     no localStorage (`placarpro_pending_redirect_after_pwa_install`).
+   *  3. User instala o app na home screen e abre pelo ícone.
+   *  4. O app abre em PWA standalone — Firebase Auth já persistido,
+   *     auto-login automático (sem precisar redigitar).
+   *  5. Esse método detecta `isPwaStandalone() === true` E tem URL
+   *     pendente → navega pra essa URL.
+   *
+   * Resultado: user clica no ícone do PWA → vai direto pra tela de
+   * transmissão em fullscreen real, já logado.
+   */
+  private aplicarRedirectPosInstalacaoPwa(): void {
+    // Só executa em modo PWA standalone — em browser normal a URL
+    // pendente fica armazenada esperando o user instalar.
+    if (!isPwaStandalone()) return;
+
+    const urlPendente = consumirRedirectPendente();
+    if (!urlPendente) return;
+
+    // Aguarda Auth resolver (pode ter tokens em curso de revalidação).
+    // O `handleRedirectResult` no constructor já faz parte disso —
+    // esperamos 600ms pra estar seguro, depois navegamos.
+    setTimeout(() => {
+      this.router.navigateByUrl(urlPendente).then(ok => {
+        console.log('[App] redirect pós-PWA-install', { urlPendente, ok });
+      });
+    }, 600);
+  }
+
   private async monitorarAtualizacoes(): Promise<void> {
     if (!this.swUpdate || !this.swUpdate.isEnabled) return;
 

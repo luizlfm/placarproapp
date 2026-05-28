@@ -32,10 +32,9 @@
            mobile → capaMobileUrl ?? capaUrl ?? bannerUrl
            web    → capaUrl ?? bannerUrl
            Mesma lógica de `capaCamp()` do publico-categoria. -->
-      <img
-        *ngIf="capaCategoria(cat) as capa"
+      <img skel
         class="hero-img"
-        [src]="capa"
+        [src]="capaCategoria(cat)"
         [alt]="cat.titulo"
       />
       <div class="hero-info">
@@ -84,7 +83,7 @@
             
           >
             <div class="eq-logo-mini">
-              <img *ngIf="e.logoUrl; else iconF" [src]="e.logoUrl" [alt]="e.nome" loading="lazy" />
+              <img skel *ngIf="e.logoUrl; else iconF" [src]="e.logoUrl" [alt]="e.nome" loading="lazy" />
               <ng-template #iconF><ion-icon name="shield-outline"></ion-icon></ng-template>
             </div>
             <div class="eq-info">

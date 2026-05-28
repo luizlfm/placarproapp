@@ -44,7 +44,7 @@
       <ion-searchbar
         [value]="busca"
         (ionInput)="busca = $any($event).detail.value || ''"
-        placeholder="Buscar por nome, cidade, técnico ou grupo"
+        placeholder="Buscar..."
         showCancelButton="never"
         debounce="120"
         animated="true"
@@ -78,7 +78,7 @@
           (click)="abrirEditarEquipe(eq)"
         >
           <div class="row-logo">
-            <img *ngIf="eq.logoUrl; else iconF" [src]="eq.logoUrl" [alt]="eq.nome" />
+            <img skel *ngIf="eq.logoUrl; else iconF" [src]="eq.logoUrl" [alt]="eq.nome" />
             <ng-template #iconF>
               <ion-icon name="shield-outline"></ion-icon>
             </ng-template>

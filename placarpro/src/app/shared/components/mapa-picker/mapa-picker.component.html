@@ -1,0 +1,75 @@
+<!-- Componente embeddable do picker de mapa. Não tem header próprio —
+     o wrapper (modal ou inline) cuida disso via outputs (confirmar)/(cancelar). -->
+<div class="mp-wrap">
+  <!-- Barra de busca -->
+  <div class="search-bar">
+    <ion-icon name="search-outline"></ion-icon>
+    <input
+      type="text"
+      placeholder="Buscar endereço, cidade..."
+      [(ngModel)]="busca"
+      (keyup.enter)="buscarEndereco()"
+      [disabled]="buscando"
+    />
+    <button
+      type="button"
+      class="search-go"
+      (click)="buscarEndereco()"
+      [disabled]="!busca?.trim() || buscando"
+      aria-label="Buscar"
+    >
+      <ion-icon name="arrow-forward-outline" *ngIf="!buscando"></ion-icon>
+      <ion-spinner name="dots" *ngIf="buscando"></ion-spinner>
+    </button>
+  </div>
+
+  <!-- Endereço selecionado -->
+  <div class="endereco-bar" *ngIf="enderecoSelecionado || carregandoEndereco">
+    <ion-icon name="location-outline"></ion-icon>
+    <span *ngIf="!carregandoEndereco">{{ enderecoSelecionado }}</span>
+    <span *ngIf="carregandoEndereco" class="loading">Buscando endereço...</span>
+  </div>
+
+  <!-- Mapa — usa ViewChild em vez de id global pra suportar várias instâncias -->
+  <div #mapaEl class="mp-mapa"></div>
+
+  <!-- Footer com coords + dica -->
+  <div class="mp-coords-bar">
+    <div class="coords" *ngIf="selLat !== null && selLng !== null; else dica">
+      <ion-icon name="navigate-circle-outline"></ion-icon>
+      <span>{{ selLat }}, {{ selLng }}</span>
+      <button type="button" class="limpar" (click)="limparPin()" aria-label="Limpar seleção">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+    <ng-template #dica>
+      <div class="dica">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        Toque no mapa pra escolher o local
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Botões Cancelar/Confirmar inline (quando usado embedded sem wrapper) -->
+  <div class="mp-acoes" *ngIf="exibirBotoes">
+    <ion-button
+      class="btn-acao"
+      size="small"
+      color="danger"
+      (click)="onCancelar()"
+    >
+      <ion-icon slot="start" name="close-outline"></ion-icon>
+      Cancelar
+    </ion-button>
+    <ion-button
+      class="btn-acao"
+      size="small"
+      color="primary"
+      [disabled]="selLat === null || selLng === null"
+      (click)="onConfirmar()"
+    >
+      <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+      Confirmar
+    </ion-button>
+  </div>
+</div>

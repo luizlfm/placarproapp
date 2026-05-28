@@ -27,6 +27,7 @@ import { LoginModalComponent } from '../../../auth/login-modal/login-modal.compo
 import { VotarModalComponent } from './votar-modal/votar-modal.component';
 import { ViewerModalComponent } from '../../../shared/midia/viewer/viewer.modal';
 import { NavBackService } from '../../../shared/nav-back.service';
+import { RefreshService } from '../../../shared/refresh.service';
 
 type Secao = 'inicio' | 'equipes' | 'jogos' | 'classificacao' | 'rankings' | 'midia' | 'jogo-detalhe' | 'minha-equipe';
 
@@ -83,6 +84,7 @@ export class PublicoCategoriaPage implements OnInit {
   private readonly authSrv = inject(AuthService);
   private readonly usersSrv = inject(UsersService);
   private readonly navBack = inject(NavBackService);
+  private readonly refreshSrv = inject(RefreshService);
   private readonly convitesSrv = inject(ConvitesEquipeService);
 
   /** Estado do botão SEGUIR (true se o user logado já segue este campeonato). */
@@ -109,10 +111,13 @@ export class PublicoCategoriaPage implements OnInit {
   }
 
   /** Retorna a capa apropriada — inclui fallback no `bannerUrl` legacy. */
-  capaCamp(c: Campeonato | null | undefined): string | null {
-    if (!c) return null;
+  /** Banner padrão usado em qualquer hero sem imagem cadastrada. */
+  readonly bannerPadrao = 'assets/branding/banner-default.svg';
+
+  capaCamp(c: Campeonato | null | undefined): string {
+    if (!c) return this.bannerPadrao;
     if (this.ehMobile && c.capaMobileUrl) return c.capaMobileUrl;
-    return c.capaUrl ?? c.bannerUrl ?? null;
+    return c.capaUrl || c.bannerUrl || this.bannerPadrao;
   }
 
   /**
@@ -131,7 +136,7 @@ export class PublicoCategoriaPage implements OnInit {
    *   6. camp.bannerUrl            (legacy)
    *   7. null
    */
-  capaHero(camp: Campeonato | null | undefined): string | null {
+  capaHero(camp: Campeonato | null | undefined): string {
     const cat = this.categoria;
     if (cat) {
       if (this.ehMobile && cat.capaMobileUrl) return cat.capaMobileUrl;
@@ -874,14 +879,10 @@ export class PublicoCategoriaPage implements OnInit {
     }
   }
 
-  /** Pull-to-refresh: arrasta pra baixo pra recarregar a tela. */
+  /** Pull-to-refresh: recarrega APENAS esta rota (Angular Router) — mantém
+   *  o usuário aqui em vez de cair na rota fallback. */
   async onRefresh(ev: CustomEvent): Promise<void> {
-    try {
-      window.location.reload();
-    } finally {
-      const target = ev?.target as { complete?: () => void } | null;
-      target?.complete?.();
-    }
+    await this.refreshSrv.refreshAtual(ev);
   }
 
   async clickSeguir(): Promise<void> {

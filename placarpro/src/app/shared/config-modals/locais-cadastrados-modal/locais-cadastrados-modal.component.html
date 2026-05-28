@@ -1,11 +1,10 @@
 <ion-header class="ion-no-border">
   <ion-toolbar color="primary">
-    <ion-buttons slot="start">
-      <ion-button (click)="dismiss()">Cancelar</ion-button>
-    </ion-buttons>
     <ion-title>Locais</ion-title>
     <ion-buttons slot="end">
-      <ion-button strong="true" [disabled]="salvando" (click)="salvar()">Salvar</ion-button>
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -73,52 +72,99 @@
     </div>
   </div>
 
-  <!-- Lista de locais -->
-  <div class="lc-lista" *ngIf="itens.length > 0; else vazio">
-    <div
-      class="lc-item"
-      *ngFor="let it of itens; let i = index"
-      [class.editing]="editandoIdx === i"
-      (click)="editar(i)"
-    >
-      <ion-icon class="pin" [name]="temGps(it) ? 'location' : 'location-outline'"
-                [class.has-gps]="temGps(it)"></ion-icon>
-
-      <div class="info">
-        <div class="nome">{{ it.nome }}</div>
-        <div class="endereco" *ngIf="it.endereco">{{ it.endereco }}</div>
-        <div class="coords" *ngIf="temGps(it)">
-          <ion-icon name="navigate-circle-outline"></ion-icon>
-          {{ it.lat }}, {{ it.lng }}
-        </div>
-      </div>
-
-      <button
-        *ngIf="temGps(it)"
-        type="button"
-        class="map-btn"
-        (click)="abrirNoMapa(it, $event)"
-        aria-label="Ver no mapa"
-      >
-        <ion-icon name="map-outline"></ion-icon>
-      </button>
-
-      <button
-        type="button"
-        class="lc-remove"
-        (click)="remover(i); $event.stopPropagation()"
-        [attr.aria-label]="'Remover ' + it.nome"
-      >
-        <ion-icon name="trash-outline"></ion-icon>
-      </button>
-    </div>
+  <!-- ====== Picker de mapa INLINE ======
+       Quando o user clica "Selecionar no mapa", o picker aparece aqui
+       no lugar da lista (em vez de abrir um modal sobre o modal).
+       Os outputs (confirmar)/(cancelar) são tratados localmente. -->
+  <div class="lc-mapa-inline" *ngIf="mapaAberto">
+    <app-mapa-picker
+      [lat]="lat"
+      [lng]="lng"
+      [endereco]="endereco"
+      [exibirBotoes]="true"
+      (confirmar)="aoConfirmarMapa($event)"
+      (cancelar)="aoCancelarMapa()"
+    ></app-mapa-picker>
   </div>
 
-  <ng-template #vazio>
-    <div class="lc-empty">
-      <ion-icon name="location-outline"></ion-icon>
-      <p>Nenhum local cadastrado.</p>
-      <span>Adicione o primeiro acima.</span>
+  <!-- ====== Lista de locais (escondida enquanto o mapa está aberto) ====== -->
+  <ng-container *ngIf="!mapaAberto">
+    <div class="lc-lista" *ngIf="itens.length > 0; else vazio">
+      <div
+        class="lc-item"
+        *ngFor="let it of itens; let i = index"
+        [class.editing]="editandoIdx === i"
+        (click)="editar(i)"
+      >
+        <ion-icon class="pin" [name]="temGps(it) ? 'location' : 'location-outline'"
+                  [class.has-gps]="temGps(it)"></ion-icon>
+
+        <div class="info">
+          <div class="nome">{{ it.nome }}</div>
+          <div class="endereco" *ngIf="it.endereco">{{ it.endereco }}</div>
+          <div class="coords" *ngIf="temGps(it)">
+            <ion-icon name="navigate-circle-outline"></ion-icon>
+            {{ it.lat }}, {{ it.lng }}
+          </div>
+        </div>
+
+        <button
+          *ngIf="temGps(it)"
+          type="button"
+          class="map-btn"
+          (click)="abrirNoMapa(it, $event)"
+          aria-label="Ver no mapa"
+        >
+          <ion-icon name="map-outline"></ion-icon>
+        </button>
+
+        <button
+          type="button"
+          class="lc-remove"
+          (click)="remover(i); $event.stopPropagation()"
+          [attr.aria-label]="'Remover ' + it.nome"
+        >
+          <ion-icon name="trash-outline"></ion-icon>
+        </button>
+      </div>
     </div>
-  </ng-template>
+
+    <ng-template #vazio>
+      <div class="lc-empty">
+        <ion-icon name="location-outline"></ion-icon>
+        <p>Nenhum local cadastrado.</p>
+        <span>Adicione o primeiro acima.</span>
+      </div>
+    </ng-template>
+  </ng-container>
 </ion-content>
+
+<!-- Footer padronizado: Cancelar (vermelho lixeira) + Salvar (navy check)
+     em 2 colunas de 50%, pill, UPPERCASE. Mesmo padrão dos outros modais. -->
+<ion-footer>
+  <ion-toolbar>
+    <div class="acoes-footer">
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="danger"
+        (click)="dismiss()"
+        [disabled]="salvando"
+      >
+        <ion-icon slot="start" name="trash-outline"></ion-icon>
+        Cancelar
+      </ion-button>
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="primary"
+        (click)="salvar()"
+        [disabled]="salvando"
+      >
+        <ion-spinner *ngIf="salvando" name="dots" slot="start"></ion-spinner>
+        <ion-icon *ngIf="!salvando" slot="start" name="checkmark-outline"></ion-icon>
+        Salvar
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

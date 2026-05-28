@@ -14,23 +14,12 @@
 }
 
 .modal-card {
-  background: var(--placar-card-bg);
+  background: transparent;
   color: var(--placar-text);
-  border-radius: 14px;
-  box-shadow: var(--placar-shadow-md, 0 12px 32px rgba(0, 0, 0, 0.15));
-  width: 540px;
-  max-width: calc(100vw - 32px);
-  /* Sem max-height nem overflow — ion-content cuida do scroll. */
-  padding: 24px 28px 18px;
-  /* Centraliza horizontalmente, dá respiro vertical. */
-  margin: 16px auto;
-}
-
-.title {
-  margin: 0 0 18px;
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--placar-text);
+  width: 100%;
+  max-width: 540px;
+  padding: 18px 16px 8px;
+  margin: 0 auto;
 }
 
 .form-group {
@@ -54,6 +43,13 @@
   }
 
   ion-input { width: 100%; }
+
+  /* Variante split: 2 colunas iguais (Data | Hora) — cada uma com seu
+     próprio app-date-input que abre picker próprio em modal/popover. */
+  &.split {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
 }
 
 /* Lista de links (Anexos, Pontos Extras, …) */
@@ -119,41 +115,27 @@
   }
 }
 
-/* Footer: botão Salvar estilo "link" azul à direita */
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-top: 12px;
-  padding-top: 14px;
-  border-top: 1px solid var(--placar-divider);
+/* Footer padrão — Cancelar (lixeira vermelho) + Salvar (check navy)
+   lado a lado, pill. Altura controlada pelo `size="small"` do Ionic. */
+ion-footer ion-toolbar {
+  --background: #fff;
+  --border-color: #ececef;
 }
 
-.btn-salvar {
-  background: none;
-  border: 0;
-  color: var(--ion-color-tertiary, #4dabf7);
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  padding: 8px 18px;
-  cursor: pointer;
-  border-radius: 8px;
-  text-transform: none;
-  transition: background 120ms ease;
-  display: inline-flex;
-  align-items: center;
+.acoes-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+  background: #fff;
 
-  ion-spinner { --color: var(--ion-color-tertiary, #4dabf7); }
-
-  &:hover:not(:disabled) {
-    background: rgba(77, 171, 247, 0.10);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  .btn-acao {
+    margin: 0;
+    width: 100%;
+    --border-radius: 999px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
   }
 }
 

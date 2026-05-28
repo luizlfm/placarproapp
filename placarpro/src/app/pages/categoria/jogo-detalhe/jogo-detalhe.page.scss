@@ -850,104 +850,180 @@ ion-content {
 
 /* Versão standalone (sem o card de placar em volta) — usada depois que
    o scoreboard foi retirado a pedido. Mesmas dimensões dos botões. */
+/* ═══ Cards de transmissão / câmera ═══
+   Substitui os antigos `.sb-tx-btn` (pills pequenos) por cards maiores
+   com 2 linhas (título + subtítulo) + ícone grande + chevron, dando
+   mais hierarquia visual e legibilidade. Em mobile vira coluna. */
 .tx-quick {
-  display: flex;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
   margin-bottom: 18px;
 
-  @media (max-width: 480px) {
-    gap: 8px;
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    gap: 10px;
     margin-bottom: 14px;
   }
 }
 
-.sb-tx-btn {
-  display: inline-flex;
+.tx-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #ececef;
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  position: relative;
+  overflow: hidden;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+
+  &::before {
+    /* Barra colorida vertical à esquerda — identidade visual de cada card. */
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  }
+  &:active { transform: translateY(0); }
+}
+
+.tx-card-icon {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  flex: 1 1 0;            /* proporção igual entre os dois principais */
+  flex-shrink: 0;
+
+  ion-icon { font-size: 22px; }
+}
+
+.tx-card-info {
   min-width: 0;
-  height: 36px;           /* altura fixa pra consistência visual */
-  padding: 0 12px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  font-size: 11.5px;
-  font-weight: 700;
+}
+.tx-card-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--placar-text, #1C2E3D);
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  cursor: pointer;
-  transition: all 140ms ease;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  line-height: 1;
+}
+.tx-card-sub {
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--ion-color-medium, #6b6b70);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-  ion-icon { font-size: 15px; flex-shrink: 0; }
-  span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.tx-card-chevron {
+  color: var(--ion-color-medium, #b0b3b8);
+  font-size: 18px;
+  flex-shrink: 0;
+}
 
-  &:hover { transform: translateY(-1px); }
-  &:active { transform: translateY(0); }
-
-  /* YouTube — vermelho */
-  &.sb-tx-yt {
+/* ─── Variante YouTube ─── */
+.tx-card-youtube {
+  &::before { background: linear-gradient(180deg, #e11d48 0%, #be123c 100%); }
+  &:hover { border-color: rgba(225, 29, 72, 0.4); }
+  .tx-card-icon {
     background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
     color: #fff;
-    border-color: rgba(0, 0, 0, 0.08);
-    box-shadow: 0 2px 6px rgba(225, 29, 72, 0.25);
-    &:hover { box-shadow: 0 3px 10px rgba(225, 29, 72, 0.40); }
+    box-shadow: 0 2px 8px rgba(225, 29, 72, 0.30);
   }
+}
 
-  /* LiveKit / câmera — verde */
-  &.sb-tx-live {
+/* ─── Variante Câmera/LiveKit ─── */
+.tx-card-camera {
+  &::before {
+    background: linear-gradient(180deg, var(--ion-color-secondary, #7CC61D) 0%, #5a9912 100%);
+  }
+  &:hover { border-color: rgba(124, 198, 29, 0.4); }
+  .tx-card-icon {
     background: linear-gradient(135deg, var(--ion-color-secondary, #7CC61D) 0%, #5a9912 100%);
     color: #fff;
-    border-color: rgba(0, 0, 0, 0.08);
-    box-shadow: 0 2px 6px rgba(124, 198, 29, 0.25);
-    &:hover { box-shadow: 0 3px 10px rgba(124, 198, 29, 0.40); }
+    box-shadow: 0 2px 8px rgba(124, 198, 29, 0.30);
   }
 
-  /* Menu ⋮ — quadrado, mesma altura, discreto */
-  &.sb-tx-menu {
-    flex: 0 0 36px;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    background: var(--placar-bg-soft, #f5f5f7);
-    color: var(--placar-text, #1c1c1f);
-    border-color: var(--placar-divider, #ececef);
-    &:hover { background: #ececef; }
-    span { display: none; }
+  /* Estado "ATIVA" — quando está transmitindo agora. Vermelho pulsante. */
+  &.ativa {
+    background: linear-gradient(135deg, rgba(225, 29, 72, 0.05) 0%, rgba(225, 29, 72, 0.10) 100%);
+    border-color: rgba(225, 29, 72, 0.3);
+    &::before { background: linear-gradient(180deg, #e11d48 0%, #be123c 100%); }
+    .tx-card-icon {
+      background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+      box-shadow: 0 2px 8px rgba(225, 29, 72, 0.30);
+    }
+    .tx-card-title { color: #be123c; }
   }
 }
 
-/* Por padrão: mostra texto "Abrir transmissão" cheio, esconde o mini.
-   Mobile inverte. */
-.sb-tx-txt-full { display: inline; }
-.sb-tx-txt-mini { display: none; }
+/* Badge "AO VIVO" pulsante — quando transmitindo, ocupa o espaço inteiro
+   do `.tx-card-icon` (em vez de ficar no canto sobrepondo o ion-icon). */
+.tx-card-live-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  background: transparent; /* fundo já é o gradiente do .tx-card-icon */
+  color: #fff;
+  border-radius: inherit;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  line-height: 1;
+  text-align: center;
+  animation: txCardLivePulse 1.4s ease-in-out infinite;
+}
+.tx-card-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+}
+@keyframes txCardLivePulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.85; }
+}
 
+/* Mobile: cards mais compactos */
 @media (max-width: 600px) {
-  .sb-tx-actions { gap: 6px; padding-top: 10px; }
-  .sb-tx-btn {
-    height: 34px;
-    padding: 0 8px;
-    font-size: 10.5px;
-    letter-spacing: 0.2px;
-    gap: 5px;
-    ion-icon { font-size: 14px; }
-    &.sb-tx-menu { flex: 0 0 34px; width: 34px; height: 34px; }
+  .tx-card {
+    padding: 12px 14px;
+    gap: 12px;
+    border-radius: 12px;
   }
-  /* Inverte: mostra texto curto, esconde longo */
-  .sb-tx-txt-full { display: none; }
-  .sb-tx-txt-mini { display: inline; }
-}
-
-@media (max-width: 380px) {
-  .sb-tx-btn {
-    height: 32px;
-    padding: 0 6px;
-    font-size: 10px;
-    ion-icon { font-size: 13px; }
-    &.sb-tx-menu { flex: 0 0 32px; width: 32px; height: 32px; }
+  .tx-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    ion-icon { font-size: 20px; }
   }
+  .tx-card-title { font-size: 13px; }
+  .tx-card-sub { font-size: 11px; }
 }
 
 /* ── Segments Escalação | Lances ── */
@@ -1681,6 +1757,25 @@ ion-content {
   }
 
   @media (max-width: 420px) { font-size: 18px; padding: 3px 10px; }
+}
+
+/* Versão BUTTON do `.live-time` — clicável pra editar o cronômetro
+   manualmente (admin clica em MM:SS e pode redefinir o tempo). */
+.live-time-btn {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease, transform 120ms ease;
+
+  &:hover { background: rgba(255, 255, 255, 0.15); }
+  &:active { transform: scale(0.97); }
+
+  .live-time-edit-icon {
+    font-size: 14px;
+    opacity: 0.55;
+    margin-left: 4px;
+  }
+  &:hover .live-time-edit-icon { opacity: 1; }
 }
 
 /* Chip "PAUSADO" ao lado do cronômetro — texto compacto pra avisar

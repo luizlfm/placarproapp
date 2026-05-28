@@ -1,7 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { LoadingController, ModalController, ToastController } from '@ionic/angular';
-import { Observable } from 'rxjs';
+import { Observable, combineLatest, map } from 'rxjs';
 import { User } from '@angular/fire/auth';
 import { AuthService } from '../../auth/auth.service';
 import { UsersService } from '../../users/users.service';
@@ -10,6 +11,7 @@ import { StorageService } from '../../shared/storage.service';
 import { NavBackService } from '../../shared/nav-back.service';
 import { ImageCropperModalComponent } from '../../shared/components/image-cropper-modal/image-cropper-modal.component';
 import { ThemeService, ThemeMode } from '../../shared/theme.service';
+import { CampeonatoThemeService } from '../../shared/campeonato-theme.service';
 
 @Component({
   selector: 'app-organizador',
@@ -23,6 +25,8 @@ export class OrganizadorPage implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly usersSrv = inject(UsersService);
   private readonly storageSrv = inject(StorageService);
+  private readonly router = inject(Router);
+  private readonly campeonatoTheme = inject(CampeonatoThemeService);
   /** Navegação "voltar" — padrão UX após salvar (histórico + fallback). */
   private readonly navBack = inject(NavBackService);
   readonly themeSrv = inject(ThemeService);
@@ -41,6 +45,78 @@ export class OrganizadorPage implements OnInit {
   }
 
   readonly user$: Observable<User | null> = this.auth.user$;
+
+  /** Identidade vinda das configurações (Dados Pessoais): nome + foto.
+   *  Combina o `user` do Firebase Auth (sempre presente quando logado)
+   *  com o `profile` do Firestore (pode estar null se o user nunca
+   *  abriu Configurações). Prioridade: profile → user (fallback). */
+  readonly identidade$ = combineLatest([
+    this.auth.user$,
+    this.usersSrv.profile$(),
+  ]).pipe(
+    map(([u, p]) => ({
+      nome: p?.nome || u?.displayName || u?.email?.split('@')[0] || 'Sem nome',
+      fotoUrl: p?.fotoUrl || u?.photoURL || null,
+      email: u?.email || '',
+    })),
+  );
+
+  /** Navega pra tela de configurações (onde nome e foto são editados).
+   *  Passa `from=organizador` pra a tela exibir um botão "voltar" no header
+   *  e esconder o hamburger — fluxo focado no edit dos dados pessoais. */
+  abrirConfiguracoes(): void {
+    void this.router.navigate(['/app/configuracoes'], {
+      queryParams: { from: 'organizador' },
+    });
+  }
+
+  /** URL pública do organizador montada com o slug atual.
+   *  Aponta pra `/org/{slug}` — página estilo copafacil.com/{slug} que
+   *  mostra perfil do organizador + grid de campeonatos públicos dele. */
+  private urlPaginaPublica(): string | null {
+    const slug = (this.form.value.slug ?? '').trim();
+    if (!slug) return null;
+    return `${window.location.origin}/org/${slug}`;
+  }
+
+  /** Abre a página pública do organizador em uma nova aba (preview de
+   *  como visitantes veem). Estilo copafacil.com/{slug}/gallery. */
+  abrirPaginaPublica(): void {
+    const url = this.urlPaginaPublica();
+    if (!url) return;
+    window.open(url, '_blank', 'noopener');
+  }
+
+  /** Compartilha o link público via Web Share API (iOS/Android nativo)
+   *  com fallback pra clipboard. */
+  async compartilharLink(): Promise<void> {
+    const url = this.urlPaginaPublica();
+    if (!url) return;
+    const titulo = `${this.form.value.nome || 'PlacarPro'} • Página pública`;
+    const nav = navigator as Navigator & {
+      share?: (data: { title?: string; text?: string; url?: string }) => Promise<void>;
+    };
+    if (typeof nav.share === 'function') {
+      try {
+        await nav.share({ title: titulo, text: 'Acompanhe meus campeonatos no PlacarPro:', url });
+        return;
+      } catch (err) {
+        if ((err as { name?: string })?.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      const t = await this.toastCtrl.create({
+        message: 'Link copiado para a área de transferência.',
+        duration: 2200,
+        color: 'success',
+        position: 'top',
+      });
+      await t.present();
+    } catch {
+      /* ignore */
+    }
+  }
 
   carregado = false;
   salvando = false;
@@ -75,6 +151,12 @@ export class OrganizadorPage implements OnInit {
   });
 
   ngOnInit(): void {
+    // Live preview da cor da página: aplica nas CSS vars do app
+    // assim que o user mexe no color picker — sem precisar salvar.
+    this.form.get('corPrimaria')?.valueChanges.subscribe((cor: string) => {
+      if (cor && cor.startsWith('#')) this.campeonatoTheme.setCor(cor);
+    });
+
     this.usersSrv.profile$().subscribe(p => {
       if (this.carregado) return;
       const u = this.auth.currentUser;
@@ -178,7 +260,9 @@ export class OrganizadorPage implements OnInit {
     await loader.present();
     try {
       const tipo: 'avatar' | 'banner-app' | 'banner-site' =
-        campo === 'logoUrl' ? 'avatar' : campo === 'bannerAppUrl' ? 'banner-app' : 'banner-site';
+        campo === 'logoUrl' ? 'avatar'
+        : campo === 'bannerAppUrl' ? 'banner-app'
+        : 'banner-site';
       const url = await this.storageSrv.uploadUserAsset(tipo, data.blob);
       this.form.patchValue({ [campo]: url });
       const t = await this.toastCtrl.create({

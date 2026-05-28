@@ -1,23 +1,13 @@
 <!-- Header DESKTOP — no mobile dá lugar ao `<app-campeonato-mobile-header>`
-     (brand + segments). O atalho "Salvar" do header desktop continua aqui
-     pra desktop; em mobile o user usa o botão Salvar do rodapé do form. -->
+     (brand + segments). Os botões Salvar/Remover agora vivem no footer
+     fixo padronizado (mesma estética dos modais editar-informações etc.) —
+     então o header só precisa do back-button + título. -->
 <ion-header class="cmh-desktop-only">
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/app/campeonato/{{ campeonatoId }}/inicio"></ion-back-button>
     </ion-buttons>
     <ion-title>Configurações</ion-title>
-    <ion-buttons slot="end">
-      <ion-button
-        type="button"
-        (click)="salvar()"
-        [disabled]="salvando"
-        aria-label="Salvar alterações"
-      >
-        <ion-icon slot="start" name="save-outline"></ion-icon>
-        <span class="hdr-salvar-txt">Salvar</span>
-      </ion-button>
-    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -439,35 +429,46 @@
         </button>
       </section>
 
-      <!-- ============ BOTÕES ============ -->
-      <div class="actions">
-        <ion-button
-          expand="block"
-          color="primary"
-          type="submit"
-          class="btn-save"
-          [disabled]="salvando"
-        >
-          Salvar alterações
-        </ion-button>
-
-        <ion-button
-          fill="outline"
-          color="danger"
-          type="button"
-          class="btn-remove"
-          (click)="removerCampeonato()"
-        >
-          Remover campeonato
-        </ion-button>
-      </div>
-
       <!-- ============ SUPORTE ============ -->
       <div class="suporte">
         <h4>Dúvidas? Problemas?</h4>
-        <p>E-mail: suporte&#64;placarpro.app</p>
-        <p>WhatsApp: +55 82 99102-7052</p>
+        <p>E-mail: placarproapp&#64;gmail.com</p>
+        <p>WhatsApp: +55 37 99956-2903</p>
       </div>
     </div>
   </form>
 </ion-content>
+
+<!-- ============ FOOTER PADRONIZADO ============
+     Remover (vermelho lixeira) + Salvar (navy check) em 2 colunas de 50%,
+     pill, UPPERCASE. Mesmo padrão dos modais editar-informações,
+     anexos, criar-noticia, critérios etc. -->
+<ion-footer>
+  <ion-toolbar>
+    <div class="acoes-footer">
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="danger"
+        type="button"
+        (click)="removerCampeonato()"
+        [disabled]="salvando"
+      >
+        <ion-icon slot="start" name="trash-outline"></ion-icon>
+        Remover
+      </ion-button>
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="primary"
+        type="button"
+        (click)="salvar()"
+        [disabled]="salvando"
+      >
+        <ion-spinner *ngIf="salvando" name="dots" slot="start"></ion-spinner>
+        <ion-icon *ngIf="!salvando" slot="start" name="checkmark-outline"></ion-icon>
+        Salvar
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

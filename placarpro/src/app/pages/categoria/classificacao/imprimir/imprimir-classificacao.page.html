@@ -1,15 +1,31 @@
-<ion-header class="no-print">
+<!-- `force-mobile-header` força exibir esse ion-header também no mobile,
+     mesmo quando o `shell-mobile-header` global está renderizado.
+     Necessário pro user ter acesso aos botões PDF/Imprimir no mobile. -->
+<ion-header class="no-print force-mobile-header">
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
       <ion-button (click)="voltar()" aria-label="Voltar">
         <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
-    <ion-title>Imprimir classificação</ion-title>
+    <ion-title>Classificação</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="imprimir()" aria-label="Imprimir">
+      <!-- Mobile: botões icon-only compactos pra evitar overflow -->
+      <ion-button class="hide-desktop" (click)="baixarPdf()" aria-label="Baixar PDF">
+        <ion-icon slot="icon-only" name="download-outline"></ion-icon>
+      </ion-button>
+      <ion-button class="hide-desktop" (click)="imprimir()" aria-label="Imprimir">
+        <ion-icon slot="icon-only" name="print-outline"></ion-icon>
+      </ion-button>
+
+      <!-- Desktop: botões com texto -->
+      <ion-button class="hide-mobile" (click)="baixarPdf()" aria-label="Baixar PDF">
+        <ion-icon slot="start" name="download-outline"></ion-icon>
+        PDF
+      </ion-button>
+      <ion-button class="hide-mobile" (click)="imprimir()" aria-label="Imprimir">
         <ion-icon slot="start" name="print-outline"></ion-icon>
-        <span class="tb-label">Imprimir</span>
+        Imprimir
       </ion-button>
     </ion-buttons>
   </ion-toolbar>

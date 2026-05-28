@@ -8,7 +8,81 @@
    Em mobile vira coluna única (editor encima).
    ========================================================= */
 
-ion-content { --background: #e9ecef; }
+/* Host bloqueia overflow horizontal — a página inteira nunca pode
+   gerar scroll-x, senão o `ion-header` (fixed) desloca e os botões
+   "PDF/Imprimir" são cortados à direita. */
+:host {
+  display: block;
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+ion-content {
+  --background: #e9ecef;
+  /* CRÍTICO: impede que qualquer child com width grande
+     (`.termo-preview-img` em 210mm, `.termo-folha` em 210mm, etc) cause
+     scroll horizontal na página inteira — o que estava empurrando o
+     `ion-header` pra direita e cortando os botões "PDF/Imprimir". */
+  --overflow: auto;
+}
+
+/* Bloqueia overflow horizontal no ion-content também (via inner div). */
+ion-content::part(scroll) {
+  overflow-x: hidden;
+}
+
+/* ── Header (desktop): força os botões "PDF/Imprimir" a ficarem no
+   canto direito SEM serem cortados. Causa do bug em desktop: o
+   `<ion-title>` ocupa o espaço flex inteiro e tem padding default que
+   empurrava os ion-buttons pra fora da viewport visível.
+
+   Solução: posicionar `ion-buttons[slot="end"]` como `position: absolute`
+   colado ao right do toolbar, garantindo que SEMPRE fique visível. */
+ion-header ion-toolbar {
+  --padding-start: 4px;
+  --padding-end: 4px;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --min-height: 56px;
+  width: 100%;
+  position: relative;
+}
+
+ion-header ion-toolbar ion-title {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  min-width: 0 !important;
+  font-size: 16px;
+}
+
+ion-header ion-toolbar ion-buttons {
+  flex-shrink: 0 !important;
+  min-width: auto !important;
+}
+
+/* Cola o grupo de botões da direita no canto, com z-index alto pra
+   ficar acima de qualquer conteúdo do toolbar que pudesse sobrepor. */
+ion-header ion-toolbar ion-buttons[slot="end"] {
+  position: absolute !important;
+  right: 4px !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+  z-index: 5 !important;
+}
+
+/* Reserva espaço à direita do `ion-title` pra que o texto não passe
+   por baixo dos botões absolutos (4 botões × ~40px = 160px). */
+ion-header ion-toolbar ion-title {
+  --padding-end: 170px;
+}
+
+ion-header ion-toolbar ion-buttons[slot="end"] ion-button {
+  --padding-start: 6px;
+  --padding-end: 6px;
+}
 
 .tm-layout {
   display: grid;
@@ -17,6 +91,11 @@ ion-content { --background: #e9ecef; }
   padding: 16px;
   min-height: 100%;
   align-items: start;
+  /* Garante que esse container nunca ultrapasse a largura disponível —
+     evita scroll horizontal que cortava os botões do header. */
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* ============ Painel de edição ============ */
@@ -253,18 +332,92 @@ ion-content { --background: #e9ecef; }
   justify-content: center;
   align-items: flex-start;
   padding-bottom: 24px;
+  /* Permite que `.termo-preview-loading` flutue por cima quando gerando */
+  position: relative;
+  /* CRÍTICO: sem `min-width: 0`, esta coluna (1fr no grid pai
+     `.tm-layout`) usa `min-width: auto` por padrão — o que faz ela
+     crescer pra acomodar o conteúdo natural da img (210mm = ~793px),
+     empurrando o layout pra fora da viewport e fazendo os botões do
+     header serem CORTADOS. `min-width: 0` libera a coluna pra encolher. */
+  min-width: 0;
+  /* Garante que a img não cause overflow horizontal no parent. */
+  overflow: hidden;
+}
+
+/* Preview do termo como IMAGEM — substitui o HTML cru pra dar a visão
+   exata do que sairá no PDF. Pixel-perfect via dom-to-image-more.
+   `max-width: 100%` (não 210mm) garante que em viewports menores que
+   210mm a img encolhe proporcionalmente, evitando overflow horizontal
+   que cortava os botões do header. */
+.termo-preview-img {
+  display: block;
+  width: 100%;
+  max-width: 210mm;
+  height: auto;
+  margin: 0 auto;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+}
+
+.termo-preview-loading {
+  /* OVERLAY centralizado em cima da folha enquanto a img gera —
+     antes ficava como item flex ao lado do HTML, parecendo "deslocado". */
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: var(--ion-color-primary, #1c2e3d);
+  font-size: 14px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(2px);
+  z-index: 5;
+  pointer-events: none;
+
+  ion-spinner {
+    width: 40px;
+    height: 40px;
+    --color: var(--ion-color-primary, #1c2e3d);
+  }
+}
+
+/* Quando preview-img está mostrando OU está GERANDO, esconde o HTML
+   cru. Durante a regeneração mantemos a img antiga visível (com o
+   overlay-loading por cima) — assim o user vê transição suave img→img,
+   não um flash do HTML cru desconfigurado.
+   HTML continua no DOM pra `imprimir`/`baixarPdf` reutilizarem. */
+.tm-preview-wrap.tem-preview .termo-folha,
+.tm-preview-wrap.gerando-preview .termo-folha {
+  display: none !important;
 }
 
 .termo-folha {
   background: #fff;
   width: 210mm;
   min-height: 297mm;
-  max-width: 100%;
+  max-width: none;
   padding: 18mm 18mm;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
   font-family: 'Arial', 'Helvetica', sans-serif;
   font-size: 12pt;
   line-height: 1.8;
+
+  /* PDF-like preview no mobile: mantém 210mm (A4 retrato) e usa `zoom`
+     pra encolher TUDO proporcionalmente. Resultado: user vê o termo
+     EXATAMENTE como sairá no PDF, só em escala menor que cabe no celular. */
+  @media (max-width: 760px) {
+    zoom: 0.45;
+  }
+  @media (max-width: 480px) {
+    zoom: 0.38;
+  }
+  @media (max-width: 380px) {
+    zoom: 0.32;
+  }
   color: #1a1a1a;
 }
 

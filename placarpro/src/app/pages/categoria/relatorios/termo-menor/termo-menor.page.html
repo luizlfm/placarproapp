@@ -1,4 +1,4 @@
-<ion-header class="no-print">
+<ion-header class="no-print force-mobile-header">
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
       <ion-button (click)="voltar()" aria-label="Voltar">
@@ -10,9 +10,23 @@
       <ion-button (click)="restaurarPadrao()" aria-label="Restaurar padrão">
         <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
       </ion-button>
-      <ion-button (click)="imprimir()" aria-label="Imprimir">
+
+      <!-- Mobile: botões icon-only compactos (sem texto pra evitar overflow) -->
+      <ion-button class="hide-desktop" (click)="baixarPdf()" aria-label="Baixar PDF">
+        <ion-icon slot="icon-only" name="download-outline"></ion-icon>
+      </ion-button>
+      <ion-button class="hide-desktop" (click)="imprimir()" aria-label="Imprimir">
+        <ion-icon slot="icon-only" name="print-outline"></ion-icon>
+      </ion-button>
+
+      <!-- Desktop: botões com texto + ícone -->
+      <ion-button class="hide-mobile" (click)="baixarPdf()" aria-label="Baixar PDF">
+        <ion-icon slot="start" name="download-outline"></ion-icon>
+        PDF
+      </ion-button>
+      <ion-button class="hide-mobile" (click)="imprimir()" aria-label="Imprimir">
         <ion-icon slot="start" name="print-outline"></ion-icon>
-        <span class="tb-label">Imprimir</span>
+        Imprimir
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -74,13 +88,16 @@
           <textarea
             rows="2"
             [(ngModel)]="config.titulo"
+            (ngModelChange)="agendarGeracaoPreview()"
             placeholder="Ex.: 5ª COPA REGIONAL SPORT+ DE FUTEBOL SOCIETY"
           ></textarea>
         </label>
 
         <label class="pe-campo">
           <span class="pe-campo-lbl">Ano</span>
-          <input type="number" [(ngModel)]="config.ano" min="2000" max="2099" />
+          <input type="number" [(ngModel)]="config.ano"
+                 (ngModelChange)="agendarGeracaoPreview()"
+                 min="2000" max="2099" />
         </label>
 
         <label class="pe-campo">
@@ -88,6 +105,7 @@
           <input
             type="text"
             [(ngModel)]="config.organizador"
+            (ngModelChange)="agendarGeracaoPreview()"
             placeholder="Ex.: JOGA 10 SPORTS"
           />
         </label>
@@ -104,6 +122,7 @@
           class="pe-textarea-grande"
           rows="8"
           [(ngModel)]="config.declaracao"
+          (ngModelChange)="agendarGeracaoPreview()"
         ></textarea>
       </section>
 
@@ -122,8 +141,29 @@
 
     <!-- ===========================================================
          PREVIEW DO TERMO (folha A4 retrato)
+         Mostra a imagem renderizada (PNG via dom-to-image-more) que é
+         pixel-perfect ao PDF. O HTML cru continua no DOM (escondido)
+         pra que `imprimir()` / `baixarPdf()` capturem dele.
          =========================================================== -->
-    <main class="tm-preview-wrap">
+    <main class="tm-preview-wrap"
+          [class.tem-preview]="!!previewImagemUrl"
+          [class.gerando-preview]="gerandoPreviewMobile">
+
+      <img *ngIf="previewImagemUrl"
+           class="termo-preview-img no-print"
+           [src]="previewImagemUrl"
+           alt="Termo renderizado" />
+
+      <!-- Overlay de loading — aparece SEMPRE que `gerandoPreviewMobile` é
+           true, independente de ter img antiga ou não. CSS já tem
+           `background: rgba(255,255,255,.75) + backdrop-filter: blur(2px)`
+           pra cobrir a img antiga durante a regeneração. -->
+      <div *ngIf="gerandoPreviewMobile"
+           class="termo-preview-loading no-print">
+        <ion-spinner name="crescent"></ion-spinner>
+        <span>Renderizando termo...</span>
+      </div>
+
       <article class="termo-folha">
         <!-- Cabeçalho com logos + título -->
         <header class="termo-cabec">

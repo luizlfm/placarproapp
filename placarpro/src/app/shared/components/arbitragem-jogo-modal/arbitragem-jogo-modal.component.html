@@ -79,13 +79,28 @@
 
 <ion-footer>
   <ion-toolbar>
-    <div class="footer-actions">
-      <ion-button fill="clear" color="medium" (click)="dismiss()" [disabled]="salvando">
+    <!-- Footer padrão: Cancelar (lixeira vermelho) + Salvar (check navy)
+         em 2 colunas iguais (50%), pill, ícone à esquerda. -->
+    <div class="acoes-footer">
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="danger"
+        (click)="dismiss()"
+        [disabled]="salvando"
+      >
+        <ion-icon slot="start" name="trash-outline"></ion-icon>
         Cancelar
       </ion-button>
-      <div class="spacer"></div>
-      <ion-button color="primary" (click)="salvar()" [disabled]="salvando">
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="primary"
+        (click)="salvar()"
+        [disabled]="salvando"
+      >
         <ion-spinner *ngIf="salvando" name="dots" slot="start"></ion-spinner>
+        <ion-icon *ngIf="!salvando" slot="start" name="checkmark-outline"></ion-icon>
         Salvar
       </ion-button>
     </div>

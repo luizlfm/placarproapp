@@ -1,38 +1,106 @@
-<div class="card">
-  <h2 class="card-title">Editar fase</h2>
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Editar fase</ion-title>
+  </ion-toolbar>
+</ion-header>
 
-  <label class="lbl-titulo">
-    <span class="lbl-text">Título</span>
-    <input class="ipt-titulo" type="text" [(ngModel)]="titulo" maxlength="40" />
-  </label>
-
-  <!-- Linha condicional: "Classificação" pra eliminatórias OU "Destacar posições" pra pontos corridos -->
-  <ng-container *ngIf="isEliminatoria; else linhaDestacar">
-    <label class="row check-row">
-      <span class="row-text">Classificação</span>
-      <input type="checkbox" [(ngModel)]="classificacaoAtiva" />
+<ion-content class="bg">
+  <div class="wrap">
+    <label class="lbl-titulo">
+      <span class="lbl-text">Título</span>
+      <input class="ipt-titulo" type="text" [(ngModel)]="titulo" maxlength="40" />
     </label>
-  </ng-container>
-  <ng-template #linhaDestacar>
-    <button type="button" class="row" (click)="editarDestaques()">
-      <ion-icon class="row-icon" name="color-palette-outline"></ion-icon>
-      <span class="row-text">Destacar posições</span>
+
+    <!-- Tipo (read-only — mudar tipo quebra os jogos da fase) -->
+    <div class="row info-row">
+      <ion-icon class="row-icon" name="layers-outline"></ion-icon>
+      <span class="row-text">Tipo</span>
+      <span class="row-value">{{ tipoLabel }}</span>
+    </div>
+
+    <!-- Linha condicional: "Classificação" pra eliminatórias OU "Destacar posições" pra pontos corridos -->
+    <ng-container *ngIf="isEliminatoria; else linhaDestacar">
+      <label class="row check-row">
+        <span class="row-text">Classificação</span>
+        <input type="checkbox" [(ngModel)]="classificacaoAtiva" />
+      </label>
+    </ng-container>
+    <ng-template #linhaDestacar>
+      <button type="button" class="row" (click)="editarDestaques()">
+        <ion-icon class="row-icon" name="color-palette-outline"></ion-icon>
+        <span class="row-text">Destacar posições</span>
+        <span class="row-link">Editar</span>
+      </button>
+    </ng-template>
+
+    <!-- Turnos — ida ou ida e volta -->
+    <div class="row segment-row">
+      <ion-icon class="row-icon" name="repeat-outline"></ion-icon>
+      <span class="row-text">Turnos</span>
+      <div class="segment">
+        <button
+          type="button"
+          class="seg-btn"
+          [class.ativo]="turnos === 1"
+          (click)="turnos = 1"
+        >Ida</button>
+        <button
+          type="button"
+          class="seg-btn"
+          [class.ativo]="turnos === 2"
+          (click)="turnos = 2"
+        >Ida e volta</button>
+      </div>
+    </div>
+
+    <!-- Pontuação — só aparece quando tem classificação ativa (pontos-corridos
+         ou eliminatórias com classificacaoAtiva = true). Em eliminatorias sem
+         classificação não faz sentido editar pontos. -->
+    <div class="row pontos-row" *ngIf="!isEliminatoria || classificacaoAtiva">
+      <ion-icon class="row-icon" name="trophy-outline"></ion-icon>
+      <span class="row-text">Pontuação</span>
+      <div class="pontos-grid">
+        <label>
+          <span>V</span>
+          <input type="number" min="0" max="10" [(ngModel)]="pontosVitoria" />
+        </label>
+        <label>
+          <span>E</span>
+          <input type="number" min="0" max="10" [(ngModel)]="pontosEmpate" />
+        </label>
+        <label>
+          <span>D</span>
+          <input type="number" min="-10" max="10" [(ngModel)]="pontosDerrota" />
+        </label>
+      </div>
+    </div>
+
+    <button type="button" class="row" (click)="editarCriterios()">
+      <ion-icon class="row-icon" name="podium-outline"></ion-icon>
+      <span class="row-text">Critérios de desempate</span>
+      <span class="row-link">{{ criteriosResumo }}</span>
+    </button>
+
+    <button type="button" class="row" (click)="editarEquipes()">
+      <ion-icon class="row-icon" name="filter-outline"></ion-icon>
+      <span class="row-text">Selecionar equipes</span>
       <span class="row-link">Editar</span>
     </button>
-  </ng-template>
 
-  <button type="button" class="row" (click)="editarEquipes()">
-    <ion-icon class="row-icon" name="filter-outline"></ion-icon>
-    <span class="row-text">Selecionar equipes</span>
-    <span class="row-link">Editar</span>
-  </button>
+    <button type="button" class="row" (click)="editarContinuar()">
+      <ion-icon class="row-icon" name="copy-outline"></ion-icon>
+      <span class="row-text">Continuar tabela</span>
+      <span class="row-link">Editar</span>
+    </button>
+  </div>
+</ion-content>
 
-  <button type="button" class="row" (click)="editarContinuar()">
-    <ion-icon class="row-icon" name="copy-outline"></ion-icon>
-    <span class="row-text">Continuar tabela</span>
-    <span class="row-link">Editar</span>
-  </button>
-
+<ion-footer>
   <div class="actions">
     <button type="button" class="btn-text danger" (click)="remover()" [disabled]="loading">
       Remover
@@ -42,4 +110,4 @@
       Salvar
     </button>
   </div>
-</div>
+</ion-footer>

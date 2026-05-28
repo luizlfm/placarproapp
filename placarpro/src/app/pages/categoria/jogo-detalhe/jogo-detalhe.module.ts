@@ -8,7 +8,7 @@ import { EditarInformacoesModalModule } from './editar-informacoes-modal/editar-
 import { EventoModalComponent } from './evento-modal/evento-modal.component';
 import { EscalacaoModalComponent } from './escalacao-modal/escalacao-modal.component';
 import { EditorPartidaPage } from './editor-partida/editor-partida.page';
-import { SumulaPage } from './sumula/sumula.page';
+import { SumulaPageModule } from './sumula/sumula.module';
 import { PreSumulaPage } from './pre-sumula/pre-sumula.page';
 import { SharedModule } from '../../../shared/shared.module';
 import { ImageCropperComponent } from 'ngx-image-cropper';
@@ -23,12 +23,12 @@ import { PatrocinadorJogoModalComponent } from './patrocinador-jogo-modal/patroc
     JogoDetalhePageRoutingModule,
     SharedModule,
     EditarInformacoesModalModule,
+    SumulaPageModule,
     ImageCropperComponent,
   ],
   declarations: [
     JogoDetalhePage,
     EditorPartidaPage,
-    SumulaPage,
     PreSumulaPage,
     EventoModalComponent,
     EscalacaoModalComponent,

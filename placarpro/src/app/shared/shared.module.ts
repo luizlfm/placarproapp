@@ -10,6 +10,10 @@ import { ModalidadePickerComponent } from './components/modalidade-picker/modali
 import { GruposModalComponent } from './components/grupos-modal/grupos-modal.component';
 import { ImageCropperModalComponent } from './components/image-cropper-modal/image-cropper-modal.component';
 import { JogoModalComponent } from './components/jogo-modal/jogo-modal.component';
+import { EditarResultadoModalComponent } from './components/editar-resultado-modal/editar-resultado-modal.component';
+import { PontosExtrasModalComponent } from './components/pontos-extras-modal/pontos-extras-modal.component';
+import { PontosExtrasFormModalComponent } from './components/pontos-extras-form-modal/pontos-extras-form-modal.component';
+import { ArteDoJogoModalComponent } from './components/arte-do-jogo-modal/arte-do-jogo-modal.component';
 import { JogoAcoesPopoverComponent } from './components/jogo-acoes-popover/jogo-acoes-popover.component';
 import { JogosAcoesPopoverComponent } from './components/jogos-acoes-popover/jogos-acoes-popover.component';
 import { MaskDirective } from './directives/mask.directive';
@@ -39,6 +43,8 @@ import { TransmissaoPlayerComponent } from './components/transmissao-player/tran
 import { RotatePromptComponent } from './components/rotate-prompt/rotate-prompt.component';
 import { DateInputComponent } from './components/date-input/date-input.component';
 import { ActionModalComponent } from './components/action-modal/action-modal.component';
+import { ImgSkeletonDirective } from './directives/img-skeleton.directive';
+import { IosPwaTutorialModalComponent } from './components/ios-pwa-tutorial-modal/ios-pwa-tutorial-modal.component';
 
 /**
  * Componentes/diretivas/pipes reutilizáveis pelo app inteiro.
@@ -52,6 +58,10 @@ import { ActionModalComponent } from './components/action-modal/action-modal.com
     GruposModalComponent,
     ImageCropperModalComponent,
     JogoModalComponent,
+    EditarResultadoModalComponent,
+    PontosExtrasModalComponent,
+    PontosExtrasFormModalComponent,
+    ArteDoJogoModalComponent,
     JogoAcoesPopoverComponent,
     JogosAcoesPopoverComponent,
     MaskDirective,
@@ -77,6 +87,8 @@ import { ActionModalComponent } from './components/action-modal/action-modal.com
     RotatePromptComponent,
     DateInputComponent,
     ActionModalComponent,
+    ImgSkeletonDirective,
+    IosPwaTutorialModalComponent,
   ],
   exports: [
     CampeonatoMobileHeaderComponent,
@@ -84,6 +96,10 @@ import { ActionModalComponent } from './components/action-modal/action-modal.com
     GruposModalComponent,
     ImageCropperModalComponent,
     JogoModalComponent,
+    EditarResultadoModalComponent,
+    PontosExtrasModalComponent,
+    PontosExtrasFormModalComponent,
+    ArteDoJogoModalComponent,
     JogoAcoesPopoverComponent,
     JogosAcoesPopoverComponent,
     MaskDirective,
@@ -109,6 +125,8 @@ import { ActionModalComponent } from './components/action-modal/action-modal.com
     RotatePromptComponent,
     DateInputComponent,
     ActionModalComponent,
+    ImgSkeletonDirective,
+    IosPwaTutorialModalComponent,
   ],
 })
 export class SharedModule {}

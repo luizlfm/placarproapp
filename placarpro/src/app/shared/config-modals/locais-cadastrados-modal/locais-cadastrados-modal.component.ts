@@ -3,7 +3,6 @@ import { ModalController, ToastController } from '@ionic/angular';
 import { Observable } from 'rxjs';
 import { Campeonato, LocalCadastrado } from '../../../campeonatos/campeonato.model';
 import { CampeonatosService } from '../../../campeonatos/campeonatos.service';
-import { MapaPickerModalComponent } from '../../components/mapa-picker-modal/mapa-picker-modal.component';
 
 /**
  * Modal especializado pra `campeonato.locaisCadastrados`.
@@ -37,6 +36,10 @@ export class LocaisCadastradosModalComponent implements OnInit {
   lat: number | null = null;
   lng: number | null = null;
 
+  /** Quando true, o picker de mapa aparece INLINE no lugar da lista
+   *  de locais cadastrados (em vez de abrir como modal sobre este). */
+  mapaAberto = false;
+
   salvando = false;
 
   async ngOnInit(): Promise<void> {
@@ -46,38 +49,35 @@ export class LocaisCadastradosModalComponent implements OnInit {
   }
 
   /**
-   * Abre o picker visual de mapa. O usuário pode buscar por endereço,
-   * clicar no mapa pra dropar pin, ou arrastar o pin pra ajustar. O modal
-   * retorna `{ lat, lng, endereco }` que aplicamos aos campos atuais.
+   * Abre/fecha o picker visual de mapa INLINE (em vez de modal sobre
+   * modal). O componente <app-mapa-picker> aparece no lugar da lista
+   * de locais cadastrados; ao confirmar, os valores são aplicados aos
+   * campos do form e o picker é fechado.
    */
-  async selecionarNoMapa(): Promise<void> {
-    const modal = await this.modalCtrl.create({
-      component: MapaPickerModalComponent,
-      componentProps: {
-        lat: this.lat,
-        lng: this.lng,
-        endereco: this.endereco,
-      },
-    });
-    await modal.present();
-    const { data } = await modal.onDidDismiss<{
-      lat?: number; lng?: number; endereco?: string;
-    }>();
-    if (!data) return;
-    if (typeof data.lat === 'number' && typeof data.lng === 'number') {
-      this.lat = data.lat;
-      this.lng = data.lng;
-    }
-    // Substitui endereço só se o usuário não tinha digitado algo OU se aceitar.
-    if (data.endereco && !this.endereco?.trim()) {
-      this.endereco = data.endereco;
-    } else if (data.endereco && data.endereco !== this.endereco) {
-      // Já tinha endereço — pergunta se quer substituir? Aqui simplificamos:
-      // só substitui se for completamente diferente (heurística simples).
-      if (!this.endereco.includes(data.endereco.slice(0, 20))) {
+  selecionarNoMapa(): void {
+    this.mapaAberto = true;
+  }
+
+  /** Handler do output `(confirmar)` do <app-mapa-picker> embedded. */
+  aoConfirmarMapa(data: { lat: number; lng: number; endereco?: string }): void {
+    this.lat = data.lat;
+    this.lng = data.lng;
+    // Substitui endereço só se o usuário não tinha digitado algo OU
+    // se for completamente diferente (heurística simples).
+    if (data.endereco) {
+      if (!this.endereco?.trim()) {
+        this.endereco = data.endereco;
+      } else if (data.endereco !== this.endereco
+                 && !this.endereco.includes(data.endereco.slice(0, 20))) {
         this.endereco = data.endereco;
       }
     }
+    this.mapaAberto = false;
+  }
+
+  /** Handler do output `(cancelar)` do <app-mapa-picker> embedded. */
+  aoCancelarMapa(): void {
+    this.mapaAberto = false;
   }
 
   /** Adiciona um novo item à lista (ou salva edição se editandoIdx !== null). */

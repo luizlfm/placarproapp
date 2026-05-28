@@ -12,15 +12,6 @@
   padding: 18px 16px 40px;
 }
 
-/* Botão "Salvar" no header — em telas muito estreitas (≤380px) esconde
-   o texto e mantém só o ícone, pra não brigar com o título "Configurações"
-   por espaço. Em desktop/mobile médio o texto continua visível. */
-.hdr-salvar-txt {
-  @media (max-width: 380px) {
-    display: none;
-  }
-}
-
 .card {
   background: var(--placar-surface);
   border-radius: 12px;
@@ -347,27 +338,40 @@
   }
 }
 
-/* ===== Botões finais ===== */
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 18px 0 22px;
+/* ===== Footer padrão do sistema =====
+   Remover (lixeira vermelho) + Salvar (check navy) lado a lado, pill.
+   Mesma estética dos modais editar-informações, criar-noticia,
+   critérios, anexos etc. */
+ion-footer ion-toolbar {
+  --background: #fff;
+  --border-color: #ececef;
 }
 
-.btn-save {
-  --border-radius: 12px;
-  --box-shadow: 0 6px 18px rgba(28, 46, 61, 0.35);
-  height: 48px;
-  font-weight: 600;
-}
+.acoes-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+  background: #fff;
 
-.btn-remove {
-  --border-radius: 999px;
-  --padding-start: 32px;
-  --padding-end: 32px;
-  align-self: center;
-  font-weight: 600;
+  /* Em web (≥768px): mesma largura central do `.wrap` (880px) — botões
+     ficam alinhados com o conteúdo em vez de encostar nas bordas da
+     viewport. Em mobile permanece full-width (sem max-width). */
+  @media (min-width: 768px) {
+    max-width: 880px;
+    margin: 0 auto;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .btn-acao {
+    margin: 0;
+    width: 100%;
+    --border-radius: 999px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
 }
 
 /* ===== Suporte ===== */

@@ -13,6 +13,7 @@ import { CriteriosModalComponent } from './criterios-modal/criterios-modal.compo
 import { GerarPartidasModalComponent } from './gerar-partidas-modal/gerar-partidas-modal.component';
 import { ReordenarModalComponent } from './reordenar-modal/reordenar-modal.component';
 import { EditarFaseModalComponent } from './editar-fase-modal/editar-fase-modal.component';
+import { NovaFaseModalComponent } from './nova-fase-modal/nova-fase-modal.component';
 import { DestacarPosicoesModalComponent } from './destacar-posicoes-modal/destacar-posicoes-modal.component';
 import { NovaRodadaModalComponent } from './nova-rodada-modal/nova-rodada-modal.component';
 import { EditarRodadaModalComponent } from './editar-rodada-modal/editar-rodada-modal.component';
@@ -36,6 +37,7 @@ import { ImprimirClassificacaoPage } from './imprimir/imprimir-classificacao.pag
     GerarPartidasModalComponent,
     ReordenarModalComponent,
     EditarFaseModalComponent,
+    NovaFaseModalComponent,
     DestacarPosicoesModalComponent,
     NovaRodadaModalComponent,
     EditarRodadaModalComponent,

@@ -22,7 +22,7 @@
           <div class="banner" [style.backgroundImage]="(c.capaUrl || c.bannerUrl) ? 'url(' + (c.capaUrl || c.bannerUrl) + ')' : null"></div>
           <div class="body">
             <div class="logo">
-              <img *ngIf="c.logoUrl; else iconC" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
+              <img skel *ngIf="c.logoUrl; else iconC" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
               <ng-template #iconC><ion-icon name="trophy-outline"></ion-icon></ng-template>
             </div>
             <div class="info">

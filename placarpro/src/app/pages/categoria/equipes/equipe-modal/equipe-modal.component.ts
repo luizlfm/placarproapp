@@ -299,9 +299,50 @@ export class EquipeModalComponent implements OnInit {
     '#000000', // preto
   ];
 
+  /**
+   * Compartilha o link público da equipe via Web Share API (iOS Safari /
+   * Android Chrome / desktop com suporte). Fallback: copia pro clipboard
+   * e mostra toast.
+   *
+   * URL pública: `/p/:campeonatoId/categoria/:catId/equipe/:eqId`
+   * (rota declarada em `publico-routing.module.ts`).
+   */
   async compartilhar(): Promise<void> {
-    const nome = this.equipeExistente?.nome ?? this.form.value.nome ?? 'Equipe';
-    await this.toast(`Compartilhar "${nome}" em desenvolvimento.`, 'danger');
+    const eq = this.equipeExistente;
+    const nome = eq?.nome ?? this.form.value.nome ?? 'Equipe';
+
+    if (!eq?.id || !this.campeonatoId || !this.categoriaId) {
+      await this.toast('Salve a equipe antes de compartilhar.', 'warning');
+      return;
+    }
+
+    const url = `${location.origin}/p/${this.campeonatoId}/categoria/${this.categoriaId}/equipe/${eq.id}`;
+    const titulo = `${nome} • PlacarPro`;
+    const texto = `Confira a equipe ${nome} no PlacarPro:`;
+
+    // Web Share API — abre o sheet nativo de compartilhamento do SO.
+    const nav = navigator as Navigator & {
+      share?: (data: { title?: string; text?: string; url?: string }) => Promise<void>;
+    };
+    if (typeof nav.share === 'function') {
+      try {
+        await nav.share({ title: titulo, text: texto, url });
+        return;
+      } catch (err) {
+        // user cancelou (AbortError) — sem feedback negativo
+        const code = (err as { name?: string })?.name;
+        if (code === 'AbortError') return;
+        console.warn('[compartilhar] share falhou, vai cair no fallback', err);
+      }
+    }
+
+    // Fallback: clipboard
+    try {
+      await navigator.clipboard.writeText(url);
+      await this.toast('Link copiado para a área de transferência.', 'success');
+    } catch {
+      await this.toast(url, 'success');
+    }
   }
 
   private pickFile(): Promise<File | null> {
@@ -331,7 +372,7 @@ export class EquipeModalComponent implements OnInit {
     });
   }
 
-  private async toast(message: string, color: 'success' | 'danger'): Promise<void> {
+  private async toast(message: string, color: 'success' | 'danger' | 'warning'): Promise<void> {
     const t = await this.toastCtrl.create({
       message,
       duration: 2500,

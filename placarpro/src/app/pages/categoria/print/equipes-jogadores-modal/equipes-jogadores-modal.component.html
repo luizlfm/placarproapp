@@ -1,0 +1,75 @@
+<ion-header class="ejm-header">
+  <ion-toolbar>
+    <ion-title>Equipes do relatório</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ejm-content">
+  <div class="ejm-toolbar">
+    <button type="button" class="ejm-link" (click)="marcarTodas()">Marcar todas</button>
+    <span class="ejm-sep">·</span>
+    <button type="button" class="ejm-link" (click)="limpar()">Limpar</button>
+    <span class="ejm-count">{{ qtdMarcadas() }} de {{ equipes.length }}</span>
+  </div>
+
+  <p class="ejm-hint">
+    Selecione quais equipes vão aparecer no relatório. Apenas as marcadas
+    serão incluídas no PDF/impressão.
+  </p>
+
+  <ul class="ejm-list" *ngIf="equipes.length > 0; else vazio">
+    <li
+      *ngFor="let e of equipes; trackBy: trackById"
+      class="ejm-item"
+      [class.on]="e.selecionado"
+      (click)="toggle(e)"
+    >
+      <span class="ejm-shield">
+        <img *ngIf="e.logoUrl; else iconShield" [src]="e.logoUrl" alt="" />
+        <ng-template #iconShield>
+          <ion-icon name="shield-outline"></ion-icon>
+        </ng-template>
+      </span>
+      <span class="ejm-nome">{{ e.nome }}</span>
+      <span class="ejm-qtd">{{ e.qtd }}</span>
+      <span class="ejm-check" [class.on]="e.selecionado">
+        <ion-icon *ngIf="e.selecionado" name="checkmark-outline"></ion-icon>
+      </span>
+    </li>
+  </ul>
+
+  <ng-template #vazio>
+    <p class="ejm-empty">Nenhuma equipe cadastrada nesta categoria.</p>
+  </ng-template>
+</ion-content>
+
+<ion-footer class="ejm-footer">
+  <ion-toolbar>
+    <div class="ejm-footer-actions">
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="danger"
+        fill="outline"
+        (click)="fechar()"
+      >
+        <ion-icon slot="start" name="close-outline"></ion-icon>
+        Cancelar
+      </ion-button>
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="primary"
+        (click)="salvar()"
+      >
+        <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+        Salvar
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

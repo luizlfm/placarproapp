@@ -21,8 +21,86 @@
       </div>
 
       <div class="field-group">
+        <!-- Foto do local (16:9). Upload via cropper modal. -->
+        <div class="foto-block">
+          <button
+            type="button"
+            class="foto-preview"
+            (click)="selecionarFoto()"
+            [disabled]="enviandoFoto"
+            aria-label="Selecionar foto do local"
+          >
+            <img *ngIf="form.value.fotoUrl; else fotoIcon" skel [src]="form.value.fotoUrl" alt="Foto do local" />
+            <ng-template #fotoIcon>
+              <ion-icon name="image-outline"></ion-icon>
+              <span>Foto do local</span>
+            </ng-template>
+            <span *ngIf="enviandoFoto" class="overlay">
+              <ion-spinner color="light"></ion-spinner>
+            </span>
+          </button>
+          <div class="foto-actions" *ngIf="form.value.fotoUrl">
+            <ion-button size="small" color="primary" type="button" (click)="selecionarFoto()" [disabled]="enviandoFoto">
+              <ion-icon slot="start" name="camera-outline"></ion-icon>
+              Trocar
+            </ion-button>
+            <ion-button size="small" color="danger" type="button" (click)="removerFoto()">
+              <ion-icon slot="start" name="trash-outline"></ion-icon>
+              Remover
+            </ion-button>
+          </div>
+        </div>
+
         <ion-input fill="outline" label="Nome do local" labelPlacement="stacked" placeholder="Ex: Ginásio Municipal" formControlName="nome" required></ion-input>
-        <ion-input fill="outline" label="Endereço" labelPlacement="stacked" placeholder="Ex: Rua das Flores, 123" formControlName="endereco"></ion-input>
+        <!-- Endereço com autocomplete via Nominatim (OpenStreetMap) — digita
+             >=4 letras e mostra sugestões. Clicar preenche endereço, número
+             e cidade automaticamente. -->
+        <div class="row-endereco">
+          <div class="endereco-wrap">
+            <ion-input
+              fill="outline"
+              label="Endereço"
+              labelPlacement="stacked"
+              placeholder="Ex: Rua das Flores"
+              formControlName="endereco"
+              autocomplete="off"
+              (ionInput)="onDigitarEndereco($any($event).detail.value)"
+              (ionFocus)="enderecoFocado = true"
+              (ionBlur)="onBlurEndereco()"
+            ></ion-input>
+            <div
+              class="endereco-suggest"
+              *ngIf="enderecoFocado && (sugestoes.length > 0 || buscandoEndereco)"
+            >
+              <div class="es-loading" *ngIf="buscandoEndereco">
+                <ion-spinner name="dots"></ion-spinner>
+                Buscando endereços...
+              </div>
+              <button
+                *ngFor="let s of sugestoes"
+                type="button"
+                class="es-item"
+                (mousedown)="selecionarSugestao(s)"
+                (touchstart)="selecionarSugestao(s)"
+              >
+                <ion-icon name="location-outline"></ion-icon>
+                <span class="es-text">
+                  <strong>{{ s.endereco }}{{ s.numero ? ', ' + s.numero : '' }}</strong>
+                  <small>{{ s.display }}</small>
+                </span>
+              </button>
+            </div>
+          </div>
+          <ion-input
+            fill="outline"
+            label="Número"
+            labelPlacement="stacked"
+            placeholder="Ex: 123"
+            inputmode="numeric"
+            formControlName="numero"
+            class="input-numero"
+          ></ion-input>
+        </div>
         <div class="row-2">
           <ion-input fill="outline" label="Cidade/UF" labelPlacement="stacked" placeholder="Ex: São Paulo / SP" formControlName="cidade"></ion-input>
           <ion-input fill="outline" label="Capacidade" labelPlacement="stacked" type="number" formControlName="capacidade"></ion-input>
@@ -41,13 +119,18 @@
 
       <div class="lista-card" *ngIf="lista.length > 0; else empty">
         <div *ngFor="let l of lista; trackBy: trackById" class="local-row" (click)="editar(l)">
-          <div class="ic"><ion-icon name="location-outline"></ion-icon></div>
+          <div class="ic">
+            <img *ngIf="l.fotoUrl; else iconLoc" skel [src]="l.fotoUrl" [alt]="l.nome" loading="lazy" />
+            <ng-template #iconLoc>
+              <ion-icon name="location-outline"></ion-icon>
+            </ng-template>
+          </div>
           <div class="info">
             <div class="nome">{{ l.nome }}</div>
             <div class="meta">
               <span *ngIf="l.cidade">{{ l.cidade }}</span>
               <span *ngIf="l.cidade && l.endereco"> · </span>
-              <span *ngIf="l.endereco">{{ l.endereco }}</span>
+              <span *ngIf="l.endereco">{{ l.endereco }}<ng-container *ngIf="l.numero">, {{ l.numero }}</ng-container></span>
               <span *ngIf="l.capacidade"> · {{ l.capacidade }} lugares</span>
             </div>
           </div>

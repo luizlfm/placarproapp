@@ -142,7 +142,7 @@
                 [title]="j.mandanteId ? 'Trocar equipe mandante' : 'Selecionar mandante'"
               >
                 <span class="t-logo" [class.vazio]="!j.mandanteId">
-                  <img *ngIf="j.logoMandante; else iconM" [src]="j.logoMandante" alt="" loading="lazy" />
+                  <img skel *ngIf="j.logoMandante; else iconM" [src]="j.logoMandante" alt="" loading="lazy" />
                   <ng-template #iconM>
                     <ion-icon [name]="j.mandanteId ? 'shield-outline' : 'shield-half-outline'"></ion-icon>
                   </ng-template>
@@ -179,7 +179,7 @@
                 [title]="j.visitanteId ? 'Trocar equipe visitante' : 'Selecionar visitante'"
               >
                 <span class="t-logo" [class.vazio]="!j.visitanteId">
-                  <img *ngIf="j.logoVisitante; else iconV" [src]="j.logoVisitante" alt="" loading="lazy" />
+                  <img skel *ngIf="j.logoVisitante; else iconV" [src]="j.logoVisitante" alt="" loading="lazy" />
                   <ng-template #iconV>
                     <ion-icon [name]="j.visitanteId ? 'shield-outline' : 'shield-half-outline'"></ion-icon>
                   </ng-template>
@@ -203,15 +203,38 @@
             <ion-icon name="calendar-outline"></ion-icon>
             <h2>Nenhum jogo encontrado</h2>
             <p *ngIf="(filtroFase$ | async) || (filtroRodada$ | async); else semFiltros">
-              Tente ajustar os filtros acima ou crie um novo jogo.
+              Tente ajustar os filtros acima, criar uma partida manual ou gerar o calendário.
             </p>
             <ng-template #semFiltros>
-              <p>Crie jogos definindo as equipes, data e local — ou gere automaticamente pela classificação.</p>
+              <p>Crie partidas definindo equipes, data e local — ou gere automaticamente.</p>
             </ng-template>
-            <ion-button color="primary" (click)="novoJogo()">
-              <ion-icon slot="start" name="add-outline"></ion-icon>
-              Criar jogo
-            </ion-button>
+
+            <div class="empty-actions">
+              <ion-button
+                *ngIf="(filtroFase$ | async) || (filtroRodada$ | async)"
+                color="medium"
+                fill="outline"
+                (click)="limparFiltros()"
+              >
+                <ion-icon slot="start" name="close-outline"></ion-icon>
+                Limpar filtros
+              </ion-button>
+
+              <ion-button color="primary" (click)="novoJogo()">
+                <ion-icon slot="start" name="add-outline"></ion-icon>
+                Adicionar partida
+              </ion-button>
+
+              <ion-button color="secondary" fill="outline" (click)="irParaClassificacao()">
+                <ion-icon slot="start" name="flash-outline"></ion-icon>
+                Gerar partidas automaticamente
+              </ion-button>
+
+              <ion-button color="tertiary" fill="clear" (click)="irParaClassificacao()">
+                <ion-icon slot="start" name="layers-outline"></ion-icon>
+                Adicionar rodada
+              </ion-button>
+            </div>
           </div>
         </ng-template>
       </ng-container>

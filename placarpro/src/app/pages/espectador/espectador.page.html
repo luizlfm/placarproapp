@@ -36,8 +36,15 @@
               ? 'url(' + (c.campeonato?.capaUrl || c.campeonato?.bannerUrl) + ')'
               : null"
           >
+            <!-- Badge AO VIVO — vermelho pulsante, canto sup. direito.
+                 Aparece quando `campeonato.transmissaoLiveAtiva` está setado. -->
+            <div class="es-card-live-badge" *ngIf="c.campeonato?.transmissaoLiveAtiva">
+              <span class="dot"></span>
+              AO VIVO
+            </div>
+
             <div class="es-card-logo">
-              <img
+              <img skel
                 *ngIf="c.campeonato?.logoUrl; else iconCamp"
                 [src]="c.campeonato!.logoUrl"
                 [alt]="c.convite.tituloCampeonato || ''"
@@ -60,6 +67,18 @@
               {{ c.convite.subtituloCampeonato }}
             </div>
           </div>
+
+          <!-- Botão ASSISTIR AO VIVO — só aparece se há transmissão ativa.
+               Vermelho pulsante, leva direto pro player /transmissao/... -->
+          <button
+            *ngIf="c.campeonato?.transmissaoLiveAtiva"
+            class="es-btn-live"
+            type="button"
+            (click)="assistirAoVivo(c.campeonato!, $event)"
+          >
+            <ion-icon name="play-circle"></ion-icon>
+            Assistir ao vivo
+          </button>
 
           <div class="es-card-acoes single">
             <button class="es-btn primary full" type="button" (click)="abrirCampeonatoConvite(c)">
@@ -151,6 +170,13 @@
               ? 'url(' + (camp.capaUrl || camp.bannerUrl) + ')'
               : null"
           >
+            <!-- Badge AO VIVO — vermelho pulsante, canto sup. esquerdo
+                 (esq. porque o botão de coração já ocupa o canto direito). -->
+            <div class="es-card-live-badge" *ngIf="camp.transmissaoLiveAtiva">
+              <span class="dot"></span>
+              AO VIVO
+            </div>
+
             <button
               type="button"
               class="es-seguir-btn"
@@ -161,7 +187,7 @@
               <ion-icon [name]="segueCampeonato(camp) ? 'heart' : 'heart-outline'"></ion-icon>
             </button>
             <div class="es-card-logo">
-              <img *ngIf="camp.logoUrl; else iconCp" [src]="camp.logoUrl" [alt]="camp.titulo" loading="lazy" />
+              <img skel *ngIf="camp.logoUrl; else iconCp" [src]="camp.logoUrl" [alt]="camp.titulo" loading="lazy" />
               <ng-template #iconCp>
                 <ion-icon name="trophy-outline"></ion-icon>
               </ng-template>
@@ -176,6 +202,17 @@
               {{ camp.localizacao }}
             </div>
           </div>
+
+          <!-- Botão ASSISTIR AO VIVO — só quando há transmissão ativa. -->
+          <button
+            *ngIf="camp.transmissaoLiveAtiva"
+            class="es-btn-live"
+            type="button"
+            (click)="assistirAoVivo(camp, $event)"
+          >
+            <ion-icon name="play-circle"></ion-icon>
+            Assistir ao vivo
+          </button>
 
           <div class="es-card-acoes single">
             <button class="es-btn ghost full" type="button">

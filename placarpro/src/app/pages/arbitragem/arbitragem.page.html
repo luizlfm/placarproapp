@@ -1,5 +1,12 @@
 <ion-header>
   <ion-toolbar color="primary">
+    <!-- Em modo modal exibe botão fechar (X). Em modo página o back
+         button global da shell-mobile-header cuida da navegação. -->
+    <ion-buttons slot="start" *ngIf="modoModal">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
     <ion-title>Arbitragem</ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="novo()" aria-label="Novo árbitro">

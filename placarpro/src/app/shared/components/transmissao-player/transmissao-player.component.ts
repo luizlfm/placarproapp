@@ -12,10 +12,12 @@ import {
 import { Observable, Subscription, of } from 'rxjs';
 import {
   RemoteTrack,
+  RemoteTrackPublication,
   RemoteVideoTrack,
   Room,
   RoomEvent,
   Track,
+  VideoQuality,
 } from 'livekit-client';
 import { LiveKitService } from '../../livekit/livekit.service';
 import { TransmissoesService } from '../../../campeonatos/transmissoes.service';
@@ -126,6 +128,118 @@ export class TransmissaoPlayerComponent implements OnChanges, OnDestroy {
 
   /** Estado interno do player. */
   estado: 'aguardando' | 'connecting' | 'live' | 'erro' = 'aguardando';
+
+  /** Resolução real do vídeo que está chegando do broadcaster. Atualizada
+   *  pelo evento `loadedmetadata` do <video> assim que o stream tem
+   *  dimensões reais. Mostrada num chip no canto da tela pra usuário ver
+   *  a qualidade efetiva da transmissão (não a configurada). */
+  resolucaoRecebida: { width: number; height: number } | null = null;
+
+  /** Chave no localStorage onde guardamos a preferência de qualidade. */
+  private static readonly KEY_QUALIDADE = 'placarpro_qualidade_transmissao';
+
+  /** Qualidade selecionada pelo viewer:
+   *   - 'auto'   → LiveKit escolhe automaticamente conforme banda (padrão)
+   *   - 'alta'   → força layer HIGH (1080p+ se disponível)
+   *   - 'media'  → força layer MEDIUM (720p)
+   *   - 'baixa'  → força layer LOW (360p) — economiza dados/banda */
+  qualidadeSelecionada: 'auto' | 'alta' | 'media' | 'baixa' = this.lerQualidadeSalva();
+
+  /** Controle de visibilidade do menu de qualidade (clica no botão de
+   *  engrenagem pra abrir). */
+  menuQualidadeAberto = false;
+
+  /** Lê preferência de qualidade do localStorage (default: auto). */
+  private lerQualidadeSalva(): 'auto' | 'alta' | 'media' | 'baixa' {
+    try {
+      const v = localStorage.getItem(TransmissaoPlayerComponent.KEY_QUALIDADE);
+      if (v === 'alta' || v === 'media' || v === 'baixa' || v === 'auto') return v;
+    } catch { /* ignore */ }
+    return 'auto';
+  }
+
+  /**
+   * Aplica a qualidade selecionada na publication do track de vídeo.
+   * No LiveKit Client SDK 2.x, `setVideoQuality` é método da
+   * `RemoteTrackPublication`, não do track em si.
+   */
+  private aplicarQualidadeNaPublication(pub: RemoteTrackPublication): void {
+    try {
+      switch (this.qualidadeSelecionada) {
+        case 'alta':  pub.setVideoQuality(VideoQuality.HIGH); break;
+        case 'media': pub.setVideoQuality(VideoQuality.MEDIUM); break;
+        case 'baixa': pub.setVideoQuality(VideoQuality.LOW); break;
+        case 'auto':
+        default:
+          // Sem setVideoQuality = adaptive (default).
+          pub.setSubscribed(true);
+      }
+    } catch (err) {
+      console.warn('[Player] setVideoQuality falhou', err);
+    }
+  }
+
+  /** Chamado pelo template quando user clica numa opção do menu de
+   *  qualidade. Aplica imediatamente + salva preferência. */
+  selecionarQualidade(q: 'auto' | 'alta' | 'media' | 'baixa'): void {
+    this.qualidadeSelecionada = q;
+    try {
+      localStorage.setItem(TransmissaoPlayerComponent.KEY_QUALIDADE, q);
+    } catch { /* ignore */ }
+    // Aplica na publication do track de vídeo atual (se houver).
+    if (this.room) {
+      this.room.remoteParticipants.forEach(p => {
+        p.videoTrackPublications.forEach(pub => {
+          this.aplicarQualidadeNaPublication(pub as RemoteTrackPublication);
+        });
+      });
+    }
+    this.menuQualidadeAberto = false;
+    this.cdr.detectChanges();
+  }
+
+  /** Aplica qualidade selecionada em TODAS as publications de vídeo
+   *  ativas — usado tanto na seleção manual quanto quando um novo
+   *  track chega. */
+  private aplicarQualidadeNaTrackAtual(): void {
+    if (!this.room) return;
+    this.room.remoteParticipants.forEach(p => {
+      p.videoTrackPublications.forEach(pub => {
+        this.aplicarQualidadeNaPublication(pub as RemoteTrackPublication);
+      });
+    });
+  }
+
+  /** Toggle do menu dropdown. */
+  toggleMenuQualidade(): void {
+    this.menuQualidadeAberto = !this.menuQualidadeAberto;
+    this.cdr.detectChanges();
+  }
+
+  /** Label legível pra mostrar no botão de qualidade. */
+  get labelQualidade(): string {
+    switch (this.qualidadeSelecionada) {
+      case 'alta':  return 'Alta';
+      case 'media': return 'Média';
+      case 'baixa': return 'Baixa';
+      case 'auto':
+      default:      return 'Auto';
+    }
+  }
+
+  /** Label legível: "4K", "1080p", "720p", etc. Calculada a partir do
+   *  videoHeight (mais confiável que width — funciona pra qualquer aspect). */
+  get rotuloResolucao(): string {
+    const r = this.resolucaoRecebida;
+    if (!r) return '';
+    const h = r.height;
+    if (h >= 2160) return '4K';
+    if (h >= 1440) return '1440p';
+    if (h >= 1080) return '1080p';
+    if (h >= 720)  return '720p';
+    if (h >= 480)  return '480p';
+    return `${r.width}×${h}`;
+  }
   mensagemErro = '';
 
   /** Volume mutado (default true — autoplay com áudio é bloqueado pelo browser). */
@@ -467,6 +581,38 @@ export class TransmissaoPlayerComponent implements OnChanges, OnDestroy {
     }
     if (track.kind === Track.Kind.Video) {
       (track as RemoteVideoTrack).attach(el);
+      // Aplica qualidade selecionada pelo user (auto/alta/media/baixa)
+      // na publication correspondente.
+      this.aplicarQualidadeNaTrackAtual();
+      // ═══ Otimizações de LATÊNCIA no elemento <video> do espectador ═══
+      // Browsers HTML5 fazem buffer interno de 1-3s por padrão. Em
+      // transmissão ao vivo isso é DELAY puro — vamos zerar.
+      try {
+        const v = el as HTMLVideoElement;
+        // `preload='none'` previne pré-buffer.
+        v.preload = 'none';
+        v.playsInline = true;
+        // Lê resolução real do vídeo quando metadata carrega.
+        v.addEventListener('loadedmetadata', () => {
+          if (v.videoWidth > 0 && v.videoHeight > 0) {
+            this.resolucaoRecebida = { width: v.videoWidth, height: v.videoHeight };
+            this.cdr.detectChanges();
+          }
+        }, { once: true });
+        // Anti-drift: se acumular > 1s de buffer, pula pra ponta —
+        // mantém live em vez de acumular delay.
+        v.addEventListener('progress', () => {
+          if (v.buffered.length > 0) {
+            const ultimoBuffer = v.buffered.end(v.buffered.length - 1);
+            const drift = ultimoBuffer - v.currentTime;
+            if (drift > 1.0 && !v.paused) {
+              v.currentTime = ultimoBuffer - 0.1;
+            }
+          }
+        });
+      } catch (err) {
+        console.warn('[Player] otimização latência falhou', err);
+      }
       // Só promove pra 'live' QUANDO vídeo de fato attachou — áudio
       // sozinho mantém overlay "Conectando..." porque o usuário ainda
       // não tem nada pra ver.

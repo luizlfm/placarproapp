@@ -186,14 +186,53 @@
       </div>
     </div>
 
-    <!-- Endereço -->
-    <div class="mr-field">
-      <label class="mr-label">Endereço do Racha</label>
-      <input
-        type="text"
-        formControlName="endereco"
-        placeholder="Rua, número, complemento"
-      />
+    <!-- Endereço com autocomplete (Nominatim/OSM) + Número separado -->
+    <div class="mr-row mr-row-endereco">
+      <div class="mr-field mr-field-endereco">
+        <label class="mr-label">Endereço do Racha</label>
+        <div class="endereco-wrap">
+          <input
+            type="text"
+            formControlName="endereco"
+            placeholder="Rua / logradouro"
+            autocomplete="off"
+            (input)="onDigitarEndereco($any($event.target).value)"
+            (focus)="enderecoFocado = true"
+            (blur)="onBlurEndereco()"
+          />
+          <div
+            class="endereco-suggest"
+            *ngIf="enderecoFocado && (sugestoes.length > 0 || buscandoEndereco)"
+          >
+            <div class="es-loading" *ngIf="buscandoEndereco">
+              <ion-spinner name="dots"></ion-spinner>
+              Buscando endereços...
+            </div>
+            <button
+              *ngFor="let s of sugestoes"
+              type="button"
+              class="es-item"
+              (mousedown)="selecionarSugestao(s)"
+              (touchstart)="selecionarSugestao(s)"
+            >
+              <ion-icon name="location-outline"></ion-icon>
+              <span class="es-text">
+                <strong>{{ s.endereco }}{{ s.numero ? ', ' + s.numero : '' }}</strong>
+                <small>{{ s.display }}</small>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="mr-field mr-field-numero">
+        <label class="mr-label">Número</label>
+        <input
+          type="text"
+          inputmode="numeric"
+          formControlName="numero"
+          placeholder="123"
+        />
+      </div>
     </div>
 
     <!-- Toggles -->

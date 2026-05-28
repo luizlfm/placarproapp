@@ -1,11 +1,10 @@
 <ion-header class="ion-no-border">
   <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-button (click)="dismiss()">Cancelar</ion-button>
-    </ion-buttons>
     <ion-title>Editar {{ rotuloTipo }}</ion-title>
     <ion-buttons slot="end">
-      <ion-button strong="true" [disabled]="form.invalid" (click)="salvar()">Salvar</ion-button>
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -42,3 +41,29 @@
     ></ion-textarea>
   </form>
 </ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <div class="acoes-footer">
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="danger"
+        (click)="dismiss()"
+      >
+        <ion-icon slot="start" name="trash-outline"></ion-icon>
+        Cancelar
+      </ion-button>
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="primary"
+        [disabled]="form.invalid"
+        (click)="salvar()"
+      >
+        <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+        Salvar
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

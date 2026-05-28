@@ -1,6 +1,11 @@
 import { Component, ElementRef, HostBinding, HostListener, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { LoadingController, ModalController, ToastController } from '@ionic/angular';
 import { firstValueFrom } from 'rxjs';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import domtoimage from 'dom-to-image-more';
+import { SumulaPage } from '../jogo-detalhe/sumula/sumula.page';
 import { Campeonato } from '../../../campeonatos/campeonato.model';
 import { Categoria } from '../../../campeonatos/categoria.model';
 import { Equipe } from '../../../campeonatos/models/equipe.model';
@@ -18,6 +23,7 @@ import { EquipesService } from '../../../campeonatos/equipes.service';
 import { JogadoresService } from '../../../campeonatos/jogadores.service';
 import { JogosService } from '../../../campeonatos/jogos.service';
 import { NavBackService } from '../../../shared/nav-back.service';
+import { salvarPdf } from '../../../shared/pdf-download.helper';
 
 /** Modelos visuais de súmula disponíveis. Adicione um novo valor aqui
  *  + entrada em `modelosSumula` + entrada em `mapaModalidadeModelo` +
@@ -81,6 +87,9 @@ export class SumulasPreviewPage implements OnInit {
   private readonly jogosSrv = inject(JogosService);
   private readonly navBack = inject(NavBackService);
   private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly modalCtrl = inject(ModalController);
+  private readonly loadingCtrl = inject(LoadingController);
+  private readonly toastCtrl = inject(ToastController);
 
   readonly campeonatoId = this.route.snapshot.paramMap.get('id') ?? '';
   readonly categoriaId  = this.route.snapshot.paramMap.get('catId') ?? '';
@@ -98,6 +107,19 @@ export class SumulasPreviewPage implements OnInit {
 
   /** Súmulas montadas pra renderizar (uma por jogoId selecionado). */
   sumulas: SumulaView[] = [];
+
+  /**
+   * URL data:image/png de cada súmula renderizada como imagem (preview
+   * pixel-perfect ao PDF). Chave = jogoId. Quando setada, o template
+   * mostra a img em vez do HTML cru.
+   *
+   * Idéia: gerar o PNG via mesma pipeline do `baixarPdf` (dom-to-image-more)
+   * de modo que o usuário vê na tela EXATAMENTE o que sairá no PDF
+   * — sem problemas de CSS (vertical-text, colunas desalinhadas, etc).
+   */
+  previewImagens: Record<string, string> = {};
+  /** Flag global enquanto qualquer captura está rodando. */
+  gerandoPreviews = false;
 
   /** Painel aberto/fechado (mobile). */
   painelAberto = true;
@@ -279,35 +301,339 @@ export class SumulasPreviewPage implements OnInit {
     this.painelAberto = !this.painelAberto;
   }
 
+  /**
+   * "Imprimir (N)" → gera um PDF MULTIPÁGINA (1 súmula por página,
+   * A4 paisagem) via html2canvas + jsPDF e abre numa nova aba com
+   * autoPrint() — o reader do PDF já dispara o diálogo de impressão.
+   *
+   * Por que NÃO usar `window.print()` direto:
+   *   1. @media print é frágil — regras de viewport (max-width:900px)
+   *      persistem durante o print, ion-content tem scroll interno,
+   *      page-break-after às vezes é "engolido" por containers grid/flex.
+   *   2. O resultado dependia do viewport do user — em mobile saía 1
+   *      folha em branco. No desktop também acontecia em certos zooms.
+   *
+   * Vantagens do PDF programático:
+   *   - SEM cabeçalho da página, SEM toolbar, SEM menu — só a folha pura
+   *   - Mesma saída em web e mobile (não depende de viewport)
+   *   - User pode salvar ou imprimir do reader do PDF
+   *   - Funciona offline (jsPDF roda local)
+   */
   async imprimir(): Promise<void> {
-    if (this.selecionadas.size === 0) return;
-    // Garante que o preview está sincronizado antes de imprimir
-    if (this.sumulas.length !== this.selecionadas.size) {
-      await this.recarregarSumulas();
-    }
-    setTimeout(() => window.print(), 50);
+    return this.gerarPdfMultipage('print');
   }
 
   /**
-   * Abre o overlay de visualização individual de uma súmula (icone "olho"
-   * em cada card). Carrega os dados sob demanda — não precisa estar
-   * selecionada pra visualizar.
+   * Baixa o PDF multipágina diretamente, sem abrir diálogo.
+   * Mesma pipeline do `imprimir()` mas chama `pdf.save()` no fim em
+   * vez de `autoPrint + window.open`.
+   */
+  async baixarPdf(): Promise<void> {
+    return this.gerarPdfMultipage('download');
+  }
+
+  /**
+   * Núcleo compartilhado de imprimir() e baixarPdf().
+   * Gera um PDF multipágina (1 súmula por página) e:
+   *   - destino `print`: `pdf.autoPrint()` + abre em nova aba (browser
+   *     dispara diálogo de impressão automaticamente)
+   *   - destino `download`: `pdf.save(nome)` (download direto)
+   */
+  private async gerarPdfMultipage(destino: 'print' | 'download'): Promise<void> {
+    if (this.selecionadas.size === 0) return;
+
+    const loading = await this.loadingCtrl.create({
+      message: `Gerando ${this.selecionadas.size} súmula${this.selecionadas.size > 1 ? 's' : ''}...`,
+      spinner: 'crescent',
+    });
+    await loading.present();
+
+    try {
+      await this.recarregarSumulas();
+      await new Promise<void>(r => requestAnimationFrame(() => r()));
+      await new Promise<void>(r => requestAnimationFrame(() => r()));
+      await this.aguardarImagens(5000);
+
+      const rootInline = this.host.nativeElement as HTMLElement;
+      await this.inlineImagens(rootInline);
+
+      const root = this.host.nativeElement as HTMLElement;
+      const folhas = Array.from(
+        root.querySelectorAll<HTMLElement>('.sumula-folha'),
+      ).filter(f => !f.hasAttribute('hidden'));
+
+      if (folhas.length === 0) {
+        throw new Error('Nenhuma súmula encontrada — selecione ao menos uma partida.');
+      }
+
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+      });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+
+      for (let i = 0; i < folhas.length; i++) {
+        loading.message = `Gerando súmula ${i + 1} de ${folhas.length}...`;
+        await new Promise<void>(r => setTimeout(r, 0));
+
+        const dataUrl = await this.capturarFolhaParaPdf(folhas[i]);
+        if (!dataUrl) continue;
+
+        const tmpImg = new Image();
+        await new Promise<void>((resolve, reject) => {
+          tmpImg.onload = () => resolve();
+          tmpImg.onerror = () => reject(new Error('falha png'));
+          tmpImg.src = dataUrl;
+        });
+
+        const imgRatio = tmpImg.naturalHeight / tmpImg.naturalWidth;
+        const imgW = pageW;
+        let imgH = imgW * imgRatio;
+        if (imgH > pageH) imgH = pageH;
+        if (i > 0) pdf.addPage('a4', 'landscape');
+        pdf.addImage(dataUrl, 'PNG', 0, 0, imgW, imgH);
+
+        await new Promise<void>(r => setTimeout(r, 0));
+      }
+
+      if (destino === 'print') {
+        pdf.autoPrint();
+        const blobUrl = pdf.output('bloburl');
+        window.open(blobUrl, '_blank');
+      } else {
+        // download direto — pdf.save() força via <a download>.
+        // No iOS Safari, salvarPdf() usa Web Share API pra abrir share sheet
+        // nativo (com opção "Salvar em Arquivos") em vez de abrir PDF inline.
+        const nome = `sumulas-${this.campeonato?.titulo?.replace(/\s+/g, '_') || 'campeonato'}.pdf`;
+        await salvarPdf(pdf, nome);
+      }
+    } catch (err) {
+      console.error(`[${destino}] erro`, err);
+      const t = await this.toastCtrl.create({
+        message: 'Falha ao gerar PDF. Tente novamente.',
+        duration: 3000,
+        color: 'danger',
+        position: 'top',
+      });
+      await t.present();
+    } finally {
+      await loading.dismiss();
+    }
+  }
+
+  /**
+   * Captura uma `.sumula-folha` como PNG data URL via dom-to-image-more.
+   * Clona pra container off-screen no body pra evitar constraints do
+   * modal/preview, aplica bordas 0.5px inline pra ficar hairline no PDF.
+   */
+  private async capturarFolhaParaPdf(folhaOriginal: HTMLElement): Promise<string | null> {
+    const offscreen = document.createElement('div');
+    offscreen.style.cssText = `
+      position: fixed;
+      top: -10000px;
+      left: 0;
+      width: 290mm;
+      background: #ffffff;
+      pointer-events: none;
+      z-index: -1;
+    `;
+    try {
+      const folhaClone = folhaOriginal.cloneNode(true) as HTMLElement;
+      folhaClone.style.transform = 'none';
+      folhaClone.style.position = 'static';
+      folhaClone.style.top = 'auto';
+      folhaClone.style.left = 'auto';
+      folhaClone.style.margin = '0';
+      folhaClone.style.boxShadow = 'none';
+
+      // Bordas finas inline.
+      folhaClone.style.setProperty('border-width', '0.5px', 'important');
+      folhaClone.querySelectorAll<HTMLElement>('*').forEach(el => {
+        el.style.setProperty('border-width', '0.5px', 'important');
+      });
+
+      // Fix TÉCNICO/CAPITÃO rotacionado.
+      folhaClone.querySelectorAll<HTMLElement>('.vertical-text').forEach(v => {
+        const texto = (v.textContent || '').trim();
+        if (!texto) return;
+        v.style.writingMode = 'horizontal-tb';
+        v.style.transform = 'none';
+        v.style.position = 'relative';
+        v.style.padding = '0';
+        v.innerHTML =
+          '<div style="position:absolute;top:50%;left:50%;' +
+          'transform:translate(-50%,-50%) rotate(-90deg);' +
+          'transform-origin:center center;white-space:nowrap;' +
+          'font:inherit;color:inherit;">' +
+          texto +
+          '</div>';
+      });
+
+      offscreen.appendChild(folhaClone);
+      document.body.appendChild(offscreen);
+
+      // Aguarda layout + imagens do clone decodificarem.
+      await new Promise<void>(r => requestAnimationFrame(() => r()));
+      await new Promise<void>(r => requestAnimationFrame(() => r()));
+      const imgsClone = Array.from(folhaClone.querySelectorAll('img')) as HTMLImageElement[];
+      await Promise.all(
+        imgsClone.map(img => {
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+          return new Promise<void>(resolve => {
+            const fin = (): void => resolve();
+            img.addEventListener('load', fin, { once: true });
+            img.addEventListener('error', fin, { once: true });
+            setTimeout(fin, 2000);
+          });
+        }),
+      );
+      await new Promise<void>(r => requestAnimationFrame(() => r()));
+
+      const rect = folhaClone.getBoundingClientRect();
+
+      const dataUrl = await domtoimage.toPng(folhaClone, {
+        bgcolor: '#ffffff',
+        width: Math.ceil(rect.width),
+        height: Math.ceil(rect.height),
+        scale: 3,
+        cacheBust: false,
+      });
+      return dataUrl;
+    } catch (err) {
+      console.error('[capturarFolhaParaPdf] erro', err);
+      return null;
+    } finally {
+      try {
+        if (offscreen.parentNode) {
+          offscreen.parentNode.removeChild(offscreen);
+        }
+      } catch { /* ignore */ }
+    }
+  }
+
+  /**
+   * Aguarda todas as `<img>` da página de súmulas (folhas + logos)
+   * terminarem de carregar. Resolve quando todas terminam (sucesso
+   * ou erro) ou quando o timeout expira.
+   */
+  private aguardarImagens(timeoutMs: number): Promise<void> {
+    return new Promise<void>(resolve => {
+      const root = this.host.nativeElement as HTMLElement;
+      const imgs = Array.from(
+        root.querySelectorAll('.sumula-folha img'),
+      ) as HTMLImageElement[];
+      const pendentes = imgs.filter(img => !img.complete);
+      if (pendentes.length === 0) return resolve();
+
+      let restantes = pendentes.length;
+      const fin = (): void => {
+        restantes--;
+        if (restantes <= 0) resolve();
+      };
+      pendentes.forEach(img => {
+        img.addEventListener('load', fin, { once: true });
+        img.addEventListener('error', fin, { once: true });
+      });
+      setTimeout(() => resolve(), timeoutMs);
+    });
+  }
+
+  /**
+   * Converte todas as `<img>` em base64 ANTES do html2canvas — sem isso
+   * logos saem em branco no PDF. Usa novo `<Image>` com `crossOrigin =
+   * 'anonymous'` + canvas pra extrair data URL (mais confiável que
+   * fetch+FileReader, que esbarra em cache opaque).
+   */
+  private async inlineImagens(container: HTMLElement): Promise<void> {
+    const imgs = Array.from(container.querySelectorAll('img')) as HTMLImageElement[];
+    await Promise.all(
+      imgs.map(async imgEl => {
+        const src = imgEl.getAttribute('src') || '';
+        if (!src || src.startsWith('data:')) return;
+        try {
+          const dataUrl = await this.urlParaDataUrl(src);
+          if (dataUrl) {
+            imgEl.src = dataUrl;
+            if (imgEl.decode) await imgEl.decode().catch(() => undefined);
+          }
+        } catch {
+          /* segue sem essa imagem */
+        }
+      }),
+    );
+  }
+
+  /** Carrega URL como data URL. Tenta fetch(no-store) e fallback Image+canvas. */
+  private async urlParaDataUrl(src: string): Promise<string | null> {
+    // Caminho 1: fetch (sem cache opaque).
+    try {
+      const res = await fetch(src, { mode: 'cors', cache: 'no-store' });
+      if (res.ok) {
+        const blob = await res.blob();
+        return await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result as string);
+          r.onerror = () => reject(r.error);
+          r.readAsDataURL(blob);
+        });
+      }
+    } catch (err) {
+      console.warn('[inlineImagens] fetch falhou pra', src, err);
+    }
+
+    // Caminho 2: Image() + canvas.
+    return new Promise(resolve => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return resolve(null);
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        } catch (err) {
+          console.warn('[inlineImagens] canvas falhou', err);
+          resolve(null);
+        }
+      };
+      img.onerror = err => {
+        console.warn('[inlineImagens] Image load falhou pra', src, err);
+        resolve(null);
+      };
+      img.src = src;
+    });
+  }
+
+  /**
+   * Abre a visualização da súmula como MODAL (em vez do overlay in-page
+   * antigo) — reaproveita a `SumulaPage` em modo modal, ganhando de
+   * graça: rotação 90° no mobile, pinch-zoom + pan, botão "Baixar PDF",
+   * impressão. Mantém a mesma UX da súmula aberta pelo jogo-detalhe.
    */
   async abrirVisualizacao(jogoId?: string): Promise<void> {
     if (!jogoId) return;
-    if (!this.viewIndividualCache.has(jogoId) && !this.sumulas.find(s => s.jogo.id === jogoId)) {
-      const linha = this.linhas.find(l => l.jogo.id === jogoId);
-      if (linha) {
-        const eventos = await this.getEventos(jogoId);
-        this.viewIndividualCache.set(jogoId, this.montarSumulaView(linha, eventos));
-      }
-    }
-    this.verSumulaId = jogoId;
-    // Calcula a escala da rotação assim que abre (no próximo tick pra dar
-    // tempo do template renderizar e o viewport estar correto).
-    setTimeout(() => this.atualizarEscalaRotacao(), 50);
+    const modal = await this.modalCtrl.create({
+      component: SumulaPage,
+      cssClass: 'sumula-modal',
+      componentProps: {
+        isModal: true,
+        campeonatoIdInput: this.campeonatoId,
+        categoriaIdInput: this.categoriaId,
+        jogoIdInput: jogoId,
+      },
+      backdropDismiss: true,
+    });
+    await modal.present();
   }
 
+  /** Mantido pra compatibilidade com o overlay antigo (caso ainda
+   *  esteja sendo referenciado em outros lugares do template).
+   *  TODO: remover quando o overlay for limpado do HTML. */
   fecharVisualizacao(): void {
     this.verSumulaId = null;
   }
@@ -396,6 +722,68 @@ export class SumulasPreviewPage implements OnInit {
       views.push(this.montarSumulaView(linha, eventos));
     }
     this.sumulas = views;
+
+    // Limpa previews antigas (de súmulas que saíram da seleção) e dispara
+    // regeneração pras novas. Debounce 600ms pra dar tempo do user clicar
+    // várias opções sem regenerar a cada toggle.
+    this.agendarGeracaoPreviews();
+  }
+
+  private regenPreviewsTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Agenda regeneração das previews (debounce). */
+  private agendarGeracaoPreviews(): void {
+    if (this.regenPreviewsTimer) clearTimeout(this.regenPreviewsTimer);
+    this.regenPreviewsTimer = setTimeout(() => {
+      void this.gerarPreviewsImagens();
+    }, 600);
+  }
+
+  /**
+   * Captura cada `.sumula-folha` renderizada como PNG via dom-to-image-more
+   * e popula `previewImagens[jogoId]`. O template então mostra a img em vez
+   * do HTML. Pixel-perfect com o PDF.
+   */
+  private async gerarPreviewsImagens(): Promise<void> {
+    if (this.sumulas.length === 0) {
+      this.previewImagens = {};
+      return;
+    }
+
+    this.gerandoPreviews = true;
+    // Aguarda 2 frames pra Angular renderizar as folhas no DOM.
+    await new Promise<void>(r => requestAnimationFrame(() => r()));
+    await new Promise<void>(r => requestAnimationFrame(() => r()));
+
+    const root = this.host.nativeElement as HTMLElement;
+    // Inline imagens das folhas (logos do campeonato + equipes) pra evitar
+    // CORS no canvas — só faz isso uma vez no root inteiro.
+    await this.inlineImagens(root);
+
+    // Localiza todas as folhas visíveis (não escondidas por modelo).
+    const folhas = Array.from(
+      root.querySelectorAll<HTMLElement>('.sumula-folha'),
+    ).filter(f => !f.hasAttribute('hidden'));
+
+    // Atualiza um Map novo (não muta o anterior — mantém previews já feitas
+    // pras súmulas que não mudaram).
+    const novoMap: Record<string, string> = {};
+
+    for (let i = 0; i < folhas.length && i < this.sumulas.length; i++) {
+      const jogoId = this.sumulas[i].jogo.id;
+      if (!jogoId) continue;
+      // Yield antes de cada captura pra não congelar a UI.
+      await new Promise<void>(r => setTimeout(r, 0));
+      try {
+        const dataUrl = await this.capturarFolhaParaPdf(folhas[i]);
+        if (dataUrl) novoMap[jogoId] = dataUrl;
+      } catch (err) {
+        console.warn('[sumulas-preview] preview falhou pra jogo', jogoId, err);
+      }
+    }
+
+    this.previewImagens = novoMap;
+    this.gerandoPreviews = false;
   }
 
   private async getEventos(jogoId: string): Promise<EventoJogo[]> {

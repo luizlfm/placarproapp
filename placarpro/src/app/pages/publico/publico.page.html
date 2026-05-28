@@ -36,7 +36,7 @@
       </button>
       <button class="topbar-brand" type="button" (click)="voltarHome()">
         <div class="tb-logo">
-          <img *ngIf="logoCamp(camp) as l; else iconTb" [src]="l" [alt]="camp.titulo" />
+          <img skel *ngIf="logoCamp(camp) as l; else iconTb" [src]="l" [alt]="camp.titulo" />
           <ng-template #iconTb><ion-icon name="trophy-outline"></ion-icon></ng-template>
         </div>
         <span class="tb-titulo">{{ camp.titulo }}</span>
@@ -60,7 +60,7 @@
 
       <button class="brand" type="button" (click)="voltarHome()">
         <div class="brand-logo">
-          <img *ngIf="logoCamp(camp) as l; else iconBrand" [src]="l" [alt]="camp.titulo" />
+          <img skel *ngIf="logoCamp(camp) as l; else iconBrand" [src]="l" [alt]="camp.titulo" />
           <ng-template #iconBrand><ion-icon name="trophy-outline"></ion-icon></ng-template>
         </div>
         <div class="brand-title">{{ camp.titulo }}</div>
@@ -108,7 +108,7 @@
            está conectado nesta sessão". -->
       <div class="sidebar-user" *ngIf="estaLogado" [title]="nomeUsuarioLogado">
         <div class="su-avatar">
-          <img
+          <img skel
             *ngIf="fotoUsuario; else iniciaisUsuario"
             [src]="fotoUsuario"
             [alt]="nomeUsuarioLogado"
@@ -180,10 +180,9 @@
         <!-- HERO CARD: igual ao publico-categoria.page —
              imagem real + overlay compacto. -->
         <article class="hero-card">
-          <img
-            *ngIf="capaCamp(camp) as cap"
+          <img skel
             class="hero-img"
-            [src]="cap"
+            [src]="capaCamp(camp)"
             [alt]="camp.titulo"
           />
           <div class="hero-info">
@@ -234,7 +233,7 @@
                 [style.background]="modalidadeOf(c)?.color ? modalidadeOf(c)!.color + '26' : null"
                 [style.color]="modalidadeOf(c)?.color || null"
               >
-                <img *ngIf="c.logoUrl; else iconCC" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
+                <img skel *ngIf="c.logoUrl; else iconCC" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
                 <ng-template #iconCC>
                   <ion-icon [name]="modalidadeOf(c)?.icon || 'grid-outline'"></ion-icon>
                 </ng-template>
@@ -292,7 +291,7 @@
                 tabindex="0"
               >
                 <div class="card-thumb">
-                  <img *ngIf="thumbMidia(m) as src" [src]="src" [alt]="m.titulo || labelMidia(m.tipo)" loading="lazy" />
+                  <img skel *ngIf="thumbMidia(m) as src" [src]="src" [alt]="m.titulo || labelMidia(m.tipo)" loading="lazy" />
                   <div class="card-thumb-fallback" *ngIf="!thumbMidia(m)">
                     <ion-icon [name]="iconeMidia(m.tipo)"></ion-icon>
                   </div>
@@ -359,7 +358,7 @@
                    senão exibe o ícone genérico de pessoas. -->
               <ng-container *ngIf="equipeDoConvite(conv) as eq; else iconeGenerico">
                 <div class="me-escudo" [class.sem-logo]="!eq.logoUrl">
-                  <img *ngIf="eq.logoUrl; else iconShield" [src]="eq.logoUrl" [alt]="eq.nome" loading="lazy" />
+                  <img skel *ngIf="eq.logoUrl; else iconShield" [src]="eq.logoUrl" [alt]="eq.nome" loading="lazy" />
                   <ng-template #iconShield>
                     <ion-icon name="shield-outline"></ion-icon>
                   </ng-template>

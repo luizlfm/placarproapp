@@ -45,6 +45,13 @@ export const gerarTokenLiveKit = onCall(
     secrets: [LIVEKIT_API_KEY, LIVEKIT_API_SECRET],
     cors: [
       /localhost:\d+$/,
+      // IPs de rede local (192.168.x.x, 10.x.x.x, 172.16-31.x.x) — usado
+      // durante desenvolvimento quando testamos em mobile real apontando
+      // pra IP do dev machine. Sem isso, o CORS rejeita o request e a
+      // function nem chega a rodar — cliente recebe erro `internal`.
+      /^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/,
+      /^https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/,
+      /^https?:\/\/172\.(?:1[6-9]|2\d|3[01])\.\d+\.\d+(:\d+)?$/,
       'https://placapro-d276d.web.app',
       'https://placapro-d276d.firebaseapp.com',
       // Domínio customizado — manter sincronizado com os outros endpoints

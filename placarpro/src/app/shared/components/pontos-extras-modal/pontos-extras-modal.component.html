@@ -1,0 +1,46 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Pontos Extras</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bg">
+  <div class="wrap">
+    <!-- Estado vazio: sem nenhum ajuste — só o botão Adicionar -->
+    <div class="empty" *ngIf="itens.length === 0">
+      <ion-icon name="add-circle-outline"></ion-icon>
+      <p>Nenhum ajuste manual aplicado.</p>
+    </div>
+
+    <!-- Lista de ajustes existentes -->
+    <div class="lista" *ngIf="itens.length > 0">
+      <div class="item" *ngFor="let i of itens">
+        <div class="info">
+          <div class="lbl">{{ i.lado === 'mandante' ? 'Mandante' : 'Visitante' }}</div>
+          <div class="nome">{{ i.equipe?.nome || '?' }}</div>
+        </div>
+        <div class="pontos" [class.pos]="i.pontos > 0" [class.neg]="i.pontos < 0">
+          {{ i.pontos > 0 ? '+' : '' }}{{ i.pontos }}
+        </div>
+        <button type="button" class="btn-editar" (click)="adicionar(i.lado)" aria-label="Editar">
+          <ion-icon name="create-outline"></ion-icon>
+        </button>
+        <button type="button" class="btn-remover" (click)="remover(i.lado)" aria-label="Remover">
+          <ion-icon name="trash-outline"></ion-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="cta">
+      <ion-button color="success" (click)="adicionar()">
+        <ion-icon slot="start" name="add-outline"></ion-icon>
+        Adicionar
+      </ion-button>
+    </div>
+  </div>
+</ion-content>

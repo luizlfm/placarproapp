@@ -5,6 +5,7 @@ import { IonicModule } from '@ionic/angular';
 
 import { EspectadorPageRoutingModule } from './espectador-routing.module';
 import { EspectadorPage } from './espectador.page';
+import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
   imports: [
@@ -12,6 +13,7 @@ import { EspectadorPage } from './espectador.page';
     FormsModule,
     IonicModule,
     EspectadorPageRoutingModule,
+    SharedModule,
   ],
   declarations: [EspectadorPage],
 })

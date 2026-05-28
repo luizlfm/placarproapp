@@ -160,6 +160,33 @@ ion-textarea.ion-invalid.ion-touched {
 }
 
 /* ============================================================
+   Footer padronizado do sistema:
+   Cancelar (lixeira vermelho) + Salvar (check navy) lado a lado, pill.
+   Mesma estética do editar-informações, anexos, colunas-jogadores etc.
+   ============================================================ */
+ion-footer ion-toolbar {
+  --background: #fff;
+  --border-color: #ececef;
+}
+
+.acoes-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+  background: #fff;
+
+  .btn-acao {
+    margin: 0;
+    width: 100%;
+    --border-radius: 999px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+/* ============================================================
    Preview do YouTube (thumbnail estática)
    ============================================================ */
 .yt-preview {

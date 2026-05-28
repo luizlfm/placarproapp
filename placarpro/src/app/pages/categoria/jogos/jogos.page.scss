@@ -21,6 +21,12 @@ ion-content {
 .page-head {
   margin-bottom: 18px;
 
+  @media (max-width: 767px) {
+    padding: 5px;
+    /* padding-left: 56px; */
+    /* min-height: 40px; */
+  }
+
   .camp-titulo {
     margin: 0 0 4px;
     font-size: 32px;
@@ -31,6 +37,11 @@ ion-content {
     text-transform: uppercase;
 
     @media (max-width: 768px) { font-size: 22px; }
+
+    @media (max-width: 480px) {
+      font-size: 13px;
+      text-align: center;
+    }
   }
 
   .cat-subtitulo {
@@ -577,6 +588,23 @@ ion-content {
     --border-radius: 10px;
     text-transform: none;
     font-weight: 600;
+  }
+}
+
+/* Empilha os botões contextuais do empty state. Largura máxima evita que
+   fiquem gigantes em telas largas; centralizado pelo `text-align: center`
+   herdado do `.empty`. */
+.empty-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 320px;
+  margin: 0 auto;
+  align-items: stretch;
+
+  ion-button {
+    margin: 0;
+    width: 100%;
   }
 }
 

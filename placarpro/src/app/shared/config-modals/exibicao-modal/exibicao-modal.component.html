@@ -1,11 +1,10 @@
 <ion-header class="ion-no-border">
   <ion-toolbar color="primary">
-    <ion-buttons slot="start">
-      <ion-button (click)="dismiss()">Cancelar</ion-button>
-    </ion-buttons>
     <ion-title>Exibição</ion-title>
     <ion-buttons slot="end">
-      <ion-button strong="true" [disabled]="salvando" (click)="salvar()">Salvar</ion-button>
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -37,3 +36,34 @@
     </div>
   </div>
 </ion-content>
+
+<!-- Footer padronizado: Cancelar (vermelho lixeira) + Salvar (navy check)
+     em 2 colunas de 50%, botões small em pill. Mesmo padrão do
+     editar-informações, criar-noticia, critérios, anexos etc. -->
+<ion-footer>
+  <ion-toolbar>
+    <div class="acoes-footer">
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="danger"
+        (click)="dismiss()"
+        [disabled]="salvando"
+      >
+        <ion-icon slot="start" name="trash-outline"></ion-icon>
+        Cancelar
+      </ion-button>
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="primary"
+        (click)="salvar()"
+        [disabled]="salvando"
+      >
+        <ion-spinner *ngIf="salvando" name="dots" slot="start"></ion-spinner>
+        <ion-icon *ngIf="!salvando" slot="start" name="checkmark-outline"></ion-icon>
+        Salvar
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

@@ -11,16 +11,24 @@ ion-content {
   @media (max-width: 768px) {
     padding: 16px;
   }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 }
 
 /* ============== Cabeçalho da página ============== */
 .page-head {
   margin-bottom: 18px;
 
-  /* No mobile, reserva espaço pro hambúrguer global (fixed, 40x40 @10px) */
   @media (max-width: 767px) {
-    padding-left: 56px;
-    min-height: 40px;
+    padding: 5px;
+    /* padding-left: 56px; */
+    /* min-height: 40px; */
+  }
+
+  @media (max-width: 480px) {
+    margin-bottom: 0;
   }
 
   .camp-titulo {
@@ -33,7 +41,14 @@ ion-content {
     text-transform: uppercase;
 
     @media (max-width: 768px) {
-      font-size: 22px;
+      font-size: 15px;
+      letter-spacing: 0;
+      line-height: 1.2;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 13px;
+      text-align: center;
     }
   }
 
@@ -55,6 +70,13 @@ ion-content {
   @media (max-width: 1080px) {
     grid-template-columns: 1fr;
     .jogos-aside { order: 2; }
+  }
+
+  /* No mobile (<=768px), a coluna de Jogos não aparece — o usuário pode
+     acessar a página /jogos dedicada pelo menu da categoria. Economiza
+     scroll vertical e foca na tabela de classificação. */
+  @media (max-width: 768px) {
+    .jogos-aside { display: none; }
   }
 }
 
@@ -114,8 +136,8 @@ ion-content {
   gap: 14px;
 
   @media (max-width: 768px) {
-    padding: 18px 10px 12px;
-    margin-top: 26px;
+    padding: 0px 10px 12px;
+    margin-top: 0;
   }
 }
 
@@ -168,6 +190,27 @@ ion-content {
 
     &:hover { background: var(--ion-color-primary-shade); }
   }
+
+  /* Mobile: empurra o FAB pra ficar entre o topbar (Fase+toggle) e o
+     primeiro grupo-card, em vez de sobrepor o texto do toggle. O topbar
+     mobile tem ~58px de altura — FAB top: 58px o coloca tabbed na borda
+     superior do primeiro grupo. */
+  @media (max-width: 768px) {
+    top: 58px;
+  }
+}
+
+/* Menu drop-down centralizado abaixo do FAB — mesmo offset que o FAB. */
+@media (max-width: 768px) {
+  .menu-card.centered { top: 96px !important; }
+
+  /* Margem extra acima do primeiro grupo pra que o FAB encoste
+     visualmente na sua borda superior, sem cobrir conteúdo. */
+  .grupo-card:first-of-type,
+  .painel-card > .empty:first-child,
+  .painel-card > .empty-inline:first-child {
+    margin-top: 14px;
+  }
 }
 
 /* ============== Topbar do card (fase + toggle) ============== */
@@ -182,6 +225,30 @@ ion-content {
   border-radius: 14px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
   padding: 14px 18px;
+
+  /* Mobile: select e toggle dividem a barra em 2 colunas, sem quebrar
+     pra próxima linha. Cada um ocupa ~50%. */
+  @media (max-width: 600px) {
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 10px 12px;
+
+    .fase-select {
+      flex: 1 1 50%;
+      min-width: 0;
+    }
+
+    .toggle-row {
+      flex: 1 1 50%;
+      min-width: 0;
+      justify-content: flex-end;
+    }
+
+    .toggle-label {
+      font-size: 12px;
+      line-height: 1.2;
+    }
+  }
 }
 
 .fase-select {
@@ -381,7 +448,7 @@ ion-content {
   background: #fff;
   border-radius: 14px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-  padding: 6px 16px 16px;
+  padding: 6px;
   margin-bottom: 0;
 }
 
@@ -390,6 +457,12 @@ ion-content {
   border-bottom: 1px solid #ececef;
   text-align: center;
   margin-bottom: 6px;
+
+  @media (max-width: 600px) {
+    text-align: left;
+    padding: 8px 4px 6px;
+    border-bottom: 2px solid var(--placar-accent, #7CC61D);
+  }
 }
 
 .grupo-titulo {
@@ -398,6 +471,53 @@ ion-content {
   color: var(--ion-color-medium-shade, #6b6b70);
   text-transform: uppercase;
   letter-spacing: 0.6px;
+
+  @media (max-width: 600px) {
+    color: var(--ion-color-primary);
+    font-size: 13px;
+  }
+}
+
+/* Legenda das abreviações + ícones de variação — aparece em desktop e
+   mobile, em linha com wrap, abaixo da última tabela. */
+.tabela-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 6px;
+  margin-top: 14px;
+  padding: 10px 6px 4px;
+  font-size: 12px;
+  color: #2d2d2d;
+  line-height: 1.4;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  strong {
+    font-weight: 800;
+    color: var(--ion-color-primary);
+  }
+
+  /* Itens de variação (subiu/caiu/manteve) — ícone colorido + label */
+  .leg-var {
+    .ico {
+      font-size: 14px;
+      &.subiu   { color: #7CC61D; }
+      &.caiu    { color: #EB445A; }
+      &.manteve { color: #b6b6bb; }
+    }
+  }
+
+  @media (max-width: 600px) {
+    font-size: 11.5px;
+    column-gap: 12px;
+  }
 }
 
 .tabela-scroll { overflow-x: auto; }
@@ -406,6 +526,44 @@ ion-content {
   width: 100%;
   border-collapse: collapse;
   font-size: 13.5px;
+  table-layout: fixed;
+
+  /* ============ Larguras fixas das colunas (desktop) ============
+     Ordem real no DOM (com ÚLT.JOGOS duplicado mobile/desktop):
+       1=POS 2=EQ 3=P 4=J 5=V 6=E 7=D 8=GP 9=ÚLT-mobile 10=GC 11=SG 12=% 13=PE 14=ÚLT-desktop
+     Desktop esconde a coluna 9 (mobile-only) e mostra a 14 (desktop-only).
+     - POS: 40px
+     - EQ:  280px
+     - Numéricas (3-8, 10-13): 50px cada
+     - ÚLT.JOGOS desktop (14): 120px */
+  th:nth-child(1),  td:nth-child(1)  { width: 40px; }
+  th:nth-child(2),  td:nth-child(2)  { width: 280px; }
+  th:nth-child(3),  td:nth-child(3),
+  th:nth-child(4),  td:nth-child(4),
+  th:nth-child(5),  td:nth-child(5),
+  th:nth-child(6),  td:nth-child(6),
+  th:nth-child(7),  td:nth-child(7),
+  th:nth-child(8),  td:nth-child(8),
+  th:nth-child(10), td:nth-child(10),
+  th:nth-child(11), td:nth-child(11),
+  th:nth-child(12), td:nth-child(12),
+  th:nth-child(13), td:nth-child(13) { width: 50px; }
+  th:nth-child(14), td:nth-child(14) { width: 120px; }
+
+  /* Esconde a coluna ÚLT.JOGOS-mobile no desktop (col 9 do DOM). */
+  .th-ult-mobile, .td-ult-mobile {
+    display: none;
+  }
+
+  /* Divisões verticais entre colunas — exceto entre POS e EQ
+     (que visualmente formam um bloco só "CLASSIFICAÇÃO"). */
+  th + th,
+  td + td {
+    border-left: 1px solid #ececef;
+  }
+  th.th-eq, td.td-eq {
+    border-left: none;
+  }
 
   thead {
     th {
@@ -418,8 +576,92 @@ ion-content {
       letter-spacing: 0.4px;
       border-bottom: 1px solid #ececef;
 
-      &.th-pos { width: 48px; }
+      &.th-pos { width: 40px; }
       &.th-eq  { text-align: left; padding-left: 10px; }
+    }
+  }
+
+  /* Mobile (<600px): troca a ÚLT.JOGOS pra aparecer logo depois de GP
+     (coluna 9 do DOM), e esconde a versão desktop (coluna 14). GC/SG/%/PE
+     ficam acessíveis via scroll horizontal.
+     Ordem visível: POS, EQ, P, J, V, E, D, GP, ÚLT.JOGOS, GC, SG, %, PE */
+  @media (max-width: 600px) {
+    font-size: 12.5px;
+    table-layout: auto;
+    width: auto;
+    min-width: 100%;
+
+    /* Inverte as visibilidades: mostra a ÚLT.JOGOS-mobile e esconde a -desktop. */
+    .th-ult-mobile, .td-ult-mobile { display: table-cell; }
+    .th-ult-desktop, .td-ult-desktop { display: none; }
+
+    th, td {
+      padding: 6px 3px;
+    }
+
+    /* POS: número plano sem badge/círculo no mobile (só vira badge
+       quando há destaque de zona/classificação). */
+    .td-pos {
+      width: 22px;
+      font-size: 13px;
+
+      .pos-bola {
+        background: transparent;
+        min-width: auto;
+        padding: 0;
+        font-weight: 700;
+
+        &.has-destaque {
+          /* Mantém o badge colorido nas posições destacadas */
+          min-width: 24px;
+          padding: 0 6px;
+        }
+      }
+    }
+
+    /* Mobile: só o escudo da equipe — nome e sigla escondidos. */
+    .eq-nome { display: none; }
+    .eq-sigla { display: none; }
+
+    .eq-logo {
+      width: 26px;
+      height: 26px;
+      ion-icon { font-size: 14px; }
+    }
+
+    .td-eq { padding-left: 4px; padding-right: 4px; }
+    .eq-cell { gap: 0; justify-content: center; }
+
+    /* Larguras explícitas em px. Visíveis sem scroll: POS+EQ+P+J+V+E+D+GP
+       (~250px) — depois aparece ÚLT.JOGOS-mobile (90px) e o usuário pode
+       rolar pra ver GC, SG, %, PE.
+       Numeração DOM (mobile): 1=POS 2=EQ 3=P 4=J 5=V 6=E 7=D 8=GP 9=ÚLT-m
+                               10=GC 11=SG 12=% 13=PE  (14=ÚLT-desktop oculta) */
+    th:nth-child(1),  td:nth-child(1)  { width: 28px; min-width: 28px; }  /* POS */
+    th:nth-child(2),  td:nth-child(2)  { width: 50px; min-width: 50px; }  /* EQ escudo */
+    th:nth-child(3),  td:nth-child(3)  { width: 36px; min-width: 36px; }  /* P */
+    th:nth-child(4),  td:nth-child(4),
+    th:nth-child(5),  td:nth-child(5),
+    th:nth-child(6),  td:nth-child(6),
+    th:nth-child(7),  td:nth-child(7),
+    th:nth-child(8),  td:nth-child(8)  { width: 32px; min-width: 32px; }  /* J,V,E,D,GP */
+    th:nth-child(9),  td:nth-child(9)  { width: 90px; min-width: 90px; }  /* ÚLT-mobile */
+    th:nth-child(10), td:nth-child(10),
+    th:nth-child(11), td:nth-child(11),
+    th:nth-child(12), td:nth-child(12),
+    th:nth-child(13), td:nth-child(13) { width: 36px; min-width: 36px; }  /* GC,SG,%,PE */
+
+    /* Sem pílula inset — números ocupam todo o cell. Coluna P destacada
+       só pelo peso da fonte e cor. */
+    tbody td.td-num {
+      font-weight: 600;
+      color: #2d2d2d;
+    }
+
+    tbody td.td-num.td-pontos {
+      font-weight: 800;
+      color: var(--ion-color-primary);
+      font-size: 14px;
     }
   }
 
@@ -438,7 +680,7 @@ ion-content {
     }
 
     .td-pos {
-      width: 48px;
+      width: 32px;
       font-weight: 700;
       color: var(--ion-color-primary);
       background: transparent;
@@ -495,6 +737,101 @@ ion-content {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* Indicador de variação de posição (↑ verde, ↓ vermelho, ▪ cinza).
+   Aparece dentro da célula POS, logo após o número. */
+.variacao {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+
+  ion-icon { font-size: 12px; }
+
+  &.subiu   { color: #7CC61D; }
+  &.caiu    { color: #EB445A; }
+  &.manteve { color: #b6b6bb; }
+
+  .var-num { font-variant-numeric: tabular-nums; }
+}
+
+@media (max-width: 600px) {
+  .variacao {
+    margin-left: 2px;
+    font-size: 9.5px;
+    ion-icon { font-size: 10px; }
+  }
+}
+
+/* Sigla automática (3 letras) gerada pelo gerarSigla() no .ts. Default
+   escondida — só aparece no mobile no lugar do .eq-nome completo. */
+.eq-sigla {
+  display: none;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--ion-color-primary);
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cabeçalho da coluna de equipes: "Equipes" no desktop, "EQ." no mobile. */
+.th-eq-short { display: none; }
+
+@media (max-width: 600px) {
+  .th-eq-full  { display: none; }
+  .th-eq-short { display: inline; }
+}
+
+/* Coluna "ÚLT. JOGOS" — bolinhas coloridas por resultado (V=verde,
+   E=cinza, D=vermelho). Slots vazios quando faltam jogos. */
+.th-ult {
+  text-align: center;
+  min-width: 90px;
+}
+
+.td-ult {
+  text-align: center;
+  padding: 8px 6px !important;
+}
+
+.ult-dots {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+
+.ult-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+
+  &.v { background: #7CC61D; }
+  &.e { background: #b6b6bb; }
+  &.d { background: #EB445A; }
+  &.vazio { background: #ececef; }
+}
+
+@media (max-width: 600px) {
+  .th-ult {
+    min-width: 70px;
+    font-size: 10px;
+  }
+
+  .ult-dot {
+    width: 8px;
+    height: 8px;
+  }
+
+  .ult-dots {
+    gap: 3px;
+  }
 }
 
 .eq-logo {
@@ -876,6 +1213,29 @@ ion-content {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 700;
+
+  .rodada-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 5px;
+
+    &.editavel {
+      cursor: pointer;
+      transition: background 0.12s ease;
+
+      &:hover {
+        background: rgba(124, 198, 29, 0.12);
+        color: var(--placar-accent, #7CC61D);
+      }
+    }
+  }
+
+  .rodada-edit-icon {
+    font-size: 11px;
+    opacity: 0.65;
+  }
 }
 
 /* Local + data do jogo (linha abaixo da fase) */

@@ -1,0 +1,361 @@
+<ion-content [fullscreen]="true" class="po-content">
+  <!-- Loading -->
+  <div class="po-state" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <!-- Erro -->
+  <div class="po-state" *ngIf="!loading && erro">
+    <ion-icon name="alert-circle-outline"></ion-icon>
+    <h2>Organizador não encontrado</h2>
+    <p>Verifique o link e tente novamente.</p>
+    <ion-button (click)="voltarHome()" fill="outline" color="primary">
+      Voltar para home
+    </ion-button>
+  </div>
+
+  <!-- Conteúdo principal -->
+  <ng-container *ngIf="!loading && !erro && org">
+    <!-- ═══ Hero: banner grande com overlay + texto sobreposto ═══ -->
+    <div class="po-hero-banner">
+      <img
+        skel
+        class="po-hero-img"
+        [src]="bannerOrg(org)"
+        alt=""
+        loading="eager"
+        decoding="async"
+      />
+      <div class="po-hero-overlay"></div>
+    </div>
+
+    <!-- ═══ Header do perfil: logo flutuando + nome + meta + redes ═══ -->
+    <header class="po-profile">
+      <div class="po-profile-inner">
+        <!-- Logo grande circular sobreposta no banner -->
+        <div class="po-profile-logo">
+          <img
+            *ngIf="org.logoUrl || org.fotoUrl; else logoIcon"
+            skel
+            [src]="org.logoUrl || org.fotoUrl"
+            [alt]="org.nome"
+          />
+          <ng-template #logoIcon>
+            <ion-icon name="trophy-outline"></ion-icon>
+          </ng-template>
+        </div>
+
+        <div class="po-profile-info">
+          <h1>{{ org.nome }}</h1>
+          <p class="po-tagline" *ngIf="org.texto1">{{ org.texto1 }}</p>
+
+          <!-- Meta chips: localização, sede, modalidade -->
+          <div class="po-meta-chips" *ngIf="org.localizacao || org.sede || org.tipoEvento">
+            <span class="po-meta-chip" *ngIf="org.localizacao">
+              <ion-icon name="location-outline"></ion-icon>
+              {{ org.localizacao }}<ng-container *ngIf="org.regiao">, {{ org.regiao }}</ng-container>
+            </span>
+            <span class="po-meta-chip" *ngIf="org.tipoEvento">
+              <ion-icon [name]="org.tipoEvento === 'internet' ? 'globe-outline' : 'football-outline'"></ion-icon>
+              {{ org.tipoEvento === 'internet' ? 'Online' : 'Presencial' }}
+            </span>
+            <span class="po-meta-chip" *ngIf="org.idioma">
+              <ion-icon name="language-outline"></ion-icon>
+              {{ org.idioma === 'pt-BR' ? 'PT-BR' : org.idioma }}
+            </span>
+          </div>
+
+          <!-- Redes sociais — ícones discretos no header -->
+          <div class="po-profile-redes" *ngIf="org.redes as r">
+            <a *ngIf="r.instagram" [href]="r.instagram" target="_blank" rel="noopener" aria-label="Instagram">
+              <ion-icon name="logo-instagram"></ion-icon>
+            </a>
+            <a *ngIf="r.facebook" [href]="r.facebook" target="_blank" rel="noopener" aria-label="Facebook">
+              <ion-icon name="logo-facebook"></ion-icon>
+            </a>
+            <a *ngIf="r.youtube" [href]="r.youtube" target="_blank" rel="noopener" aria-label="YouTube">
+              <ion-icon name="logo-youtube"></ion-icon>
+            </a>
+            <a *ngIf="waLink(r.whatsapp) as wa" [href]="wa" target="_blank" rel="noopener" aria-label="WhatsApp">
+              <ion-icon name="logo-whatsapp"></ion-icon>
+            </a>
+            <a *ngIf="r.site" [href]="r.site" target="_blank" rel="noopener" aria-label="Site">
+              <ion-icon name="globe-outline"></ion-icon>
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ═══ Tabs com indicador animado ═══ -->
+    <nav class="po-tabs" aria-label="Seções do organizador">
+      <div class="po-tabs-inner">
+        <button
+          *ngFor="let a of abas"
+          type="button"
+          class="po-tab"
+          [class.ativa]="aba === a.id"
+          (click)="selecionarAba(a.id)"
+        >
+          <ion-icon [name]="a.icon"></ion-icon>
+          <span>{{ a.label }}</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ════════ INÍCIO — grid de campeonatos (padrão home-publica) ════════ -->
+    <section class="po-section" *ngIf="aba === 'inicio'">
+      <ng-container *ngIf="(campeonatos$ | async) as lista; else carregandoCamps">
+        <div class="po-grid" *ngIf="lista.length > 0; else semCamps">
+          <button
+            *ngFor="let c of lista; trackBy: trackById"
+            type="button"
+            class="camp-card"
+            (click)="abrirCampeonato(c)"
+          >
+            <!-- CAPA -->
+            <div class="capa">
+              <picture *ngIf="c.capaUrl || c.bannerUrl">
+                <img
+                  skel
+                  [src]="c.capaUrl || c.bannerUrl"
+                  [alt]="c.titulo"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </picture>
+            </div>
+
+            <!-- INFO -->
+            <div class="info">
+              <div class="logo-float">
+                <img *ngIf="c.logoUrl; else logoIc" skel [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" />
+                <ng-template #logoIc><ion-icon name="trophy-outline"></ion-icon></ng-template>
+              </div>
+
+              <div class="textos">
+                <div class="titulo">{{ c.titulo }}</div>
+                <div class="subtitulo" *ngIf="c.subtitulo">{{ c.subtitulo }}</div>
+              </div>
+
+              <div class="chips" *ngIf="c.esporte || c.localizacao">
+                <span class="chip" *ngIf="c.esporte">
+                  <ion-icon name="football-outline"></ion-icon>
+                  <span>{{ c.esporte }}</span>
+                </span>
+                <span class="chip" *ngIf="c.localizacao">
+                  <ion-icon name="location-outline"></ion-icon>
+                  <span>{{ c.localizacao }}</span>
+                </span>
+              </div>
+
+              <div class="rodape">
+                <span class="rodape-stat">
+                  <ion-icon name="people-outline"></ion-icon>
+                  <span><strong>{{ c.seguidores ?? 0 }}</strong> {{ (c.seguidores ?? 0) === 1 ? 'seguidor' : 'seguidores' }}</span>
+                </span>
+                <span class="rodape-cta">
+                  Ver
+                  <ion-icon name="arrow-forward-outline"></ion-icon>
+                </span>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <ng-template #semCamps>
+          <div class="po-empty">
+            <ion-icon name="trophy-outline"></ion-icon>
+            <p>Nenhum campeonato público disponível.</p>
+          </div>
+        </ng-template>
+      </ng-container>
+
+      <ng-template #carregandoCamps>
+        <div class="po-state">
+          <ion-spinner name="dots"></ion-spinner>
+        </div>
+      </ng-template>
+    </section>
+
+    <!-- ════════ GALERIA — banners + capas dos campeonatos ════════ -->
+    <section class="po-section" *ngIf="aba === 'galeria'">
+      <h2 class="po-section-title">Galeria</h2>
+      <div class="po-galeria">
+        <div class="po-gal-item" *ngIf="org.bannerSiteUrl">
+          <img [src]="org.bannerSiteUrl" alt="Banner do site" />
+          <span>Banner do site</span>
+        </div>
+        <div class="po-gal-item" *ngIf="org.bannerAppUrl">
+          <img [src]="org.bannerAppUrl" alt="Banner do aplicativo" />
+          <span>Banner do aplicativo</span>
+        </div>
+        <ng-container *ngIf="(campeonatos$ | async) as lista">
+          <div
+            class="po-gal-item"
+            *ngFor="let c of lista; trackBy: trackById"
+          >
+            <img *ngIf="c.capaUrl || c.bannerUrl" [src]="c.capaUrl || c.bannerUrl" [alt]="c.titulo" />
+            <span>{{ c.titulo }}</span>
+          </div>
+        </ng-container>
+
+        <div
+          *ngIf="!org.bannerSiteUrl && !org.bannerAppUrl"
+          class="po-empty"
+        >
+          <ion-icon name="images-outline"></ion-icon>
+          <p>Nenhuma imagem disponível ainda.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ SOBRE ════════ -->
+    <section class="po-section po-sobre-wrap" *ngIf="aba === 'sobre'">
+      <h2 class="po-section-title">Sobre {{ org.nome }}</h2>
+      <div class="po-sobre-card">
+        <p class="po-sobre-texto" *ngIf="org.sobre; else semSobre">{{ org.sobre }}</p>
+        <ng-template #semSobre>
+          <p class="po-empty-text">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            Este organizador ainda não publicou informações sobre si.
+          </p>
+        </ng-template>
+
+        <div class="po-meta-grid">
+          <div class="po-meta-item" *ngIf="org.localizacao">
+            <ion-icon name="location-outline"></ion-icon>
+            <div>
+              <strong>Localização</strong>
+              <span>{{ org.localizacao }}<ng-container *ngIf="org.regiao">, {{ org.regiao }}</ng-container></span>
+            </div>
+          </div>
+          <div class="po-meta-item" *ngIf="org.sede">
+            <ion-icon name="flag-outline"></ion-icon>
+            <div>
+              <strong>Sede</strong>
+              <span>{{ org.sede }}</span>
+            </div>
+          </div>
+          <div class="po-meta-item" *ngIf="org.tipoEvento">
+            <ion-icon
+              [name]="org.tipoEvento === 'internet' ? 'globe-outline' : 'football-outline'"
+            ></ion-icon>
+            <div>
+              <strong>Modalidade</strong>
+              <span>{{ org.tipoEvento === 'internet' ? 'Online' : 'Presencial' }}</span>
+            </div>
+          </div>
+          <div class="po-meta-item" *ngIf="org.idioma">
+            <ion-icon name="language-outline"></ion-icon>
+            <div>
+              <strong>Idioma</strong>
+              <span>{{ org.idioma === 'pt-BR' ? 'Português (Brasil)' : org.idioma }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ CONTATOS — segue o padrão das outras abas ════════ -->
+    <ng-container *ngIf="aba === 'contatos'">
+      <section class="po-section">
+        <h2 class="po-section-title">Contato</h2>
+        <div class="po-contato-grid">
+        <!-- Coluna esquerda: redes sociais -->
+        <div class="po-contato-redes">
+          <h3>Nossas redes sociais</h3>
+          <div class="po-redes-squares">
+            <a *ngIf="org.redes?.instagram as ig" [href]="ig" target="_blank" rel="noopener" aria-label="Instagram">
+              <ion-icon name="logo-instagram"></ion-icon>
+            </a>
+            <a *ngIf="org.redes?.facebook as fb" [href]="fb" target="_blank" rel="noopener" aria-label="Facebook">
+              <ion-icon name="logo-facebook"></ion-icon>
+            </a>
+            <a *ngIf="org.redes?.twitter as tw" [href]="tw" target="_blank" rel="noopener" aria-label="Twitter">
+              <ion-icon name="logo-twitter"></ion-icon>
+            </a>
+            <a *ngIf="org.redes?.youtube as yt" [href]="yt" target="_blank" rel="noopener" aria-label="YouTube">
+              <ion-icon name="logo-youtube"></ion-icon>
+            </a>
+            <a *ngIf="waLink(org.redes?.whatsapp) as wa" [href]="wa" target="_blank" rel="noopener" aria-label="WhatsApp">
+              <ion-icon name="logo-whatsapp"></ion-icon>
+            </a>
+            <a *ngIf="org.redes?.site as s" [href]="s" target="_blank" rel="noopener" aria-label="Site">
+              <ion-icon name="globe-outline"></ion-icon>
+            </a>
+          </div>
+
+          <!-- Contato direto (e-mail/telefone) — abaixo dos squares -->
+          <div class="po-contato-direto" *ngIf="org.email || org.telefone">
+            <a *ngIf="org.email" class="po-contato-row" [href]="'mailto:' + org.email">
+              <ion-icon name="mail-outline"></ion-icon>
+              <div>
+                <strong>E-mail</strong>
+                <span>{{ org.email }}</span>
+              </div>
+            </a>
+            <a *ngIf="org.telefone" class="po-contato-row" [href]="'tel:' + org.telefone">
+              <ion-icon name="call-outline"></ion-icon>
+              <div>
+                <strong>Telefone</strong>
+                <span>{{ org.telefone }}</span>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <!-- Coluna direita: card "Fale Conosco" -->
+        <form class="po-fale-card" (ngSubmit)="enviarFaleConosco()" *ngIf="org.email">
+          <h2>Fale Conosco</h2>
+
+          <input
+            type="text"
+            class="po-fc-input"
+            placeholder="Seu nome"
+            [(ngModel)]="fcNome"
+            name="nome"
+            required
+          />
+          <input
+            type="email"
+            class="po-fc-input"
+            placeholder="Seu e-mail"
+            [(ngModel)]="fcEmail"
+            name="email"
+            required
+          />
+          <input
+            type="tel"
+            class="po-fc-input"
+            placeholder="Telefone"
+            [(ngModel)]="fcTelefone"
+            name="telefone"
+          />
+          <input
+            type="text"
+            class="po-fc-input"
+            placeholder="Assunto"
+            [(ngModel)]="fcAssunto"
+            name="assunto"
+          />
+          <textarea
+            class="po-fc-input po-fc-textarea"
+            placeholder="Mensagem"
+            [(ngModel)]="fcMensagem"
+            name="mensagem"
+            rows="5"
+            required
+          ></textarea>
+
+          <button type="submit" class="po-fc-btn">Enviar</button>
+        </form>
+        </div>
+      </section>
+    </ng-container>
+
+    <footer class="po-footer">
+      <a href="/" class="po-brand">PlacarPro</a>
+    </footer>
+  </ng-container>
+</ion-content>

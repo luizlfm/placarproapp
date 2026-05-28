@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { AlertController, ToastController } from '@ionic/angular';
+import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { Observable } from 'rxjs';
 import { Arbitro } from '../../users/models/arbitro.model';
 import { UsersService } from '../../users/users.service';
@@ -17,12 +17,21 @@ export class ArbitragemPage {
   private readonly usersSrv = inject(UsersService);
   private readonly alertCtrl = inject(AlertController);
   private readonly toastCtrl = inject(ToastController);
+  private readonly modalCtrl = inject(ModalController);
+
+  /** Quando true, a página foi aberta como modal (em vez de via rota).
+   *  Mostra o botão de fechar no header em vez do back-button padrão. */
+  @Input() modoModal = false;
 
   readonly arbitros$: Observable<Arbitro[]> = this.usersSrv.arbitros$();
 
   editandoId: string | null = null;
   abrirForm = false;
   salvando = false;
+
+  dismiss(): Promise<boolean> {
+    return this.modalCtrl.dismiss();
+  }
 
   readonly form: FormGroup = this.fb.nonNullable.group({
     nome: ['', [Validators.required, Validators.minLength(2)]],

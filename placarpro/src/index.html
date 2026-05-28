@@ -16,14 +16,22 @@
 
   <!-- Favicon: usa logo.svg (escalável e nítido em qualquer resolução). -->
   <link rel="icon" type="image/svg+xml" href="assets/icon/logo.svg"/>
-  <!-- Fallback PNG pra browsers que não suportam SVG favicon (iOS Safari antigo). -->
-  <link rel="shortcut icon" type="image/png" href="assets/images/logo3.png"/>
-  <link rel="apple-touch-icon" href="assets/images/logo3.png"/>
+  <!-- Fallback PNGs (favicon clássico em tabs, etc.) -->
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png"/>
+  <link rel="shortcut icon" type="image/png" href="icons/favicon-32.png"/>
+  <!-- Apple Touch Icon (180x180, fundo sólido — iOS não suporta transparência) -->
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
 
   <!-- add to homescreen for ios -->
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <!-- Status bar EM PWA INSTALADO (iOS): `black-translucent` deixava a
+       status bar transparente E sobreposta ao conteúdo — TODOS os headers
+       ficavam cortados embaixo do relógio/bateria. Mudando pra `black`,
+       o iOS reserva espaço pra status bar acima do app (~47px com notch),
+       e nosso primeiro toolbar começa logo abaixo dela. Sem corte. -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
   <meta name="apple-mobile-web-app-title" content="PlacarPro"/>
   <link rel="manifest" href="manifest.webmanifest">
 </head>

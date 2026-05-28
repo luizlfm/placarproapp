@@ -2,6 +2,7 @@ import { Component, Input, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { Equipe } from '../../../campeonatos/models/equipe.model';
+import { Fase } from '../../../campeonatos/models/fase.model';
 import { Jogo, JogoStatus, parseYoutubeVideoId } from '../../../campeonatos/models/jogo.model';
 import { JogosService } from '../../../campeonatos/jogos.service';
 import {
@@ -24,6 +25,22 @@ export class JogoModalComponent implements OnInit {
   @Input() faseDefault?: string;
   /** Rodada pré-selecionada ao abrir como novo. */
   @Input() rodadaDefault?: number;
+  /** Lista de fases pra popular o select. Vazio = só fallback (texto). */
+  @Input() fases: Fase[] = [];
+  /** Lista de jogos existentes — usado pra calcular as rodadas disponíveis
+   *  por fase (max rodada existente + 1 pra criar nova). */
+  @Input() jogosExistentes: Jogo[] = [];
+  /**
+   * Modo de operação do modal:
+   *  - 'completo'    → todos os campos visíveis (default)
+   *  - 'resultado'   → só placar (gols) + botão encerrar/salvar
+   *  - 'informacoes' → tudo menos gols/placar (equipes, fase, rodada,
+   *                    data, local, status, YouTube)
+   */
+  @Input() modo: 'completo' | 'resultado' | 'informacoes' = 'completo';
+
+  get mostrarPlacar(): boolean { return this.modo !== 'informacoes'; }
+  get mostrarInformacoes(): boolean { return this.modo !== 'resultado'; }
 
   private readonly fb = inject(FormBuilder);
   private readonly jogosSrv = inject(JogosService);
@@ -75,7 +92,25 @@ export class JogoModalComponent implements OnInit {
   }
 
   get titulo(): string {
-    return this.jogoExistente ? 'Editar jogo' : 'Novo jogo';
+    if (!this.jogoExistente) return 'Novo jogo';
+    if (this.modo === 'resultado')   return 'Editar resultado';
+    if (this.modo === 'informacoes') return 'Editar informações';
+    return 'Editar jogo';
+  }
+
+  /**
+   * Lista de rodadas pra popular o select. Calcula com base nos jogos
+   * existentes da fase selecionada: pega max(rodada) e adiciona +1 pra
+   * permitir "rodada nova". Sempre tem no mínimo [1..5].
+   */
+  get rodadasDisponiveis(): number[] {
+    const faseAtual = (this.form.value.fase ?? '') as string;
+    const jogosFase = this.jogosExistentes.filter(
+      j => !faseAtual || !j.fase || j.fase === faseAtual,
+    );
+    const max = jogosFase.reduce((m, j) => Math.max(m, j.rodada ?? 0), 0);
+    const limite = Math.max(max + 1, 5);
+    return Array.from({ length: limite }, (_, i) => i + 1);
   }
 
   get mandanteSelecionado(): Equipe | undefined {

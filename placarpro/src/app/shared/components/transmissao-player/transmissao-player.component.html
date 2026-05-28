@@ -88,7 +88,7 @@
         <img [src]="bUrl" alt="" loading="lazy" />
       </div>
 
-      <!-- Controles (mute / fullscreen) — canto inferior direito. -->
+      <!-- Controles (mute / qualidade / fullscreen) — canto inferior direito. -->
       <div class="tp-controles">
         <button
           type="button"
@@ -98,6 +98,68 @@
         >
           <ion-icon [name]="mutado ? 'volume-mute-outline' : 'volume-high-outline'"></ion-icon>
         </button>
+
+        <!-- ═══ Botão de QUALIDADE (igual YouTube/Twitch) ═══
+             Mostra label da qualidade atual e abre dropdown ao clicar.
+             Permite ao viewer escolher entre Auto / Alta / Média / Baixa
+             conforme sua banda — Auto deixa LiveKit adaptar sozinho. -->
+        <div class="tp-qualidade-wrap" *ngIf="estado === 'live'">
+          <button
+            type="button"
+            class="tp-btn-ctrl tp-btn-qualidade"
+            (click)="toggleMenuQualidade()"
+            [attr.aria-label]="'Qualidade: ' + labelQualidade"
+          >
+            <ion-icon name="settings-outline"></ion-icon>
+            <span class="tp-qualidade-label">{{ labelQualidade }}</span>
+          </button>
+
+          <!-- Dropdown com opções (abre pra cima) -->
+          <div class="tp-qualidade-menu" *ngIf="menuQualidadeAberto">
+            <div class="tp-qualidade-header">Qualidade</div>
+            <button type="button" class="tp-qualidade-opt"
+                    [class.ativo]="qualidadeSelecionada === 'auto'"
+                    (click)="selecionarQualidade('auto')">
+              <ion-icon name="sparkles-outline"></ion-icon>
+              <div class="tp-qualidade-info">
+                <span class="tp-qualidade-nome">Auto</span>
+                <span class="tp-qualidade-hint">Ajusta conforme banda</span>
+              </div>
+              <ion-icon class="tp-qualidade-check" *ngIf="qualidadeSelecionada === 'auto'" name="checkmark"></ion-icon>
+            </button>
+            <button type="button" class="tp-qualidade-opt"
+                    [class.ativo]="qualidadeSelecionada === 'alta'"
+                    (click)="selecionarQualidade('alta')">
+              <ion-icon name="cellular"></ion-icon>
+              <div class="tp-qualidade-info">
+                <span class="tp-qualidade-nome">Alta</span>
+                <span class="tp-qualidade-hint">1080p+ • wifi/fibra</span>
+              </div>
+              <ion-icon class="tp-qualidade-check" *ngIf="qualidadeSelecionada === 'alta'" name="checkmark"></ion-icon>
+            </button>
+            <button type="button" class="tp-qualidade-opt"
+                    [class.ativo]="qualidadeSelecionada === 'media'"
+                    (click)="selecionarQualidade('media')">
+              <ion-icon name="cellular-outline"></ion-icon>
+              <div class="tp-qualidade-info">
+                <span class="tp-qualidade-nome">Média</span>
+                <span class="tp-qualidade-hint">720p • 4G normal</span>
+              </div>
+              <ion-icon class="tp-qualidade-check" *ngIf="qualidadeSelecionada === 'media'" name="checkmark"></ion-icon>
+            </button>
+            <button type="button" class="tp-qualidade-opt"
+                    [class.ativo]="qualidadeSelecionada === 'baixa'"
+                    (click)="selecionarQualidade('baixa')">
+              <ion-icon name="leaf-outline"></ion-icon>
+              <div class="tp-qualidade-info">
+                <span class="tp-qualidade-nome">Baixa</span>
+                <span class="tp-qualidade-hint">360p • economia de dados</span>
+              </div>
+              <ion-icon class="tp-qualidade-check" *ngIf="qualidadeSelecionada === 'baixa'" name="checkmark"></ion-icon>
+            </button>
+          </div>
+        </div>
+
         <button
           type="button"
           class="tp-btn-ctrl"

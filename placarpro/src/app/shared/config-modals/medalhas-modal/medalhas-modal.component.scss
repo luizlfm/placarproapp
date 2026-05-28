@@ -6,6 +6,32 @@
   --padding-bottom: 28px;
 }
 
+/* ===== Footer padrão do sistema =====
+   Cancelar (lixeira vermelho) + Salvar (check navy) lado a lado, pill.
+   Mesma estética dos modais editar-informações, criar-noticia,
+   exibição, locais etc. */
+ion-footer ion-toolbar {
+  --background: #fff;
+  --border-color: #ececef;
+}
+
+.acoes-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+  background: #fff;
+
+  .btn-acao {
+    margin: 0;
+    width: 100%;
+    --border-radius: 999px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
 .med-intro {
   margin: 0 0 18px;
   font-size: 14px;

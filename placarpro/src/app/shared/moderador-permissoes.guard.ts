@@ -3,6 +3,7 @@ import { CanActivateFn, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ToastController } from '@ionic/angular';
 import { ModeradorPermissoesService } from './moderador-permissoes.service';
+import { AuthService } from '../auth/auth.service';
 
 /**
  * Guards que bloqueiam acesso a rotas administrativas baseado nas
@@ -45,6 +46,7 @@ function criarGuard(
   msgErro: string,
 ): CanActivateFn {
   return async (route) => {
+    const auth = inject(AuthService);
     const perms = inject(ModeradorPermissoesService);
     const router = inject(Router);
     const toastCtrl = inject(ToastController);
@@ -52,7 +54,22 @@ function criarGuard(
     const campeonatoId = buscarCampeonatoId(route);
     if (!campeonatoId) return router.parseUrl('/app/meus-campeonatos');
 
-    const efetivas = await firstValueFrom(perms.efetivas$(campeonatoId));
+    // Garante que o Firebase Auth terminou de hidratar antes de calcular
+    // permissões — sem isto, em F5 o `efetivas$` calcula com `uid =
+    // undefined` (estado pré-hidratação) e retorna "sem acesso", redirecionando
+    // o usuário pra `inicio` e desviando ele da página em que estava.
+    await auth.waitForAuthInit();
+
+    let efetivas;
+    try {
+      efetivas = await firstValueFrom(perms.efetivas$(campeonatoId));
+    } catch (err) {
+      // Erro transient (Firestore ainda carregando, perda de rede momentânea
+      // etc.) — libera. Firestore Rules ainda protege os dados de quem
+      // realmente não tem permissão; apenas a URL é mantida no F5.
+      console.warn('[moderadorPermissoesGuard] erro lendo permissão — liberando', err);
+      return true;
+    }
     if (efetivas[perm]) return true;
 
     // Sem permissão → toast + redireciona pra Início do campeonato (que

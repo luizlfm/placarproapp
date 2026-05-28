@@ -1,12 +1,19 @@
 <ion-header class="no-print">
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
-      <ion-button (click)="voltar()" aria-label="Voltar">
-        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      <ion-button (click)="voltar()" [attr.aria-label]="isModal ? 'Fechar' : 'Voltar'">
+        <ion-icon
+          slot="icon-only"
+          [name]="isModal ? 'close-outline' : 'arrow-back-outline'"
+        ></ion-icon>
       </ion-button>
     </ion-buttons>
     <ion-title>Súmula</ion-title>
     <ion-buttons slot="end">
+      <ion-button (click)="baixarPdf()" aria-label="Baixar PDF">
+        <ion-icon slot="start" name="download-outline"></ion-icon>
+        <span class="tb-label">PDF</span>
+      </ion-button>
       <ion-button (click)="imprimir()" aria-label="Imprimir">
         <ion-icon slot="start" name="print-outline"></ion-icon>
         <span class="tb-label">Imprimir</span>
@@ -16,6 +23,26 @@
 </ion-header>
 
 <ion-content>
+  <div class="sumula-folha-host"
+       [class.is-modal]="isModal"
+       [class.tem-preview]="!!previewImagemUrl"
+       [class.gerando-preview]="isModal && !previewImagemUrl && gerandoPreviewMobile">
+
+    <!-- ═══ Mobile-modal: preview renderizado como IMAGEM (pixel-perfect,
+         idêntico ao PDF). Usado em vez do HTML rotacionado pra evitar
+         problemas de CSS (vertical-text, colunas desalinhadas). O HTML
+         continua existindo no DOM (com visibility:hidden via CSS) pra
+         imprimir/baixarPdf reutilizarem. ═══ -->
+    <img *ngIf="isModal && previewImagemUrl"
+         class="sumula-preview-img"
+         [src]="previewImagemUrl"
+         alt="Súmula renderizada" />
+    <div *ngIf="isModal && !previewImagemUrl && gerandoPreviewMobile"
+         class="sumula-preview-loading">
+      <ion-spinner name="crescent"></ion-spinner>
+      <span>Renderizando súmula...</span>
+    </div>
+
   <div class="sumula-folha" *ngIf="sumula$ | async as s; else carregando">
 
     <!-- ============== Faixa do título com logos ============== -->
@@ -345,6 +372,7 @@
       [intervaloMs]="0"
     ></app-banner-site-faixa>
   </div>
+  </div><!-- /.sumula-folha-host -->
 
   <ng-template #carregando>
     <div class="loading"><ion-spinner name="dots"></ion-spinner></div>

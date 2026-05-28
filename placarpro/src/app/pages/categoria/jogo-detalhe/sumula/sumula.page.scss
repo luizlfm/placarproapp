@@ -5,6 +5,36 @@
 
 ion-content {
   --background: #f3f4f6;
+
+  /* No modo modal a folha tem 290mm (~1097px) — bem mais larga que
+     uma tela mobile. Liberar scroll horizontal no ion-content é
+     essencial pra o usuário poder panar pela súmula no celular sem
+     que o layout seja "comprimido" e quebre. Em desktop fullscreen
+     o modal tem 95vw, suficiente pra caber a folha em telas ≥ 1100px;
+     em telas menores o scroll horizontal ajuda também. */
+  --overflow: auto;
+}
+
+/* Wrapper da folha — no desktop é só um container flex pra centralizar.
+   No mobile em modo modal, vira o "stage" da rotação 90° que faz a
+   súmula (originalmente paisagem A4) ser exibida verticalmente. */
+.sumula-folha-host {
+  display: flex;
+  justify-content: center;
+
+  &.is-modal {
+    @media (max-width: 768px) {
+      /* Container do stage rotacionado — precisa de altura suficiente
+         pra acomodar a folha rotacionada (que visualmente fica com
+         altura = largura original ≈ 290mm). */
+      position: relative;
+      width: 100vw;
+      min-height: calc(100vh - 56px); /* viewport menos toolbar */
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0;
+    }
+  }
 }
 
 .sumula-folha {
@@ -12,13 +42,296 @@ ion-content {
   margin: 12px auto;
   padding: 6mm;
   width: 290mm;
-  max-width: 100%;
+  /* Antes era `max-width: 100%` — isso forçava a folha a encolher pra
+     caber no container e quebrava o layout (tabelas viravam linhas
+     truncadas). Removido: a folha mantém seu tamanho natural de A4
+     paisagem e o container scrolla horizontalmente quando necessário. */
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   color: #000;
   font-family: 'Arial', 'Helvetica', sans-serif;
   font-size: 10px;
   line-height: 1.15;
+
+  /* No mobile (modal fullscreen), encosta a folha no topo sem margem
+     pra maximizar o espaço útil de leitura. */
+  @media (max-width: 768px) {
+    margin: 0 auto;
+  }
 }
+
+/* ════════ Rotação 90° no mobile (modo modal) ════════
+   A súmula é desenhada em A4 paisagem (290mm × ~200mm). Em celular
+   portrait, mostrá-la "deitada" desperdiça espaço — rotacionar 90°
+   faz a folha caber verticalmente, ocupando bem a tela.
+
+   Estratégia: posição absoluta com origem no canto superior-esquerdo
+   do container, transformação `rotate(90deg)` + scale calculado pra
+   que a altura da folha rotacionada (= largura original 290mm) caiba
+   na altura útil da viewport. */
+/* ════════ Preview como IMAGEM (modo modal — mobile + web) ════════
+   Quando `previewImagemUrl` é setada pelo TS, o template renderiza
+   uma `<img class="sumula-preview-img">` com o PNG capturado da folha
+   em layout WEB (off-screen). Isso garante que a visualização seja
+   IDÊNTICA ao PDF gerado — sem problemas de CSS mobile (table-layout,
+   `.vertical-text` empurrando colunas, etc).
+
+   - A `.sumula-folha` HTML continua no DOM (necessário pra
+     imprimir/baixarPdf), mas fica `visibility: hidden` por baixo da img.
+   - Em mobile, a img é rotacionada 90° + escalada pra caber em portrait.
+   - Em web, a img é exibida em tamanho natural com box-shadow.            */
+
+/* ─── MODO WEB (desktop) — img em tamanho natural ─── */
+.sumula-folha-host.is-modal.tem-preview .sumula-folha,
+.sumula-folha-host.is-modal.gerando-preview .sumula-folha {
+  /* Em web (com preview pronta OU gerando) escondemos o HTML — a img
+     preview é a referência visual única (pixel-perfect ao PDF). HTML
+     continua no DOM (hidden) pra imprimir/baixarPdf reutilizarem o clone.
+     Com `gerando-preview`, também esconde durante o loading pra não
+     mostrar o HTML "cru" lado a lado com o spinner. */
+  visibility: hidden !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -10000px !important;
+}
+
+/* Loading do preview no DESKTOP — centralizado dentro do host. */
+.sumula-folha-host.is-modal.gerando-preview {
+  min-height: 60vh;
+  align-items: center;
+}
+
+.sumula-folha-host.is-modal .sumula-preview-img {
+  display: block;
+  width: 290mm;           /* tamanho A4 paisagem natural */
+  max-width: 100%;
+  height: auto;
+  margin: 12px auto;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.sumula-folha-host.is-modal .sumula-preview-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: var(--ion-color-primary, #1c2e3d);
+  font-size: 14px;
+  font-weight: 500;
+
+  ion-spinner {
+    width: 40px;
+    height: 40px;
+    --color: var(--ion-color-primary, #1c2e3d);
+  }
+}
+
+/* ─── MODO MOBILE — img rotacionada 90° + escalada pra portrait ─── */
+@media (max-width: 768px) {
+  .sumula-folha-host.is-modal.tem-preview .sumula-folha {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  .sumula-folha-host.is-modal .sumula-preview-img {
+    --user-zoom: 1;
+    --user-pan-x: 0px;
+    --user-pan-y: 0px;
+    /* Calcula scale máximo pra preencher a viewport. Após `rotate(90deg)`:
+       - visual width = altura natural da img (≈ 200mm)
+       - visual height = largura natural da img (290mm)
+       Queremos: max(width_visual ≤ 100vw, height_visual ≤ 100vh - 56px)
+       Margem 4vw + 4vh pra não colar nas bordas. */
+    --rot-scale: min(
+      calc((100vh - 56px - 4vh) / 290mm),
+      calc((100vw - 4vw) / 200mm)
+    );
+    display: block;
+    width: 290mm !important;
+    max-width: none !important;
+    height: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin: 0;
+    background: #fff;
+    transform-origin: center center;
+    transform:
+      translate(-50%, -50%)
+      translate(var(--user-pan-x), var(--user-pan-y))
+      rotate(90deg)
+      scale(calc(var(--rot-scale) * var(--user-zoom)));
+    touch-action: none;
+    will-change: transform;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .sumula-folha-host.is-modal .sumula-preview-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--ion-color-primary, #1c2e3d);
+    font-size: 14px;
+    font-weight: 500;
+    background: #f7f7f7;
+    z-index: 5;
+
+    ion-spinner {
+      width: 40px;
+      height: 40px;
+      --color: var(--ion-color-primary, #1c2e3d);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .sumula-folha-host.is-modal {
+    .sumula-folha {
+      /* Calcula scale pra encaixar 290mm (vira altura após rotação)
+         na altura útil (~100vh menos toolbar). Usa min() pra também
+         garantir que a folha rotacionada não exceda largura. A folha
+         tem altura natural ~200mm — vira largura visual após rotação. */
+      --rot-scale: min(
+        calc((100vh - 56px) / 290mm),
+        calc(96vw / 200mm)
+      );
+      /* Variáveis controladas pelo TS via touch (pinch + pan).
+         Inicializadas neutras: zoom 1×, pan zero. */
+      --user-zoom: 1;
+      --user-pan-x: 0px;
+      --user-pan-y: 0px;
+      /* Transform composto: centraliza, aplica pan do usuário, rotaciona
+         pra orientação portrait e aplica scale (base × zoom do usuário). */
+      transform:
+        translate(-50%, -50%)
+        translate(var(--user-pan-x), var(--user-pan-y))
+        rotate(90deg)
+        scale(calc(var(--rot-scale) * var(--user-zoom)));
+      transform-origin: center center;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      margin: 0;
+      /* `touch-action: none` desliga o tratamento padrão de gestos do
+         browser na folha (que ignoraria zoom por causa do
+         `user-scalable=no` global) — assim conseguimos capturar
+         touchstart/move/end pra implementar pinch + pan custom. */
+      touch-action: none;
+      will-change: transform;
+    }
+  }
+}
+
+/* ════════ @media print: ANULA rotação/scale/posicionamento ════════
+   Durante impressão (ou geração de PDF via html2canvas com cloning),
+   a folha precisa sair na orientação NATURAL (A4 paisagem, sem
+   rotação 90°, sem scale do zoom mobile, sem pan do usuário). Senão
+   o PDF impresso sai rotacionado/cortado/encolhido.
+
+   Aplicado também via `body.sumula-printing` pra cobrir o caminho
+   do html2canvas — ele clona o DOM sem disparar @media print, então
+   precisamos da classe no body antes da snapshot. */
+@media print {
+  .sumula-folha-host.is-modal .sumula-folha,
+  .sumula-folha-host .sumula-folha {
+    transform: none !important;
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    margin: 0 auto !important;
+    --user-zoom: 1 !important;
+    --user-pan-x: 0px !important;
+    --user-pan-y: 0px !important;
+    --rot-scale: 1 !important;
+    touch-action: auto !important;
+    will-change: auto !important;
+  }
+  /* Esconde o header da modal (toolbar com botão fechar/PDF/imprimir)
+     na impressão — só a folha pura sai. */
+  ion-header { display: none !important; }
+}
+
+body.sumula-printing {
+  .sumula-folha-host.is-modal .sumula-folha,
+  .sumula-folha-host .sumula-folha {
+    transform: none !important;
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    margin: 0 auto !important;
+    --user-zoom: 1 !important;
+    --user-pan-x: 0px !important;
+    --user-pan-y: 0px !important;
+    --rot-scale: 1 !important;
+  }
+
+  /* DIMENSÕES FIXAS — anti-distorção (mesmas regras do @media print).
+     Aplicadas via classe `sumula-printing` no body antes do html2canvas
+     capturar. Sem isso, o DOM clonado pelo html2canvas usa as regras
+     mobile (transform/scale) e gera PDF distorcido. */
+  .sumula-folha {
+    width: 290mm !important;
+    max-width: 290mm !important;
+    min-width: 290mm !important;
+    padding: 6mm !important;
+    box-sizing: border-box !important;
+  }
+  .sumula-folha table {
+    table-layout: fixed !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  .sm-titulo-faixa {
+    display: grid !important;
+    grid-template-columns: 56px 1fr 96px !important;
+  }
+  .sm-equipe-cabecalho {
+    display: grid !important;
+    grid-template-columns: 56px 1fr 60px 110px !important;
+  }
+  .sm-grade-numerada {
+    display: grid !important;
+    grid-template-columns: repeat(13, 1fr) !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+  .sm-jogadores th { height: 14px !important; }
+  .sm-jogadores td { height: 15px !important; }
+  .sm-jogadores tbody tr.comissao-row td { height: 16px !important; }
+}
+
+/* ════════ Estabilidade do layout no mobile (apenas dimensões base) ════════
+   Trava só largura e padding da folha — sem forçar `table-layout: fixed`
+   nem grid templates. As percentages naturais das colunas (.td-acum 3%,
+   .td-falta 3%, etc) e os colspans cuidam do alinhamento das células
+   ACUMULATIVAS/FALTAS/PEDIDO DE TEMPO. Forçar table-layout:fixed estava
+   quebrando a distribuição de larguras nas linhas com colspan diferente
+   (PEDIDO DE TEMPO, TÉCNICO/CAPITÃO). */
+@media (max-width: 768px) {
+  .sumula-folha-host.is-modal {
+    .sumula-folha {
+      width: 290mm !important;
+      max-width: 290mm !important;
+      min-width: 290mm !important;
+      padding: 6mm !important;
+      box-sizing: border-box !important;
+    }
+  }
+}
+
+/* Bordas mantidas em 1px (largura natural) no PDF/Impressão.
+   Tentativa anterior usou `border-width: 0.5px !important` mas em
+   algumas renderizações de print/PDF a 0.5px é arredondada pra 0 e
+   bordas internas (das ACUMULATIVAS, da grade 1-26) sumiam. 1px é
+   o sweet spot — fino o bastante pra parecer leve, grosso o bastante
+   pra renderizar consistentemente em qualquer driver de impressão. */
 
 /* ================ Faixa do título com logos ================ */
 .sm-titulo-faixa {
@@ -231,7 +544,7 @@ ion-content {
   }
 
   .nome-equipe {
-    font-size: 11.5px;
+    font-size: 8.5px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.3px;
@@ -330,8 +643,8 @@ ion-content {
 
 .mini-head {
   font-size: 8px;
-  color: #555;
-  font-weight: 600;
+  color: #000;
+  font-weight: 700;
 }
 
 /* PEDIDO DE TEMPO embutido nas linhas 3-4 do body (sobre as ACUMULATIVAS) */
@@ -365,7 +678,8 @@ ion-content {
 .sm-jogadores tbody tr.comissao-row td {
   height: 16px;
   background: #fff;
-  font-weight: 100;
+  font-weight: 700;
+  color: #000;
 }
 
 .td-comissao-lbl {
@@ -394,10 +708,12 @@ ion-content {
   letter-spacing: 0.5px;
 }
 
-/* Linha vazia (sem jogador): mantém estrutura mas com fonte mais clara */
+/* Linha vazia (sem jogador): mantém estrutura mas com texto preto sólido
+   pra que os números 1..5 das FALTAS/ACUMULATIVAS fiquem nítidos na
+   impressão e no PDF. (Antes era #999 + weight 100 — saía opaco). */
 .sm-jogadores tbody tr.vazia td {
-  color: #999;
-  font-weight: 100;
+  color: #000;
+  font-weight: 600;
 }
 
 /* ================ Comissão técnica ================ */
@@ -512,10 +828,15 @@ ion-content {
   }
 
   .sumula-folha {
-    margin: 0;
-    padding: 0;
-    box-shadow: none;
-    width: 100%;
+    /* Mantém `width: 290mm` natural — com `@page margin: 5mm` a folha
+       cabe certinho na A4 paisagem (297mm - 10mm = 287mm útil, e o
+       browser scaleia 290→287mm sem distorção visível).
+       NÃO força `padding: 0` (estava fazendo o conteúdo colar nas
+       bordas e dando aparência "compressa"). NÃO força `width: 100%`
+       (estava encolhendo dentro do ion-modal antes do override do
+       global.scss e o resultado ficava pequeno no canto da folha). */
+    margin: 0 auto !important;
+    box-shadow: none !important;
   }
 
   /* Cores e bordas saem na impressão */
@@ -524,4 +845,57 @@ ion-content {
     print-color-adjust: exact !important;
     color-adjust: exact !important;
   }
+
+  /* ━━━━━━ Bordas — preserva o desenho original ━━━━━━
+     Cada célula da grade tem APENAS `border-right + border-bottom`,
+     e o container `.sm-grade-numerada` provê o `border` externo.
+     Antes eu forçava `border-right/bottom !important` em TODAS as
+     células da grade — isso DOBRAVA a borda nas células da última
+     coluna/linha (que NÃO devem ter border-right/bottom). Resultado:
+     algumas linhas saíam 2× mais grossas que outras. Removido. */
+  .sm-jogadores,
+  .sm-jogadores th,
+  .sm-jogadores td {
+    border-collapse: collapse !important;
+  }
+
+  /* ━━━━━━ DIMENSÕES FIXAS — anti-distorção no print ━━━━━━
+     Trava largura/altura da folha e suas estruturas internas em
+     valores explícitos pra que o rendering do print seja IDÊNTICO
+     ao da tela. Sem isso, valores em `%` e `1fr` se reajustam
+     quando o container do modal/print muda de tamanho — colunas
+     entortavam, células ACUMULATIVAS encolhiam, grade 1-26 ficava
+     distorcida. */
+  .sumula-folha {
+    width: 290mm !important;
+    max-width: 290mm !important;
+    min-width: 290mm !important;
+    padding: 6mm !important;
+    box-sizing: border-box !important;
+  }
+  /* Tabelas com layout fixo (column widths são respeitados, não
+     re-calculados pela ASCII width do conteúdo). */
+  .sumula-folha table {
+    table-layout: fixed !important;
+    width: 100% !important;
+  }
+  /* Grids internos com mesmas proporções da tela. */
+  .sm-titulo-faixa {
+    display: grid !important;
+    grid-template-columns: 56px 1fr 96px !important;
+  }
+  .sm-equipe-cabecalho {
+    display: grid !important;
+    grid-template-columns: 56px 1fr 60px 110px !important;
+  }
+  .sm-grade-numerada {
+    display: grid !important;
+    grid-template-columns: repeat(13, 1fr) !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+  /* Altura das linhas — sem isso, células podiam encolher em print. */
+  .sm-jogadores th { height: 14px !important; }
+  .sm-jogadores td { height: 15px !important; }
+  .sm-jogadores tbody tr.comissao-row td { height: 16px !important; }
 }

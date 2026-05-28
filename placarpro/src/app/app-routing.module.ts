@@ -36,6 +36,16 @@ const routes: Routes = [
     loadChildren: () => import('./shell/shell.module').then(m => m.ShellPageModule),
   },
 
+  // Página pública do ORGANIZADOR (estilo copafacil.com/{slug}): perfil
+  // + grid de campeonatos públicos dele. Não exige login.
+  {
+    path: 'org/:slug',
+    loadChildren: () =>
+      import('./pages/publico-organizador/publico-organizador.module').then(
+        m => m.PublicoOrganizadorPageModule,
+      ),
+  },
+
   // Página pública de um campeonato — link compartilhável: /p/:slug (alias antigo)
   {
     path: 'p/:slug',

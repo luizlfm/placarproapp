@@ -31,7 +31,6 @@ export const COLUNAS_EQUIPES_PADRAO: ColunaEquipe[] = [
   { id: 'nome', label: 'Nome', selecionado: true },
   { id: 'escudo', label: 'Escudo', selecionado: true },
   { id: 'tecnico', label: 'Técnico', selecionado: true },
-  { id: 'link', label: 'Link para editar a equipe', selecionado: false },
   { id: 'pontos', label: 'Pontos', selecionado: false },
   { id: 'jogos', label: 'Jogos', selecionado: false },
   { id: 'vitorias', label: 'Vitórias', selecionado: false },
@@ -71,6 +70,18 @@ export class ColunasEquipesModalComponent implements OnInit {
 
   toggle(c: ColunaEquipe): void {
     c.selecionado = !c.selecionado;
+  }
+
+  marcarTodas(): void {
+    this.colunas = this.colunas.map(c => ({ ...c, selecionado: true }));
+  }
+
+  limpar(): void {
+    this.colunas = this.colunas.map(c => ({ ...c, selecionado: false }));
+  }
+
+  qtdMarcadas(): number {
+    return this.colunas.filter(c => c.selecionado).length;
   }
 
   salvar(): void {

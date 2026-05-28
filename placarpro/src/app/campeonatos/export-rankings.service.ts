@@ -5,6 +5,7 @@ import html2canvas from 'html2canvas';
 import { LinhaRanking, TipoRanking } from './rankings.service';
 import { Campeonato } from './campeonato.model';
 import { Categoria } from './categoria.model';
+import { salvarPdf } from '../shared/pdf-download.helper';
 
 interface ExportContext {
   campeonato?: Campeonato;
@@ -148,7 +149,8 @@ export class ExportRankingsService {
     pdf.text('Gerado por PlacarPro · placarpro.app', pageW / 2, pageH - 8, { align: 'center' });
 
     const fname = this.fileName(ctx, 'pdf');
-    pdf.save(fname);
+    // iOS Safari abre PDF inline — salvarPdf usa Web Share API no iOS.
+    await salvarPdf(pdf, fname);
   }
 
   /** Gera imagem PNG estilo poster (canva-like) renderizando um template off-screen. */

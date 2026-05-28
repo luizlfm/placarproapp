@@ -18,6 +18,7 @@ import { ModalController, ToastController } from '@ionic/angular';
 import { ViewerModalComponent } from '../../shared/midia/viewer/viewer.modal';
 import { firstValueFrom } from 'rxjs';
 import { NavBackService } from '../../shared/nav-back.service';
+import { RefreshService } from '../../shared/refresh.service';
 
 /** Filtro disponível no chip-bar acima do grid de mídias. */
 type FiltroMidia = 'todas' | MidiaTipo;
@@ -63,6 +64,7 @@ export class PublicoPage implements OnInit {
   private readonly toastCtrl = inject(ToastController);
   private readonly modalCtrl = inject(ModalController);
   private readonly navBack = inject(NavBackService);
+  private readonly refreshSrv = inject(RefreshService);
 
   /** Viewport mobile? Detectado uma vez no boot + atualizado em resize.
    *  Usado pra escolher entre `logoUrl`/`logoMobileUrl` e
@@ -79,10 +81,13 @@ export class PublicoPage implements OnInit {
 
   /** Retorna a capa apropriada pra viewport. Considera também o campo
    *  legacy `bannerUrl` pra campeonatos antigos. */
-  capaCamp(c: Campeonato | null | undefined): string | null {
-    if (!c) return null;
+  /** Banner padrão exibido quando o campeonato não tem capa cadastrada. */
+  readonly bannerPadrao = 'assets/branding/banner-default.svg';
+
+  capaCamp(c: Campeonato | null | undefined): string {
+    if (!c) return this.bannerPadrao;
     if (this.ehMobile && c.capaMobileUrl) return c.capaMobileUrl;
-    return c.capaUrl ?? c.bannerUrl ?? null;
+    return c.capaUrl || c.bannerUrl || this.bannerPadrao;
   }
 
   campeonato?: Campeonato;
@@ -144,6 +149,17 @@ export class PublicoPage implements OnInit {
     try {
       const c = await this.campSrv.getBySlug(slug);
       if (!c) {
+        // Fallback: pode ser slug de ORGANIZADOR (estilo copafacil.com/y7ah).
+        // Se bater num user.slug, redireciona pra `/org/:slug`.
+        try {
+          const org = await this.usersSrv.getBySlug(slug);
+          if (org) {
+            await this.router.navigateByUrl(`/org/${slug}`, { replaceUrl: true });
+            return;
+          }
+        } catch (err) {
+          console.warn('[Publico] fallback getBySlug user falhou', err);
+        }
         this.erro = true;
         return;
       }
@@ -152,6 +168,32 @@ export class PublicoPage implements OnInit {
         return;
       }
       this.campeonato = c;
+
+      // Campeonato "único" não tem seleção de categoria — mesmo fluxo do
+      // admin (`inicioRedirectGuard`). Redireciona direto pra
+      // /:slug/categoria/:catId pra pular essa tela.
+      if (c.tipo === 'unico' && c.id) {
+        const slugOrId = slug || c.id;
+        let catId = c.categoriaPrincipalId;
+        if (!catId) {
+          // Fallback (campeonatos antigos sem o campo denormalizado).
+          try {
+            const cats = await firstValueFrom(this.catSrv.list$(c.id));
+            if (cats.length && cats[0].id) {
+              catId = cats[0].id;
+              // Migração automática fire-and-forget — não bloqueia o redirect.
+              this.campSrv
+                .atualizar(c.id, { categoriaPrincipalId: catId })
+                .catch(() => { /* ignora */ });
+            }
+          } catch { /* segue sem catId — cai pra renderização da PublicoPage */ }
+        }
+        if (catId) {
+          await this.router.navigate(['/', slugOrId, 'categoria', catId], { replaceUrl: true });
+          return;
+        }
+      }
+
       this.categorias$ = this.catSrv.list$(c.id!);
       // Mídias do nível do campeonato (campeonatos/{id}/midias).
       // Cobrimos com `catchError` pra evitar que rejeições silenciosas das
@@ -258,17 +300,11 @@ export class PublicoPage implements OnInit {
     return getModalidade(c.modalidade);
   }
 
-  /** Pull-to-refresh: arrasta pra baixo pra recarregar a tela. Usa
-   *  `location.reload()` como solução simples e universal — recarrega
-   *  dados, imagens e CSS atualizados sem precisar reinscrever em cada
-   *  observable individualmente. */
+  /** Pull-to-refresh: recarrega APENAS a rota atual (via Angular Router) —
+   *  sem `location.reload()`. Mantém o usuário onde está em vez de cair
+   *  na rota fallback. */
   async onRefresh(ev: CustomEvent): Promise<void> {
-    try {
-      window.location.reload();
-    } finally {
-      const target = ev?.target as { complete?: () => void } | null;
-      target?.complete?.();
-    }
+    await this.refreshSrv.refreshAtual(ev);
   }
 
   async clickSeguir(): Promise<void> {

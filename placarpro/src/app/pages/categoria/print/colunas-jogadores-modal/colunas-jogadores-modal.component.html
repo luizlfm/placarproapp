@@ -41,8 +41,26 @@
 
 <ion-footer class="cjm-footer">
   <ion-toolbar>
-    <ion-buttons slot="end">
-      <ion-button color="primary" (click)="salvar()">Salvar</ion-button>
-    </ion-buttons>
+    <div class="cjm-footer-actions">
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="danger"
+        fill="outline"
+        (click)="fechar()"
+      >
+        <ion-icon slot="start" name="close-outline"></ion-icon>
+        Cancelar
+      </ion-button>
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="primary"
+        (click)="salvar()"
+      >
+        <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+        Salvar
+      </ion-button>
+    </div>
   </ion-toolbar>
 </ion-footer>

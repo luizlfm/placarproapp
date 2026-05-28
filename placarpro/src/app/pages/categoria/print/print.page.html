@@ -1,4 +1,8 @@
-<ion-header class="no-print">
+<!-- `force-mobile-header` força exibir esse header também no mobile,
+     mesmo dentro do shell-layout que esconderia ion-headers de child
+     pages. Necessário pra ter acesso aos botões Baixar PDF e Imprimir
+     no mobile. -->
+<ion-header class="no-print force-mobile-header">
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
       <ion-button (click)="voltar()" aria-label="Voltar">
@@ -7,29 +11,20 @@
     </ion-buttons>
     <ion-title>{{ tituloTipo() }}</ion-title>
     <ion-buttons slot="end">
-      <!-- Tipo equipes: botão "Exportar" abre popover com opções
-           Tipo jogadores: botão "Colunas" abre modal de seleção + Imprimir
-           Demais tipos: só Imprimir direto -->
-      <ng-container *ngIf="tipo === 'equipes'; else outrosTipos">
-        <ion-button (click)="abrirPopoverExportar($event)" aria-label="Exportar">
-          <ion-icon slot="start" name="download-outline"></ion-icon>
-          <span class="tb-label">Exportar</span>
-        </ion-button>
-      </ng-container>
-      <ng-template #outrosTipos>
-        <ion-button
-          *ngIf="tipo === 'jogadores'"
-          (click)="abrirModalColunasJogadores()"
-          aria-label="Colunas"
-        >
-          <ion-icon slot="start" name="options-outline"></ion-icon>
-          <span class="tb-label">Colunas</span>
-        </ion-button>
-        <ion-button (click)="imprimir()" aria-label="Imprimir">
-          <ion-icon slot="start" name="print-outline"></ion-icon>
-          <span class="tb-label">Imprimir</span>
-        </ion-button>
-      </ng-template>
+      <!-- Equipes tem botão extra "Exportar" (CSV/colunas).
+           Demais tipos vão direto pros 2 botões PDF + Imprimir. -->
+      <ion-button *ngIf="tipo === 'equipes'" (click)="abrirPopoverExportar($event)" aria-label="Exportar">
+        <ion-icon slot="start" name="download-outline"></ion-icon>
+        <span class="tb-label">Exportar</span>
+      </ion-button>
+      <ion-button (click)="baixarPdfRelatorio()" aria-label="Baixar PDF">
+        <ion-icon slot="start" name="document-text-outline"></ion-icon>
+        <span class="tb-label">PDF</span>
+      </ion-button>
+      <ion-button (click)="imprimir()" aria-label="Imprimir">
+        <ion-icon slot="start" name="print-outline"></ion-icon>
+        <span class="tb-label">Imprimir</span>
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -45,18 +40,26 @@
        Renderiza só quando view$ já tem dados (precisa
        da lista de equipes pra montar os chips).
        ============================================ -->
+  <!-- ============================================
+       BARRA DE CONTROLES (apenas tipo='jogadores')
+       Chips de Colunas inline + botão "Equipes" abrindo modal +
+       atalhos "Baixar PDF" / "Imprimir" no final. Tudo escondido
+       na hora da impressão via classe `no-print`.
+       ============================================ -->
   <ng-container *ngIf="tipo === 'jogadores' && (view$ | async) as v2">
     <div
       class="ctrl-bar no-print"
       *ngIf="inicializarEquipesJog(v2.gruposJogadores)"
     >
-      <!-- Linha 1 — colunas -->
+      <!-- Linha 1 — colunas (desktop: chips inline; mobile: botão modal) -->
       <div class="ctrl-row">
         <div class="ctrl-label">
           <ion-icon name="options-outline"></ion-icon>
           <span>Colunas:</span>
         </div>
-        <div class="ctrl-chips">
+
+        <!-- DESKTOP: chips inline + atalhos -->
+        <div class="ctrl-chips hide-mobile">
           <button
             *ngFor="let c of colunasJogadores; trackBy: trackByColunaJog"
             class="ctrl-chip"
@@ -68,13 +71,26 @@
             <span>{{ c.label }}</span>
           </button>
         </div>
-        <div class="ctrl-actions">
+        <div class="ctrl-actions hide-mobile">
           <button class="ctrl-btn ghost" type="button" (click)="marcarTodasColunasJogadores(true)">Marcar todas</button>
           <button class="ctrl-btn ghost" type="button" (click)="marcarTodasColunasJogadores(false)">Limpar</button>
         </div>
+
+        <!-- MOBILE: botão único que abre o modal de colunas -->
+        <div class="ctrl-chips hide-desktop">
+          <button
+            class="ctrl-chip ctrl-chip-equipe ctrl-chip-modal"
+            type="button"
+            (click)="abrirModalColunasJogadores()"
+          >
+            <ion-icon name="options-outline"></ion-icon>
+            <span>Selecionar colunas</span>
+            <span class="cce-qtd">{{ qtdColunasJogSelecionadas() }}/{{ colunasJogadores.length }}</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Linha 2 — equipes -->
+      <!-- Linha 2 — equipes (abre MODAL em vez de chips inline) -->
       <div class="ctrl-row ctrl-row-2">
         <div class="ctrl-label">
           <ion-icon name="shield-outline"></ion-icon>
@@ -82,32 +98,24 @@
         </div>
         <div class="ctrl-chips">
           <button
-            *ngFor="let g of v2.gruposJogadores; trackBy: trackByEquipeId"
-            class="ctrl-chip ctrl-chip-equipe"
+            class="ctrl-chip ctrl-chip-equipe ctrl-chip-modal"
             type="button"
-            [class.on]="equipeJogAtiva(g.equipe.id)"
-            (click)="alternarEquipeJog(g.equipe.id)"
+            (click)="abrirModalEquipesJog(v2.gruposJogadores)"
           >
-            <span class="cce-shield">
-              <img *ngIf="g.equipe.logoUrl; else cceIcon" [src]="g.equipe.logoUrl" alt="" />
-              <ng-template #cceIcon><ion-icon name="shield-outline"></ion-icon></ng-template>
-            </span>
-            <span>{{ g.equipe.nome }}</span>
-            <span class="cce-qtd">{{ g.jogadores.length }}</span>
+            <ion-icon name="shield-outline"></ion-icon>
+            <span>Selecionar equipes</span>
+            <span class="cce-qtd">{{ qtdEquipesJogSelecionadas(v2.gruposJogadores) }}/{{ v2.gruposJogadores.length }}</span>
           </button>
-          <div class="ctrl-empty" *ngIf="v2.gruposJogadores.length === 0">
-            Nenhuma equipe cadastrada.
-          </div>
-        </div>
-        <div class="ctrl-actions">
-          <button class="ctrl-btn ghost" type="button" (click)="marcarTodasEquipesJog(v2.gruposJogadores, true)">Marcar todas</button>
-          <button class="ctrl-btn ghost" type="button" (click)="marcarTodasEquipesJog(v2.gruposJogadores, false)">Limpar</button>
         </div>
       </div>
 
-      <!-- Linha 3 — atalho Imprimir -->
+      <!-- Linha 3 — atalhos Baixar PDF + Imprimir -->
       <div class="ctrl-row ctrl-row-2">
         <div class="ctrl-actions push-right">
+          <button class="ctrl-btn outline" type="button" (click)="baixarPdfRelatorio()">
+            <ion-icon name="download-outline"></ion-icon>
+            Baixar PDF
+          </button>
           <button class="ctrl-btn primary solid" type="button" (click)="imprimir()">
             <ion-icon name="print-outline"></ion-icon>
             Imprimir
@@ -161,7 +169,9 @@
         <ion-icon name="options-outline"></ion-icon>
         <span>Colunas:</span>
       </div>
-      <div class="ctrl-chips">
+
+      <!-- DESKTOP: chips inline -->
+      <div class="ctrl-chips hide-mobile">
         <button
           *ngFor="let c of colunas; trackBy: trackByColuna"
           class="ctrl-chip"
@@ -175,12 +185,25 @@
           <span>{{ c.label }}</span>
         </button>
       </div>
-      <div class="ctrl-actions">
+      <div class="ctrl-actions hide-mobile">
         <button class="ctrl-btn ghost" type="button" (click)="marcarTodasColunas(true)">
           Marcar todas
         </button>
         <button class="ctrl-btn ghost" type="button" (click)="marcarTodasColunas(false)">
           Limpar
+        </button>
+      </div>
+
+      <!-- MOBILE: botão único que abre o modal de colunas -->
+      <div class="ctrl-chips hide-desktop">
+        <button
+          class="ctrl-chip ctrl-chip-equipe ctrl-chip-modal"
+          type="button"
+          (click)="abrirModalColunas()"
+        >
+          <ion-icon name="options-outline"></ion-icon>
+          <span>Selecionar colunas</span>
+          <span class="cce-qtd">{{ qtdColunasEqSelecionadas() }}/{{ colunas.length }}</span>
         </button>
       </div>
     </div>
@@ -209,9 +232,12 @@
       </button>
 
       <div class="ctrl-actions push-right">
-        <button class="ctrl-btn primary" type="button" (click)="exportarCsvPublico()">
-          <ion-icon name="grid-outline"></ion-icon>
-          Excel
+        <!-- Usa a mesma pipeline do relatório de jogadores: clone offscreen
+             em 210mm + dom-to-image-more + jsPDF. Resolve o problema do
+             corte ao gerar PDF do viewport mobile. -->
+        <button class="ctrl-btn outline" type="button" (click)="baixarPdfRelatorio()">
+          <ion-icon name="document-text-outline"></ion-icon>
+          Baixar PDF
         </button>
         <button class="ctrl-btn primary solid" type="button" (click)="imprimir()">
           <ion-icon name="print-outline"></ion-icon>

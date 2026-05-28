@@ -34,7 +34,7 @@
           <ion-icon name="arrow-back-outline"></ion-icon>
         </button>
         <div class="mh-logo">
-          <img *ngIf="logoCamp(camp) as l; else iMhBrand" [src]="l" [alt]="camp.titulo" />
+          <img skel *ngIf="logoCamp(camp) as l; else iMhBrand" [src]="l" [alt]="camp.titulo" />
           <ng-template #iMhBrand><ion-icon name="trophy-outline"></ion-icon></ng-template>
         </div>
         <div class="mh-title">{{ camp.titulo }}</div>
@@ -85,7 +85,7 @@
 
       <button class="brand" type="button" (click)="voltarHome()">
         <div class="brand-logo">
-          <img *ngIf="logoCamp(camp) as l; else iconBrand" [src]="l" [alt]="camp.titulo" />
+          <img skel *ngIf="logoCamp(camp) as l; else iconBrand" [src]="l" [alt]="camp.titulo" />
           <ng-template #iconBrand><ion-icon name="trophy-outline"></ion-icon></ng-template>
         </div>
         <div class="brand-title">{{ camp.titulo }}</div>
@@ -153,10 +153,9 @@
              categoria, ele aparece aqui — antes a página pública lia
              só do campeonato e ignorava a capa da categoria. -->
         <article class="hero-card">
-          <img
-            *ngIf="capaHero(camp) as cap"
+          <img skel
             class="hero-img"
-            [src]="cap"
+            [src]="capaHero(camp)"
             [alt]="categoria?.titulo || camp.titulo"
           />
           <div class="hero-info">
@@ -211,7 +210,7 @@
                    role="button"
                    [attr.aria-label]="'Ver detalhes da equipe ' + e.nome">
                   <div class="eq-logo-mini">
-                    <img *ngIf="e.logoUrl; else iE" [src]="e.logoUrl" [alt]="e.nome" loading="lazy" />
+                    <img skel *ngIf="e.logoUrl; else iE" [src]="e.logoUrl" [alt]="e.nome" loading="lazy" />
                     <ng-template #iE><ion-icon name="shield-outline"></ion-icon></ng-template>
                   </div>
                   <div class="eq-info">
@@ -422,7 +421,7 @@
                 <div class="placar-row">
                   <span class="time esq">
                     <span class="t-logo">
-                      <img *ngIf="j.logoMandante; else iconM" [src]="j.logoMandante" alt="" loading="lazy" />
+                      <img skel *ngIf="j.logoMandante; else iconM" [src]="j.logoMandante" alt="" loading="lazy" />
                       <ng-template #iconM><ion-icon name="shield-outline"></ion-icon></ng-template>
                     </span>
                     <span class="t-nome">{{ j.nomeMandante }}</span>
@@ -447,7 +446,7 @@
 
                   <span class="time dir">
                     <span class="t-logo">
-                      <img *ngIf="j.logoVisitante; else iconV" [src]="j.logoVisitante" alt="" loading="lazy" />
+                      <img skel *ngIf="j.logoVisitante; else iconV" [src]="j.logoVisitante" alt="" loading="lazy" />
                       <ng-template #iconV><ion-icon name="shield-outline"></ion-icon></ng-template>
                     </span>
                     <span class="t-nome">{{ j.nomeVisitante }}</span>
@@ -528,7 +527,7 @@
                           <td class="td-eq">
                             <div class="eq-cell">
                               <div class="eq-logo-mini">
-                                <img *ngIf="l.equipe.logoUrl; else iEq" [src]="l.equipe.logoUrl" loading="lazy" />
+                                <img skel *ngIf="l.equipe.logoUrl; else iEq" [src]="l.equipe.logoUrl" loading="lazy" />
                                 <ng-template #iEq><ion-icon name="shield-outline"></ion-icon></ng-template>
                               </div>
                               <span>{{ l.equipe.nome }}</span>
@@ -585,7 +584,7 @@
                     <!-- Time mandante -->
                     <div class="jcp-time">
                       <div class="jcp-logo">
-                        <img *ngIf="j.logoMandante; else iMmm" [src]="j.logoMandante" alt="" loading="lazy" />
+                        <img skel *ngIf="j.logoMandante; else iMmm" [src]="j.logoMandante" alt="" loading="lazy" />
                         <ng-template #iMmm><ion-icon name="shield-outline"></ion-icon></ng-template>
                       </div>
                       <div class="jcp-nome">{{ j.nomeMandante }}</div>
@@ -610,7 +609,7 @@
                     <!-- Time visitante -->
                     <div class="jcp-time">
                       <div class="jcp-logo">
-                        <img *ngIf="j.logoVisitante; else iVvv" [src]="j.logoVisitante" alt="" loading="lazy" />
+                        <img skel *ngIf="j.logoVisitante; else iVvv" [src]="j.logoVisitante" alt="" loading="lazy" />
                         <ng-template #iVvv><ion-icon name="shield-outline"></ion-icon></ng-template>
                       </div>
                       <div class="jcp-nome">{{ j.nomeVisitante }}</div>
@@ -701,7 +700,7 @@
               <!-- Mandante -->
               <div class="jd-team">
                 <div class="jd-team-logo">
-                  <img *ngIf="j.logoMandante; else jdLm" [src]="j.logoMandante" alt="" />
+                  <img skel *ngIf="j.logoMandante; else jdLm" [src]="j.logoMandante" alt="" />
                   <ng-template #jdLm><ion-icon name="shield-outline"></ion-icon></ng-template>
                 </div>
                 <div class="jd-team-nome">{{ j.nomeMandante }}</div>
@@ -729,7 +728,7 @@
               <!-- Visitante -->
               <div class="jd-team">
                 <div class="jd-team-logo">
-                  <img *ngIf="j.logoVisitante; else jdLv" [src]="j.logoVisitante" alt="" />
+                  <img skel *ngIf="j.logoVisitante; else jdLv" [src]="j.logoVisitante" alt="" />
                   <ng-template #jdLv><ion-icon name="shield-outline"></ion-icon></ng-template>
                 </div>
                 <div class="jd-team-nome">{{ j.nomeVisitante }}</div>
@@ -790,7 +789,7 @@
                 (click)="selecionarLadoEscalacao('mandante')"
               >
                 <span class="jd-esc-seg-logo">
-                  <img *ngIf="j.logoMandante; else iSegM" [src]="j.logoMandante" alt="" />
+                  <img skel *ngIf="j.logoMandante; else iSegM" [src]="j.logoMandante" alt="" />
                   <ng-template #iSegM><ion-icon name="shield-outline"></ion-icon></ng-template>
                 </span>
                 <span class="jd-esc-seg-nome">{{ j.nomeMandante }}</span>
@@ -802,7 +801,7 @@
                 (click)="selecionarLadoEscalacao('visitante')"
               >
                 <span class="jd-esc-seg-logo">
-                  <img *ngIf="j.logoVisitante; else iSegV" [src]="j.logoVisitante" alt="" />
+                  <img skel *ngIf="j.logoVisitante; else iSegV" [src]="j.logoVisitante" alt="" />
                   <ng-template #iSegV><ion-icon name="shield-outline"></ion-icon></ng-template>
                 </span>
                 <span class="jd-esc-seg-nome">{{ j.nomeVisitante }}</span>
@@ -823,7 +822,7 @@
                   <div class="escala-lista" *ngIf="esc.length > 0; else nadaEscM">
                     <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado">
                       <div class="foto">
-                        <img *ngIf="e.jogador.fotoUrl; else iEscM" [src]="e.jogador.fotoUrl" alt="" loading="lazy" />
+                        <img skel *ngIf="e.jogador.fotoUrl; else iEscM" [src]="e.jogador.fotoUrl" alt="" loading="lazy" />
                         <ng-template #iEscM><ion-icon name="person-circle-outline"></ion-icon></ng-template>
                       </div>
                       <span class="nome">
@@ -855,7 +854,7 @@
                   <div class="escala-lista" *ngIf="esc.length > 0; else nadaEscV">
                     <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado">
                       <div class="foto">
-                        <img *ngIf="e.jogador.fotoUrl; else iEscV" [src]="e.jogador.fotoUrl" alt="" loading="lazy" />
+                        <img skel *ngIf="e.jogador.fotoUrl; else iEscV" [src]="e.jogador.fotoUrl" alt="" loading="lazy" />
                         <ng-template #iEscV><ion-icon name="person-circle-outline"></ion-icon></ng-template>
                       </div>
                       <span class="nome">
@@ -898,12 +897,12 @@
             <!-- Linha de escudos ABAIXO do título -->
             <div class="lances-escudos-bar">
               <span class="lances-escudo lances-escudo-mand">
-                <img *ngIf="j.logoMandante; else iLEMb" [src]="j.logoMandante" [alt]="j.nomeMandante" />
+                <img skel *ngIf="j.logoMandante; else iLEMb" [src]="j.logoMandante" [alt]="j.nomeMandante" />
                 <ng-template #iLEMb><ion-icon name="shield-outline"></ion-icon></ng-template>
               </span>
               <span class="lances-escudos-vs">vs</span>
               <span class="lances-escudo lances-escudo-vis">
-                <img *ngIf="j.logoVisitante; else iLEVb" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
+                <img skel *ngIf="j.logoVisitante; else iLEVb" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
                 <ng-template #iLEVb><ion-icon name="shield-outline"></ion-icon></ng-template>
               </span>
             </div>
@@ -1079,7 +1078,7 @@
                 </div>
                 <div class="cell jog">
                   <div class="jog-foto">
-                    <img *ngIf="l.jogador.fotoUrl; else iJ" [src]="l.jogador.fotoUrl" />
+                    <img skel *ngIf="l.jogador.fotoUrl; else iJ" [src]="l.jogador.fotoUrl" />
                     <ng-template #iJ><ion-icon name="person-outline"></ion-icon></ng-template>
                   </div>
                   <div class="jog-info">
@@ -1087,7 +1086,7 @@
                     <div class="jog-equipe" *ngIf="l.equipe || l.jogador.numeroCamisa">
                       <ng-container *ngIf="l.equipe">
                         <span class="eq-logo-mini">
-                          <img *ngIf="l.equipe.logoUrl; else iEqR" [src]="l.equipe.logoUrl" />
+                          <img skel *ngIf="l.equipe.logoUrl; else iEqR" [src]="l.equipe.logoUrl" />
                           <ng-template #iEqR><ion-icon name="shield-outline"></ion-icon></ng-template>
                         </span>
                         <span class="eq-txt">{{ l.equipe.nome }}</span>
@@ -1149,7 +1148,7 @@
                 tabindex="0"
               >
                 <div class="card-thumb">
-                  <img *ngIf="thumbMidia(m) as src" [src]="src" [alt]="m.titulo || labelMidia(m.tipo)" loading="lazy" />
+                  <img skel *ngIf="thumbMidia(m) as src" [src]="src" [alt]="m.titulo || labelMidia(m.tipo)" loading="lazy" />
                   <div class="card-thumb-fallback" *ngIf="!thumbMidia(m)">
                     <ion-icon [name]="iconeMidia(m.tipo)"></ion-icon>
                   </div>

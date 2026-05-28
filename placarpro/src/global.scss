@@ -27,6 +27,19 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--placar-text);
+
+  /* Bloqueia o pull-to-refresh NATIVO do Safari/Chrome mobile
+     (que recarregava o app inteiro e fazia o usuário cair em
+     /app/meus-campeonatos). O pull-to-refresh do ion-refresher
+     continua funcionando porque ele intercepta o gesto antes. */
+  overscroll-behavior-y: contain;
+}
+
+/* Garante que o gesto de scroll em ion-content NÃO propaga pro body
+   (mesmo motivo do acima — Safari iOS é especialmente sensível). */
+ion-content {
+  --overflow: auto;
+  overscroll-behavior-y: contain;
 }
 
 /* Suaviza títulos */
@@ -44,25 +57,25 @@ ion-textarea[fill="outline"] {
   --placeholder-opacity: 0.7;
   --border-color: var(--placar-border-strong);
   --border-radius: 10px;
+  --border-width: 1.5px;
   --highlight-color-focused: var(--ion-color-primary);
   --highlight-color-valid: var(--ion-color-primary);
 
-  /* Fallback de borda forçada via box-shadow inset — fica visível mesmo
-     quando o ::part(outline) interno do Ionic perde renderização ao
-     receber foco em alguns contextos. Garante o look "outline rounded"
-     consistente em todos os estados. */
-  border-radius: 10px;
-  box-shadow: inset 0 0 0 1px var(--placar-border-strong);
-  transition: box-shadow 150ms ease;
+  /* Enquanto o user não tocou o campo, NÃO mostra erro nem borda
+     vermelha — mesmo que o FormControl esteja `invalid` (required, etc).
+     O Ionic 8 por default mostra `errorText` assim que `ion-invalid` está
+     presente, ignorando `ion-touched` — daí o "E-mail inválido" aparecia
+     antes do user digitar nada. */
+  &.ion-invalid:not(.ion-touched) {
+    --border-color: var(--placar-border-strong);
+    --highlight-color-invalid: var(--placar-border-strong);
 
-  &.has-focus,
-  &.ion-focused {
-    box-shadow: inset 0 0 0 2px var(--ion-color-primary);
+    &::part(error-text),
+    &::part(supporting-text) {
+      display: none;
+    }
   }
 
-  &.ion-invalid.ion-touched {
-    box-shadow: inset 0 0 0 2px var(--ion-color-danger);
-  }
   &::part(label) {
     color: var(--placar-text-muted);
     font-weight: 500;
@@ -109,6 +122,46 @@ ion-toolbar {
   --color: #ffffff;
   --border-color: transparent;
   --min-height: 56px;
+}
+
+/* Força exibir ion-headers marcados com .force-mobile-header também no
+   mobile, mesmo dentro do shell-layout que esconderia ion-headers de
+   child pages pra evitar duplicação de barra navy. Páginas com botões
+   de ação importantes (Baixar PDF, Imprimir, etc) precisam disso. */
+@media (max-width: 767px) {
+  .shell-layout .shell-main ion-header.force-mobile-header {
+    display: block !important;
+  }
+}
+
+/* ═══ Fix safe-area do iOS em PWA standalone (app instalado na tela
+   de início) ═══
+
+   Quando o user instala o app na home screen e abre pelo ícone, o
+   iOS roda em modo "standalone" — sem a barra do Safari, mas a
+   status bar do sistema (relógio, bateria, sinal) ainda aparece em
+   cima. Sem padding-top, todos os `ion-header` ficam por baixo dela.
+
+   `@media (display-mode: standalone)` detecta APENAS o modo PWA —
+   no Safari normal essas regras NÃO se aplicam, mantendo o
+   comportamento original do navegador. */
+@media all and (display-mode: standalone) {
+  ion-header ion-toolbar:first-of-type {
+    --padding-top: env(safe-area-inset-top);
+  }
+  /* Modal toolbar dentro de ion-modal também precisa. */
+  ion-modal ion-header ion-toolbar:first-of-type {
+    --padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Utility helpers — esconde elementos por breakpoint. Usado em
+   ion-toolbar pra mostrar só ícones no mobile e texto+ícone no desktop. */
+@media (max-width: 767px) {
+  .hide-mobile { display: none !important; }
+}
+@media (min-width: 768px) {
+  .hide-desktop { display: none !important; }
 }
 
 /* Empurra o título do toolbar pra direita no mobile (espaço pro hambúrguer) */
@@ -208,6 +261,32 @@ ion-modal.modal-large {
   --border-radius: 14px;
 }
 
+/* Modal de seleção de equipes do relatório de jogadores — médio,
+   com altura suficiente pra mostrar lista longa de equipes (12+). */
+ion-modal.equipes-jogadores-modal,
+ion-modal.colunas-jogadores-modal,
+ion-modal.colunas-equipes-modal {
+  --width: 94% !important;
+  --max-width: 560px !important;
+  --height: 92% !important;
+  --max-height: 760px !important;
+  --border-radius: 14px;
+  --min-height: 480px;
+
+  &::part(content) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (max-width: 540px) {
+    --width: 100% !important;
+    --max-width: 100% !important;
+    --height: 100% !important;
+    --max-height: 100% !important;
+    --border-radius: 0;
+  }
+}
+
 /* Modal de Login — overlay escuro com card centralizado */
 ion-modal.modal-login {
   --width: 100%;
@@ -251,20 +330,63 @@ ion-modal.midia-viewer-modal {
 }
 
 
-/* Modal compacto (cartão centralizado pequeno, p/ Editar fase) */
+/* Modal "Editar fase" — mesmo padrão visual do modal Fases (header navy
+   + body branco). Mesmas dimensões/cantos do modal Fases pai. */
 ion-modal.modal-editar-fase {
-  --width: auto;
+  --backdrop-opacity: 0.5;
+}
+
+/* Form modal de Pontos Extras — diálogo pequeno centralizado (igual
+   ao modal-editar-rodada, padrão "card flutuante" em vez de full). */
+ion-modal.modal-pontos-extras-form {
+  --width: 92%;
+  --max-width: 380px;
+  --min-width: 280px;
   --height: auto;
-  --max-width: 460px;
-  --min-width: 320px;
   --background: transparent;
   --box-shadow: none;
   --backdrop-opacity: 0.5;
+  --border-radius: 14px;
 
   &::part(content) {
     background: transparent;
     box-shadow: none;
   }
+}
+
+/* Modal "Arte do Jogo" — full-screen no desktop (precisa de bastante
+   espaço pra o preview 1080x1080 + form de edição + botão Compartilhar). */
+ion-modal.modal-arte-jogo {
+  --width: 100%;
+  --max-width: 100%;
+  --height: 100%;
+  --max-height: 100%;
+  --border-radius: 0;
+}
+
+/* Modal "Editar Rodada" — diálogo pequeno centralizado tipo alert.
+   Usa o card próprio do componente (.dialog em editar-rodada-modal.scss)
+   e zera o background do ion-modal pra não duplicar visual. */
+ion-modal.modal-editar-rodada {
+  --width: 92%;
+  --max-width: 380px;
+  --min-width: 280px;
+  --height: auto;
+  --background: transparent;
+  --box-shadow: none;
+  --backdrop-opacity: 0.5;
+  --border-radius: 14px;
+
+  &::part(content) {
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+/* Modal "Nova fase" — mesmo padrão visual do modal Fases (header navy
+   + body branco com cards de tipo). */
+ion-modal.modal-nova-fase {
+  --backdrop-opacity: 0.5;
 }
 
 /* Alert "Nova fase" — botões grandes empilhados */
@@ -533,7 +655,9 @@ ion-button ion-icon[slot="end"] {
    próprias regras pra @page (size, margin).
    ============================================================ */
 @media print {
-  /* Esconde menu lateral, header global, FAB de "ver página pública" */
+  /* Esconde menu lateral, header global, FAB de "ver página pública",
+     header mobile do campeonato (logo+nav icons) e qualquer ion-header
+     com .no-print. */
   .shell-layout .shell-aside,
   .shell-layout > ion-menu,
   ion-menu,
@@ -541,7 +665,10 @@ ion-button ion-icon[slot="end"] {
   .shell-layout .shell-topbar,
   .shell-fab,
   ion-fab,
-  ion-tab-bar {
+  ion-tab-bar,
+  app-campeonato-mobile-header,
+  ion-header.no-print,
+  .no-print {
     display: none !important;
   }
 
@@ -631,6 +758,7 @@ ion-popover.popover-jogo-acoes {
     display: none;
   }
 }
+
 
 /* Modal "Lista das equipes" (seleção de colunas) — sheet visual padronizado */
 ion-modal.colunas-equipes-modal,
@@ -722,7 +850,10 @@ html, body, ion-app, app-root {
    soltas pela app que precisam dessa proteção. */
 @media (max-width: 767px) {
   ion-content table:not(.tabela-print):not([data-no-scroll]) {
-    display: block;
+    /* display: block; — removido: quebrava alinhamento de colunas em
+       tabelas que dependem de table-layout (relatórios, súmulas, etc.).
+       Mantém o table layout natural e só adiciona scroll horizontal
+       caso a tabela exceda a viewport. */
     max-width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -773,7 +904,7 @@ html, body, ion-app, app-root {
      full-screen no mobile. O conteúdo interno (header + body + footer)
      já tem scroll próprio via ion-content/ion-footer, então a tela
      toda fica disponível. */
-  ion-modal:not(.modal-large):not(.modal-login):not(.midia-viewer-modal):not(.modal-editar-fase):not(.colunas-equipes-modal):not(.fase-equipes-modal):not(.exportar-popover) {
+  ion-modal:not(.modal-large):not(.modal-login):not(.midia-viewer-modal):not(.modal-editar-rodada):not(.modal-pontos-extras-form):not(.colunas-equipes-modal):not(.fase-equipes-modal):not(.exportar-popover) {
     --width: 100%;
     --height: 100%;
     --max-width: 100%;
@@ -1023,6 +1154,32 @@ html, body, ion-app, app-root {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+   Diretiva `skel` em <img>: enquanto a imagem carrega, fica INVISÍVEL
+   (opacity:0). Quando termina, fade-in suave. O container/parent
+   responsável por reservar o espaço (background ou aspect-ratio fixo).
+   ════════════════════════════════════════════════════════════════════ */
+img.is-img-loading {
+  opacity: 0;
+  /* Esconde o ícone de imagem quebrada do browser enquanto carrega */
+  color: transparent;
+}
+
+img.is-img-error {
+  opacity: 1;
+  background: rgba(28, 46, 61, 0.06);
+}
+
+/* Fade-in suave quando a imagem termina de carregar */
+img[skel]:not(.is-img-loading):not(.is-img-error) {
+  animation: img-fadein 280ms ease-out;
+}
+
+@keyframes img-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
    <app-date-input> — popover compacto com ion-datetime.
    ion-popover é renderizado fora do shadow DOM do componente, então
    o estilo precisa ser global.
@@ -1046,6 +1203,91 @@ ion-modal.action-modal-overlay {
     background: transparent;
     box-shadow: none;
     border-radius: 0;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   .sumula-modal — modal que abre a SumulaPage (A4 paisagem, 290mm).
+   - Desktop: ocupa quase toda a tela (95vw × 95vh) pra renderizar a
+     folha inteira sem cortes laterais.
+   - Mobile: fullscreen — o conteúdo é mais largo que a viewport, mas
+     ion-content libera scroll horizontal pra que o usuário consiga
+     panar pelo documento. Mantém orientação natural (sem rotação)
+     pra leitura fluida e impressão coerente.
+   ════════════════════════════════════════════════════════════════════ */
+ion-modal.sumula-modal {
+  --width: 95vw;
+  --max-width: 95vw;
+  --height: 95vh;
+  --max-height: 95vh;
+  --border-radius: 12px;
+
+  @media (max-width: 768px) {
+    --width: 100vw;
+    --max-width: 100vw;
+    --height: 100vh;
+    --max-height: 100vh;
+    --border-radius: 0;
+  }
+}
+
+/* ════════ Print/PDF: força modal da súmula a ocupar 100% da folha ════════
+   No screen, `ion-modal.sumula-modal` tem 95vw/95vh (com border-radius).
+   Em PRINT, essas constraints fazem a súmula (290mm) sair menor que a
+   página A4 paisagem — ela aparecia "encolhida" no canto com bordas brancas
+   em volta, dando aspecto de campos desconfigurados. As regras abaixo
+   garantem que durante `window.print()` o modal preencha exatamente a
+   página. Aplicado também via `body.sumula-printing` pra cobrir o caminho
+   do `html2canvas` (que clona o DOM sem disparar @media print). */
+@media print {
+  ion-modal.sumula-modal,
+  ion-modal {
+    --width: 100% !important;
+    --max-width: 100% !important;
+    --height: auto !important;
+    --max-height: none !important;
+    --border-radius: 0 !important;
+    --box-shadow: none !important;
+    --backdrop-opacity: 0 !important;
+    position: static !important;
+    display: block !important;
+    contain: none !important;
+
+    &::part(content) {
+      position: static !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      height: auto !important;
+      max-height: none !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      overflow: visible !important;
+    }
+    &::part(backdrop) {
+      display: none !important;
+    }
+  }
+}
+
+body.sumula-printing {
+  ion-modal.sumula-modal,
+  ion-modal {
+    --width: 100% !important;
+    --max-width: 100% !important;
+    --height: auto !important;
+    --max-height: none !important;
+    --border-radius: 0 !important;
+
+    &::part(content) {
+      position: static !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      height: auto !important;
+      max-height: none !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      overflow: visible !important;
+    }
   }
 }
 

@@ -11,12 +11,15 @@ import {
   doc,
   docData,
   getDoc,
+  getDocs,
   increment,
+  limit,
   orderBy,
   query,
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
   writeBatch,
 } from '@angular/fire/firestore';
 import { Observable, of, switchMap, map } from 'rxjs';
@@ -55,6 +58,23 @@ export class UsersService {
         );
       }),
     );
+  }
+
+  /**
+   * Busca um organizador pelo `slug` (definido na "Página do Organizador").
+   * Usado pra renderizar a página pública `/org/:slug` estilo copafacil.
+   * Retorna `null` se nenhum user com aquele slug for encontrado.
+   */
+  async getBySlug(slug: string): Promise<(UserProfile & { id: string }) | null> {
+    if (!slug) return null;
+    return runInInjectionContext(this.injector, async () => {
+      const col = collection(this.fs, 'users') as CollectionReference<UserProfile>;
+      const q = query(col, where('slug', '==', slug.toLowerCase()), limit(1));
+      const snap = await getDocs(q);
+      if (snap.empty) return null;
+      const d = snap.docs[0];
+      return { ...(d.data() as UserProfile), id: d.id };
+    });
   }
 
   async saveProfile(patch: Partial<UserProfile>): Promise<void> {

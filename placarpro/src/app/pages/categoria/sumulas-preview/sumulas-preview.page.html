@@ -7,6 +7,10 @@
     </ion-buttons>
     <ion-title>Imprimir súmulas ({{ qtdSelecionadas }})</ion-title>
     <ion-buttons slot="end">
+      <ion-button (click)="baixarPdf()" [disabled]="qtdSelecionadas === 0" aria-label="Baixar PDF">
+        <ion-icon slot="start" name="download-outline"></ion-icon>
+        PDF
+      </ion-button>
       <ion-button (click)="imprimir()" [disabled]="qtdSelecionadas === 0" aria-label="Imprimir">
         <ion-icon slot="start" name="print-outline"></ion-icon>
         Imprimir
@@ -33,15 +37,26 @@
         <option *ngFor="let m of modelosSumula" [ngValue]="m.id">{{ m.label }}</option>
       </select>
     </label>
-    <button
-      type="button"
-      class="sp-toolbar-imprimir"
-      (click)="imprimir()"
-      [disabled]="qtdSelecionadas === 0"
-    >
-      <ion-icon name="print-outline"></ion-icon>
-      <span>Imprimir ({{ qtdSelecionadas }})</span>
-    </button>
+    <div class="sp-toolbar-acoes">
+      <button
+        type="button"
+        class="sp-toolbar-pdf"
+        (click)="baixarPdf()"
+        [disabled]="qtdSelecionadas === 0"
+      >
+        <ion-icon name="download-outline"></ion-icon>
+        <span>Baixar PDF ({{ qtdSelecionadas }})</span>
+      </button>
+      <button
+        type="button"
+        class="sp-toolbar-imprimir"
+        (click)="imprimir()"
+        [disabled]="qtdSelecionadas === 0"
+      >
+        <ion-icon name="print-outline"></ion-icon>
+        <span>Imprimir ({{ qtdSelecionadas }})</span>
+      </button>
+    </div>
   </div>
 
   <div class="sp-layout">
@@ -110,11 +125,19 @@
       </div>
 
       <!-- ═══════════ MODELO PADRÃO (genérico) ═══════════ -->
-      <!-- Cada súmula vira uma folha A4 paisagem com page-break-after -->
+      <!-- Cada súmula vira uma folha A4 paisagem com page-break-after.
+           Quando `previewImagens[s.jogo.id]` está pronta, mostramos a
+           IMAGEM (pixel-perfect ao PDF) e escondemos o HTML cru. O HTML
+           continua no DOM pra que imprimir/baixarPdf reutilizem. -->
+      <img *ngFor="let s of sumulas; trackBy: trackBySumula"
+           class="sumula-preview-img"
+           [src]="previewImagens[s.jogo.id || '']"
+           [hidden]="modeloSelecionado !== 'padrao' || !previewImagens[s.jogo.id || '']"
+           alt="Súmula renderizada" />
       <div
         class="sumula-folha"
         *ngFor="let s of sumulas; trackBy: trackBySumula"
-        [hidden]="modeloSelecionado !== 'padrao'"
+        [hidden]="modeloSelecionado !== 'padrao' || !!previewImagens[s.jogo.id || '']"
       >
 
         <!-- Faixa do título -->
@@ -229,6 +252,32 @@
               </div>
 
               <table class="sm-jogadores">
+                <!-- colgroup FIXA as larguras de TODAS as 17 colunas físicas
+                     da tabela. Em `table-layout: fixed`, larguras do colgroup
+                     TÊM PRECEDÊNCIA sobre cells (`<td width>` ou `width:` no
+                     CSS), o que evita que `.vertical-text` com texto longo
+                     (TÉCNICO/CAPITÃO) empurre via `min-content` do
+                     `writing-mode: vertical-rl`. As 7 cols ACUMULATIVAS
+                     ficam EXATAMENTE iguais (3% cada). -->
+                <colgroup>
+                  <col style="width:7%">   <!-- Reg. -->
+                  <col style="width:47%">  <!-- JOGADORES -->
+                  <col style="width:4%">   <!-- Nº -->
+                  <col style="width:3%">   <!-- Falta 1 -->
+                  <col style="width:3%">   <!-- Falta 2 -->
+                  <col style="width:3%">   <!-- Falta 3 -->
+                  <col style="width:3%">   <!-- Falta 4 -->
+                  <col style="width:3%">   <!-- Falta 5 -->
+                  <col style="width:3%">   <!-- AM -->
+                  <col style="width:3%">   <!-- VM -->
+                  <col style="width:3%">   <!-- Acum 1 -->
+                  <col style="width:3%">   <!-- Acum 2 -->
+                  <col style="width:3%">   <!-- Acum 3 -->
+                  <col style="width:3%">   <!-- Acum 4 -->
+                  <col style="width:3%">   <!-- Acum 5 -->
+                  <col style="width:3%">   <!-- Acum 6 -->
+                  <col style="width:3%">   <!-- Acum 7 -->
+                </colgroup>
                 <thead>
                   <tr>
                     <th rowspan="2" class="th-registro">Reg.</th>
@@ -271,11 +320,16 @@
                       <td class="td-pedido-box" colspan="2"></td>
                     </ng-container>
                     <ng-container *ngIf="i === 5">
-                      <td class="td-pedido-box" colspan="1"></td>
+                      <!-- 7 células INDEPENDENTES (colspan=1 cada) pra que
+                           ocupem exatamente o MESMO tamanho das 7 cells
+                           1,2,3,4,5,6,7 da linha ACUMULATIVAS acima. -->
+                      <td class="td-pedido-box"></td>
                       <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5">TÉCNICO</td>
-                      <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5" colspan="2"></td>
+                      <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5"></td>
+                      <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5"></td>
                       <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5">CAPITÃO</td>
-                      <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5" colspan="2"></td>
+                      <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5"></td>
+                      <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5"></td>
                     </ng-container>
                   </tr>
 
@@ -1218,6 +1272,29 @@
                     </div>
                   </div>
                   <table class="sm-jogadores">
+                    <!-- colgroup FIXA as larguras das 17 colunas físicas. Em
+                         `table-layout: fixed`, widths do colgroup TÊM PRECEDÊNCIA
+                         sobre cells, evitando que `.vertical-text` empurre via
+                         min-content. As 7 cols ACUMULATIVAS ficam iguais (3% cada). -->
+                    <colgroup>
+                      <col style="width:7%">   <!-- Reg. -->
+                      <col style="width:47%">  <!-- JOGADORES -->
+                      <col style="width:4%">   <!-- Nº -->
+                      <col style="width:3%">   <!-- Falta 1 -->
+                      <col style="width:3%">   <!-- Falta 2 -->
+                      <col style="width:3%">   <!-- Falta 3 -->
+                      <col style="width:3%">   <!-- Falta 4 -->
+                      <col style="width:3%">   <!-- Falta 5 -->
+                      <col style="width:3%">   <!-- AM -->
+                      <col style="width:3%">   <!-- VM -->
+                      <col style="width:3%">   <!-- Acum 1 -->
+                      <col style="width:3%">   <!-- Acum 2 -->
+                      <col style="width:3%">   <!-- Acum 3 -->
+                      <col style="width:3%">   <!-- Acum 4 -->
+                      <col style="width:3%">   <!-- Acum 5 -->
+                      <col style="width:3%">   <!-- Acum 6 -->
+                      <col style="width:3%">   <!-- Acum 7 -->
+                    </colgroup>
                     <thead>
                       <tr>
                         <th rowspan="2" class="th-registro">Reg.</th>
@@ -1257,11 +1334,16 @@
                           <td class="td-pedido-box" colspan="2"></td>
                         </ng-container>
                         <ng-container *ngIf="i === 5">
-                          <td class="td-pedido-box" colspan="1"></td>
+                          <!-- 7 células INDEPENDENTES (colspan=1 cada) pra que
+                               ocupem exatamente o MESMO tamanho das 7 cells
+                               1,2,3,4,5,6,7 da linha ACUMULATIVAS acima. -->
+                          <td class="td-pedido-box"></td>
                           <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5">TÉCNICO</td>
-                          <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5" colspan="2"></td>
+                          <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5"></td>
+                          <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5"></td>
                           <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5">CAPITÃO</td>
-                          <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5" colspan="2"></td>
+                          <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5"></td>
+                          <td class="vertical-text" [attr.rowspan]="linhasParaAmbas(s) - 5"></td>
                         </ng-container>
                       </tr>
                       <tr class="comissao-row">

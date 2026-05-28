@@ -194,3 +194,27 @@
     font-weight: 700;
   }
 }
+
+/* Footer padrão — Cancelar (lixeira vermelho) + Salvar (check navy)
+   lado a lado, pill. Altura controlada pelo `size="small"` do Ionic. */
+ion-footer ion-toolbar {
+  --background: #fff;
+  --border-color: #ececef;
+}
+
+.acoes-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+  background: #fff;
+
+  .btn-acao {
+    margin: 0;
+    width: 100%;
+    --border-radius: 999px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}

@@ -70,7 +70,64 @@ export class CampeonatoThemeService {
   }
 
   setCor(cor: string | null | undefined): void {
-    this.cor.set(cor && cor.startsWith('#') ? cor : null);
+    const valida = cor && cor.startsWith('#') ? cor : null;
+    this.cor.set(valida);
+    // Aplica IMEDIATAMENTE no DOM, sem depender do `effect()` (que pode
+    // atrasar em uma microtask quando chamado fora de zone). Antes a
+    // mudança não aparecia até o próximo change detection.
+    this.aplicarSincrono(valida);
+  }
+
+  /**
+   * Aplica em AMBOS `html` (documentElement) e `body` — porque
+   * `variables.scss` declara as cores em `:root, body.light` e `body.dark`,
+   * e o seletor `body.light` é mais específico que `:root`, vencendo o
+   * `style.setProperty` aplicado só no html.
+   */
+  private aplicarSincrono(c: string | null): void {
+    const root = this.doc.documentElement;
+    const body = this.doc.body;
+    const targets = [root, body];
+
+    const vars = [
+      '--campeonato-cor',
+      '--campeonato-cor-rgb',
+      '--ion-color-primary',
+      '--ion-color-primary-rgb',
+      '--ion-color-primary-shade',
+      '--ion-color-primary-tint',
+      '--ion-color-primary-contrast',
+      '--ion-color-primary-contrast-rgb',
+      '--placar-sidebar-bg',
+      '--placar-header-bg',
+    ];
+
+    if (!c) {
+      targets.forEach(t => vars.forEach(v => t.style.removeProperty(v)));
+      body.classList.remove('campeonato-themed');
+      return;
+    }
+
+    const rgb = this.hexToRgb(c);
+    const rgbStr = rgb ? `${rgb.r}, ${rgb.g}, ${rgb.b}` : '';
+    const shade = this.shadeHex(c, 0.12);
+    const tint = this.tintHex(c, 0.06);
+    const contrast = rgb ? this.contrastColor(rgb) : '#ffffff';
+    const contrastRgb = contrast === '#ffffff' ? '255, 255, 255' : '0, 0, 0';
+
+    targets.forEach(t => {
+      t.style.setProperty('--campeonato-cor', c);
+      if (rgbStr) t.style.setProperty('--campeonato-cor-rgb', rgbStr);
+      t.style.setProperty('--ion-color-primary', c);
+      if (rgbStr) t.style.setProperty('--ion-color-primary-rgb', rgbStr);
+      t.style.setProperty('--ion-color-primary-shade', shade);
+      t.style.setProperty('--ion-color-primary-tint', tint);
+      t.style.setProperty('--ion-color-primary-contrast', contrast);
+      t.style.setProperty('--ion-color-primary-contrast-rgb', contrastRgb);
+      t.style.setProperty('--placar-sidebar-bg', c);
+      t.style.setProperty('--placar-header-bg', c);
+    });
+    body.classList.add('campeonato-themed');
   }
 
   clear(): void {

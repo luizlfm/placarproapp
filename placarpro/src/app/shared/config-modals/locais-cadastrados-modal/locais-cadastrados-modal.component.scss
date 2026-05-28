@@ -6,6 +6,55 @@
   --padding-bottom: 28px;
 }
 
+/* ===== Footer padrão do sistema =====
+   Cancelar (lixeira vermelho) + Salvar (check navy) lado a lado, pill.
+   Mesma estética dos modais editar-informações, criar-noticia,
+   exibição, anexos etc. */
+ion-footer ion-toolbar {
+  --background: #fff;
+  --border-color: #ececef;
+}
+
+.acoes-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+  background: #fff;
+
+  .btn-acao {
+    margin: 0;
+    width: 100%;
+    --border-radius: 999px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+/* Container do mapa picker INLINE — aparece no lugar da lista quando
+   `mapaAberto` é true. O componente embeddable tem altura fluida; aqui
+   garantimos altura mínima decente pra o mapa ser usável dentro do modal. */
+.lc-mapa-inline {
+  margin-top: 4px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  app-mapa-picker {
+    display: flex;
+    width: 100%;
+    /* Altura suficiente pra usar o mapa confortavelmente dentro do
+       contexto do modal pai. Em telas pequenas pode reduzir. */
+    min-height: 520px;
+  }
+
+  @media (max-width: 540px) {
+    app-mapa-picker { min-height: 440px; }
+  }
+}
+
 .add-card {
   background: #fff;
   border-radius: 12px;

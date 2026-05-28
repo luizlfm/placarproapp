@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import jsPDF from 'jspdf';
 import { Equipe } from './models/equipe.model';
 import { Jogador } from './models/jogador.model';
+import { salvarPdf } from '../shared/pdf-download.helper';
 
 /** Opções pré-definidas de tamanho de carteirinha. */
 export type TamanhoCarteirinhaId =
@@ -147,7 +148,8 @@ export class CarteirinhasPdfService {
     }
 
     const fileName = `carteirinhas-${this.slugify(cfg.subtitulo || cfg.nomeCampeonato)}.pdf`;
-    pdf.save(fileName);
+    // iOS Safari abre PDF inline — salvarPdf usa Web Share API no iOS.
+    await salvarPdf(pdf, fileName);
   }
 
   private desenharLote(

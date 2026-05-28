@@ -71,8 +71,10 @@ export interface Racha {
   estado?: string;
   /** Município (nome). */
   municipio?: string;
-  /** Endereço completo (rua, número, complemento). */
+  /** Rua/logradouro (sem número). */
   endereco?: string;
+  /** Número do imóvel (separado pra autocomplete via OSM). */
+  numero?: string;
 
   // ============ Mídia ============
 

@@ -75,13 +75,34 @@
 
 <ion-footer>
   <ion-toolbar>
-    <div class="footer-actions">
-      <ion-button fill="clear" color="medium" (click)="resetar()" [disabled]="loading">
-        Restaurar padrão
+    <!-- Footer padronizado: Cancelar (vermelho lixeira) + Salvar (navy check)
+         em 2 colunas de 50%, botões small em pill. Mesmo padrão do
+         editar-informações, anexos, colunas-jogadores etc.
+         "Restaurar padrão" virou link discreto acima dos botões. -->
+    <button type="button" class="link-restaurar" (click)="resetar()" [disabled]="loading">
+      <ion-icon name="refresh-outline"></ion-icon>
+      Restaurar padrão
+    </button>
+    <div class="acoes-footer">
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="danger"
+        (click)="dismiss()"
+        [disabled]="loading"
+      >
+        <ion-icon slot="start" name="trash-outline"></ion-icon>
+        Cancelar
       </ion-button>
-      <div class="spacer"></div>
-      <ion-button color="primary" (click)="salvar()" [disabled]="loading">
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="primary"
+        (click)="salvar()"
+        [disabled]="loading"
+      >
         <ion-spinner *ngIf="loading" name="dots" slot="start"></ion-spinner>
+        <ion-icon *ngIf="!loading" slot="start" name="checkmark-outline"></ion-icon>
         Salvar
       </ion-button>
     </div>

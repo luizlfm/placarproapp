@@ -1,12 +1,17 @@
 <ion-header>
   <ion-toolbar color="primary">
     <ion-title>Página do organizador</ion-title>
+    <!-- Atalho "Salvar" no header (mesmo padrão de Configurações).
+         Útil em forms longos pra não rolar até o fim. -->
     <ion-buttons slot="end">
-      <ion-button aria-label="Compartilhar">
-        <ion-icon slot="icon-only" name="share-social-outline"></ion-icon>
-      </ion-button>
-      <ion-button aria-label="Visibilidade">
-        <ion-icon slot="icon-only" name="globe-outline"></ion-icon>
+      <ion-button
+        type="button"
+        (click)="salvar()"
+        [disabled]="salvando"
+        aria-label="Salvar"
+      >
+        <ion-icon slot="start" name="save-outline"></ion-icon>
+        <span class="hdr-salvar-txt">Salvar</span>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -16,13 +21,17 @@
   <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
     <div class="wrap">
 
-      <!-- Identidade -->
+      <!-- ═══ Identidade da organização ═══ -->
       <section class="card">
+        <h3>Identidade</h3>
+
+        <!-- Logo + nome — em coluna no mobile, lado a lado no desktop -->
         <div class="logo-row">
-          <div
+          <button
+            type="button"
             class="logo-box clickable"
             (click)="selecionarImagem('logoUrl', 1, 'Ajustar logo')"
-            title="Clique para alterar"
+            [attr.aria-label]="form.value.logoUrl ? 'Trocar logo' : 'Adicionar logo'"
           >
             <img *ngIf="form.value.logoUrl; else logoIc" [src]="form.value.logoUrl" alt="Logo" />
             <ng-template #logoIc>
@@ -30,7 +39,7 @@
               <span class="size">150×150</span>
             </ng-template>
             <div class="upload-overlay"><ion-icon name="camera-outline"></ion-icon></div>
-          </div>
+          </button>
           <div class="logo-fields">
             <ion-input
               fill="outline"
@@ -40,71 +49,18 @@
               formControlName="nome"
               required
             ></ion-input>
-            <ion-input
-              fill="outline"
-              label="URL do logo"
-              labelPlacement="stacked"
-              placeholder="https://..."
-              formControlName="logoUrl"
-            ></ion-input>
+            <div class="logo-hint-text">Toque na imagem para enviar o logo.</div>
           </div>
         </div>
 
-        <!-- Banner do app -->
-        <div class="banner-block">
-          <div
-            class="banner-box banner-app clickable"
-            (click)="selecionarImagem('bannerAppUrl', 805/453, 'Ajustar banner do aplicativo')"
-            title="Clique para alterar"
-          >
-            <img *ngIf="form.value.bannerAppUrl; else bAppIc" [src]="form.value.bannerAppUrl" alt="Banner app" />
-            <ng-template #bAppIc>
-              <ion-icon name="add-outline"></ion-icon>
-              <span>Banner do aplicativo</span>
-              <span class="size">805×453</span>
-            </ng-template>
-            <div class="upload-overlay"><ion-icon name="camera-outline"></ion-icon></div>
-          </div>
-          <ion-input
-            fill="outline"
-            label="URL do banner do aplicativo"
-            labelPlacement="stacked"
-            placeholder="https://..."
-            formControlName="bannerAppUrl"
-          ></ion-input>
-        </div>
-
-        <!-- Banner do site -->
-        <div class="banner-block">
-          <div
-            class="banner-box banner-site clickable"
-            (click)="selecionarImagem('bannerSiteUrl', 970/90, 'Ajustar banner do site')"
-            title="Clique para alterar"
-          >
-            <img *ngIf="form.value.bannerSiteUrl; else bSiteIc" [src]="form.value.bannerSiteUrl" alt="Banner jogos" />
-            <ng-template #bSiteIc>
-              <ion-icon name="add-outline"></ion-icon>
-              <span>Banner do jogos</span>
-              <span class="size">970×90</span>
-            </ng-template>
-            <div class="upload-overlay"><ion-icon name="camera-outline"></ion-icon></div>
-          </div>
-          <ion-input
-            fill="outline"
-            label="URL do banner do site"
-            labelPlacement="stacked"
-            placeholder="https://..."
-            formControlName="bannerSiteUrl"
-          ></ion-input>
-        </div>
-
-        <!-- Cor -->
+        <!-- Cor da página da organização -->
         <div class="cor-row">
           <ion-icon name="color-fill-outline"></ion-icon>
           <span class="label">Cor da página</span>
           <input type="color" formControlName="corPrimaria" />
         </div>
       </section>
+
 
       <!-- Textos -->
       <section class="card">
@@ -139,7 +95,54 @@
         ></ion-textarea>
       </section>
 
-      <!-- Link personalizado -->
+      <!-- ═══ Banners ═══ -->
+      <section class="card">
+        <h3>Banners</h3>
+
+        <!-- Banner do app -->
+        <div class="banner-block">
+          <div class="banner-label">
+            <strong>Banner do aplicativo</strong>
+            <span>Proporção 805×453 — aparece no topo das telas do app</span>
+          </div>
+          <button
+            type="button"
+            class="banner-box banner-app clickable"
+            (click)="selecionarImagem('bannerAppUrl', 805/453, 'Ajustar banner do aplicativo')"
+            [attr.aria-label]="form.value.bannerAppUrl ? 'Trocar banner do aplicativo' : 'Adicionar banner do aplicativo'"
+          >
+            <img *ngIf="form.value.bannerAppUrl; else bAppIc" [src]="form.value.bannerAppUrl" alt="Banner app" />
+            <ng-template #bAppIc>
+              <ion-icon name="cloud-upload-outline"></ion-icon>
+              <span>Toque para enviar</span>
+            </ng-template>
+            <div class="upload-overlay"><ion-icon name="camera-outline"></ion-icon></div>
+          </button>
+        </div>
+
+        <!-- Banner do site -->
+        <div class="banner-block">
+          <div class="banner-label">
+            <strong>Banner do site</strong>
+            <span>Proporção 970×90 — usado em destaques</span>
+          </div>
+          <button
+            type="button"
+            class="banner-box banner-site clickable"
+            (click)="selecionarImagem('bannerSiteUrl', 970/90, 'Ajustar banner do site')"
+            [attr.aria-label]="form.value.bannerSiteUrl ? 'Trocar banner do site' : 'Adicionar banner do site'"
+          >
+            <img *ngIf="form.value.bannerSiteUrl; else bSiteIc" [src]="form.value.bannerSiteUrl" alt="Banner site" />
+            <ng-template #bSiteIc>
+              <ion-icon name="cloud-upload-outline"></ion-icon>
+              <span>Toque para enviar</span>
+            </ng-template>
+            <div class="upload-overlay"><ion-icon name="camera-outline"></ion-icon></div>
+          </button>
+        </div>
+      </section>
+
+      <!-- ═══ Definir link do site ═══ -->
       <section class="card">
         <h3>Definir link do site</h3>
         <div class="link-row">
@@ -152,7 +155,24 @@
             formControlName="slug"
           ></ion-input>
         </div>
+
+        <!-- Ações do link: abrir página pública + compartilhar -->
+        <div class="link-actions" *ngIf="form.value.slug">
+          <button type="button" class="link-action-btn" (click)="abrirPaginaPublica()">
+            <ion-icon name="globe-outline"></ion-icon>
+            <span>Abrir página</span>
+          </button>
+          <button type="button" class="link-action-btn primary" (click)="compartilharLink()">
+            <ion-icon name="share-social-outline"></ion-icon>
+            <span>Compartilhar</span>
+          </button>
+        </div>
+        <div class="link-hint" *ngIf="!form.value.slug">
+          Defina um slug acima e salve — a página pública abrirá uma galeria
+          com seus campeonatos, equipes e mídias.
+        </div>
       </section>
+
 
       <!-- Quem pode ver -->
       <section class="card">

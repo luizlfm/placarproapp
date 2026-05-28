@@ -1,6 +1,6 @@
 <ion-header class="cem-header">
   <ion-toolbar>
-    <ion-title>Lista das equipes</ion-title>
+    <ion-title>Colunas do relatório</ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="fechar()" aria-label="Fechar">
         <ion-icon slot="icon-only" name="close-outline"></ion-icon>
@@ -10,10 +10,22 @@
 </ion-header>
 
 <ion-content class="cem-content">
-  <ul class="cem-list">
+  <div class="cem-toolbar">
+    <button type="button" class="cem-link" (click)="marcarTodas()">Marcar todas</button>
+    <span class="cem-sep">·</span>
+    <button type="button" class="cem-link" (click)="limpar()">Limpar</button>
+    <span class="cem-count">{{ qtdMarcadas() }} de {{ colunas.length }}</span>
+  </div>
+
+  <p class="cem-hint">
+    Selecione quais colunas vão aparecer na tabela de equipes do relatório.
+  </p>
+
+  <ul class="cem-list" *ngIf="colunas.length > 0; else vazio">
     <li
       *ngFor="let c of colunas; trackBy: trackByColuna"
       class="cem-item"
+      [class.on]="c.selecionado"
       (click)="toggle(c)"
     >
       <span class="cem-label">{{ c.label }}</span>
@@ -22,12 +34,34 @@
       </span>
     </li>
   </ul>
+
+  <ng-template #vazio>
+    <p class="cem-empty">Nenhuma coluna disponível.</p>
+  </ng-template>
 </ion-content>
 
 <ion-footer class="cem-footer">
   <ion-toolbar>
-    <ion-buttons slot="end">
-      <ion-button color="primary" (click)="salvar()">Salvar</ion-button>
-    </ion-buttons>
+    <div class="cem-footer-actions">
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="danger"
+        fill="outline"
+        (click)="fechar()"
+      >
+        <ion-icon slot="start" name="close-outline"></ion-icon>
+        Cancelar
+      </ion-button>
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="primary"
+        (click)="salvar()"
+      >
+        <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+        Salvar
+      </ion-button>
+    </div>
   </ion-toolbar>
 </ion-footer>
