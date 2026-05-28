@@ -1,6 +1,6 @@
 /*
  * App Global CSS — PlacarPro
- * Tipografia clean + inputs outlined + dark mode automático.
+ * Tipografia clean + inputs outlined. Dark mode 100% desabilitado.
  */
 
 /* Ionic core */
@@ -18,6 +18,19 @@
 
 /* IMPORTANTE: removemos o auto dark do Ionic — controlamos via ThemeService. */
 /* @import "@ionic/angular/css/palettes/dark.system.css"; */
+
+/* ============================================================
+   DARK MODE BLOQUEADO GLOBALMENTE
+   `color-scheme: light` no CSS é mais forte que só o
+   `<meta name="color-scheme">` no index.html — cobre form
+   controls (inputs, scrollbars, pickers nativos), autofill do
+   Chrome, etc. Aplicado no html+body pra cobrir ambos contextos
+   (Ionic ora renderiza no body, ora cria overlays no html). */
+:root,
+html,
+body {
+  color-scheme: light;
+}
 
 /* ============ Tipografia base ============ */
 body {
