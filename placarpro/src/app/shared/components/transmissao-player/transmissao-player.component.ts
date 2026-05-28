@@ -160,8 +160,9 @@ export class TransmissaoPlayerComponent implements OnChanges, OnDestroy {
 
   /**
    * Aplica a qualidade selecionada na publication do track de vídeo.
-   * No LiveKit Client SDK 2.x, `setVideoQuality` é método da
-   * `RemoteTrackPublication`, não do track em si.
+   * Em modo 'auto' NÃO chama nada — deixa o LiveKit fazer adaptive
+   * sozinho (chamar `setSubscribed(true)` em track já subscribed pode
+   * dar problema dependendo do estado da room).
    */
   private aplicarQualidadeNaPublication(pub: RemoteTrackPublication): void {
     try {
@@ -171,8 +172,8 @@ export class TransmissaoPlayerComponent implements OnChanges, OnDestroy {
         case 'baixa': pub.setVideoQuality(VideoQuality.LOW); break;
         case 'auto':
         default:
-          // Sem setVideoQuality = adaptive (default).
-          pub.setSubscribed(true);
+          // No-op — adaptive automático do LiveKit.
+          break;
       }
     } catch (err) {
       console.warn('[Player] setVideoQuality falhou', err);
@@ -587,31 +588,21 @@ export class TransmissaoPlayerComponent implements OnChanges, OnDestroy {
       // ═══ Otimizações de LATÊNCIA no elemento <video> do espectador ═══
       // Browsers HTML5 fazem buffer interno de 1-3s por padrão. Em
       // transmissão ao vivo isso é DELAY puro — vamos zerar.
+      // Lê resolução real do vídeo quando metadata carrega — atualiza
+      // o chip de qualidade no player com a resolução efetiva.
+      // NÃO mexer em `preload` ou `currentTime` em WebRTC MediaStream:
+      // `preload='none'` impede o stream de renderizar, e MediaStream
+      // não tem `buffered` no sentido de VOD (causa quebra do player).
       try {
         const v = el as HTMLVideoElement;
-        // `preload='none'` previne pré-buffer.
-        v.preload = 'none';
-        v.playsInline = true;
-        // Lê resolução real do vídeo quando metadata carrega.
         v.addEventListener('loadedmetadata', () => {
           if (v.videoWidth > 0 && v.videoHeight > 0) {
             this.resolucaoRecebida = { width: v.videoWidth, height: v.videoHeight };
             this.cdr.detectChanges();
           }
         }, { once: true });
-        // Anti-drift: se acumular > 1s de buffer, pula pra ponta —
-        // mantém live em vez de acumular delay.
-        v.addEventListener('progress', () => {
-          if (v.buffered.length > 0) {
-            const ultimoBuffer = v.buffered.end(v.buffered.length - 1);
-            const drift = ultimoBuffer - v.currentTime;
-            if (drift > 1.0 && !v.paused) {
-              v.currentTime = ultimoBuffer - 0.1;
-            }
-          }
-        });
       } catch (err) {
-        console.warn('[Player] otimização latência falhou', err);
+        console.warn('[Player] detecção de resolução falhou', err);
       }
       // Só promove pra 'live' QUANDO vídeo de fato attachou — áudio
       // sozinho mantém overlay "Conectando..." porque o usuário ainda

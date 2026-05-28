@@ -3502,7 +3502,13 @@
   }
 }
 
-/* Visitante: inverte ordem visual (avatar à direita, ícone à esquerda) */
+/* Visitante: inverte ordem visual — espelha tudo do card mandante.
+   - Avatar vai pra direita (RTL no grid)
+   - Texto fica alinhado à direita
+   - `.lance-time` (logo + nome) também espelha: logo VAI PRA DIREITA,
+     nome fica à ESQUERDA da logo, com justify-content: flex-end.
+   - `.lance-tipo` (que tem GOOOOLL! + qtd em inline-flex) precisa
+     inverter sua flex-direction também pra alinhar corretamente. */
 .lado-visitante .lance-bubble {
   direction: rtl;
 
@@ -3512,6 +3518,28 @@
   .lance-assist {
     direction: ltr;
     text-align: right;
+  }
+
+  /* `.lance-tipo` é inline-flex com children (texto + qtd). Sem
+     row-reverse + justify-end, "GOOOOLL!" e "2x" ficam no canto errado. */
+  .lance-tipo {
+    justify-content: flex-end;
+    flex-direction: row-reverse;
+  }
+
+  /* Time da ação: logo na DIREITA, nome à ESQUERDA (mirror do mandante). */
+  .lance-time {
+    direction: ltr;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    /* Tira o gap default pra reaproximar logo e nome após o reverse */
+    gap: 5px;
+  }
+
+  /* Assistência (ícone "hand" + nome) também espelha. */
+  .lance-assist {
+    justify-content: flex-end;
+    flex-direction: row-reverse;
   }
 }
 
