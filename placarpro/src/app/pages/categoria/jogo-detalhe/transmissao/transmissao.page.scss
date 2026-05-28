@@ -3239,7 +3239,13 @@
   grid-template-columns: 36px 1fr 36px;
   align-items: center;
   gap: 10px;
-  width: 100%;
+  /* Antes era `width: 100%` — isso fazia o card ocupar a largura toda
+     do painel, então o `justify-content: flex-end` do `.lado-visitante`
+     no `.lance-row` não tinha efeito visual (não dava pra "alinhar" um
+     card que já era 100%). Agora o card tem largura natural mas com
+     `max-width: 92%` pra não colar nas bordas do painel. */
+  width: auto;
+  max-width: 92%;
   padding: 10px 12px;
   border-radius: 12px;
   /* Fundo SÓLIDO (cinza claro) — pra o dark panel do feed não vazar

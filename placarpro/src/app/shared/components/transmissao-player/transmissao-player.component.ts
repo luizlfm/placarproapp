@@ -582,9 +582,13 @@ export class TransmissaoPlayerComponent implements OnChanges, OnDestroy {
     }
     if (track.kind === Track.Kind.Video) {
       (track as RemoteVideoTrack).attach(el);
-      // Aplica qualidade selecionada pelo user (auto/alta/media/baixa)
-      // na publication correspondente.
-      this.aplicarQualidadeNaTrackAtual();
+      // Se user já tinha escolhido qualidade não-auto manualmente, aplica.
+      // Em 'auto', não chamamos NADA — deixa LiveKit fazer subscription
+      // natural sem interferir (intervenção causava o player ficar preso
+      // em "Conectando...").
+      if (this.qualidadeSelecionada !== 'auto') {
+        this.aplicarQualidadeNaTrackAtual();
+      }
       // ═══ Otimizações de LATÊNCIA no elemento <video> do espectador ═══
       // Browsers HTML5 fazem buffer interno de 1-3s por padrão. Em
       // transmissão ao vivo isso é DELAY puro — vamos zerar.
