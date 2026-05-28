@@ -1,3 +1,22 @@
+/* ============ PROTEÇÃO DE OVERFLOW HORIZONTAL ============
+   Garante que a página NUNCA gere scroll-x na viewport mobile, mesmo
+   se algum filho (banner, card, faixa de patrocinadores) tentar
+   extrapolar a largura. Sem isso, em telas estreitas a lista de
+   equipes "vazava" pra direita e ficava cortada visualmente. */
+:host {
+  display: block;
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+ion-content {
+  --overflow: auto;
+}
+
+ion-content::part(scroll) {
+  overflow-x: hidden;
+}
+
 /* Título duplicado escondido em TODAS viewports —
    o nome da categoria já aparece no header navy (mobile) e na sidebar
    contextual (desktop), tornando o <h1> redundante. Mantemos no DOM
@@ -97,6 +116,13 @@ app-patrocinadores-faixa {
   max-width: 980px;
   margin: 28px auto 40px;
   padding: 0 24px;
+  /* `box-sizing: border-box` garante que o padding lateral conta dentro
+     do max-width — sem isso em viewports menores que 980px o padding
+     somava fora, podendo causar overflow. `min-width: 0` permite que a
+     seção encolha pra caber no container (importante quando children
+     têm conteúdo wide tipo nomes longos de equipe). */
+  box-sizing: border-box;
+  min-width: 0;
 
   /* Em mobile, menos respiro entre o hero card e o grid de equipes —
      acompanha a redução do hero, pra equipes aparecerem perto do topo
@@ -147,6 +173,11 @@ app-patrocinadores-faixa {
   border-radius: 12px;
   cursor: pointer;
   transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+  /* Garante que o card respeita o tamanho da célula do grid, mesmo se
+     o nome da equipe for longo. Sem `min-width: 0` + `box-sizing: border-box`
+     o conteúdo wide podia empurrar o card além da largura do grid. */
+  box-sizing: border-box;
+  min-width: 0;
 
   &:hover {
     transform: translateY(-1px);
