@@ -187,9 +187,14 @@
       <div class="row-2">
         <ion-input fill="outline" label="Nº camisa/registro" labelPlacement="stacked" inputmode="numeric"
           placeholder="Ex: 10" formControlName="numeroCamisa"></ion-input>
-        <ion-input fill="outline" label="Documento (CPF)" labelPlacement="stacked" inputmode="numeric"
-          placeholder="000.000.000-00" mask="cpf" formControlName="documento"></ion-input>
+        <ion-input fill="outline" label="CPF" labelPlacement="stacked" inputmode="numeric"
+          placeholder="000.000.000-00" mask="cpf" formControlName="cpf"></ion-input>
       </div>
+
+      <!-- RG separado em sua própria linha — formato variado (CNH inclui
+           órgão emissor + UF tipo "MG14967119 SSP MG", RG comum só dígitos). -->
+      <ion-input fill="outline" label="RG / Doc. Identidade" labelPlacement="stacked"
+        placeholder="Ex: MG14967119 SSP MG  ou  00.000.000-0" formControlName="rg"></ion-input>
 
       <div class="row-2">
         <app-date-input label="Data nascimento" mode="date" formControlName="dataNascimento"></app-date-input>

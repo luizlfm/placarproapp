@@ -96,8 +96,6 @@ export class OcrCameraService {
       input.setAttribute('capture', 'environment');
       input.style.display = 'none';
 
-      let resolvido = false;
-
       const cleanup = (): void => {
         try {
           if (input.parentNode) input.parentNode.removeChild(input);
@@ -113,7 +111,6 @@ export class OcrCameraService {
         }
         const reader = new FileReader();
         reader.onload = () => {
-          resolvido = true;
           cleanup();
           resolve(reader.result as string);
         };
@@ -124,18 +121,15 @@ export class OcrCameraService {
         reader.readAsDataURL(file);
       });
 
-      // Fallback pra cancelamento — alguns browsers não disparam evento.
-      // Aguarda janela voltar a ter foco; se não recebeu file, cancela.
-      const onFoco = (): void => {
-        setTimeout(() => {
-          if (!resolvido) {
-            cleanup();
-            reject(new Error('Captura cancelada.'));
-          }
-          window.removeEventListener('focus', onFoco);
-        }, 500);
-      };
-      window.addEventListener('focus', onFoco);
+      // Evento `cancel` nativo (Chrome 113+, Firefox 91+, Safari 16+).
+      // Dispara quando o user fecha o file picker sem escolher arquivo.
+      // Muito mais confiável que o hack antigo de window.focus + timeout
+      // (que disparava ANTES do `change` chegar no Windows, fazendo o
+      // user precisar selecionar 2-3 vezes pro arquivo "aparecer").
+      input.addEventListener('cancel', () => {
+        cleanup();
+        reject(new Error('Captura cancelada.'));
+      });
 
       document.body.appendChild(input);
       input.click();

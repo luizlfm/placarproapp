@@ -24,8 +24,11 @@ export interface PreprocessOpcoes {
 }
 
 const DEFAULTS: Required<Omit<PreprocessOpcoes, 'threshold'>> & { threshold: number | false } = {
-  larguraAlvo: 1600,
-  contraste: 1.35,
+  larguraAlvo: 1800,
+  // Contraste 1.15 (era 1.35) — valor menor preserva texto fino dos
+  // campos (CPF, RG, datas) que sumiam quando o contraste era muito
+  // agressivo. Mais conservador, mas mantém detalhes legíveis.
+  contraste: 1.15,
   threshold: false,
 };
 
@@ -100,4 +103,43 @@ function carregarImagem(src: string): Promise<HTMLImageElement> {
     img.onerror = () => reject(new Error('Falha ao carregar imagem.'));
     img.src = src;
   });
+}
+
+/**
+ * Redimensiona uma imagem (data URL) pra largura máxima especificada
+ * SEM aplicar filtros de contraste/grayscale. Útil pra reduzir fotos
+ * grandes de mobile (~12MP / 4032×3024) antes do Tesseract, que tem
+ * comportamento errático com imagens muito grandes (timeout ou texto
+ * extraído vazio).
+ *
+ * Diferente do `preprocessarImagem()`: NÃO altera cores nem aplica
+ * contraste — só resize. Versão segura pra todos os casos.
+ */
+export async function redimensionarImagem(
+  imagemDataUrl: string,
+  larguraMaxima = 2000,
+): Promise<string> {
+  const img = await carregarImagem(imagemDataUrl);
+
+  // Se já está dentro do limite, retorna a original (evita reencode desnecessário)
+  if (img.width <= larguraMaxima) {
+    return imagemDataUrl;
+  }
+
+  const ratio = img.width / img.height;
+  const largura = larguraMaxima;
+  const altura = Math.round(largura / ratio);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = largura;
+  canvas.height = altura;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return imagemDataUrl;
+
+  ctx.imageSmoothingEnabled = true;
+  (ctx as CanvasRenderingContext2D & { imageSmoothingQuality: ImageSmoothingQuality })
+    .imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, largura, altura);
+
+  return canvas.toDataURL('image/png');
 }

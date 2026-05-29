@@ -1,0 +1,463 @@
+.ficha-content {
+  --background: var(--placar-bg, #f5f5f7);
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 16px;
+  --padding-bottom: 28px;
+}
+
+/* ============ INICIAL ============ */
+.ficha-inicial {
+  text-align: center;
+  padding: 32px 8px;
+  max-width: 480px;
+  margin: 0 auto;
+
+  h2 {
+    margin: 16px 0 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--placar-text);
+  }
+  p {
+    margin: 0 0 24px;
+    font-size: 14px;
+    color: var(--placar-text-muted);
+    line-height: 1.5;
+  }
+  .hint {
+    margin-top: 18px;
+    font-size: 12.5px;
+    color: var(--placar-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+    line-height: 1.4;
+
+    ion-icon {
+      font-size: 16px;
+      color: var(--ion-color-secondary);
+      flex-shrink: 0;
+    }
+  }
+}
+
+.ficha-icon-grande {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 8px;
+  border-radius: 50%;
+  background: rgba(var(--ion-color-secondary-rgb), 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 48px;
+    color: var(--ion-color-secondary-shade);
+  }
+}
+
+.btn-tirar-foto {
+  --border-radius: 12px;
+  height: 52px;
+  font-weight: 800;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin: 0;
+
+  ion-icon { font-size: 20px; }
+}
+
+/* ============ CAPTURADO ============ */
+.ficha-capturado {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.ficha-preview {
+  position: relative;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  display: flex;
+  justify-content: center;
+
+  img {
+    max-width: 100%;
+    max-height: 60vh;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+.badge-pdf {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(var(--ion-color-danger-rgb), 0.92);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+
+  ion-icon { font-size: 13px; }
+}
+
+.ficha-acoes-preview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+
+  ion-button {
+    margin: 0;
+    height: 48px;
+    --border-radius: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+/* ============ PROCESSANDO ============ */
+.ficha-processando {
+  text-align: center;
+  padding: 60px 20px;
+
+  ion-spinner {
+    width: 56px;
+    height: 56px;
+    --color: var(--ion-color-primary);
+  }
+
+  h3 {
+    margin: 20px 0 6px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--placar-text);
+  }
+
+  p {
+    margin: 0;
+    color: var(--placar-text-muted);
+    font-size: 13.5px;
+  }
+}
+
+/* ============ REVISÃO ============ */
+.ficha-revisao {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.confianca-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.4;
+
+  ion-icon { font-size: 20px; flex-shrink: 0; }
+  strong { font-weight: 800; }
+
+  &.alta {
+    background: rgba(var(--ion-color-success-rgb, 124, 198, 29), 0.12);
+    color: var(--ion-color-success-shade);
+    ion-icon { color: var(--ion-color-success); }
+  }
+  &.media {
+    background: rgba(var(--ion-color-warning-rgb, 255, 196, 9), 0.15);
+    color: #8a6300;
+    ion-icon { color: var(--ion-color-warning-shade); }
+  }
+  &.baixa {
+    background: rgba(var(--ion-color-danger-rgb, 235, 71, 71), 0.12);
+    color: var(--ion-color-danger-shade);
+    ion-icon { color: var(--ion-color-danger); }
+  }
+}
+
+/* Lista de jogadores ──────────────────────────────────────────── */
+.jogadores-bloco {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid var(--placar-border);
+  overflow: hidden;
+}
+
+.jogadores-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--placar-surface-2);
+  border-bottom: 1px solid var(--placar-border);
+
+  strong {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--placar-text);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .btn-add-jog {
+    background: rgba(var(--ion-color-secondary-rgb), 0.18);
+    border: 0;
+    color: var(--ion-color-secondary-shade);
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+
+    ion-icon { font-size: 14px; }
+  }
+}
+
+.jogadores-vazio {
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--placar-text-muted);
+  line-height: 1.5;
+}
+
+.jog-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--placar-divider);
+
+  &:last-child { border-bottom: 0; }
+}
+
+.jog-num {
+  flex: 0 0 28px;
+  background: var(--placar-surface-2);
+  color: var(--placar-text-muted);
+  font-weight: 800;
+  font-size: 12px;
+  text-align: center;
+  padding: 6px 0;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+.jog-inputs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .inp-nome,
+  .inp-doc,
+  .inp-data {
+    width: 100%;
+    border: 1px solid var(--placar-border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 12.5px;
+    font-family: inherit;
+    color: var(--placar-text);
+    background: #fff;
+    outline: none;
+
+    &:focus { border-color: var(--ion-color-secondary); }
+  }
+
+  .inp-nome { font-weight: 700; }
+}
+
+.jog-row-sub {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 4px;
+}
+
+.jog-remove {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 0;
+  color: var(--ion-color-danger);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 6px;
+  margin-top: 4px;
+
+  &:hover { background: rgba(var(--ion-color-danger-rgb), 0.08); }
+  ion-icon { font-size: 16px; }
+}
+
+/* Texto bruto ──────────────────────────────────────────────────── */
+.texto-bruto {
+  background: #fff;
+  border: 1px solid var(--placar-border);
+  border-radius: 8px;
+
+  summary {
+    cursor: pointer;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--placar-text-muted);
+    font-weight: 600;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    list-style: none;
+
+    &::-webkit-details-marker { display: none; }
+    &::before { content: '▸'; }
+
+    .contador {
+      margin-left: auto;
+      font-size: 10.5px;
+      padding: 2px 8px;
+      background: var(--placar-surface-2);
+      border-radius: 999px;
+      font-weight: 700;
+    }
+  }
+  &[open] summary::before { content: '▾'; }
+
+  pre {
+    margin: 0;
+    padding: 10px 14px;
+    border-top: 1px solid var(--placar-border);
+    background: var(--placar-surface-2);
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--placar-text-muted);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+}
+
+/* Footer padrão ────────────────────────────────────────────────── */
+ion-footer ion-toolbar {
+  --background: #fff;
+  --border-color: #ececef;
+}
+
+.acoes-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+  background: #fff;
+
+  .btn-acao {
+    margin: 0;
+    width: 100%;
+    --border-radius: 999px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+/* ============ Comissão Técnica ============
+   Bloco editável com 3 linhas fixas (Técnico, Auxiliar, Assistente). */
+.comissao-bloco {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid var(--placar-border);
+  overflow: hidden;
+}
+
+.comissao-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--placar-surface-2);
+  border-bottom: 1px solid var(--placar-border);
+
+  strong {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--placar-text);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  small {
+    font-size: 11px;
+    color: var(--placar-text-muted);
+    font-weight: 500;
+  }
+}
+
+.cm-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 110px;
+  gap: 6px;
+  padding: 8px 10px;
+  align-items: center;
+  border-bottom: 1px solid var(--placar-divider);
+
+  &:last-child { border-bottom: 0; }
+
+  @media (max-width: 540px) {
+    grid-template-columns: 80px 1fr;
+    .cm-doc { grid-column: 2 / 3; }
+  }
+
+  .cm-funcao {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--placar-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .cm-nome,
+  .cm-doc {
+    border: 1px solid var(--placar-border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 12.5px;
+    font-family: inherit;
+    color: var(--placar-text);
+    background: #fff;
+    outline: none;
+
+    &:focus { border-color: var(--ion-color-secondary); }
+  }
+
+  .cm-nome { font-weight: 700; }
+}

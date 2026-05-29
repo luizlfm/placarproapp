@@ -57,6 +57,21 @@
       </ion-grid>
     </form>
 
+    <!-- Botão Escanear ficha — bulk import (cria equipe + jogadores via OCR) -->
+    <button
+      type="button"
+      class="btn-escanear-ficha"
+      (click)="escanearFicha()"
+      aria-label="Escanear ficha de inscrição"
+    >
+      <ion-icon name="scan-outline"></ion-icon>
+      <span>
+        <strong>Escanear ficha de inscrição</strong>
+        <small>Importa nome da equipe + jogadores automaticamente</small>
+      </span>
+      <ion-icon class="chevron" name="chevron-forward-outline"></ion-icon>
+    </button>
+
     <!-- Busca -->
     <div class="busca">
       <ion-searchbar

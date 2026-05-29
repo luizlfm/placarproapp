@@ -31,6 +31,8 @@ export interface DadosDocumentoBR {
   registroCnh?: string;
   /** Validade da CNH ISO: `YYYY-MM-DD` (só CNH). */
   validadeCnh?: string;
+  /** Data da 1ª habilitação ISO: `YYYY-MM-DD` (só CNH). */
+  primeiraHabilitacao?: string;
   /** Categoria da habilitação (AB, B, AC, etc. — só CNH). */
   categoriaCnh?: string;
   /** Nome do pai. */
@@ -41,12 +43,51 @@ export interface DadosDocumentoBR {
   confianca: number;
 }
 
-/** Map de variações de label que aparecem nos documentos. */
+/**
+ * Map de variações de label que aparecem nos documentos.
+ *
+ * REFERÊNCIA — layout da CNH brasileira (Carteira Nacional de Habilitação):
+ *
+ *   ┌──────────────────────────────────────────────┐
+ *   │ REPÚBLICA FEDERATIVA DO BRASIL               │
+ *   │ MINISTÉRIO DA INFRAESTRUTURA                 │
+ *   │ DEPARTAMENTO NACIONAL DE TRÂNSITO            │
+ *   │ CARTEIRA NACIONAL DE HABILITAÇÃO             │
+ *   ├──────────────┬───────────────────────────────┤
+ *   │              │ NOME                          │
+ *   │   [FOTO]     │ LUIZ FERNANDO DE MIRANDA      │
+ *   │              ├──────────────────┬────────────┤
+ *   │              │ DOC. IDENTIDADE/ÓRG EMISSOR/UF│
+ *   │              │ MG14967119 SSP MG             │
+ *   │              ├──────────────┬────────────────┤
+ *   │              │ CPF          │ DATA NASCIMENTO│
+ *   │              │ 086.099.986-65│ 14/06/1988    │
+ *   │              ├──────────────┴────────────────┤
+ *   │              │ FILIAÇÃO                      │
+ *   │              │ FERNANDO TEIXEIRA MIRANDA     │
+ *   │              │ EDLAMAR APARECIDA DE PAULA    │
+ *   │              │ MIRANDA                       │
+ *   │              ├──────┬──────┬─────────────────┤
+ *   │              │PERMIS│ ACC  │ CAT. HAB.       │
+ *   │              │      │      │ AB              │
+ *   ├──────┬───────┴──────┴──────┴─────────────────┤
+ *   │N° REG│ VALIDADE     │ 1ª HABILITAÇÃO         │
+ *   │xxxxxx│ 01/07/2031   │ 12/09/2006             │
+ *   └──────┴──────────────┴────────────────────────┘
+ *
+ * Observe que vários campos ficam LADO A LADO na mesma "linha" lógica do
+ * documento, mas o OCR pode quebrá-los em linhas separadas — daí o
+ * algoritmo procura o valor na MESMA linha do label OU nas 2 linhas
+ * seguintes (sem ultrapassar o próximo label).
+ */
 const LABELS = {
   nome: ['NOME', 'NOME COMPLETO', 'NOME E SOBRENOME'],
   cpf: ['CPF', 'C.P.F', 'C P F'],
   rg: [
-    'DOC IDENTIDADE', 'DOC. IDENTIDADE', 'DOCUMENTO DE IDENTIDADE',
+    // CNH usa label "DOC. IDENTIDADE/ÓRG EMISSOR/UF" — inclui o slash
+    // pra match parcial funcionar
+    'DOC IDENTIDADE', 'DOC. IDENTIDADE', 'DOC IDENT', 'DOC. IDENT',
+    'DOCUMENTO DE IDENTIDADE',
     'IDENTIDADE', 'RG', 'REGISTRO GERAL', 'CARTEIRA DE IDENTIDADE',
     'IDENT', 'CART IDENT',
   ],
@@ -54,10 +95,26 @@ const LABELS = {
     'DATA NASCIMENTO', 'DATA DE NASCIMENTO', 'NASCIMENTO',
     'DT NASC', 'DT NASCIMENTO', 'DATA NASC', 'NASC',
   ],
-  filiacao: ['FILIACAO', 'FILIAÇÃO', 'FILIAÇAO', 'FILIACÃO', 'PAI E MAE', 'PAI E MÃE'],
-  registroCnh: ['N° REGISTRO', 'Nº REGISTRO', 'N REGISTRO', 'REGISTRO', 'NUMERO REGISTRO'],
-  validadeCnh: ['VALIDADE', 'VALIDA ATE', 'VÁLIDA ATÉ', 'VALIDADE CNH'],
-  categoriaCnh: ['CAT HAB', 'CAT. HAB', 'CATEGORIA', 'CATEGORIA HABILITACAO', 'CAT'],
+  filiacao: [
+    'FILIACAO', 'FILIAÇÃO', 'FILIAÇAO', 'FILIACÃO',
+    'PAI E MAE', 'PAI E MÃE', 'PAI/MAE', 'PAI/MÃE',
+  ],
+  registroCnh: [
+    'N° REGISTRO', 'Nº REGISTRO', 'N REGISTRO', 'N° REG', 'Nº REG',
+    'NUMERO REGISTRO', 'NÚMERO REGISTRO', 'REGISTRO',
+  ],
+  validadeCnh: [
+    'VALIDADE', 'VALIDA ATE', 'VÁLIDA ATÉ', 'VALIDADE CNH',
+    'VAL', 'VAL.',
+  ],
+  categoriaCnh: [
+    'CAT HAB', 'CAT. HAB', 'CAT.HAB', 'CATEGORIA', 'CAT', 'CAT.',
+    'CATEGORIA HABILITACAO', 'CATEGORIA DE HABILITAÇÃO',
+  ],
+  primeiraHab: [
+    '1ª HABILITAÇÃO', '1A HABILITACAO', '1A HAB', '1ª HAB',
+    'PRIMEIRA HABILITACAO', 'PRIMEIRA HABILITAÇÃO',
+  ],
 } as const;
 
 /** Palavras que NUNCA fazem parte de nome próprio — extensão da blacklist. */
@@ -99,6 +156,7 @@ export function parseDocumentoBR(textoBruto: string): DadosDocumentoBR {
   resultado.dataNascimento = acharValorAposLabel(linhas, LABELS.nascimento, { extrator: extrairDataDaLinha });
   resultado.registroCnh = acharValorAposLabel(linhas, LABELS.registroCnh, { extrator: extrairRegistroCnh });
   resultado.validadeCnh = acharValorAposLabel(linhas, LABELS.validadeCnh, { extrator: extrairDataDaLinha });
+  resultado.primeiraHabilitacao = acharValorAposLabel(linhas, LABELS.primeiraHab, { extrator: extrairDataDaLinha });
   resultado.categoriaCnh = acharValorAposLabel(linhas, LABELS.categoriaCnh, { extrator: extrairCategoriaCnh });
 
   // Filiação tem 2 nomes — extrai os 2 primeiros nomes válidos após o label.
@@ -106,8 +164,9 @@ export function parseDocumentoBR(textoBruto: string): DadosDocumentoBR {
   resultado.nomePai = filiacao[0];
   resultado.nomeMae = filiacao[1];
 
-  // 2) Fallbacks — só se label-based falhou.
+  // 2) Fallbacks — escaneamento global quando label-based falhou.
   if (!resultado.cpf) resultado.cpf = extrairCpfGlobal(texto);
+  if (!resultado.rg) resultado.rg = extrairRgGlobal(texto);
   if (!resultado.dataNascimento) resultado.dataNascimento = extrairDataNascimentoFallback(texto);
   if (!resultado.nome) resultado.nome = extrairNomeFallback(linhas);
 
@@ -203,18 +262,30 @@ function ehLinhaDeLabel(linha: string): boolean {
 // ──────────────────────────────────────────────────────────────────────
 
 /**
- * Nome válido = 2+ palavras, sem dígitos, sem maioria de palavras
- * institucionais. Aceita texto com letras maiúsculas E minúsculas
- * (alguns docs aparecem em title case).
+ * Nome válido = 2+ palavras de tamanho real, sem dígitos, sem palavras
+ * institucionais, com pelo menos uma palavra "completa" (4+ chars).
+ *
+ * Regras (rigorosas pra evitar lixo do OCR tipo "E SO sa" ou "RC TY pp"):
+ *  - 10+ caracteres totais (sem espaços)
+ *  - 2+ palavras de 3+ chars (descarta "E", "DE", "DA")
+ *  - Pelo menos 1 palavra com 4+ chars (nomes brasileiros sempre têm
+ *    pelo menos um termo razoável tipo "JOAO", "MARIA", "SILVA")
+ *  - Nenhuma palavra institucional
  */
 function validarNome(v: string): boolean {
-  if (v.length < 5 || v.length > 100) return false;
+  if (v.length < 8 || v.length > 100) return false;
   // Sem dígitos
   if (/\d/.test(v)) return false;
   // Só letras, acentos, espaços, hífens, apóstrofos
   if (!/^[A-Za-zÀ-ÿ\s'\-]+$/.test(v)) return false;
-  const palavras = v.toUpperCase().split(/\s+/).filter(p => p.length >= 2);
+  // Mínimo de caracteres não-espaço (descarta "X Y Z" tipo lixo)
+  const semEspacos = v.replace(/\s+/g, '');
+  if (semEspacos.length < 10) return false;
+  // Palavras de 3+ caracteres
+  const palavras = v.toUpperCase().split(/\s+/).filter(p => p.length >= 3);
   if (palavras.length < 2) return false;
+  // Pelo menos 1 palavra "robusta" (4+ chars) — nomes reais sempre têm
+  if (!palavras.some(p => p.length >= 4)) return false;
   // Rejeita se QUALQUER palavra estiver na blacklist institucional
   if (palavras.some(p => PALAVRAS_INSTITUCIONAIS.has(p))) return false;
   return true;
@@ -302,6 +373,24 @@ function extrairCpfGlobal(texto: string): string | undefined {
   return undefined;
 }
 
+/**
+ * Fallback global pro RG — varre texto buscando padrão CNH típico
+ * (2 letras UF + 7-10 dígitos + sigla órgão emissor + UF) OU formato
+ * RG clássico (dígitos com separadores + dígito verificador).
+ * Usado quando label "DOC IDENTIDADE"/"RG" não foi encontrado.
+ */
+function extrairRgGlobal(texto: string): string | undefined {
+  // Padrão CNH "MG14967119 SSP MG" — UF (2 letras) + 7-10 dígitos
+  // + opcionalmente órgão (2-4 letras) + UF (2 letras)
+  const cnh = /\b([A-Z]{2}\d{6,10})(\s+[A-Z]{2,4})?(\s+[A-Z]{2})?/.exec(texto);
+  if (cnh) {
+    return [cnh[1], cnh[2], cnh[3]].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+  }
+  // Padrão RG comum: 7-10 dígitos com possível pontuação + dígito verificador
+  const rg = /\b(\d{1,2}\.?\d{3}\.?\d{3}-?[\dxX])\b/.exec(texto);
+  return rg ? rg[1] : undefined;
+}
+
 function extrairDataNascimentoFallback(texto: string): string | undefined {
   // Primeira data válida do texto (1900-ano atual)
   const m = /(\d{2})[\/\-.](\d{2})[\/\-.](\d{4})/.exec(texto);
@@ -326,16 +415,50 @@ function extrairNomeFallback(linhas: string[]): string | undefined {
   return undefined;
 }
 
+/**
+ * Extrai pai e mãe do bloco FILIAÇÃO da CNH.
+ *
+ * Desafio: o OCR frequentemente QUEBRA o nome da mãe em 2 linhas quando
+ * ela tem nome longo. Ex:
+ *   "FERNANDO TEIXEIRA MIRANDA"          ← pai (linha 1)
+ *   "EDLAMAR APARECIDA DE PAULA"         ← mãe (linha 2, parte 1)
+ *   "MIRANDA"                            ← mãe (linha 3, parte 2 — só 1 palavra)
+ *
+ * Algoritmo:
+ *   1. Acha o label FILIAÇÃO
+ *   2. Coleta TODAS as linhas seguintes até bater em outro label/limite
+ *   3. Junta linhas-continuação (1 palavra maiúscula) com a anterior
+ *   4. Pega os 2 primeiros nomes válidos resultantes
+ */
 function acharFiliacao(linhas: string[]): [string?, string?] {
   for (let i = 0; i < linhas.length; i++) {
     const upper = linhas[i].toUpperCase();
     if (LABELS.filiacao.some(lbl => upper.includes(lbl))) {
-      const nomes: string[] = [];
-      for (let j = i + 1; j < Math.min(i + 6, linhas.length); j++) {
+      // Coleta linhas brutas até bater em outro label
+      const brutas: string[] = [];
+      for (let j = i + 1; j < Math.min(i + 8, linhas.length); j++) {
         if (ehLinhaDeLabel(linhas[j])) break;
-        if (validarNome(linhas[j])) nomes.push(linhas[j]);
-        if (nomes.length === 2) break;
+        if (linhas[j].trim()) brutas.push(linhas[j].trim());
       }
+
+      // Junta linhas-continuação (1-2 palavras maiúsculas curtas) com a
+      // linha anterior — comum quando nome longo da mãe quebra em duas.
+      const consolidadas: string[] = [];
+      for (const linha of brutas) {
+        const palavras = linha.split(/\s+/);
+        const ehContinuacao =
+          consolidadas.length > 0 &&
+          palavras.length <= 2 &&
+          /^[A-ZÀ-Ý\s]+$/.test(linha);
+        if (ehContinuacao) {
+          consolidadas[consolidadas.length - 1] += ' ' + linha;
+        } else {
+          consolidadas.push(linha);
+        }
+      }
+
+      // Filtra os que passam no validador de nome
+      const nomes = consolidadas.filter(n => validarNome(n));
       return [nomes[0], nomes[1]];
     }
   }

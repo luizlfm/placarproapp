@@ -36,8 +36,15 @@ export interface Jogador {
   posicao?: string;
   /** Número da camisa ou registro de inscrição. */
   numeroCamisa?: string;
-  /** RG/CPF. */
+  /** Campo LEGADO — antes guardava "CPF / RG" combinados. Mantido pra
+   *  retrocompatibilidade com docs antigos do Firestore. Novos cadastros
+   *  preferem `cpf` e `rg` separados. Pode ser preenchido a partir
+   *  desses dois pra retro-compat em listagens. */
   documento?: string;
+  /** CPF formatado: `123.456.789-00`. */
+  cpf?: string;
+  /** RG / DOC. IDENTIDADE. Aceita formato CNH ("MG14967119 SSP MG"). */
+  rg?: string;
   /** YYYY-MM-DD (ISO). */
   dataNascimento?: string;
   telefone?: string;
@@ -54,6 +61,7 @@ export type NovoJogadorInput = Pick<Jogador, 'nome' | 'equipeId'> &
   Partial<
     Pick<
       Jogador,
-      'apelido' | 'posicao' | 'numeroCamisa' | 'documento' | 'dataNascimento' | 'telefone' | 'fotoUrl'
+      'apelido' | 'posicao' | 'numeroCamisa' | 'documento' | 'cpf' | 'rg' |
+      'dataNascimento' | 'telefone' | 'fotoUrl'
     >
   >;

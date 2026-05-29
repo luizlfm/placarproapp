@@ -86,6 +86,38 @@
       </span>
     </div>
 
+    <!-- Aviso + retry quando confiança baixa (<66%) -->
+    <div class="aviso-retry" *ngIf="dados.confianca < 0.66">
+      <ion-icon name="warning-outline"></ion-icon>
+      <div class="aviso-texto">
+        <strong>Resultado incompleto.</strong>
+        <span>
+          Você pode tentar de novo COM filtro de imagem (ajuda em fotos
+          escuras/baixa qualidade) ou trocar a foto.
+        </span>
+      </div>
+      <div class="aviso-acoes">
+        <ion-button
+          size="small"
+          fill="outline"
+          color="primary"
+          (click)="reprocessarComFiltro()"
+        >
+          <ion-icon slot="start" name="contrast-outline"></ion-icon>
+          Tentar com filtro
+        </ion-button>
+        <ion-button
+          size="small"
+          fill="outline"
+          color="medium"
+          (click)="trocarFoto()"
+        >
+          <ion-icon slot="start" name="camera-outline"></ion-icon>
+          Outra foto
+        </ion-button>
+      </div>
+    </div>
+
     <p class="instrucao">Revise os dados extraídos. Você pode editar antes de importar.</p>
 
     <ion-input
@@ -122,9 +154,39 @@
       type="date"
     ></ion-input>
 
-    <details class="texto-bruto" *ngIf="dados.textoOriginal">
-      <summary>Ver texto bruto reconhecido (debug)</summary>
-      <pre>{{ dados.textoOriginal }}</pre>
+    <!-- ============ Toggle: usar foto do documento como foto do jogador ============
+         Default ligado — evita user precisar tirar 2 fotos. Pode desligar
+         se a foto for de baixa qualidade ou for um PDF/lista (não rosto). -->
+    <div class="toggle-foto" *ngIf="imagemDataUrl">
+      <div class="toggle-foto-preview">
+        <img [src]="imagemDataUrl" alt="Preview" />
+      </div>
+      <div class="toggle-foto-texto">
+        <strong>Usar como foto do jogador</strong>
+        <span>A imagem capturada vira a foto-perfil</span>
+      </div>
+      <ion-toggle
+        [(ngModel)]="importarFoto"
+        color="secondary"
+        aria-label="Importar foto do documento como foto do jogador"
+      ></ion-toggle>
+    </div>
+
+    <!-- Texto bruto — expandido por padrão se confiança = 0%
+         (pra debug rápido: você vê se OCR retornou nada vs algo que
+         o parser não conseguiu interpretar). -->
+    <details class="texto-bruto" [open]="dados.confianca === 0">
+      <summary>
+        Texto bruto reconhecido pelo OCR
+        <span class="contador">{{ dados.textoOriginal.length }} chars</span>
+      </summary>
+      <pre *ngIf="dados.textoOriginal.trim(); else semTexto">{{ dados.textoOriginal }}</pre>
+      <ng-template #semTexto>
+        <div class="sem-texto">
+          ⚠️ OCR não conseguiu extrair NENHUM texto da imagem.
+          Tente outra foto (mais nítida ou com mais luz) ou ative o filtro.
+        </div>
+      </ng-template>
     </details>
   </div>
 </ion-content>

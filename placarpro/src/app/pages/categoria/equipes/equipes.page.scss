@@ -289,3 +289,61 @@
     }
   }
 }
+
+/* ============ Botão "Escanear ficha de inscrição" ============
+   Aparece entre o quick-add e o searchbar — atalho destacado em
+   verde (cor secundária da marca) pra importar ficha completa via OCR.
+   Mesma estética do "Escanear documento" do jogador-modal. */
+.btn-escanear-ficha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 4px 0 14px;
+  padding: 12px 14px;
+  background: rgba(var(--ion-color-secondary-rgb), 0.10);
+  border: 1px solid rgba(var(--ion-color-secondary-rgb), 0.30);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 120ms ease, border-color 120ms ease, transform 80ms ease;
+  font-family: inherit;
+  color: var(--placar-text);
+
+  &:hover {
+    background: rgba(var(--ion-color-secondary-rgb), 0.16);
+    border-color: rgba(var(--ion-color-secondary-rgb), 0.50);
+  }
+  &:active { transform: scale(0.99); }
+
+  > ion-icon:first-child {
+    font-size: 26px;
+    color: var(--ion-color-secondary-shade);
+    flex-shrink: 0;
+  }
+
+  > span {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+
+    strong {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--placar-text);
+    }
+    small {
+      font-size: 11.5px;
+      color: var(--placar-text-muted);
+      line-height: 1.35;
+    }
+  }
+
+  .chevron {
+    font-size: 18px;
+    color: var(--ion-color-secondary-shade);
+    flex-shrink: 0;
+  }
+}

@@ -13,6 +13,7 @@ import { ConvitesEquipeService } from '../../../campeonatos/convites-equipe.serv
 import { AuthService } from '../../../auth/auth.service';
 import { EquipeModalComponent } from './equipe-modal/equipe-modal.component';
 import { JogadorModalComponent } from './jogador-modal/jogador-modal.component';
+import { FichaEquipeOcrModalComponent } from '../../../shared/ocr/ficha-equipe-ocr-modal/ficha-equipe-ocr-modal.component';
 
 interface EquipeView extends Equipe {
   grupoNome?: string;
@@ -105,6 +106,37 @@ export class EquipesPage {
       await this.showToast('Não foi possível criar a equipe. Verifique permissões.', 'danger');
     } finally {
       this.criando = false;
+    }
+  }
+
+  /**
+   * Abre o modal de OCR de ficha de inscrição — captura/PDF, extrai
+   * nome da equipe + lista de jogadores e cria tudo em bulk no Firestore.
+   *
+   * O próprio modal faz as criações via EquipesService/JogadoresService.
+   * Aqui só dismissamos e mostramos um toast com o resultado.
+   */
+  async escanearFicha(): Promise<void> {
+    const modal = await this.modalCtrl.create({
+      component: FichaEquipeOcrModalComponent,
+      componentProps: {
+        campeonatoId: this.campeonatoId,
+        categoriaId: this.categoriaId,
+      },
+      backdropDismiss: false,
+    });
+    await modal.present();
+    const { data } = await modal.onDidDismiss<{
+      saved?: boolean;
+      equipeId?: string;
+      nome?: string;
+      qtdJogadores?: number;
+    }>();
+    if (data?.saved) {
+      await this.showToast(
+        `"${data.nome}" criada com ${data.qtdJogadores ?? 0} jogador(es).`,
+        'success',
+      );
     }
   }
 

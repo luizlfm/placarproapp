@@ -89,7 +89,11 @@ export class JogadorModalComponent implements OnInit {
     apelido: [''],
     posicao: [''],
     numeroCamisa: [''],
-    documento: [''],
+    // CPF e RG separados (antes era um campo `documento` único combinado).
+    // Continuamos populando `documento` no salvar pra retrocompat com
+    // listagens antigas que leem desse campo.
+    cpf: [''],
+    rg: [''],
     dataNascimento: [''],
     telefone: [''],
     fotoUrl: [''],
@@ -197,7 +201,8 @@ export class JogadorModalComponent implements OnInit {
       apelido: '',
       posicao: '',
       numeroCamisa: '',
-      documento: '',
+      cpf: '',
+      rg: '',
       dataNascimento: '',
       telefone: '',
       fotoUrl: '',
@@ -213,7 +218,8 @@ export class JogadorModalComponent implements OnInit {
       apelido: '',
       posicao: '',
       numeroCamisa: '',
-      documento: '',
+      cpf: '',
+      rg: '',
       dataNascimento: '',
       telefone: '',
       fotoUrl: '',
@@ -225,12 +231,20 @@ export class JogadorModalComponent implements OnInit {
     this.jogadorEditando = j;
     this.fotoPendenteBlob = undefined;
     this.fotoPendenteUrl = undefined;
+
+    // Migração suave do campo `documento` legado (formato "CPF / RG")
+    // pros campos novos `cpf` e `rg`. Se o jogador já tem `cpf`/`rg`
+    // separados, usa direto. Senão, tenta splitar o `documento` antigo.
+    const cpf = j.cpf ?? this.extrairCpfDoLegado(j.documento);
+    const rg  = j.rg  ?? this.extrairRgDoLegado(j.documento);
+
     this.form.patchValue({
       nome: j.nome,
       apelido: j.apelido ?? '',
       posicao: j.posicao ?? '',
       numeroCamisa: j.numeroCamisa ?? '',
-      documento: j.documento ?? '',
+      cpf: cpf ?? '',
+      rg: rg ?? '',
       dataNascimento: j.dataNascimento ?? '',
       telefone: j.telefone ?? '',
       fotoUrl: j.fotoUrl ?? '',
@@ -497,6 +511,16 @@ export class JogadorModalComponent implements OnInit {
         sanitized[k] = v;
       });
 
+      // Retro-compat: também popula o campo legado `documento` com
+      // "CPF / RG" combinados. Assim listagens/CSV/relatórios antigos
+      // que leem só `documento` continuam funcionando.
+      const cpf = (raw.cpf ?? '').trim();
+      const rg = (raw.rg ?? '').trim();
+      const combinado = [cpf, rg].filter(Boolean).join(' / ');
+      if (combinado) {
+        sanitized['documento'] = combinado;
+      }
+
       let jogadorId = this.jogadorEditando?.id;
       if (jogadorId) {
         await this.jogadoresSrv.atualizar(
@@ -714,6 +738,10 @@ export class JogadorModalComponent implements OnInit {
    * - CPF e RG são concatenados no campo `documento` (form tem um campo só)
    * - Se já tinha algum valor no form, ele é SOBRESCRITO pelo OCR (intencional —
    *   user clicou explicitamente "Escanear" pra esse fim)
+   * - Se o toggle "usar como foto do jogador" estava ligado no OCR modal,
+   *   a imagem capturada também é seta como `fotoUrl`:
+   *     - Editando: faz upload imediato pro Storage
+   *     - Criando: guarda em `fotoPendenteBlob`/`fotoPendenteUrl` (uploadado no salvar)
    */
   async escanearDocumento(): Promise<void> {
     const modal = await this.modalCtrl.create({
@@ -723,19 +751,34 @@ export class JogadorModalComponent implements OnInit {
     await modal.present();
     const { data } = await modal.onDidDismiss<{
       saved?: boolean;
-      dados?: { nome?: string; cpf?: string; rg?: string; dataNascimento?: string };
+      dados?: {
+        nome?: string;
+        cpf?: string;
+        rg?: string;
+        dataNascimento?: string;
+        fotoDataUrl?: string;
+      };
     }>();
     if (!data?.saved || !data.dados) return;
 
-    const { nome, cpf, rg, dataNascimento } = data.dados;
-    // Combina CPF + RG no campo `documento` (formato: "CPF / RG")
-    const documento = [cpf, rg].filter(Boolean).join(' / ') || undefined;
+    const { nome, cpf, rg, dataNascimento, fotoDataUrl } = data.dados;
 
+    // Patcheia CADA campo separadamente (form agora tem `cpf` e `rg`
+    // separados, em vez do antigo `documento` combinado).
     this.form.patchValue({
       ...(nome ? { nome } : {}),
-      ...(documento ? { documento } : {}),
+      ...(cpf ? { cpf } : {}),
+      ...(rg ? { rg } : {}),
       ...(dataNascimento ? { dataNascimento } : {}),
     });
+
+    // Se OCR devolveu foto, abre o cropper pro user recortar SÓ a foto
+    // do rosto (não a folha inteira do documento). Mesmo aspecto 5:6 e
+    // fluxo do `selecionarFoto()`. Sai depois com `fotoPendenteBlob` ou
+    // upload imediato (se editando).
+    if (fotoDataUrl) {
+      await this.cortarFotoDoDocumento(fotoDataUrl);
+    }
 
     const t = await this.toastCtrl.create({
       message: 'Dados importados do documento. Revise e salve.',
@@ -744,6 +787,79 @@ export class JogadorModalComponent implements OnInit {
       color: 'success',
     });
     await t.present();
+  }
+
+  /**
+   * Recebe a imagem capturada do documento e abre o ImageCropper pro user
+   * recortar SÓ a área da foto do rosto (que vira a foto-perfil do jogador).
+   * Não salva a folha inteira como foto — usa o mesmo cropper do botão
+   * "Selecionar foto" pra consistência visual.
+   */
+  private async cortarFotoDoDocumento(fotoDataUrl: string): Promise<void> {
+    try {
+      const blob = await this.dataUrlParaBlob(fotoDataUrl);
+      const file = new File([blob], 'documento.png', { type: blob.type || 'image/png' });
+
+      const modal = await this.modalCtrl.create({
+        component: ImageCropperModalComponent,
+        componentProps: {
+          file,
+          aspectRatio: 5 / 6,
+          title: 'Recortar foto do jogador',
+          roundCropper: false,
+        },
+      });
+      await modal.present();
+      const { data } = await modal.onDidDismiss<{ blob?: Blob; dataUrl?: string }>();
+      if (!data?.blob) return;
+
+      // Mesmo fluxo do selecionarFoto: novo → pendente; editando → upload.
+      if (this.jogadorEditando?.id) {
+        await this.uploadFotoBlob(this.jogadorEditando.id, data.blob);
+      } else {
+        this.fotoPendenteBlob = data.blob;
+        this.fotoPendenteUrl = data.dataUrl;
+        this.form.patchValue({ fotoUrl: data.dataUrl ?? '' });
+      }
+    } catch (err) {
+      console.warn('[cortarFotoDoDocumento] falha', err);
+    }
+  }
+
+  /** Converte uma data URL (base64) em Blob — necessário pro upload
+   *  da foto do OCR pro Firebase Storage (que aceita Blob/File, não dataUrl). */
+  private async dataUrlParaBlob(dataUrl: string): Promise<Blob> {
+    const res = await fetch(dataUrl);
+    return await res.blob();
+  }
+
+  /**
+   * Tenta extrair o CPF de um campo `documento` legado (formato
+   * antigo "CPF / RG" ou só "CPF"). Identifica pelo padrão de 11
+   * dígitos com pontuação típica de CPF.
+   */
+  private extrairCpfDoLegado(documento?: string): string | undefined {
+    if (!documento) return undefined;
+    const m = /(\d{3})[.\s-]?(\d{3})[.\s-]?(\d{3})[.\s-]?(\d{2})/.exec(documento);
+    return m ? `${m[1]}.${m[2]}.${m[3]}-${m[4]}` : undefined;
+  }
+
+  /**
+   * Tenta extrair o RG de um campo `documento` legado. Estratégia:
+   *   - Se tem " / ", pega o que vem DEPOIS (formato "CPF / RG")
+   *   - Se NÃO bate o pattern de CPF, considera o conteúdo inteiro como RG
+   */
+  private extrairRgDoLegado(documento?: string): string | undefined {
+    if (!documento) return undefined;
+    if (documento.includes(' / ')) {
+      const partes = documento.split(' / ').map(p => p.trim()).filter(Boolean);
+      // O CPF normalmente vem primeiro — pega tudo que não é CPF
+      const rgParte = partes.find(p => !/\d{3}[.\s-]?\d{3}[.\s-]?\d{3}[.\s-]?\d{2}/.test(p));
+      return rgParte || partes[partes.length - 1];
+    }
+    // Sem separador: se for CPF puro, não há RG. Se não for CPF, é RG.
+    const ehCpf = /\d{3}[.\s-]?\d{3}[.\s-]?\d{3}[.\s-]?\d{2}/.test(documento);
+    return ehCpf ? undefined : documento.trim();
   }
 
   async selecionarFoto(): Promise<void> {

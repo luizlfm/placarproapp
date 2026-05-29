@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { createWorker, Worker, PSM } from 'tesseract.js';
-import { preprocessarImagem } from './image-preprocess.util';
+import { preprocessarImagem, redimensionarImagem } from './image-preprocess.util';
 
 /**
  * Serviço de OCR usando Tesseract.js.
@@ -27,13 +27,18 @@ export class OcrService {
   /**
    * Extrai todo o texto reconhecido da imagem.
    *
-   * Por padrão aplica PRÉ-PROCESSAMENTO (grayscale + contraste + resize)
-   * que aumenta MUITO a precisão em fotos de documento. Passar
-   * `preprocessar: false` se a imagem já está limpa (ex: PDF renderizado).
+   * Pré-processamento (grayscale + contraste + resize) é OPT-IN agora
+   * — testes empíricos mostraram que muitos documentos modernos (com
+   * fundo claro e texto escuro bem-impresso) ficam PIOR com o filtro
+   * porque o contraste extra "apaga" texto fino. Imagens cruas do
+   * Tesseract.js v5 com `'por'` + PSM.AUTO já dão bons resultados.
+   *
+   * Passe `preprocessar: true` se a foto for muito escura, com flash,
+   * ou de baixa qualidade — aí o filtro ajuda.
    *
    * @param imagem  Data URL (base64) OU File OU Blob OU HTMLImageElement.
    * @param langs   Idiomas pra reconhecer. Default: 'por'.
-   * @param opcoes  { preprocessar?: boolean } — default true.
+   * @param opcoes  { preprocessar?: boolean } — default false (cru).
    * @returns       Texto bruto reconhecido, com quebras de linha preservadas.
    */
   async extrair(
@@ -44,19 +49,29 @@ export class OcrService {
     const langStr = Array.isArray(langs) ? langs.join('+') : langs;
     const worker = await this.obterWorker(langStr);
 
-    // Pré-processa só se for data URL (string base64) — File/Blob/Img
-    // ficaria custoso converter; nesses casos passar `preprocessar: false`.
+    // Pipeline (só pra strings/data URLs):
+    //   1. SEMPRE redimensiona se > 2000px de largura (evita Tesseract
+    //      retornar vazio com imagens gigantes de mobile ~12MP).
+    //   2. Se `preprocessar: true`, aplica também grayscale + contraste.
     let imagemFinal: string | File | Blob | HTMLImageElement = imagem;
-    if (typeof imagem === 'string' && opcoes.preprocessar !== false) {
+    if (typeof imagem === 'string') {
       try {
-        imagemFinal = await preprocessarImagem(imagem);
+        imagemFinal = await redimensionarImagem(imagem, 2000);
+        if (opcoes.preprocessar === true) {
+          imagemFinal = await preprocessarImagem(imagemFinal as string);
+        }
       } catch (err) {
-        console.warn('[OcrService] preprocess falhou, usando imagem original', err);
+        console.warn('[OcrService] resize/preprocess falhou, usando original', err);
+        imagemFinal = imagem;
       }
     }
 
     const { data } = await worker.recognize(imagemFinal);
-    return data.text ?? '';
+    const texto = data.text ?? '';
+    // Log de diagnóstico — ajuda a depurar quando OCR retorna vazio mesmo
+    // com imagem boa. Não polui produção (1 linha por OCR run).
+    console.info(`[OcrService] extrair: ${texto.length} chars, lang=${langStr}, preprocess=${opcoes.preprocessar === true}`);
+    return texto;
   }
 
   /**

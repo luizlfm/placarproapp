@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { ModalController, ToastController } from '@ionic/angular';
 import { OcrService } from '../ocr.service';
+import { OcrSpaceService } from '../ocr-space.service';
 import { OcrCameraService } from '../ocr-camera.service';
 import { parseDocumentoBR, DadosDocumentoBR } from '../parsers/rg-parser';
 import { pdfParaPrimeiraImagem } from '../pdf-to-image.util';
@@ -29,6 +30,7 @@ export class OcrImportModalComponent {
   private readonly modalCtrl = inject(ModalController);
   private readonly toastCtrl = inject(ToastController);
   private readonly ocr = inject(OcrService);
+  private readonly ocrCloud = inject(OcrSpaceService);
   private readonly camera = inject(OcrCameraService);
 
   /** Estados do fluxo: 'inicial' → 'capturado' → 'processando' → 'revisao' */
@@ -50,6 +52,11 @@ export class OcrImportModalComponent {
   cpf = '';
   rg = '';
   dataNascimento = '';
+
+  /** Quando true, devolve a imagem capturada pro caller usar como foto
+   *  do jogador (campo `fotoUrl`). Default true — usuário geralmente quer
+   *  isso quando escaneia, evita ter que tirar 2 fotos separadas. */
+  importarFoto = true;
 
   /** Progresso do OCR pra mostrar no spinner (0-100). */
   progressoOcr = 0;
@@ -101,14 +108,46 @@ export class OcrImportModalComponent {
     this.estado = 'inicial';
   }
 
-  /** Inicia OCR + parsing. */
-  async processar(): Promise<void> {
+  /**
+   * Inicia OCR + parsing.
+   *
+   * Estratégia em CASCATA (tenta o melhor primeiro, fallback no pior):
+   *   1. OCR.space (cloud, Engine 2 layout-aware) — qualidade ALTA pra
+   *      documentos. 25k requests/mês grátis. Falha se sem internet
+   *      ou se quota estourar.
+   *   2. Tesseract.js (client-side WASM) — fallback offline. Qualidade
+   *      menor mas funciona sem rede.
+   *
+   * @param comFiltro  Se true, aplica pré-processamento na imagem
+   *   antes de mandar pro Tesseract (não afeta OCR.space). Útil em
+   *   retries de fotos escuras.
+   */
+  async processar(comFiltro = false): Promise<void> {
     if (!this.imagemDataUrl) return;
     this.estado = 'processando';
     this.progressoOcr = 0;
 
+    let texto = '';
+    let origem: 'cloud' | 'local' = 'cloud';
+
     try {
-      const texto = await this.ocr.extrair(this.imagemDataUrl, 'por');
+      // 1) Tenta OCR.space primeiro (qualidade ALTA pra docs)
+      try {
+        texto = await this.ocrCloud.extrair(this.imagemDataUrl, {
+          lang: 'por',
+          engine: 2,
+        });
+        origem = 'cloud';
+      } catch (errCloud) {
+        // 2) Fallback Tesseract.js client-side
+        console.warn('[OcrImport] OCR.space falhou, caindo pra Tesseract', errCloud);
+        await this.toast('OCR cloud indisponível — usando processamento local.', 'medium');
+        texto = await this.ocr.extrair(this.imagemDataUrl, 'por', {
+          preprocessar: comFiltro,
+        });
+        origem = 'local';
+      }
+
       this.dados = parseDocumentoBR(texto);
 
       // Pré-preenche os modelos
@@ -122,18 +161,29 @@ export class OcrImportModalComponent {
       const confiancaPercent = Math.round(this.dados.confianca * 100);
       if (confiancaPercent < 50) {
         await this.toast(
-          `Confiança baixa (${confiancaPercent}%). Revise os campos antes de importar.`,
+          `Confiança ${confiancaPercent}% (${origem}). Revise os campos.`,
           'medium',
         );
       }
     } catch (err) {
-      console.error('[OcrImport] OCR erro', err);
+      console.error('[OcrImport] OCR erro total', err);
       await this.toast('Erro ao processar imagem. Tente outra foto.', 'danger');
       this.estado = 'capturado';
     }
   }
 
-  /** Confirma e fecha o modal retornando os campos ao caller. */
+  /** Botão "Tentar de novo" — reprocessa COM filtro de imagem (útil pra
+   *  fotos escuras/baixa qualidade onde o OCR cru falhou). */
+  async reprocessarComFiltro(): Promise<void> {
+    await this.processar(true);
+  }
+
+  /**
+   * Confirma e fecha o modal retornando os campos ao caller.
+   * Se `importarFoto` está ligado, devolve também `fotoDataUrl` com a
+   * imagem capturada — o caller (jogador-modal) sobe pro Storage e
+   * seta como `fotoUrl` do jogador.
+   */
   async importar(): Promise<void> {
     if (!this.nome.trim()) {
       await this.toast('Nome é obrigatório.', 'medium');
@@ -146,6 +196,10 @@ export class OcrImportModalComponent {
         cpf: this.cpf.trim() || undefined,
         rg: this.rg.trim() || undefined,
         dataNascimento: this.dataNascimento || undefined,
+        // Imagem capturada pra usar como foto do jogador (se toggle ligado).
+        // Sempre a imagem rasterizada (PNG) — funciona tanto pra foto direta
+        // quanto pra PDF (já renderizado pela 1ª página antes do OCR).
+        fotoDataUrl: this.importarFoto ? (this.imagemDataUrl || undefined) : undefined,
       },
     });
   }

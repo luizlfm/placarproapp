@@ -1,0 +1,197 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-title>Escanear ficha de inscrição</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ficha-content">
+  <!-- ============ INICIAL ============ -->
+  <div class="ficha-inicial" *ngIf="estado === 'inicial'">
+    <div class="ficha-icon-grande">
+      <ion-icon name="document-attach-outline"></ion-icon>
+    </div>
+    <h2>Foto ou PDF da ficha</h2>
+    <p>
+      Tire foto ou anexe a ficha de inscrição preenchida.
+      O sistema vai extrair automaticamente o <strong>nome da equipe</strong>
+      e a <strong>lista de jogadores</strong> (nome, documento, nascimento).
+    </p>
+    <ion-button
+      expand="block"
+      color="primary"
+      class="btn-tirar-foto"
+      (click)="tirarFoto()"
+    >
+      <ion-icon slot="start" name="camera-outline"></ion-icon>
+      Câmera, galeria ou PDF
+    </ion-button>
+    <p class="hint">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      Funciona melhor com ficha bem iluminada e plana. Aceita até 30 jogadores.
+    </p>
+  </div>
+
+  <!-- ============ CAPTURADO ============ -->
+  <div class="ficha-capturado" *ngIf="estado === 'capturado' && imagemDataUrl">
+    <div class="ficha-preview">
+      <span class="badge-pdf" *ngIf="ehPdf">
+        <ion-icon name="document-attach-outline"></ion-icon> PDF
+      </span>
+      <img [src]="imagemDataUrl" alt="Preview da ficha" />
+    </div>
+    <div class="ficha-acoes-preview">
+      <ion-button fill="outline" color="medium" (click)="trocarFoto()">
+        <ion-icon slot="start" name="refresh-outline"></ion-icon>
+        Trocar
+      </ion-button>
+      <ion-button color="primary" (click)="processar()">
+        <ion-icon slot="start" name="scan-outline"></ion-icon>
+        Extrair dados
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- ============ PROCESSANDO ============ -->
+  <div class="ficha-processando" *ngIf="estado === 'processando' || estado === 'importando'">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <h3>{{ estado === 'importando' ? 'Importando equipe e jogadores...' : 'Lendo ficha...' }}</h3>
+    <p *ngIf="estado === 'processando'">Pode levar alguns segundos pra documentos com muitos jogadores.</p>
+  </div>
+
+  <!-- ============ REVISÃO ============ -->
+  <div class="ficha-revisao" *ngIf="estado === 'revisao' && dados">
+    <!-- Confiança -->
+    <div class="confianca-banner"
+         [class.alta]="dados.confianca >= 0.66"
+         [class.media]="dados.confianca >= 0.33 && dados.confianca < 0.66"
+         [class.baixa]="dados.confianca < 0.33">
+      <ion-icon
+        [name]="dados.confianca >= 0.66 ? 'checkmark-circle-outline' :
+                dados.confianca >= 0.33 ? 'alert-circle-outline' : 'warning-outline'"
+      ></ion-icon>
+      <span>
+        Confiança: <strong>{{ (dados.confianca * 100) | number:'1.0-0' }}%</strong>
+        <span *ngIf="jogadores.length > 0"> · {{ jogadores.length }} jogadores</span>
+      </span>
+    </div>
+
+    <!-- Nome da equipe -->
+    <ion-input
+      fill="outline"
+      label="Nome da equipe *"
+      labelPlacement="stacked"
+      [(ngModel)]="nomeEquipe"
+      placeholder="Ex: COUNTRY CLUBE DE FORMIGA"
+      autocapitalize="characters"
+    ></ion-input>
+
+    <!-- Lista de jogadores editável -->
+    <div class="jogadores-bloco">
+      <div class="jogadores-head">
+        <strong>Jogadores ({{ jogadores.length }})</strong>
+        <button type="button" class="btn-add-jog" (click)="adicionarJogadorVazio()">
+          <ion-icon name="add-circle-outline"></ion-icon> Adicionar
+        </button>
+      </div>
+
+      <div class="jogadores-vazio" *ngIf="jogadores.length === 0">
+        Nenhum jogador detectado.<br/>
+        Use "Adicionar" pra inserir manualmente ou volte e escaneie outra foto.
+      </div>
+
+      <div class="jog-row" *ngFor="let j of jogadores; let i = index; trackBy: trackByOrdem">
+        <span class="jog-num">{{ i + 1 }}</span>
+        <div class="jog-inputs">
+          <input
+            type="text"
+            class="inp-nome"
+            [(ngModel)]="j.nome"
+            placeholder="Nome do atleta"
+            autocapitalize="characters"
+          />
+          <div class="jog-row-sub">
+            <input
+              type="text"
+              class="inp-doc"
+              [(ngModel)]="j.documento"
+              placeholder="Documento"
+            />
+            <input
+              type="date"
+              class="inp-data"
+              [(ngModel)]="j.dataNascimento"
+            />
+          </div>
+        </div>
+        <button type="button" class="jog-remove" (click)="removerJogador(i)" aria-label="Remover">
+          <ion-icon name="trash-outline"></ion-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============ COMISSÃO TÉCNICA (editável) ============
+         Cada função tem nome + documento. Vazios são IGNORADOS no
+         import. Mapeia pra coleção equipeTecnica/ no Firestore. -->
+    <div class="comissao-bloco">
+      <div class="comissao-head">
+        <strong>Comissão técnica</strong>
+        <small>Opcional — vazios não são importados</small>
+      </div>
+      <div class="cm-row">
+        <span class="cm-funcao">Técnico</span>
+        <input type="text" class="cm-nome" [(ngModel)]="tecnico.nome" placeholder="Nome do técnico" autocapitalize="characters"/>
+        <input type="text" class="cm-doc" [(ngModel)]="tecnico.documento" placeholder="Documento"/>
+      </div>
+      <div class="cm-row">
+        <span class="cm-funcao">Auxiliar</span>
+        <input type="text" class="cm-nome" [(ngModel)]="auxiliarTecnico.nome" placeholder="Nome do auxiliar técnico" autocapitalize="characters"/>
+        <input type="text" class="cm-doc" [(ngModel)]="auxiliarTecnico.documento" placeholder="Documento"/>
+      </div>
+      <div class="cm-row">
+        <span class="cm-funcao">Assistente</span>
+        <input type="text" class="cm-nome" [(ngModel)]="assistente.nome" placeholder="Nome do assistente" autocapitalize="characters"/>
+        <input type="text" class="cm-doc" [(ngModel)]="assistente.documento" placeholder="Documento"/>
+      </div>
+    </div>
+
+    <!-- Debug -->
+    <details class="texto-bruto" [open]="dados.confianca === 0">
+      <summary>
+        Texto bruto reconhecido
+        <span class="contador">{{ dados.textoOriginal.length }} chars</span>
+      </summary>
+      <pre *ngIf="dados.textoOriginal.trim()">{{ dados.textoOriginal }}</pre>
+    </details>
+  </div>
+</ion-content>
+
+<!-- Footer só na revisão -->
+<ion-footer *ngIf="estado === 'revisao'">
+  <ion-toolbar>
+    <div class="acoes-footer">
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="danger"
+        (click)="trocarFoto()"
+      >
+        <ion-icon slot="start" name="trash-outline"></ion-icon>
+        Cancelar
+      </ion-button>
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="primary"
+        (click)="importar()"
+      >
+        <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
+        Importar
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>
