@@ -24,7 +24,7 @@
 
 /* ============ Hero gradient ============ */
 .ar-hero {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1C2E3D 40%, #16a34a 100%);
+  background: linear-gradient(135deg, #1d4ed8 0%, #000000 40%, #16a34a 100%);
   color: #fff;
   padding: 32px 28px;
   border-radius: 16px;
@@ -156,7 +156,7 @@
   margin: 0 0 4px;
   font-size: 20px;
   font-weight: 800;
-  color: #1C2E3D;
+  color: #000000;
 }
 .ar-painel-sub {
   margin: 0 0 22px;
@@ -179,7 +179,7 @@
 .ar-stepper-label {
   font-size: 14.5px;
   font-weight: 700;
-  color: #1C2E3D;
+  color: #000000;
 }
 .ar-stepper {
   display: inline-flex;
@@ -197,7 +197,7 @@
   align-items: center;
   justify-content: center;
   transition: all 150ms ease;
-  ion-icon { font-size: 18px; color: #1C2E3D; }
+  ion-icon { font-size: 18px; color: #000000; }
 
   &:hover:not(:disabled) {
     border-color: #16a34a;
@@ -211,7 +211,7 @@
   text-align: center;
   font-size: 22px;
   font-weight: 800;
-  color: #1C2E3D;
+  color: #000000;
 }
 
 .ar-times-grid {
@@ -256,7 +256,7 @@
     outline: none;
     font-family: inherit;
     font-size: 14px;
-    color: #1C2E3D;
+    color: #000000;
     padding: 8px 4px;
   }
 }
@@ -347,7 +347,7 @@
   padding-top: 36px;
 
   .ar-painel-titulo, .ar-painel-sub { text-align: center; }
-  .ar-painel-sub strong { color: #1C2E3D; }
+  .ar-painel-sub strong { color: #000000; }
 }
 .ar-pronto-icone {
   width: 90px;
@@ -392,7 +392,7 @@
   .ar-resumo-val {
     font-size: 22px;
     font-weight: 800;
-    color: #1C2E3D;
+    color: #000000;
     line-height: 1;
     margin-top: 2px;
   }
@@ -430,7 +430,7 @@
 .ar-btn-ghost {
   background: transparent;
   color: #6b7280;
-  &:hover { background: #f3f4f6; color: #1C2E3D; }
+  &:hover { background: #f3f4f6; color: #000000; }
 }
 .ar-btn-primary {
   background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);

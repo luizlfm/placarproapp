@@ -454,9 +454,9 @@ Definidas em `src/theme/variables.scss` e `src/global.scss`:
 
 | Token | Valor | Uso |
 |---|---|---|
-| `--ion-color-primary` | `#1C2E3D` | Navy — botões primários, header |
+| `--ion-color-primary` | `#000000` | Navy — botões primários, header |
 | `--ion-color-secondary` | `#7CC61D` | Lime — accent, CTA, active state |
-| `--placar-sidebar-bg` | `#1C2E3D` | Sidebar navy |
+| `--placar-sidebar-bg` | `#000000` | Sidebar navy |
 | `--placar-sidebar-text` | `#fff` | Texto sidebar |
 | `--placar-sidebar-active-bg` | `rgba(124,198,29,0.18)` | Item ativo |
 | `--placar-sidebar-active-border` | `#7CC61D` | Border esquerda do item ativo |
@@ -581,7 +581,7 @@ Princípio: **lime/verde só pra ação ou estado ativo**, não pra texto neutro
 - Labels: `#4b5563` (cinza-700)
 - Hints: `#6b7280` (cinza-500)
 - Contadores: `#9ca3af` (cinza-400)
-- Títulos: `#1C2E3D` (navy)
+- Títulos: `#000000` (navy)
 - Destaques inline: navy
 
 ### Sistema de planos (`/racha/:id/upgrade`)

@@ -8,7 +8,7 @@
       transparent 55%
     ),
     radial-gradient(ellipse at bottom right, rgba(124, 198, 29, 0.08) 0%, transparent 55%),
-    linear-gradient(155deg, #14222d 0%, #1c2e3d 50%, #0f1a23 100%);
+    linear-gradient(155deg, #14222d 0%, #000000 50%, #0f1a23 100%);
 }
 
 // Pontinhos decorativos no fundo (sutil)
@@ -339,7 +339,7 @@
     font-weight: 800;
     letter-spacing: 0.4px;
     line-height: 1.2;
-    color: #1C2E3D;
+    color: #000000;
   }
   .tipo-sub {
     font-size: 10.5px;
@@ -363,7 +363,7 @@
     .tipo-titulo {
       color: var(--ion-color-secondary-shade, #4a7e0e);
     }
-    .tipo-sub { color: #1C2E3D; font-weight: 500; }
+    .tipo-sub { color: #000000; font-weight: 500; }
   }
 }
 

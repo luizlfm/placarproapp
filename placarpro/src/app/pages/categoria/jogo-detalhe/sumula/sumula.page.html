@@ -24,24 +24,10 @@
 
 <ion-content>
   <div class="sumula-folha-host"
-       [class.is-modal]="isModal"
-       [class.tem-preview]="!!previewImagemUrl"
-       [class.gerando-preview]="isModal && !previewImagemUrl && gerandoPreviewMobile">
-
-    <!-- ═══ Mobile-modal: preview renderizado como IMAGEM (pixel-perfect,
-         idêntico ao PDF). Usado em vez do HTML rotacionado pra evitar
-         problemas de CSS (vertical-text, colunas desalinhadas). O HTML
-         continua existindo no DOM (com visibility:hidden via CSS) pra
-         imprimir/baixarPdf reutilizarem. ═══ -->
-    <img *ngIf="isModal && previewImagemUrl"
-         class="sumula-preview-img"
-         [src]="previewImagemUrl"
-         alt="Súmula renderizada" />
-    <div *ngIf="isModal && !previewImagemUrl && gerandoPreviewMobile"
-         class="sumula-preview-loading">
-      <ion-spinner name="crescent"></ion-spinner>
-      <span>Renderizando súmula...</span>
-    </div>
+       [class.is-modal]="isModal">
+    <!-- Modal sempre mostra o HTML cru (vetorial, bordas finas).
+         Antes mostrava uma imagem rasterizada gerada por html2canvas
+         (scale 0.7) — qualidade ruim. Agora o user vê o template real. -->
 
   <div class="sumula-folha" *ngIf="sumula$ | async as s; else carregando">
 

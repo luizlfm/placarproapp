@@ -265,7 +265,8 @@ export class RachaInicioPage implements OnInit, OnDestroy {
   copiarConvite(): void {
     const codigo = this.racha?.codigoConvite || this.racha?.conviteToken;
     if (!codigo) {
-      this.toast('Convite ainda não gerado.', 'medium');
+      // Toast clicável: ao tocar, vai pra tela de gerenciar (ativação).
+      this.toastConviteNaoGerado();
       return;
     }
     const url = `${location.origin}/racha/c/${codigo}`;
@@ -284,7 +285,8 @@ export class RachaInicioPage implements OnInit, OnDestroy {
   async convidarAmigos(): Promise<void> {
     const codigo = this.racha?.codigoConvite || this.racha?.conviteToken;
     if (!codigo) {
-      this.toast('Convite ainda não gerado. Termine de ativar o racha.', 'medium');
+      // Toast clicável: ao tocar, vai pra tela de gerenciar (ativação).
+      this.toastConviteNaoGerado();
       return;
     }
     const url = `${location.origin}/racha/c/${codigo}`;
@@ -335,6 +337,41 @@ export class RachaInicioPage implements OnInit, OnDestroy {
 
   private async toast(message: string, color: 'success' | 'danger' | 'medium'): Promise<void> {
     const t = await this.toastCtrl.create({ message, duration: 2200, position: 'top', color });
+    await t.present();
+  }
+
+  /**
+   * Toast clicável que aparece quando o user tenta convidar/copiar antes
+   * do racha estar ativado. Em vez de só avisar, oferece um botão
+   * "Ativar agora" que navega pra tela de gerenciar — onde dá pra
+   * concluir o setup e gerar o convite.
+   *
+   * Também tornamos o CORPO do toast clicável (via handler) — assim
+   * o user pode tocar em qualquer parte do banner pra ir pra ativação.
+   */
+  private async toastConviteNaoGerado(): Promise<void> {
+    const t = await this.toastCtrl.create({
+      message: 'Convite ainda não gerado. Toque pra ativar o racha.',
+      duration: 4500,
+      position: 'top',
+      color: 'medium',
+      buttons: [
+        {
+          text: 'Ativar',
+          role: 'info',
+          handler: () => { this.gerenciarRacha(); },
+        },
+      ],
+    });
+    // Fallback extra: clique no body do toast também navega (alguns
+    // users não notam o botão lateral).
+    t.addEventListener('click', (ev) => {
+      // Se foi clique no botão "Ativar" interno, deixa o handler nativo agir.
+      const target = ev.target as HTMLElement | null;
+      if (target?.closest('button')) return;
+      this.gerenciarRacha();
+      t.dismiss().catch(() => undefined);
+    });
     await t.present();
   }
 }

@@ -59,7 +59,7 @@ ion-content.bg .modal-card {
 
 .modal-card {
   background: #fff;
-  color: var(--placar-text, #1c2e3d);
+  color: var(--placar-text, #000000);
   width: 100%;
   min-height: 100%;
   display: flex;
@@ -76,7 +76,7 @@ ion-content.bg .modal-card {
   justify-content: space-between;
   gap: 12px;
   padding: 12px 14px;
-  background: var(--ion-color-primary, #1c2e3d);
+  background: var(--ion-color-primary, #000000);
   border-bottom: 1px solid var(--placar-divider, #ececef);
   min-height: 56px;
 
@@ -120,10 +120,10 @@ ion-content.bg .modal-card {
 
   &:hover {
     background: var(--placar-surface, #ebebec);
-    color: var(--placar-text, #1c2e3d);
+    color: var(--placar-text, #000000);
 
     ion-icon {
-      color: #1c2e3d;
+      color: #000000;
     }
   }
 
@@ -167,7 +167,7 @@ ion-content.bg .modal-card {
   gap: 2px;
 
   strong {
-    color: var(--placar-text, #1c2e3d);
+    color: var(--placar-text, #000000);
     font-size: 14px;
   }
 
@@ -196,7 +196,7 @@ ion-content.bg .modal-card {
   border-radius: 50%;
   border: 0;
   background: var(--placar-surface, #f5f6f8);
-  color: var(--ion-color-primary, #1c2e3d);
+  color: var(--ion-color-primary, #000000);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -329,7 +329,7 @@ ion-content.bg .modal-card {
     cursor: pointer;
     font-size: 13.5px;
     font-weight: 600;
-    color: var(--placar-text, #1c2e3d);
+    color: var(--placar-text, #000000);
     padding: 12px 14px;
     user-select: none;
     list-style: none;
@@ -543,7 +543,7 @@ ion-content.bg .modal-card {
   .nav-title {
     font-size: 14px;
     font-weight: 600;
-    color: var(--placar-text, #1c2e3d);
+    color: var(--placar-text, #000000);
     letter-spacing: -0.1px;
   }
 
@@ -667,7 +667,7 @@ ion-content.bg .modal-card {
 }
 
 .btn-primary:not([class*="ion-"]):not(.btn-icon):not(.btn-icon-sm):not([data-compact]) {
-  background: var(--ion-color-primary, #1c2e3d);
+  background: var(--ion-color-primary, #000000);
   color: #fff;
   box-shadow: 0 4px 12px rgba(28, 46, 61, 0.28);
   border: none;
@@ -678,7 +678,7 @@ ion-content.bg .modal-card {
 
   &:disabled {
     box-shadow: none;
-    background: var(--ion-color-primary, #1c2e3d);
+    background: var(--ion-color-primary, #000000);
   }
 }
 

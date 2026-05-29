@@ -30,7 +30,7 @@
     font-weight: 800;
     /* Antes era azul vivo (#1d4ed8) — agora navy padrão pra integrar
        com o resto do design system. */
-    color: var(--rp-navy, #1C2E3D);
+    color: var(--rp-navy, #000000);
     letter-spacing: -0.3px;
   }
   .mr-sub {
@@ -99,7 +99,7 @@
   strong {
     font-size: 13.5px;
     font-weight: 700;
-    color: #1C2E3D;
+    color: #000000;
     text-transform: uppercase;
     letter-spacing: 0.3px;
 
@@ -119,7 +119,7 @@
   margin: 20px 0 12px;
   font-size: 14.5px;
   font-weight: 700;
-  color: var(--rp-navy, #1C2E3D);
+  color: var(--rp-navy, #000000);
 
   ion-icon {
     font-size: 14px;
@@ -167,7 +167,7 @@
     padding: 11px 14px;
     font-family: inherit;
     font-size: 14px;
-    color: #1C2E3D;
+    color: #000000;
     background: #fff;
     transition: border-color 150ms ease, box-shadow 150ms ease;
     outline: none;
@@ -179,7 +179,7 @@
     }
   }
   select { cursor: pointer; appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231C2E3D' stroke-width='3'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='3'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 12px center;
     padding-right: 36px;
@@ -202,7 +202,7 @@
     }
     /* Destaques INLINE no hint (ex: "2 × 5 = 10 jogadores") ficam navy
        — não azul vivo. */
-    strong { color: var(--rp-navy, #1C2E3D); font-weight: 700; }
+    strong { color: var(--rp-navy, #000000); font-weight: 700; }
   }
 }
 
@@ -360,7 +360,7 @@
   cursor: pointer;
   padding: 8px 4px;
   font-size: 14px;
-  color: #1C2E3D;
+  color: #000000;
 
   input { display: none; }
 
@@ -451,7 +451,7 @@
 .mr-btn-cancel {
   background: transparent;
   color: #6b7280;
-  &:hover { background: #f3f4f6; color: #1C2E3D; }
+  &:hover { background: #f3f4f6; color: #000000; }
 }
 
 .mr-btn-save {
@@ -490,7 +490,7 @@
     margin: 0 0 4px;
     font-size: 18px;
     font-weight: 800;
-    color: #1C2E3D;
+    color: #000000;
   }
   p {
     margin: 0;
@@ -540,7 +540,7 @@
   .mr-switch-label {
     font-size: 14px;
     font-weight: 700;
-    color: #1C2E3D;
+    color: #000000;
   }
   .mr-switch-sub {
     font-size: 12px;
@@ -584,7 +584,7 @@
   > label {
     font-size: 13.5px;
     font-weight: 700;
-    color: #1C2E3D;
+    color: #000000;
   }
   .mr-slider-val {
     font-size: 13px;

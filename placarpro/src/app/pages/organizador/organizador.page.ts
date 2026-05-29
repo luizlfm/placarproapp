@@ -10,7 +10,6 @@ import { UserProfile } from '../../users/models/user-profile.model';
 import { StorageService } from '../../shared/storage.service';
 import { NavBackService } from '../../shared/nav-back.service';
 import { ImageCropperModalComponent } from '../../shared/components/image-cropper-modal/image-cropper-modal.component';
-import { ThemeService, ThemeMode } from '../../shared/theme.service';
 import { CampeonatoThemeService } from '../../shared/campeonato-theme.service';
 
 @Component({
@@ -29,14 +28,9 @@ export class OrganizadorPage implements OnInit {
   private readonly campeonatoTheme = inject(CampeonatoThemeService);
   /** Navegação "voltar" — padrão UX após salvar (histórico + fallback). */
   private readonly navBack = inject(NavBackService);
-  readonly themeSrv = inject(ThemeService);
   private readonly modalCtrl = inject(ModalController);
   private readonly loadingCtrl = inject(LoadingController);
   private readonly toastCtrl = inject(ToastController);
-
-  setTheme(mode: ThemeMode): void {
-    this.themeSrv.setMode(mode);
-  }
 
   /** Prefixo do link público (dev: localhost:4200/, prod: domínio real). */
   get linkPrefix(): string {
@@ -126,7 +120,7 @@ export class OrganizadorPage implements OnInit {
     logoUrl: [''],
     bannerAppUrl: [''],
     bannerSiteUrl: [''],
-    corPrimaria: ['#1C2E3D'],
+    corPrimaria: ['#000000'],
     texto1: ['', [Validators.maxLength(70)]],
     texto2: ['', [Validators.maxLength(180)]],
     sobre: [''],
@@ -166,7 +160,7 @@ export class OrganizadorPage implements OnInit {
           logoUrl: p.logoUrl ?? p.fotoUrl ?? '',
           bannerAppUrl: p.bannerAppUrl ?? '',
           bannerSiteUrl: p.bannerSiteUrl ?? '',
-          corPrimaria: p.corPrimaria ?? '#1C2E3D',
+          corPrimaria: p.corPrimaria ?? '#000000',
           texto1: p.texto1 ?? '',
           texto2: p.texto2 ?? '',
           sobre: p.sobre ?? p.bio ?? '',

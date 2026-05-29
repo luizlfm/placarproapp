@@ -11,7 +11,7 @@
 .exp-head {
   font-size: 13px;
   font-weight: 700;
-  color: var(--placar-text, #1C2E3D);
+  color: var(--placar-text, #000000);
   padding: 10px 16px 6px;
   letter-spacing: 0.2px;
 }
@@ -27,7 +27,7 @@
   text-align: left;
   cursor: pointer;
   font-size: 14px;
-  color: var(--placar-text, #1C2E3D);
+  color: var(--placar-text, #000000);
 
   ion-icon {
     font-size: 20px;
@@ -58,7 +58,7 @@
 .exp-btn {
   background: transparent;
   border: 0;
-  color: var(--ion-color-primary, #1C2E3D);
+  color: var(--ion-color-primary, #000000);
   font-weight: 700;
   font-size: 14px;
   padding: 8px 14px;
@@ -68,5 +68,5 @@
 
   &:hover { background: rgba(28, 46, 61, 0.08); }
 
-  &.primary { color: var(--ion-color-primary, #1C2E3D); }
+  &.primary { color: var(--ion-color-primary, #000000); }
 }

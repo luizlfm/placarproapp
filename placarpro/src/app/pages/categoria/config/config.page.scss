@@ -176,7 +176,7 @@ ion-content {
   ion-icon { font-size: 14px; }
 
   &.ativo {
-    background: var(--ion-color-primary, #1c2e3d);
+    background: var(--ion-color-primary, #000000);
     color: #fff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
   }
@@ -565,7 +565,7 @@ ion-content {
   border: none;
   border-bottom: 1px solid #c4c4c8;
   background: transparent
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%231C2E3D' d='M0 0l5 6 5-6z'/></svg>")
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23000000' d='M0 0l5 6 5-6z'/></svg>")
     right 8px center no-repeat;
   font-size: 15px;
   color: #2d2d2d;

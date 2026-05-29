@@ -585,7 +585,7 @@
 .crono-wrap {
   margin: 0 0 12px;
   padding: 14px 18px;
-  background: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 100%);
+  background: linear-gradient(135deg, #000000 0%, #2d4a63 100%);
   border-radius: 12px;
   color: #fff;
   box-shadow: 0 4px 14px rgba(28, 46, 61, 0.25);
@@ -600,7 +600,7 @@
   }
 
   &.ao-vivo {
-    background: linear-gradient(135deg, #1C2E3D 0%, #b91c1c 100%);
+    background: linear-gradient(135deg, #000000 0%, #b91c1c 100%);
     animation: cronoBreath 3s ease-in-out infinite;
   }
 }

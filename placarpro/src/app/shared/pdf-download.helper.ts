@@ -46,6 +46,28 @@ async function mostrarToast(toast: ToastController | undefined, message: string)
 }
 
 /**
+ * Imprime um PDF: no desktop dispara `pdf.autoPrint()` + window.open
+ * (browser abre diálogo de impressão automaticamente). No iOS Safari,
+ * `window.open(blobUrl)` sequestra a aba do app — então usamos o mesmo
+ * fluxo do `salvarPdf` (modal/share sheet). O share sheet do iOS tem
+ * AirPrint nativo, então o usuário ainda consegue imprimir dali.
+ */
+export async function imprimirPdf(
+  pdf: jsPDF,
+  fileName: string,
+  toastCtrl?: ToastController,
+  modalCtrl?: ModalController,
+): Promise<void> {
+  if (isIOS()) {
+    return salvarPdf(pdf, fileName, toastCtrl, modalCtrl, 'imprimir');
+  }
+
+  pdf.autoPrint();
+  const blobUrl = pdf.output('bloburl');
+  window.open(blobUrl, '_blank');
+}
+
+/**
  * Salva um PDF gerado pelo jsPDF de forma compatível com iOS Safari.
  *
  * @param pdf instância jsPDF já preenchida
@@ -58,6 +80,7 @@ export async function salvarPdf(
   fileName: string,
   toastCtrl?: ToastController,
   modalCtrl?: ModalController,
+  acao: 'salvar' | 'imprimir' = 'salvar',
 ): Promise<void> {
   if (!isIOS()) {
     pdf.save(fileName);
@@ -69,7 +92,8 @@ export async function salvarPdf(
   if (modalCtrl) {
     const modal = await modalCtrl.create({
       component: PdfViewerModalComponent,
-      componentProps: { blob, fileName },
+      componentProps: { blob, fileName, acao },
+      cssClass: 'pdf-popup-modal',
     });
     await modal.present();
     return;

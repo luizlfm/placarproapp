@@ -2,7 +2,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Banner padrão PlacarPro">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1C2E3D" />
+      <stop offset="0%" stop-color="#000000" />
       <stop offset="50%" stop-color="#2d4a63" />
       <stop offset="100%" stop-color="#4a6580" />
     </linearGradient>
@@ -40,9 +40,9 @@
   <!-- Bola de futebol (estilizada, lado esquerdo) -->
   <g transform="translate(180,200)" opacity="0.18">
     <circle r="36" fill="#fff" />
-    <g fill="#1C2E3D">
+    <g fill="#000000">
       <polygon points="-6,-14 6,-14 12,-4 6,8 -6,8 -12,-4" />
-      <path d="M -6 -14 L -16 -22 M 6 -14 L 16 -22 M -12 -4 L -28 -4 M 12 -4 L 28 -4 M -6 8 L -10 22 M 6 8 L 10 22" stroke="#1C2E3D" stroke-width="2" fill="none" />
+      <path d="M -6 -14 L -16 -22 M 6 -14 L 16 -22 M -12 -4 L -28 -4 M 12 -4 L 28 -4 M -6 8 L -10 22 M 6 8 L 10 22" stroke="#000000" stroke-width="2" fill="none" />
     </g>
   </g>
 

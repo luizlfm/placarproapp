@@ -4,7 +4,7 @@ import { LoadingController, ModalController, ToastController } from '@ionic/angu
 import { Observable, combineLatest, of } from 'rxjs';
 import { catchError, map, startWith } from 'rxjs/operators';
 import { jsPDF } from 'jspdf';
-import domtoimage from 'dom-to-image-more';
+import html2canvas from 'html2canvas';
 import { CampeonatosService } from '../../../../campeonatos/campeonatos.service';
 import { NavBackService } from '../../../../shared/nav-back.service';
 import { CategoriasService } from '../../../../campeonatos/categorias.service';
@@ -15,7 +15,7 @@ import { Jogo } from '../../../../campeonatos/models/jogo.model';
 import { Campeonato } from '../../../../campeonatos/campeonato.model';
 import { Categoria } from '../../../../campeonatos/categoria.model';
 import { dataHoraIsoParaBr } from '../../../../shared/directives/mask.directive';
-import { salvarPdf } from '../../../../shared/pdf-download.helper';
+import { imprimirPdf, salvarPdf } from '../../../../shared/pdf-download.helper';
 
 interface JogoLinha {
   jogo: Jogo;
@@ -146,9 +146,45 @@ export class ImprimirJogosPage implements OnInit {
       clone.style.position = 'static';
       clone.style.margin = '0';
       clone.style.boxShadow = 'none';
+      clone.style.setProperty('width', '210mm', 'important');
+      clone.style.setProperty('max-width', '210mm', 'important');
       clone.style.setProperty('border-width', '0.5px', 'important');
       clone.querySelectorAll<HTMLElement>('*').forEach(el => {
         el.style.setProperty('border-width', '0.5px', 'important');
+      });
+
+      // Força layout DESKTOP no clone (mandante × placar × visitante numa
+      // linha). No mobile, @media (≤640px) faz `.mc-body` virar 1 coluna
+      // empilhada — html2canvas captura esse layout. Sobrescrevemos inline
+      // pra que o PDF saia sempre com layout horizontal.
+      clone.querySelectorAll<HTMLElement>('.mc-body').forEach(el => {
+        el.style.setProperty('display', 'flex', 'important');
+        el.style.setProperty('flex-direction', 'row', 'important');
+        el.style.setProperty('align-items', 'center', 'important');
+        el.style.setProperty('gap', '14px', 'important');
+        el.style.setProperty('text-align', 'initial', 'important');
+      });
+      clone.querySelectorAll<HTMLElement>('.mc-mandante').forEach(el => {
+        el.style.setProperty('flex', '1 1 0', 'important');
+        el.style.setProperty('flex-direction', 'row', 'important');
+        el.style.setProperty('justify-content', 'flex-end', 'important');
+        el.style.setProperty('text-align', 'right', 'important');
+      });
+      clone.querySelectorAll<HTMLElement>('.mc-visitante').forEach(el => {
+        el.style.setProperty('flex', '1 1 0', 'important');
+        el.style.setProperty('flex-direction', 'row', 'important');
+        el.style.setProperty('justify-content', 'flex-start', 'important');
+        el.style.setProperty('text-align', 'left', 'important');
+      });
+      clone.querySelectorAll<HTMLElement>('.mc-placar').forEach(el => {
+        el.style.setProperty('flex', '0 0 auto', 'important');
+        el.style.setProperty('margin', '0', 'important');
+      });
+      clone.querySelectorAll<HTMLElement>('.mc-mandante .mc-time-info').forEach(el => {
+        el.style.setProperty('align-items', 'flex-end', 'important');
+      });
+      clone.querySelectorAll<HTMLElement>('.mc-visitante .mc-time-info').forEach(el => {
+        el.style.setProperty('align-items', 'flex-start', 'important');
       });
 
       offscreen.appendChild(clone);
@@ -172,36 +208,33 @@ export class ImprimirJogosPage implements OnInit {
 
       const rect = clone.getBoundingClientRect();
 
-      // 4) Captura PNG via dom-to-image-more
-      const dataUrl = await domtoimage.toPng(clone, {
-        bgcolor: '#ffffff',
+      // 4) Captura PNG via html2canvas
+      const canvas = await html2canvas(clone, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        imageTimeout: 0,
         width: Math.ceil(rect.width),
         height: Math.ceil(rect.height),
-        scale: 3,
-        cacheBust: false,
       });
+      // JPEG 0.92 em vez de PNG: ~5x menor, evita Safari iOS rejeitar
+      // data URLs gigantes. Usa canvas.width/height direto (sem tmpImg).
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
 
-      // 5) Mede o PNG
-      const tmpImg = new Image();
-      await new Promise<void>((resolve, reject) => {
-        tmpImg.onload = () => resolve();
-        tmpImg.onerror = () => reject(new Error('falha ao carregar PNG'));
-        tmpImg.src = dataUrl;
-      });
-
-      // 6) Monta PDF A4 retrato com paginação automática
+      // 5) Monta PDF A4 retrato com paginação automática
       const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
       const imgW = pageW;
-      const imgH = (tmpImg.naturalHeight * imgW) / tmpImg.naturalWidth;
+      const imgH = (canvas.height * imgW) / canvas.width;
       if (imgH <= pageH) {
-        pdf.addImage(dataUrl, 'PNG', 0, 0, imgW, imgH);
+        pdf.addImage(dataUrl, 'JPEG', 0, 0, imgW, imgH);
       } else {
         let restante = imgH;
         let offsetY = 0;
         while (restante > 0) {
-          pdf.addImage(dataUrl, 'PNG', 0, -offsetY, imgW, imgH);
+          pdf.addImage(dataUrl, 'JPEG', 0, -offsetY, imgW, imgH);
           restante -= pageH;
           if (restante > 0) {
             pdf.addPage();
@@ -211,17 +244,16 @@ export class ImprimirJogosPage implements OnInit {
       }
 
       if (destino === 'print') {
-        pdf.autoPrint();
-        const blobUrl = pdf.output('bloburl');
-        window.open(blobUrl, '_blank');
+        await imprimirPdf(pdf, 'tabela-partidas.pdf', this.toastCtrl, this.modalCtrl);
       } else {
         // iOS Safari abre PDF inline — salvarPdf usa Web Share API no iOS.
         await salvarPdf(pdf, 'tabela-partidas.pdf', this.toastCtrl, this.modalCtrl);
       }
     } catch (err) {
       console.error(`[ImprimirJogos/${destino}] erro`, err);
+      const msg = err instanceof Error ? err.message : String(err);
       const t = await this.toastCtrl.create({
-        message: 'Erro ao gerar PDF.',
+        message: `Erro ao gerar PDF: ${msg}`,
         duration: 2400,
         color: 'danger',
         position: 'top',
@@ -238,20 +270,47 @@ export class ImprimirJogosPage implements OnInit {
   /** Converte `<img>` do container em data URL (base64) — evita CORS no
    *  Firebase Storage durante captura. Mesma lógica usada em outras pages. */
   private async inlineImagens(container: HTMLElement): Promise<void> {
+    const FALLBACK_TRANSPARENT =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
     const imgs = Array.from(container.querySelectorAll('img')) as HTMLImageElement[];
     await Promise.all(
       imgs.map(async imgEl => {
         const src = imgEl.getAttribute('src') || '';
-        if (!src || src.startsWith('data:')) return;
+        if (!src) return;
+        if (src.startsWith('data:image/png') || src.startsWith('data:image/jpeg')) return;
+        let dataUrl: string | null = null;
         try {
-          const dataUrl = await this.urlParaDataUrl(src);
-          if (dataUrl) {
-            imgEl.src = dataUrl;
-            if (imgEl.decode) await imgEl.decode().catch(() => undefined);
-          }
-        } catch { /* ignore */ }
+          dataUrl = await this.urlParaDataUrl(src);
+        } catch {
+          dataUrl = null;
+        }
+        if (dataUrl && dataUrl.startsWith('data:image/svg+xml')) {
+          try { dataUrl = await this.svgParaPng(dataUrl); } catch { dataUrl = null; }
+        }
+        imgEl.src = dataUrl || FALLBACK_TRANSPARENT;
+        if (imgEl.decode) await imgEl.decode().catch(() => undefined);
       }),
     );
+  }
+
+  private svgParaPng(svgDataUrl: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth || 512;
+          c.height = img.naturalHeight || 512;
+          const ctx = c.getContext('2d');
+          if (!ctx) return reject(new Error('no-ctx'));
+          ctx.drawImage(img, 0, 0);
+          resolve(c.toDataURL('image/png'));
+        } catch (e) { reject(e); }
+      };
+      img.onerror = () => reject(new Error('svg-load-fail'));
+      img.src = svgDataUrl;
+    });
   }
 
   private async urlParaDataUrl(src: string): Promise<string | null> {

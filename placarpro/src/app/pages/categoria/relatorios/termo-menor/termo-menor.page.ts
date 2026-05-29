@@ -4,13 +4,13 @@ import { LoadingController, ModalController, ToastController } from '@ionic/angu
 import { Observable, combineLatest, firstValueFrom, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { jsPDF } from 'jspdf';
-import domtoimage from 'dom-to-image-more';
+import html2canvas from 'html2canvas';
 import { CampeonatosService } from '../../../../campeonatos/campeonatos.service';
 import { CategoriasService } from '../../../../campeonatos/categorias.service';
 import { Campeonato } from '../../../../campeonatos/campeonato.model';
 import { Categoria } from '../../../../campeonatos/categoria.model';
 import { NavBackService } from '../../../../shared/nav-back.service';
-import { salvarPdf } from '../../../../shared/pdf-download.helper';
+import { imprimirPdf, salvarPdf } from '../../../../shared/pdf-download.helper';
 
 /**
  * Slots de logo no cabeçalho do termo (esquerda, centro, direita).
@@ -209,14 +209,15 @@ export class TermoMenorPage implements OnInit, AfterViewInit {
         throw new Error(`Clone com dimensões inválidas: ${rect.width}x${rect.height}`);
       }
 
-      const dataUrl = await domtoimage.toPng(clone, {
-        bgcolor: '#ffffff',
+      const canvas = await html2canvas(clone, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
         width: Math.ceil(rect.width),
         height: Math.ceil(rect.height),
-        scale: 2,
-        cacheBust: false,
       });
-      this.previewImagemUrl = dataUrl;
+      this.previewImagemUrl = canvas.toDataURL('image/png');
     } catch (err) {
       console.warn('[termo-menor] preview falhou', err);
     } finally {
@@ -240,8 +241,8 @@ export class TermoMenorPage implements OnInit, AfterViewInit {
 
   private async gerarPdf(destino: 'print' | 'download'): Promise<void> {
     const root = this.host.nativeElement as HTMLElement;
-    const folha = root.querySelector<HTMLElement>('.termo-folha');
-    if (!folha) return;
+    const folhaOriginal = root.querySelector<HTMLElement>('.termo-folha');
+    if (!folhaOriginal) return;
 
     const loading = await this.loadingCtrl.create({
       message: destino === 'print' ? 'Preparando impressão...' : 'Gerando PDF...',
@@ -249,39 +250,148 @@ export class TermoMenorPage implements OnInit, AfterViewInit {
     });
     await loading.present();
 
+    const offscreen = document.createElement('div');
+    offscreen.style.cssText = `
+      position: fixed;
+      top: -10000px;
+      left: 0;
+      width: 210mm;
+      background: #ffffff;
+      pointer-events: none;
+      z-index: -1;
+    `;
+
     try {
-      await this.aguardarImagens(folha, 3000);
-      await this.inlineImagens(folha);
+      console.time('[termo] aguardarImagens');
+      await this.aguardarImagens(folhaOriginal, 3000);
+      console.timeEnd('[termo] aguardarImagens');
+
+      console.time('[termo] inlineImagens');
+      await this.inlineImagens(folhaOriginal);
+      console.timeEnd('[termo] inlineImagens');
+
+      // Clone offscreen com display:block forçado — no mobile, regras CSS
+      // (`.tm-preview-wrap.tem-preview .termo-folha { display: none }`) deixam
+      // a folha original invisível e a captura sai BRANCA. O clone visível
+      // garante dimensões corretas pro html2canvas.
+      const folha = folhaOriginal.cloneNode(true) as HTMLElement;
+      folha.style.setProperty('display', 'block', 'important');
+      folha.style.setProperty('visibility', 'visible', 'important');
+      folha.style.setProperty('position', 'static', 'important');
+      folha.style.setProperty('width', '210mm', 'important');
+      folha.style.setProperty('max-width', '210mm', 'important');
+      folha.style.setProperty('zoom', '1', 'important');
+      folha.style.setProperty('margin', '0', 'important');
+
+      // Esconde placeholders dos slots de logo sem imagem (ícone genérico
+      // de "image-outline" que polui o PDF). Mantém o espaço pra não
+      // quebrar o layout do cabeçalho.
+      folha.querySelectorAll<HTMLElement>('.termo-logo-placeholder').forEach(el => {
+        el.style.visibility = 'hidden';
+      });
+
+      // html2canvas tem suporte ruim a `display: grid` e `flex` complexo.
+      // Usa position: absolute com coordenadas fixas — funciona sempre.
+      folha.querySelectorAll<HTMLElement>('.termo-cabec').forEach(el => {
+        el.style.setProperty('display', 'block', 'important');
+        el.style.setProperty('position', 'relative', 'important');
+        el.style.setProperty('height', '100px', 'important');
+        el.style.setProperty('width', '100%', 'important');
+      });
+      folha.querySelectorAll<HTMLElement>('.termo-logo-esq').forEach(el => {
+        el.style.setProperty('position', 'absolute', 'important');
+        el.style.setProperty('left', '0', 'important');
+        el.style.setProperty('top', '50%', 'important');
+        el.style.setProperty('transform', 'translateY(-50%)', 'important');
+        el.style.setProperty('width', '80px', 'important');
+        el.style.setProperty('height', '80px', 'important');
+      });
+      folha.querySelectorAll<HTMLElement>('.termo-titulo').forEach(el => {
+        el.style.setProperty('position', 'absolute', 'important');
+        el.style.setProperty('left', '50%', 'important');
+        el.style.setProperty('top', '50%', 'important');
+        el.style.setProperty('transform', 'translate(-50%, -50%)', 'important');
+        el.style.setProperty('width', 'auto', 'important');
+        el.style.setProperty('max-width', '60%', 'important');
+        el.style.setProperty('margin', '0', 'important');
+      });
+      folha.querySelectorAll<HTMLElement>('.termo-logos-extras').forEach(el => {
+        el.style.setProperty('position', 'absolute', 'important');
+        el.style.setProperty('right', '0', 'important');
+        el.style.setProperty('top', '50%', 'important');
+        el.style.setProperty('transform', 'translateY(-50%)', 'important');
+        el.style.setProperty('display', 'flex', 'important');
+        el.style.setProperty('flex-direction', 'row', 'important');
+        el.style.setProperty('gap', '8px', 'important');
+      });
+      folha.querySelectorAll<HTMLElement>('.termo-logo-meio, .termo-logo-dir').forEach(el => {
+        el.style.setProperty('display', 'inline-block', 'important');
+        el.style.setProperty('width', '70px', 'important');
+        el.style.setProperty('height', '70px', 'important');
+      });
+
+      offscreen.appendChild(folha);
+      document.body.appendChild(offscreen);
+
+      await new Promise<void>(r => requestAnimationFrame(() => r()));
+      await new Promise<void>(r => requestAnimationFrame(() => r()));
+
+      const imgsClone = Array.from(folha.querySelectorAll('img')) as HTMLImageElement[];
+      await Promise.all(
+        imgsClone.map(img => {
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+          return new Promise<void>(resolve => {
+            const fin = (): void => resolve();
+            img.addEventListener('load', fin, { once: true });
+            img.addEventListener('error', fin, { once: true });
+            setTimeout(fin, 2000);
+          });
+        }),
+      );
 
       const rect = folha.getBoundingClientRect();
-      const dataUrl = await domtoimage.toPng(folha, {
-        bgcolor: '#ffffff',
+      if (rect.width === 0 || rect.height === 0) {
+        throw new Error(`Clone com dimensões inválidas: ${rect.width}x${rect.height}`);
+      }
+      console.log('[termo] dims', rect.width, 'x', rect.height);
+      console.time('[termo] html2canvas');
+      const canvasPromise = html2canvas(folha, {
+        backgroundColor: '#ffffff',
+        scale: 1.5,
+        useCORS: true,
+        logging: false,
+        imageTimeout: 0,
         width: Math.ceil(rect.width),
         height: Math.ceil(rect.height),
-        scale: 3,
-        cacheBust: false,
       });
-
-      const tmpImg = new Image();
-      await new Promise<void>((resolve, reject) => {
-        tmpImg.onload = () => resolve();
-        tmpImg.onerror = () => reject(new Error('png'));
-        tmpImg.src = dataUrl;
-      });
+      const canvas = await Promise.race([
+        canvasPromise,
+        new Promise<HTMLCanvasElement>((_, reject) =>
+          setTimeout(() => reject(new Error('html2canvas-timeout-20s')), 20000),
+        ),
+      ]);
+      console.timeEnd('[termo] html2canvas');
+      console.log('[termo] canvas dims', canvas.width, 'x', canvas.height);
+      // JPEG quality 0.92 em vez de PNG: ~5x menor que PNG, evita Safari
+      // iOS rejeitar data URLs >2MB em `<img>` quando o canvas é grande.
+      console.time('[termo] toDataURL');
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      console.timeEnd('[termo] toDataURL');
+      console.log('[termo] dataUrl len', (dataUrl.length / 1024).toFixed(0), 'KB');
 
       const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
       const imgW = pageW;
-      const imgH = (tmpImg.naturalHeight * imgW) / tmpImg.naturalWidth;
+      const imgH = (canvas.height * imgW) / canvas.width;
 
       if (imgH <= pageH) {
-        pdf.addImage(dataUrl, 'PNG', 0, 0, imgW, imgH);
+        pdf.addImage(dataUrl, 'JPEG', 0, 0, imgW, imgH);
       } else {
         let restante = imgH;
         let offsetY = 0;
         while (restante > 0) {
-          pdf.addImage(dataUrl, 'PNG', 0, -offsetY, imgW, imgH);
+          pdf.addImage(dataUrl, 'JPEG', 0, -offsetY, imgW, imgH);
           restante -= pageH;
           if (restante > 0) {
             pdf.addPage();
@@ -291,25 +401,29 @@ export class TermoMenorPage implements OnInit, AfterViewInit {
       }
 
       if (destino === 'print') {
-        pdf.autoPrint();
-        const blobUrl = pdf.output('bloburl');
-        window.open(blobUrl, '_blank');
+        await imprimirPdf(pdf, `termo-autorizacao-${this.categoriaId}.pdf`, this.toastCtrl, this.modalCtrl);
       } else {
         // iOS Safari abre PDF inline — salvarPdf usa Web Share API no iOS
         // pra dar a opção "Salvar em Arquivos" e voltar pra tela do app.
         await salvarPdf(pdf, `termo-autorizacao-${this.categoriaId}.pdf`, this.toastCtrl, this.modalCtrl);
       }
     } catch (err) {
-      console.error('[termo-menor] PDF erro', err);
+      const e = err as { name?: string; message?: string; stack?: string };
+      const detalhe = `name=${e?.name}\nmessage=${e?.message}\nstack=${(e?.stack || '').slice(0, 500)}`;
+      console.error('[termo-menor] PDF erro\n' + detalhe);
+      const msg = err instanceof Error ? err.message : String(err);
       const t = await this.toastCtrl.create({
-        message: 'Erro ao gerar PDF.',
-        duration: 2400,
+        message: `Erro ao gerar PDF: ${msg || 'desconhecido'}`,
+        duration: 6000,
         color: 'danger',
         position: 'top',
       });
       await t.present();
     } finally {
       await loading.dismiss();
+      try {
+        if (offscreen.parentNode) offscreen.parentNode.removeChild(offscreen);
+      } catch { /* ignore */ }
     }
   }
 
@@ -331,26 +445,55 @@ export class TermoMenorPage implements OnInit, AfterViewInit {
 
   /** Converte src remoto → data URL base64 (resolve CORS pro html2canvas). */
   private async inlineImagens(container: HTMLElement): Promise<void> {
+    const FALLBACK_TRANSPARENT =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
     const imgs = Array.from(container.querySelectorAll('img')) as HTMLImageElement[];
     await Promise.all(
       imgs.map(async img => {
         const src = img.getAttribute('src') || '';
         if (!src || src.startsWith('data:')) return;
+        let dataUrl: string | null = null;
         try {
           const res = await fetch(src, { mode: 'cors', cache: 'no-store' });
-          if (!res.ok) return;
-          const blob = await res.blob();
-          const dataUrl = await new Promise<string>((resolve, reject) => {
-            const r = new FileReader();
-            r.onload = () => resolve(r.result as string);
-            r.onerror = () => reject(r.error);
-            r.readAsDataURL(blob);
-          });
-          img.src = dataUrl;
-          if (img.decode) await img.decode().catch(() => undefined);
-        } catch { /* segue */ }
+          if (res.ok) {
+            const blob = await res.blob();
+            dataUrl = await new Promise<string>((resolve, reject) => {
+              const r = new FileReader();
+              r.onload = () => resolve(r.result as string);
+              r.onerror = () => reject(r.error);
+              r.readAsDataURL(blob);
+            });
+          }
+        } catch {
+          dataUrl = null;
+        }
+        if (dataUrl && dataUrl.startsWith('data:image/svg+xml')) {
+          try { dataUrl = await this.svgParaPng(dataUrl); } catch { dataUrl = null; }
+        }
+        img.src = dataUrl || FALLBACK_TRANSPARENT;
+        if (img.decode) await img.decode().catch(() => undefined);
       }),
     );
+  }
+
+  private svgParaPng(svgDataUrl: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth || 512;
+          c.height = img.naturalHeight || 512;
+          const ctx = c.getContext('2d');
+          if (!ctx) return reject(new Error('no-ctx'));
+          ctx.drawImage(img, 0, 0);
+          resolve(c.toDataURL('image/png'));
+        } catch (e) { reject(e); }
+      };
+      img.onerror = () => reject(new Error('svg-load-fail'));
+      img.src = svgDataUrl;
+    });
   }
 
   /** Handler do input file por slot — converte a imagem em data URL. */

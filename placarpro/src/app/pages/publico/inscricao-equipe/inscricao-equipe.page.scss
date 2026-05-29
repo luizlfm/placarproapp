@@ -19,7 +19,7 @@
   color: #6b6b70;
 
   ion-icon { font-size: 64px; opacity: 0.5; margin-bottom: 12px; }
-  h2 { color: #1C2E3D; margin: 0 0 8px; font-size: 20px; }
+  h2 { color: #000000; margin: 0 0 8px; font-size: 20px; }
   p { font-size: 14px; max-width: 480px; margin: 0; }
 
   &.ie-erro ion-icon { color: #eb445a; opacity: 0.7; }
@@ -70,7 +70,7 @@
     .ie-lw-titulo {
       font-size: 16px;
       font-weight: 800;
-      color: #1C2E3D;
+      color: #000000;
       text-transform: uppercase;
       letter-spacing: 0.4px;
       line-height: 1.2;
@@ -95,7 +95,7 @@
     margin: 0 0 8px;
     font-size: 18px;
     font-weight: 800;
-    color: #1C2E3D;
+    color: #000000;
   }
 
   > p {
@@ -191,7 +191,7 @@
 .ie-titulo {
   font-size: 18px;
   font-weight: 800;
-  color: #1C2E3D;
+  color: #000000;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   line-height: 1.2;
@@ -300,7 +300,7 @@
     text-align: center;
     font-weight: 700;
     background: #f8f9fb;
-    color: #1C2E3D;
+    color: #000000;
   }
   .cel-funcao {
     background: #f8f9fb;
@@ -311,7 +311,7 @@
   }
 
   &.comissao {
-    th { background: #1C2E3D; color: #fff; }
+    th { background: #000000; color: #fff; }
   }
 
   /* ═════════════════════════════════════════════════════════
@@ -363,7 +363,7 @@
     /* Célula "Nº ordem" como cabeçalho destacado do card */
     .cel-ordem {
       grid-template-columns: 1fr;
-      background: #1C2E3D;
+      background: #000000;
       color: #fff;
       padding: 6px 10px;
       margin: -10px -12px 8px;
@@ -408,7 +408,7 @@
 
 /* ============ Seção título ============ */
 .ie-secao-titulo {
-  background: #1C2E3D;
+  background: #000000;
   color: #fff;
   padding: 8px 12px;
   font-size: 13px;
@@ -444,7 +444,7 @@
   align-items: center;
   gap: 8px;
   font-weight: 700;
-  color: #1C2E3D;
+  color: #000000;
   font-size: 13px;
   cursor: pointer;
 

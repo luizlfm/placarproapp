@@ -142,7 +142,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    color: var(--rp-navy, #1C2E3D);
+    color: var(--rp-navy, #000000);
     text-align: center;
 
     &:last-child { text-align: center; }
@@ -156,7 +156,7 @@
     strong {
       font-size: 26px;
       font-weight: 800;
-      color: var(--rp-navy, #1C2E3D);
+      color: var(--rp-navy, #000000);
       font-variant-numeric: tabular-nums;
       min-width: 28px;
       text-align: center;
@@ -193,7 +193,7 @@
 
   &.primary {
     flex: 1;
-    background: var(--rp-navy, #1C2E3D);
+    background: var(--rp-navy, #000000);
     color: #fff;
 
     &:hover { transform: translateY(-1px); background: #0f1d2b; }

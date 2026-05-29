@@ -27,7 +27,7 @@
 
   &.acm-erro {
     > ion-icon { font-size: 56px; color: #ef4444; }
-    h2 { margin: 4px 0; color: #1c2e3d; }
+    h2 { margin: 4px 0; color: #000000; }
     p { margin: 0; max-width: 360px; }
   }
 }
@@ -63,7 +63,7 @@
   margin: 0 0 6px;
   font-size: 20px;
   font-weight: 800;
-  color: #1c2e3d;
+  color: #000000;
 }
 
 .acm-camp {
@@ -122,7 +122,7 @@
   font-size: 13px;
 
   ion-icon { color: #3b82f6; font-size: 18px; }
-  strong { color: #1c2e3d; }
+  strong { color: #000000; }
 }
 
 .acm-actions {
@@ -160,13 +160,13 @@
   padding: 10px;
   cursor: pointer;
 
-  &:hover { color: #1c2e3d; text-decoration: underline; }
+  &:hover { color: #000000; text-decoration: underline; }
 }
 
 .acm-btn-secondary {
   margin-top: 14px;
   padding: 10px 18px;
-  background: #1c2e3d;
+  background: #000000;
   color: #fff;
   border: 0;
   border-radius: 8px;

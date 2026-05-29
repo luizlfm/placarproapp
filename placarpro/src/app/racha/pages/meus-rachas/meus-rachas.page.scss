@@ -15,7 +15,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 24px;
-  background: #1C2E3D;
+  background: #000000;
   color: #fff;
   position: sticky;
   top: 0;
@@ -76,7 +76,7 @@
    Substitui os blocos `.r-page-head` + `.r-hero-strip` antigos. Em mobile
    colapsa pra 1 coluna; em desktop fica side-by-side. */
 .mr-hero-v2 {
-  background: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 55%, #3d7820 100%);
+  background: linear-gradient(135deg, #000000 0%, #2d4a63 55%, #3d7820 100%);
   color: #fff;
   border-radius: 16px;
   padding: 22px 22px;
@@ -184,7 +184,7 @@
 
 /* ============ Hero card ============ */
 .mr-hero {
-  background: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 50%, #1e7e34 100%);
+  background: linear-gradient(135deg, #000000 0%, #2d4a63 50%, #1e7e34 100%);
   border-radius: 18px;
   padding: 28px 28px;
   color: #fff;
@@ -295,7 +295,7 @@
     margin: 0 0 4px;
     font-size: 16px;
     font-weight: 800;
-    color: #1C2E3D;
+    color: #000000;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -363,7 +363,7 @@
     grid-area: title;
     font-size: 13.5px;
     font-weight: 800;
-    color: #1C2E3D;
+    color: #000000;
     line-height: 1.2;
     padding-right: 24px; /* espaço pro check verde no canto (cards "ok") */
   }
@@ -445,7 +445,7 @@
       margin: 0;
       font-size: 18px;
       font-weight: 800;
-      color: #1C2E3D;
+      color: #000000;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -566,7 +566,7 @@
     margin: 0 0 3px;
     font-size: 16px;
     font-weight: 800;
-    color: #1C2E3D;
+    color: #000000;
     line-height: 1.2;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -603,7 +603,7 @@
   .mr-stat-valor {
     font-size: 16px;
     font-weight: 800;
-    color: #1C2E3D;
+    color: #000000;
     line-height: 1;
     margin-bottom: 2px;
   }
@@ -642,7 +642,7 @@
 
   &.primary {
     flex: 1;
-    background: #1C2E3D;
+    background: #000000;
     color: #fff;
     &:hover { background: #0f1d2b; }
   }
@@ -677,7 +677,7 @@
     margin: 0 0 8px;
     font-size: 19px;
     font-weight: 800;
-    color: #1C2E3D;
+    color: #000000;
   }
   p {
     margin: 0;

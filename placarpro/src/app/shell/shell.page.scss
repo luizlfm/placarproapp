@@ -85,7 +85,7 @@
   position: sticky;
   top: 0;
   z-index: 75; // acima do main, abaixo da sidebar e do backdrop
-  background: var(--placar-sidebar-bg, #1C2E3D);
+  background: var(--placar-sidebar-bg, #000000);
   color: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 
@@ -198,8 +198,8 @@
    pra caber 5+ itens em 360px. Indicador lime no item ativo. */
 .smh-segments {
   display: flex;
-  justify-content: space-around;
-  padding: 0;
+  justify-content: space-between;
+  padding: 0 2px;
   gap: 0;
   overflow-x: auto;
   scrollbar-width: none;
@@ -208,11 +208,11 @@
 
 .smh-seg {
   flex: 1 1 0;
-  min-width: 56px;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 6px;
+  padding: 10px 2px;
   background: none;
   border: none;
   color: rgba(255, 255, 255, 0.65);
@@ -221,7 +221,7 @@
   text-decoration: none;
   transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
 
-  ion-icon { font-size: 22px; }
+  ion-icon { font-size: 19px; }
 
   /* Texto escondido em mobile — só ícones. */
   span { display: none; }
@@ -235,6 +235,14 @@
     color: var(--placar-accent, #7CC61D);
     border-bottom-color: var(--placar-accent, #7CC61D);
     background: rgba(124, 198, 29, 0.08);
+  }
+}
+
+/* Tela muito pequena: ainda mais compacto pra caber 9+ itens. */
+@media (max-width: 380px) {
+  .smh-seg {
+    padding: 9px 1px;
+    ion-icon { font-size: 17px; }
   }
 }
 
@@ -269,7 +277,7 @@
   align-items: center;
   gap: 12px;
   padding: 8px 16px;
-  background: linear-gradient(90deg, #1C2E3D 0%, #2d4a63 100%);
+  background: linear-gradient(90deg, #000000 0%, #2d4a63 100%);
   color: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   font-family: inherit;
@@ -297,7 +305,7 @@
     gap: 6px;
     padding: 7px 14px;
     background: var(--ion-color-warning, #ffc409);
-    color: #1C2E3D;
+    color: #000000;
     border: none;
     border-radius: 6px;
     font-size: 12.5px;

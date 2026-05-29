@@ -81,7 +81,7 @@
 .pp-valor {
   font-size: 17px;
   font-weight: 800;
-  color: var(--ion-color-primary, #1C2E3D);
+  color: var(--ion-color-primary, #000000);
   font-variant-numeric: tabular-nums;
   flex: 0 0 auto;
 }
@@ -133,7 +133,7 @@
     &:hover { background: #f3f4f6; }
   }
   &.primary {
-    background: #1C2E3D;
+    background: #000000;
     color: #fff;
     &:hover { background: #102433; }
   }

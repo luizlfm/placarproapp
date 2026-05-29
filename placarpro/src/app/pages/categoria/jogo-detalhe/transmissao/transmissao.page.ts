@@ -1341,7 +1341,7 @@ export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
       case 'vermelho':    return '#e74c3c';
       case 'azul':        return '#4DABF7';
       case 'falta':       return '#94a3b8';
-      default:            return '#1C2E3D';
+      default:            return '#000000';
     }
   }
   iconEvento(tipo: string): string {

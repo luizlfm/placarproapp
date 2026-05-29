@@ -24,7 +24,7 @@
         [disabled]="exportando"
         aria-label="Exportar PDF"
       >
-        <ion-icon slot="start" name="document-text-outline"></ion-icon>
+        <ion-icon slot="start" name="download-outline"></ion-icon>
         PDF
       </ion-button>
       <ion-button
@@ -34,6 +34,13 @@
       >
         <ion-icon slot="start" name="image-outline"></ion-icon>
         Imagem
+      </ion-button>
+      <ion-button
+        (click)="imprimirPagina()"
+        aria-label="Imprimir"
+      >
+        <ion-icon slot="start" name="print-outline"></ion-icon>
+        Imprimir
       </ion-button>
     </ion-buttons>
   </ion-toolbar>

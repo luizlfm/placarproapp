@@ -353,7 +353,7 @@
   align-items: center;
   gap: 6px;
   padding: 9px 16px;
-  background: var(--ion-color-primary, #1C2E3D);
+  background: var(--ion-color-primary, #000000);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -426,7 +426,7 @@
 
   &.on {
     background: var(--ion-color-warning, #ffc409);
-    color: #1C2E3D;
+    color: #000000;
     border-color: var(--ion-color-warning, #ffc409);
   }
 }
@@ -519,7 +519,7 @@
 
   &:focus {
     outline: none;
-    border-color: var(--ion-color-primary, #1C2E3D);
+    border-color: var(--ion-color-primary, #000000);
   }
 
   &::placeholder {
@@ -587,13 +587,13 @@
 
   &:hover:not(:disabled) {
     background: var(--ion-color-warning, #ffc409);
-    color: #1C2E3D;
+    color: #000000;
   }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 
   &.on {
     background: var(--ion-color-warning, #ffc409);
-    color: #1C2E3D;
+    color: #000000;
   }
 }
 

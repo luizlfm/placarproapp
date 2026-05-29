@@ -38,7 +38,7 @@
 .sidebar {
   flex: 0 0 280px;
   width: 280px;
-  background: var(--placar-sidebar-bg, #1C2E3D);
+  background: var(--placar-sidebar-bg, #000000);
   color: var(--placar-sidebar-text, #fff);
   display: flex;
   flex-direction: column;
@@ -379,7 +379,7 @@
     right: 0;
     bottom: 0;
     z-index: 30;
-    background: var(--placar-sidebar-bg, #1C2E3D);
+    background: var(--placar-sidebar-bg, #000000);
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.18);
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
@@ -456,7 +456,7 @@
     left: 0;
     right: 0;
     z-index: 25;
-    background: var(--placar-sidebar-bg, #1C2E3D);
+    background: var(--placar-sidebar-bg, #000000);
     color: #fff;
     padding: 10px 14px calc(10px + env(safe-area-inset-top, 0px));
     padding-top: calc(10px + env(safe-area-inset-top, 0px));
@@ -528,7 +528,7 @@
   position: relative;
   border-radius: 14px;
   overflow: hidden;
-  background: #1C2E3D;
+  background: #000000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   margin-bottom: 20px;
   /* Reserva altura enquanto a img (skel) carrega — evita layout
@@ -755,9 +755,9 @@
   aspect-ratio: 1600 / 400;
   border-radius: 12px;
   overflow: hidden;
-  background-color: #1C2E3D;
+  background-color: #000000;
   background-image:
-    linear-gradient(135deg, #1C2E3D 0%, #2d4a63 100%);
+    linear-gradient(135deg, #000000 0%, #2d4a63 100%);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -1148,7 +1148,7 @@
 }
 
 /* Gradientes específicos por tipo de mídia (aplicados na thumb vazia). */
-.midia-card[data-tipo="video"]  .card-thumb { background: linear-gradient(135deg, #1c2e3d 0%, #2d4a63 100%); }
+.midia-card[data-tipo="video"]  .card-thumb { background: linear-gradient(135deg, #000000 0%, #2d4a63 100%); }
 .midia-card[data-tipo="youtube"] .card-thumb { background: linear-gradient(135deg, #cc1a1a 0%, #ff3030 100%); }
 .midia-card[data-tipo="link"]    .card-thumb { background: linear-gradient(135deg, #1976d2 0%, #5fa8ee 100%); }
 .midia-card[data-tipo="noticia"] .card-thumb { background: linear-gradient(135deg, #4a7e0e 0%, #7CC61D 100%); }

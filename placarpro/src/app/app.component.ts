@@ -2,12 +2,15 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { ToastController } from '@ionic/angular';
-import { filter } from 'rxjs/operators';
+import { filter, distinctUntilChanged, map, pairwise } from 'rxjs/operators';
 import { AuthService } from './auth/auth.service';
 import { ThemeService } from './shared/theme.service';
 import { CampeonatoThemeService } from './shared/campeonato-theme.service';
 import { UsersService } from './users/users.service';
 import { consumirRedirectPendente, isPwaStandalone } from './shared/utils/pwa.utils';
+
+/** Mirror de `TipoConta` (user-profile.model). */
+type TipoLogin = 'organizador' | 'cliente' | 'moderador' | 'racha';
 
 @Component({
   selector: 'app-root',
@@ -31,6 +34,8 @@ export class AppComponent {
     this.monitorarAtualizacoes();
     this.aplicarCorDoOrganizador();
     this.aplicarRedirectPosInstalacaoPwa();
+    this.validarRotaNoBoot();
+    this.escutarMudancasDeAuth();
 
     // No Safari/iOS, `signInWithGoogle()` usa `signInWithRedirect` por causa
     // do bloqueio de popup + cookies de terceiros (ITP). Ao voltar do provider,
@@ -111,6 +116,172 @@ export class AppComponent {
     this.usersSrv.profile$().subscribe(p => {
       this.campTheme.setCor(p?.corPrimaria ?? null);
     });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // VALIDAÇÃO DE ROTA POR PERFIL — fluxo global
+  // ═══════════════════════════════════════════════════════════════════
+  //
+  // OBJETIVO: garantir que o usuário SEMPRE veja a tela correta pro
+  // perfil dele, em três cenários:
+  //   1) F5 (boot) numa rota que não bate com o perfil → redireciona
+  //   2) Login via modal numa rota qualquer → redireciona pra área
+  //   3) Logout numa rota de área restrita → redireciona pra home
+  //
+  // PERFIS E SUAS ÁREAS PRINCIPAIS:
+  //   - organizador / moderador / admin master → /app/*
+  //   - cliente (espectador)                   → /espectador/*
+  //   - racha                                  → /racha/*
+  //
+  // ROTAS IGNORADAS (não dispara redirect):
+  //   /, /login, /cadastro, /recuperar-senha  (fluxo de auth)
+  // ═══════════════════════════════════════════════════════════════════
+
+  /** Rotas onde nunca interferimos (fluxo de auth tem guards próprios). */
+  private readonly rotasAuthIgnoradas = [
+    '/login',
+    '/cadastro',
+    '/recuperar-senha',
+  ];
+
+  /** Lê tipo de login persistido no localStorage. */
+  private getTipoLogin(): TipoLogin {
+    try {
+      const v = localStorage.getItem('placarpro_tipo_login');
+      if (v === 'cliente' || v === 'moderador' || v === 'racha' || v === 'organizador') {
+        return v;
+      }
+    } catch { /* SSR / privado */ }
+    return 'organizador';
+  }
+
+  /** Área principal correspondente a cada perfil. */
+  private areaPrincipalDoPerfil(tipo: TipoLogin): string {
+    if (tipo === 'cliente') return '/espectador';
+    if (tipo === 'racha')   return '/racha';
+    return '/app'; // organizador, moderador
+  }
+
+  /** True se a URL atual já está dentro da área principal do perfil. */
+  private rotaPertenceAArea(urlSemQuery: string, area: string): boolean {
+    return urlSemQuery === area || urlSemQuery.startsWith(`${area}/`);
+  }
+
+  /**
+   * Decide se deve redirecionar e pra onde. Lógica única usada tanto
+   * no boot (F5) quanto após login modal. Devolve a URL destino ou
+   * `null` se não precisar mexer na rota atual.
+   */
+  private decidirRedirecionamento(urlAtualSemQuery: string): string | null {
+    // 1) Anônimo → nada a fazer (guards de rota cuidam).
+    if (!this.auth.currentUser) return null;
+
+    // 2) Rota de auth → ignora (redirectIfAuthGuard cuida).
+    if (this.rotasAuthIgnoradas.includes(urlAtualSemQuery)) return null;
+
+    // 3) Página de detalhe do JOGO (admin) e TRANSMISSÃO ao vivo:
+    //    são rotas que organizador frequentemente abre vindo de um
+    //    link compartilhado. NÃO redireciona daqui — quer ver o jogo.
+    const rotasDeepLinkPermitidas = [
+      '/transmissao/', // /transmissao/:campId/:catId/:jogoId
+    ];
+    if (rotasDeepLinkPermitidas.some(p => urlAtualSemQuery.startsWith(p))) {
+      return null;
+    }
+
+    // 4) Compara área principal vs rota atual.
+    const tipo = this.getTipoLogin();
+    const area = this.areaPrincipalDoPerfil(tipo);
+    if (this.rotaPertenceAArea(urlAtualSemQuery, area)) {
+      return null; // já está na área certa
+    }
+
+    // 5) Rota não bate → redireciona pra área principal.
+    return area;
+  }
+
+  /**
+   * Validação executada no BOOT (F5/abertura inicial). Aguarda o
+   * Firebase Auth hidratar (estado persistido em IndexedDB) e depois
+   * decide se redireciona.
+   */
+  private async validarRotaNoBoot(): Promise<void> {
+    try {
+      // Espera o Firebase Auth terminar a hidratação (caso F5).
+      await this.auth.waitForAuthInit();
+
+      // Pequeno delay pra Angular Router terminar a navegação inicial
+      // (sem isso, `this.router.url` pode ainda ser '/').
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const urlAtual = this.router.url.split('?')[0];
+      const destino = this.decidirRedirecionamento(urlAtual);
+      if (!destino) return;
+
+      console.log('[App] boot — rota não condiz com perfil, redirecionando', {
+        de: urlAtual, para: destino,
+      });
+      await this.router.navigateByUrl(destino, { replaceUrl: true });
+    } catch (err) {
+      console.warn('[App] validarRotaNoBoot falhou', err);
+    }
+  }
+
+  /**
+   * Escuta mudanças de auth depois do boot:
+   *  - null → user: login via modal → redireciona pra área do perfil
+   *  - user → null: logout → manda pra `/` (home pública)
+   *
+   * `pairwise()` só emite a partir da segunda emissão; sem `skip()`
+   * desnecessário (bug anterior comia a primeira emissão e nunca
+   * disparava o login).
+   */
+  private escutarMudancasDeAuth(): void {
+    this.auth.user$
+      .pipe(
+        map(u => !!u),
+        distinctUntilChanged(),
+        pairwise(),
+      )
+      .subscribe(async ([antes, agora]) => {
+        const urlAtual = this.router.url.split('?')[0];
+
+        // ── LOGIN (false → true) ────────────────────────────────────
+        if (!antes && agora) {
+          const destino = this.decidirRedirecionamento(urlAtual);
+          if (!destino) {
+            console.log('[App] login detectado — já na área correta', urlAtual);
+            return;
+          }
+          console.log('[App] login detectado — redirecionando pra área', {
+            de: urlAtual, para: destino, tipo: this.getTipoLogin(),
+          });
+          await this.router.navigateByUrl(destino, { replaceUrl: true });
+          return;
+        }
+
+        // ── LOGOUT (true → false) ───────────────────────────────────
+        if (antes && !agora) {
+          // Se já está em rota pública (`/`, `/login`, etc.) ou pública de
+          // viewer (`/p/`, `/luizz/`, `/transmissao/`), não faz nada.
+          const rotasPublicas = ['/login', '/cadastro', '/recuperar-senha'];
+          if (urlAtual === '/' || rotasPublicas.includes(urlAtual)) return;
+
+          // Rotas públicas de viewer começam com path do usuário ou
+          // prefixos conhecidos. Detectar isso é frágil; manter user
+          // numa rota pública após logout é OK (nada a fazer).
+          // Já /app/*, /espectador/*, /racha/* precisam sair.
+          const areaRestrita =
+            urlAtual.startsWith('/app/') || urlAtual === '/app' ||
+            urlAtual.startsWith('/espectador') ||
+            urlAtual.startsWith('/racha');
+          if (!areaRestrita) return;
+
+          console.log('[App] logout detectado — mandando pra home pública', urlAtual);
+          await this.router.navigateByUrl('/', { replaceUrl: true });
+          return;
+        }
+      });
   }
 
   /**

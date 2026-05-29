@@ -8,9 +8,122 @@
   <base href="/"/>
 
   <meta name="description" content="Organize campeonatos esportivos com facilidade."/>
-  <meta name="theme-color" content="#1C2E3D"/>
-  <meta name="color-scheme" content="light"/>
+  <meta name="theme-color" content="#000000"/>
+  <!-- ═══ COLOR-SCHEME: TRUQUE ANTI-FORCE-DARK ═══
+       Declarando `light dark` (e não só `light`), o Chrome/Edge/Brave
+       interpretam que o SITE JÁ TRATA AMBOS OS MODOS — então o algoritmo
+       de "Auto Dark Mode for Web Contents" (que escurece sites declarados
+       só como light quando o sistema tá em dark) NÃO É APLICADO.
+       Como nosso CSS abaixo força light em qualquer @media (prefers-dark),
+       o resultado visual é SEMPRE claro mesmo com sistema em dark. -->
+  <meta name="color-scheme" content="only light"/>
+  <meta name="supported-color-schemes" content="only light"/>
+  <!-- Samsung Internet + extensões: opt-out explícito do dark-mode forçado. -->
+  <meta name="darkreader-lock"/>
   <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <!-- ═══ ANTI-DARK-MODE inline ═══
+       Carrega ANTES de qualquer outro CSS. Mesmo se o sistema/browser
+       tentar forçar dark, todas as regras `prefers-color-scheme: dark`
+       são interceptadas e revertidas pra white. -->
+  <style>
+    /* IMPORTANTE: `color-scheme: light dark` (não `light` sozinho!) é o
+       que faz o Chrome Android pular o "Auto Dark Mode for Web Contents".
+       Quando o site declara só `light`, Chrome com sistema em dark
+       APLICA force-dark (escurece tudo via filter). Com `light dark`,
+       Chrome assume que o site já lida com dark mode → não força.
+       Como nosso CSS abaixo força background branco quando prefers-dark,
+       o resultado visual final é SEMPRE light. */
+    :root, html, body {
+      color-scheme: only light !important;
+      background-color: #ffffff !important;
+      color: #1F2937 !important;
+    }
+    html, body, ion-app, ion-router-outlet, ion-content, ion-page {
+      filter: none !important;
+      -webkit-filter: none !important;
+      background-color: #ffffff !important;
+      color: #1F2937 !important;
+    }
+    /* `prefers-color-scheme: dark` = sistema do user tá em dark. Force tudo
+       branco aqui pra anular qualquer regra dark de bibliotecas (Ionic,
+       leaflet, etc.) e qualquer filter automático que tenha vazado. */
+    @media (prefers-color-scheme: dark) {
+      :root, html, body {
+        color-scheme: only light !important;
+        background-color: #ffffff !important;
+        color: #1F2937 !important;
+      }
+      html, body, ion-app, ion-router-outlet, ion-content, ion-page {
+        background-color: #ffffff !important;
+        color: #1F2937 !important;
+        filter: none !important;
+        -webkit-filter: none !important;
+      }
+      /* Ion-card / .placar-card / áreas brancas — força white background
+         pra anular dark palettes que possam estar puxando via media query. */
+      ion-card, .placar-card, .pub-content, .pub-page,
+      .grupo-card, .tabela, .tabela tbody td, .tabela thead th {
+        background-color: #ffffff !important;
+        color: #1F2937 !important;
+      }
+    }
+  </style>
+  <script>
+    /* Detecta Chrome "Force Dark Mode" (chrome://flags#enable-force-dark)
+       que IGNORA `color-scheme` e força dark via CSS filter renderizado
+       no compositor. A única forma de driblar é aplicar OUTRO filter
+       que reverte a inversão do Chrome.
+
+       Como funciona: Chrome força `filter: invert(1) hue-rotate(180deg)`
+       no body. Se aplicarmos o MESMO filter, dupla inversão = identity,
+       e a página volta ao normal. Imagens precisam de outra inversão
+       (já que o Chrome inverte uma vez no compositor) — fizemos isso
+       no CSS abaixo via `img { filter: invert(1) hue-rotate(180deg) }`. */
+    (function () {
+      function forcarLight() {
+        var html = document.documentElement;
+        var body = document.body;
+        if (!body) return;
+        html.style.setProperty('background-color', '#ffffff', 'important');
+        html.style.setProperty('color', '#1F2937', 'important');
+        html.style.setProperty('color-scheme', 'only light', 'important');
+        body.style.setProperty('background-color', '#ffffff', 'important');
+        body.style.setProperty('color', '#1F2937', 'important');
+        body.style.setProperty('color-scheme', 'only light', 'important');
+        // Failsafe extra: aplica os mesmos overrides em ion-app/router-outlet
+        // (que o Ionic cria via JS, então CSS estático não pega no boot).
+        var ionApp = document.querySelector('ion-app');
+        if (ionApp) {
+          ionApp.style.setProperty('background-color', '#ffffff', 'important');
+          ionApp.style.setProperty('color', '#1F2937', 'important');
+        }
+
+        // Teste: cria um elem branco e mede a cor renderizada.
+        // Se Chrome estiver invertendo, vai vir cinza/preto em vez de branco.
+        var probe = document.createElement('div');
+        probe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:10px;height:10px;background:#ffffff !important;';
+        document.body.appendChild(probe);
+        var bg = getComputedStyle(probe).backgroundColor;
+        document.body.removeChild(probe);
+        // rgb(255, 255, 255) = branco puro. Qualquer outro valor = navegador invertendo.
+        var ehForcadoDark = bg && bg !== 'rgb(255, 255, 255)' && bg !== '#ffffff';
+
+        if (ehForcadoDark) {
+          console.warn('[PlacarPro] Chrome Force Dark detectado — aplicando contra-filtro');
+          // Aplica filter no html que reverte a inversão do Chrome.
+          var contraFiltro = document.createElement('style');
+          contraFiltro.textContent = 'html{filter:invert(1) hue-rotate(180deg) !important;background:#000 !important}' +
+            'img,video,picture,svg,[style*="background-image"],iframe{filter:invert(1) hue-rotate(180deg) !important}';
+          document.head.appendChild(contraFiltro);
+        }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', forcarLight);
+      } else {
+        forcarLight();
+      }
+    })();
+  </script>
   <meta name="format-detection" content="telephone=no"/>
   <meta name="msapplication-tap-highlight" content="no"/>
 
@@ -37,8 +150,104 @@
 </head>
 
 <body>
+  <!-- ═══ Splash de loading (3s fixos) ═══
+       Aparece SEMPRE no carregamento, antes do Angular bootar. Fica visível
+       por 3 segundos (ou até o Angular renderizar — o que demorar mais) e
+       então faz fade-out. Pra desativar temporariamente: ?nosplash=1 -->
+  <div id="placar-splash" style="
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 400ms ease-out;
+    opacity: 1;
+  ">
+    <img src="icons/apple-touch-icon.png" alt="PlacarPro" style="
+      width: 140px;
+      height: 140px;
+      border-radius: 28px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      margin-bottom: 28px;
+    " />
+    <div style="
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #000000;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    ">PlacarPro</div>
+    <div style="
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
+      font-size: 13px;
+      color: #6B7280;
+      margin-bottom: 24px;
+    ">Organize seu campeonato</div>
+    <div style="
+      width: 36px;
+      height: 36px;
+      border: 3px solid #E5E7EB;
+      border-top-color: #7CC61D;
+      border-radius: 50%;
+      animation: placar-spin 0.9s linear infinite;
+    "></div>
+    <style>
+      @keyframes placar-spin { to { transform: rotate(360deg); } }
+    </style>
+  </div>
+  <script>
+    (function () {
+      try {
+        if (/[?&]nosplash=1\b/.test(location.search)) {
+          var el = document.getElementById('placar-splash');
+          if (el) el.remove();
+          return;
+        }
+      } catch (e) {}
+      var splash = document.getElementById('placar-splash');
+      if (!splash) return;
+      var INICIO = Date.now();
+      var TEMPO_MIN_MS = 3000;
+      function esconder() {
+        var passou = Date.now() - INICIO;
+        var restante = Math.max(0, TEMPO_MIN_MS - passou);
+        setTimeout(function () {
+          splash.style.opacity = '0';
+          setTimeout(function () {
+            if (splash.parentNode) splash.parentNode.removeChild(splash);
+          }, 450);
+        }, restante);
+      }
+      // Garante 3s mesmo se Angular bootar mais rápido.
+      setTimeout(esconder, TEMPO_MIN_MS);
+    })();
+  </script>
+
   <app-root></app-root>
   <noscript>Habilite JavaScript para usar o PlacarPro.</noscript>
+  <!-- Eruda DevTools — ativa com ?debug=1 (persiste em sessionStorage
+       pra sobreviver a redirects do router). Pra desativar: ?debug=0. -->
+  <script>
+    (function () {
+      try {
+        var qs = location.search || '';
+        if (/[?&]debug=1\b/.test(qs)) sessionStorage.setItem('__erudaOn', '1');
+        if (/[?&]debug=0\b/.test(qs)) sessionStorage.removeItem('__erudaOn');
+        if (sessionStorage.getItem('__erudaOn') !== '1') return;
+      } catch (e) { return; }
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/eruda';
+      s.onload = function () {
+        try { window.eruda && window.eruda.init(); } catch (e) { alert('Eruda falhou: ' + e); }
+      };
+      s.onerror = function () { alert('Falha ao carregar Eruda do CDN. Sem internet ou bloqueado?'); };
+      document.body.appendChild(s);
+    })();
+  </script>
 </body>
 
 </html>

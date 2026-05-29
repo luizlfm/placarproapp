@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { LoadingController, ModalController, ToastController } from '@ionic/angular';
 import { firstValueFrom } from 'rxjs';
 import { jsPDF } from 'jspdf';
-import domtoimage from 'dom-to-image-more';
+import html2canvas from 'html2canvas';
 import { CampeonatosService } from '../../../campeonatos/campeonatos.service';
 import { CategoriasService } from '../../../campeonatos/categorias.service';
 import { EquipesService } from '../../../campeonatos/equipes.service';
@@ -13,7 +13,7 @@ import { Categoria } from '../../../campeonatos/categoria.model';
 import { Equipe } from '../../../campeonatos/models/equipe.model';
 import { Jogador } from '../../../campeonatos/models/jogador.model';
 import { NavBackService } from '../../../shared/nav-back.service';
-import { salvarPdf } from '../../../shared/pdf-download.helper';
+import { imprimirPdf, salvarPdf } from '../../../shared/pdf-download.helper';
 import {
   TAMANHOS_CARTEIRINHA,
   TamanhoCarteirinha,
@@ -282,13 +282,15 @@ export class CarteirinhasPreviewPage implements OnInit, AfterViewInit {
       if (rect.width === 0 || rect.height === 0) {
         throw new Error(`Clone com dimensões inválidas: ${rect.width}x${rect.height}`);
       }
-      const dataUrl = await domtoimage.toPng(clone, {
-        bgcolor: '#ffffff',
+      const canvas = await html2canvas(clone, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
         width: Math.ceil(rect.width),
         height: Math.ceil(rect.height),
-        scale: 2,
-        cacheBust: false,
       });
+      const dataUrl = canvas.toDataURL('image/png');
       console.log('[gerarPreviewMobile] PNG gerado', { len: dataUrl.length });
       this.previewImagemUrl = dataUrl;
       this.previewErro = null;
@@ -359,12 +361,27 @@ export class CarteirinhasPreviewPage implements OnInit, AfterViewInit {
   /** Imprime — gera PDF via dom-to-image-more + jsPDF e abre em nova aba
    *  com `autoPrint()` (diálogo de impressão aparece automático). */
   async imprimir(): Promise<void> {
+    if (!(await this.garantirCarteirinhas())) return;
     return this.gerarPdf('print');
   }
 
   /** Baixa o PDF direto, sem diálogo. */
   async baixarPdf(): Promise<void> {
+    if (!(await this.garantirCarteirinhas())) return;
     return this.gerarPdf('download');
+  }
+
+  /** Se não há carteirinhas, mostra toast e retorna false. */
+  private async garantirCarteirinhas(): Promise<boolean> {
+    if (this.cartoes && this.cartoes.length > 0) return true;
+    const t = await this.toastCtrl.create({
+      message: 'Marque ao menos 1 jogador/equipe para gerar.',
+      duration: 2400,
+      color: 'warning',
+      position: 'top',
+    });
+    await t.present();
+    return false;
   }
 
   /**
@@ -427,13 +444,25 @@ export class CarteirinhasPreviewPage implements OnInit, AfterViewInit {
 
       const clone = grid.cloneNode(true) as HTMLElement;
       clone.style.transform = 'none';
-      clone.style.position = 'static';
-      clone.style.margin = '0';
-      clone.style.padding = '0';
       clone.style.background = '#ffffff';
+      // .cp-main tem `visibility: hidden !important` no SCSS pra esconder
+      // o HTML cru da tela (deixa só a imagem pré-renderizada). Sobrescreve
+      // tudo no clone pra que o html2canvas renderize visualmente.
+      clone.style.setProperty('visibility', 'visible', 'important');
+      clone.style.setProperty('position', 'static', 'important');
+      clone.style.setProperty('left', 'auto', 'important');
+      clone.style.setProperty('top', 'auto', 'important');
+      clone.style.setProperty('pointer-events', 'auto', 'important');
+      clone.style.setProperty('margin', '0', 'important');
+      clone.style.setProperty('padding', '0', 'important');
       // Força .cp-main no clone a largura cheia (sem max-width do flex pai)
-      clone.style.width = '210mm';
-      clone.style.maxWidth = '210mm';
+      clone.style.setProperty('width', '210mm', 'important');
+      clone.style.setProperty('max-width', '210mm', 'important');
+      // Garante visibility visible em TODOS descendentes (herança não é
+      // suficiente quando algum descendente tem visibility:hidden próprio).
+      clone.querySelectorAll<HTMLElement>('*').forEach(el => {
+        el.style.setProperty('visibility', 'visible', 'important');
+      });
 
       // Remove `.no-print` (avisos, controles que não fazem parte do conteúdo).
       clone.querySelectorAll<HTMLElement>('.no-print').forEach(el => el.remove());
@@ -485,20 +514,18 @@ export class CarteirinhasPreviewPage implements OnInit, AfterViewInit {
 
       const rect = clone.getBoundingClientRect();
 
-      const dataUrl = await domtoimage.toPng(clone, {
-        bgcolor: '#ffffff',
+      const canvas = await html2canvas(clone, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        imageTimeout: 0,
         width: Math.ceil(rect.width),
         height: Math.ceil(rect.height),
-        scale: 3,
-        cacheBust: false,
       });
-
-      const tmpImg = new Image();
-      await new Promise<void>((resolve, reject) => {
-        tmpImg.onload = () => resolve();
-        tmpImg.onerror = () => reject(new Error('falha png'));
-        tmpImg.src = dataUrl;
-      });
+      // JPEG 0.92 em vez de PNG: ~5x menor, evita Safari iOS rejeitar
+      // data URLs gigantes. Usa canvas.width/height direto (sem tmpImg).
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
 
       // PDF A4 retrato — ESTICA o conteúdo capturado pra preencher a
        // largura inteira da folha (com pequena margem 5mm cada lado).
@@ -510,16 +537,16 @@ export class CarteirinhasPreviewPage implements OnInit, AfterViewInit {
 
       const margin = 5; // mm
       const imgW = pageW - margin * 2;
-      const imgH = (tmpImg.naturalHeight * imgW) / tmpImg.naturalWidth;
+      const imgH = (canvas.height * imgW) / canvas.width;
 
       // Paginação: se altura ultrapassa página, divide em N páginas.
       if (imgH + margin * 2 <= pageH) {
-        pdf.addImage(dataUrl, 'PNG', margin, margin, imgW, imgH);
+        pdf.addImage(dataUrl, 'JPEG', margin, margin, imgW, imgH);
       } else {
         let restante = imgH;
         let offsetY = 0;
         while (restante > 0) {
-          pdf.addImage(dataUrl, 'PNG', margin, margin - offsetY, imgW, imgH);
+          pdf.addImage(dataUrl, 'JPEG', margin, margin - offsetY, imgW, imgH);
           restante -= (pageH - margin * 2);
           if (restante > 0) {
             pdf.addPage();
@@ -529,9 +556,7 @@ export class CarteirinhasPreviewPage implements OnInit, AfterViewInit {
       }
 
       if (destino === 'print') {
-        pdf.autoPrint();
-        const blobUrl = pdf.output('bloburl');
-        window.open(blobUrl, '_blank');
+        await imprimirPdf(pdf, `carteirinhas-${this.categoriaId}.pdf`, this.toastCtrl, this.modalCtrl);
       } else {
         // iOS Safari abre PDF inline em vez de baixar — salvarPdf usa
         // Web Share API pra dar a opção "Salvar em Arquivos" no iOS.
@@ -539,8 +564,9 @@ export class CarteirinhasPreviewPage implements OnInit, AfterViewInit {
       }
     } catch (err) {
       console.error(`[carteirinhas/${destino}] erro`, err);
+      const msg = err instanceof Error ? err.message : String(err);
       const t = await this.toastCtrl.create({
-        message: 'Erro ao gerar PDF.',
+        message: `Erro ao gerar PDF: ${msg}`,
         duration: 2400,
         color: 'danger',
         position: 'top',
@@ -560,22 +586,47 @@ export class CarteirinhasPreviewPage implements OnInit, AfterViewInit {
    * CORS no Firebase Storage. Mesma estratégia das outras telas.
    */
   private async inlineImagens(container: HTMLElement): Promise<void> {
+    const FALLBACK_TRANSPARENT =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
     const imgs = Array.from(container.querySelectorAll('img')) as HTMLImageElement[];
     await Promise.all(
       imgs.map(async imgEl => {
         const src = imgEl.getAttribute('src') || '';
-        if (!src || src.startsWith('data:')) return;
+        if (!src) return;
+        if (src.startsWith('data:image/png') || src.startsWith('data:image/jpeg')) return;
+        let dataUrl: string | null = null;
         try {
-          const dataUrl = await this.urlParaDataUrl(src);
-          if (dataUrl) {
-            imgEl.src = dataUrl;
-            if (imgEl.decode) await imgEl.decode().catch(() => undefined);
-          }
+          dataUrl = await this.urlParaDataUrl(src);
         } catch {
-          /* segue sem essa imagem */
+          dataUrl = null;
         }
+        if (dataUrl && dataUrl.startsWith('data:image/svg+xml')) {
+          try { dataUrl = await this.svgParaPng(dataUrl); } catch { dataUrl = null; }
+        }
+        imgEl.src = dataUrl || FALLBACK_TRANSPARENT;
+        if (imgEl.decode) await imgEl.decode().catch(() => undefined);
       }),
     );
+  }
+
+  private svgParaPng(svgDataUrl: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth || 512;
+          c.height = img.naturalHeight || 512;
+          const ctx = c.getContext('2d');
+          if (!ctx) return reject(new Error('no-ctx'));
+          ctx.drawImage(img, 0, 0);
+          resolve(c.toDataURL('image/png'));
+        } catch (e) { reject(e); }
+      };
+      img.onerror = () => reject(new Error('svg-load-fail'));
+      img.src = svgDataUrl;
+    });
   }
 
   private async urlParaDataUrl(src: string): Promise<string | null> {

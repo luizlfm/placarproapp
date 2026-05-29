@@ -11,19 +11,21 @@
     </ion-buttons>
     <ion-title>{{ tituloTipo() }}</ion-title>
     <ion-buttons slot="end">
-      <!-- Equipes tem botão extra "Exportar" (CSV/colunas).
-           Demais tipos vão direto pros 2 botões PDF + Imprimir. -->
-      <ion-button *ngIf="tipo === 'equipes'" (click)="abrirPopoverExportar($event)" aria-label="Exportar">
+      <!-- Mobile: ícones compactos -->
+      <ion-button class="hide-desktop" (click)="baixarPdfRelatorio()" aria-label="Baixar PDF">
+        <ion-icon slot="icon-only" name="download-outline"></ion-icon>
+      </ion-button>
+      <ion-button class="hide-desktop" (click)="imprimir()" aria-label="Imprimir">
+        <ion-icon slot="icon-only" name="print-outline"></ion-icon>
+      </ion-button>
+      <!-- Desktop: texto + ícone -->
+      <ion-button class="hide-mobile" (click)="baixarPdfRelatorio()" aria-label="Baixar PDF">
         <ion-icon slot="start" name="download-outline"></ion-icon>
-        <span class="tb-label">Exportar</span>
+        PDF
       </ion-button>
-      <ion-button (click)="baixarPdfRelatorio()" aria-label="Baixar PDF">
-        <ion-icon slot="start" name="document-text-outline"></ion-icon>
-        <span class="tb-label">PDF</span>
-      </ion-button>
-      <ion-button (click)="imprimir()" aria-label="Imprimir">
+      <ion-button class="hide-mobile" (click)="imprimir()" aria-label="Imprimir">
         <ion-icon slot="start" name="print-outline"></ion-icon>
-        <span class="tb-label">Imprimir</span>
+        Imprimir
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -155,10 +157,10 @@
 
     <div class="ctrl-row ctrl-row-2">
       <div class="ctrl-actions push-right">
-        <button class="ctrl-btn primary solid" type="button" (click)="imprimir()">
+        <!-- <button class="ctrl-btn primary solid" type="button" (click)="imprimir()">
           <ion-icon name="print-outline"></ion-icon>
           Imprimir
-        </button>
+        </button> -->
       </div>
     </div>
   </div>
@@ -231,19 +233,17 @@
         {{ f.nome }}
       </button>
 
-      <div class="ctrl-actions push-right">
-        <!-- Usa a mesma pipeline do relatório de jogadores: clone offscreen
-             em 210mm + dom-to-image-more + jsPDF. Resolve o problema do
-             corte ao gerar PDF do viewport mobile. -->
+      <!-- <div class="ctrl-actions push-right">
+       
         <button class="ctrl-btn outline" type="button" (click)="baixarPdfRelatorio()">
-          <ion-icon name="document-text-outline"></ion-icon>
+          <ion-icon name="download-outline"></ion-icon>
           Baixar PDF
         </button>
         <button class="ctrl-btn primary solid" type="button" (click)="imprimir()">
           <ion-icon name="print-outline"></ion-icon>
           Imprimir
         </button>
-      </div>
+      </div> -->
     </div>
   </div>
 

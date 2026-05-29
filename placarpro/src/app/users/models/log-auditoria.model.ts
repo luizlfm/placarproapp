@@ -51,7 +51,7 @@ export const LOG_ACAO_COR: Record<LogAcao, string> = {
   campeonato_criado: '#F39C12',
   campeonato_excluido: '#E11D48',
   plano_alterado: '#845EF7',
-  cobranca_criada: '#1C2E3D',
+  cobranca_criada: '#000000',
   cobranca_paga: '#4a7e0e',
   config_alterada: '#0EA5E9',
   usuario_promovido: '#9333EA',

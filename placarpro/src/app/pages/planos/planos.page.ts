@@ -71,7 +71,7 @@ export class PlanosPage {
       label: 'Pequenos Campeonatos',
       preco: 'R$ 19',
       detalhe: '/mês',
-      cor: 'linear-gradient(135deg, #1C2E3D 0%, #324350 100%)',
+      cor: 'linear-gradient(135deg, #000000 0%, #324350 100%)',
       features: [
         { icon: 'trophy-outline', titulo: '3 campeonatos', desc: 'Crie e gerencie até 3 campeonatos simultaneamente.' },
         { icon: 'close-circle-outline', titulo: 'Remover propagandas no campeonato', desc: 'Remove todas as propagandas nos seus campeonatos (site e aplicativo).' },

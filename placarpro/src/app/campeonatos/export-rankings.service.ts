@@ -25,7 +25,7 @@ const TIPO_LABEL: Record<TipoRanking, string> = {
 };
 
 const TIPO_COR: Record<TipoRanking, string> = {
-  artilharia: '#1C2E3D',
+  artilharia: '#000000',
   assistencia: '#4DABF7',
   amarelos: '#F1B500',
   vermelhos: '#E55353',
@@ -230,7 +230,7 @@ export class ExportRankingsService {
       left: -9999px;
       top: 0;
       width: 720px;
-      background: linear-gradient(160deg, #1C2E3D 0%, #2a4258 60%, ${corHex} 140%);
+      background: linear-gradient(160deg, #000000 0%, #2a4258 60%, ${corHex} 140%);
       color: #fff;
       padding: 48px 36px 32px;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

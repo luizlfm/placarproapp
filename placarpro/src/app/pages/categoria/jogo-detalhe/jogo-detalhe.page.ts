@@ -585,6 +585,98 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
     ]);
   }
 
+  /**
+   * Monta a URL PÚBLICA da transmissão. Esse link funciona pra qualquer
+   * pessoa (sem login) — rota `/transmissao/:campId/:catId/:jogoId`,
+   * tratada como pública no authGuard.
+   */
+  private montarLinkPublicoTransmissao(): string {
+    const origin = (typeof window !== 'undefined' ? window.location.origin : '').replace(/\/$/, '');
+    return `${origin}/transmissao/${this.campeonatoId}/${this.categoriaId}/${this.jogoId}`;
+  }
+
+  /**
+   * Compartilha o link da transmissão via Web Share API (nativo do
+   * sistema — abre opções de WhatsApp, Telegram, etc.). Fallback pra
+   * copiar no clipboard se o browser não suportar Web Share.
+   */
+  async compartilharLinkTransmissao(): Promise<void> {
+    const url = this.montarLinkPublicoTransmissao();
+    const titulo = 'Transmissão ao vivo';
+    // Tenta puxar nome dos times via firstValueFrom no observable jogo$;
+    // se falhar (ex: jogo ainda carregando), usa texto genérico.
+    let texto = 'Assista ao vivo no PlacarPro';
+    try {
+      const { firstValueFrom } = await import('rxjs');
+      const j = await firstValueFrom(this.jogo$);
+      if (j) {
+        texto = `Acompanhe ao vivo: ${j.nomeMandante} x ${j.nomeVisitante}`;
+      }
+    } catch { /* mantém texto genérico */ }
+
+    // Tem Web Share API? (mobile + alguns desktops)
+    const navAny = navigator as Navigator & { share?: (data: ShareData) => Promise<void> };
+    if (navAny.share) {
+      try {
+        await navAny.share({ title: titulo, text: texto, url });
+        return;
+      } catch (err) {
+        // User cancelou — não mostra erro nem fallback (UX silenciosa).
+        const code = (err as { name?: string })?.name ?? '';
+        if (code === 'AbortError') return;
+        console.warn('[JogoDetalhe] navigator.share falhou, caindo no fallback', err);
+      }
+    }
+
+    // Fallback: copia o link
+    await this.copiarLinkTransmissao();
+  }
+
+  /**
+   * Copia o link público da transmissão pro clipboard. Mostra toast
+   * de confirmação. Tem fallback pro caso do navegador não suportar
+   * a Clipboard API (ex: iOS Safari < 13.4 fora de HTTPS).
+   */
+  async copiarLinkTransmissao(): Promise<void> {
+    const url = this.montarLinkPublicoTransmissao();
+    let copiou = false;
+
+    // 1) Clipboard API moderno (HTTPS only)
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(url);
+        copiou = true;
+      } catch (err) {
+        console.warn('[JogoDetalhe] clipboard.writeText falhou', err);
+      }
+    }
+
+    // 2) Fallback: textarea + execCommand (browsers antigos / iOS Safari)
+    if (!copiou && typeof document !== 'undefined') {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = url;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        copiou = document.execCommand('copy');
+        document.body.removeChild(textarea);
+      } catch (err) {
+        console.warn('[JogoDetalhe] fallback execCommand falhou', err);
+      }
+    }
+
+    const toast = await this.toastCtrl.create({
+      message: copiou ? '🔗 Link copiado!' : 'Não foi possível copiar. Tente compartilhar.',
+      duration: 1800,
+      position: 'top',
+      color: copiou ? 'success' : 'danger',
+    });
+    await toast.present();
+  }
+
 
   /**
    * Abre o modal de BROADCASTER LiveKit DIRETO — preview de câmera +

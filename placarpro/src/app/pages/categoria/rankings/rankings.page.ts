@@ -60,7 +60,7 @@ export class RankingsPage {
       });
 
   readonly tabs: Tab[] = [
-    { id: 'artilharia',  label: 'Artilharia',   icon: 'football-outline',         cor: '#1C2E3D' },
+    { id: 'artilharia',  label: 'Artilharia',   icon: 'football-outline',         cor: '#000000' },
     { id: 'assistencia', label: 'Assistências', icon: 'people-outline',           cor: '#4DABF7' },
     { id: 'amarelos',    label: 'Amarelos',     icon: 'card-outline',             cor: '#F1B500' },
     { id: 'vermelhos',   label: 'Vermelhos',    icon: 'card',                     cor: '#E55353' },
@@ -131,6 +131,10 @@ export class RankingsPage {
     if (pos === 2) return '#CED4DA'; // prata
     if (pos === 3) return '#E8A87C'; // bronze
     return null;
+  }
+
+  imprimirPagina(): void {
+    window.print();
   }
 
   async exportar(formato: 'pdf' | 'png'): Promise<void> {

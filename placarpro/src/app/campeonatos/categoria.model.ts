@@ -118,7 +118,7 @@ export interface Categoria {
   regras?: string;
   /** Premiações. */
   premiacoes?: string;
-  /** Cor hex (#1C2E3D). */
+  /** Cor hex (#000000). */
   cor?: string;
   /** Datas. */
   dataInicio?: string;

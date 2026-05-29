@@ -7,6 +7,22 @@
         defaultHref="/app/campeonato/{{ campeonatoId }}/categoria/{{ categoriaId }}/inicio"></ion-back-button>
     </ion-buttons>
     <ion-title>Classificação</ion-title>
+    <ion-buttons slot="end">
+      <ion-button class="hide-desktop" [routerLink]="['/app/campeonato', campeonatoId, 'categoria', categoriaId, 'print', 'classificacao']" aria-label="Baixar PDF">
+        <ion-icon slot="icon-only" name="download-outline"></ion-icon>
+      </ion-button>
+      <ion-button class="hide-desktop" [routerLink]="['/app/campeonato', campeonatoId, 'categoria', categoriaId, 'print', 'classificacao']" aria-label="Imprimir">
+        <ion-icon slot="icon-only" name="print-outline"></ion-icon>
+      </ion-button>
+      <ion-button class="hide-mobile" [routerLink]="['/app/campeonato', campeonatoId, 'categoria', categoriaId, 'print', 'classificacao']" aria-label="Baixar PDF">
+        <ion-icon slot="start" name="download-outline"></ion-icon>
+        PDF
+      </ion-button>
+      <ion-button class="hide-mobile" [routerLink]="['/app/campeonato', campeonatoId, 'categoria', categoriaId, 'print', 'classificacao']" aria-label="Imprimir">
+        <ion-icon slot="start" name="print-outline"></ion-icon>
+        Imprimir
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 

@@ -1312,11 +1312,11 @@
   height: 36px;
   /* COMPACTO — versão mini */
   padding: 3px;
-  /* Navy PlacarPro (#1C2E3D primary) — gradiente sutil pra dar profundidade
+  /* Navy PlacarPro (#000000 primary) — gradiente sutil pra dar profundidade
      mantendo identidade da marca. Antes era #1e40af (azul royal genérico). */
   background: linear-gradient(180deg,
       var(--ion-color-primary-shade, #192836) 0%,
-      var(--ion-color-primary, #1C2E3D) 50%,
+      var(--ion-color-primary, #000000) 50%,
       var(--ion-color-primary-shade, #192836) 100%);
   border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1763,7 +1763,7 @@
 
   .tr-sb-tempo-acrescimo {
     background: #f1b500;
-    color: #1c2e3d;
+    color: #000000;
     border-radius: 4px;
     padding: 1px 5px;
     font-size: 10px;
@@ -1826,7 +1826,7 @@
     font-size: 16px;
     font-weight: 900;
     line-height: 1;
-    color: var(--ion-color-primary, #1C2E3D);
+    color: var(--ion-color-primary, #000000);
     /* Navy primary do sistema */
     font-family: 'SF Mono', 'Roboto Mono', 'Menlo', 'Consolas', monospace;
     font-variant-numeric: tabular-nums;
@@ -1838,7 +1838,7 @@
 
   .tr-sb-gols:first-of-type,
   .tr-sb-gols:last-of-type {
-    color: var(--ion-color-primary, #1C2E3D);
+    color: var(--ion-color-primary, #000000);
   }
 
   .tr-sb-x {
@@ -2506,7 +2506,7 @@
    pai (.tr-stage). Conteúdo interno (.tr-feed-list) recebe `overflow-y`
    pra rolar só ele, mantendo segments e título fixos. */
 .tr-feed {
-  background: #1C2E3D;
+  background: #000000;
   border-radius: 12px;
   color: #fff;
   display: flex;
@@ -2619,7 +2619,7 @@
     background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
     color: #fff;
     border-radius: 999px;
-    border: 2px solid #1c2e3d;
+    border: 2px solid #000000;
     font-size: 11px;
     font-weight: 900;
     line-height: 18px;

@@ -15,7 +15,7 @@
 
 /* ============ Hero (mesmo padrão do Times mas com botão azul "voz") ============ */
 .rj-hero {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1C2E3D 45%, #16a34a 110%);
+  background: linear-gradient(135deg, #1d4ed8 0%, #000000 45%, #16a34a 110%);
   border-radius: 16px;
   padding: 26px 28px;
   color: #fff;
@@ -91,7 +91,7 @@
 }
 .rj-btn-amarelo {
   background: #f5c518;
-  color: #1C2E3D;
+  color: #000000;
   box-shadow: 0 4px 12px rgba(245, 197, 24, 0.4);
   &:hover { transform: translateY(-1px); box-shadow: 0 7px 16px rgba(245, 197, 24, 0.5); }
 }
@@ -196,7 +196,7 @@
   gap: 8px;
   cursor: pointer;
   font-size: 13.5px;
-  color: #1C2E3D;
+  color: #000000;
 
   input { display: none; }
   .rj-checkbox-box {
@@ -251,7 +251,7 @@
     margin-left: 2px;
   }
 
-  &:hover { color: #1C2E3D; }
+  &:hover { color: #000000; }
   &.ativa {
     color: #7CC61D;
     border-bottom-color: #7CC61D;
@@ -327,7 +327,7 @@
 .rj-nome {
   font-size: 14.5px;
   font-weight: 800;
-  color: #1C2E3D;
+  color: #000000;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -389,7 +389,7 @@
   border-collapse: collapse;
 
   thead {
-    background: linear-gradient(135deg, #1d4ed8 0%, #1C2E3D 100%);
+    background: linear-gradient(135deg, #1d4ed8 0%, #000000 100%);
     color: #fff;
   }
   th, td {
@@ -466,7 +466,7 @@
     margin: 0 0 6px;
     font-size: 17px;
     font-weight: 800;
-    color: #1C2E3D;
+    color: #000000;
   }
   p {
     margin: 0 0 18px;

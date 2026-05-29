@@ -12,7 +12,7 @@
   margin: 0 0 12px;
   font-size: 17px;
   font-weight: 800;
-  color: #1c2e3d;
+  color: #000000;
 }
 .cc-field {
   display: block;
@@ -35,7 +35,7 @@
   color: #1f1f23;
   outline: none;
 
-  &:focus { border-bottom-color: #1c2e3d; }
+  &:focus { border-bottom-color: #000000; }
 }
 .cc-select {
   width: 100%;
@@ -47,7 +47,7 @@
   color: #1f1f23;
   outline: none;
   appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%231C2E3D' d='M0 0l5 6 5-6z'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23000000' d='M0 0l5 6 5-6z'/></svg>");
   background-repeat: no-repeat;
   background-position: right 4px center;
 }
@@ -57,7 +57,7 @@
   gap: 8px;
   margin: 4px 0 14px;
   font-size: 13.5px;
-  color: #1c2e3d;
+  color: #000000;
   ion-icon { font-size: 18px; }
   .cc-link {
     background: none;

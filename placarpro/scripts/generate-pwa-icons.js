@@ -12,7 +12,7 @@
  * Estratégia "maskable":
  *   - Android adaptive icons recortam o ícone em formas variadas (círculo,
  *     squircle, etc.). O "safe zone" é um círculo de 80% no centro.
- *   - Geramos uma versão com padding de 20% (cor do tema #1C2E3D) pra que
+ *   - Geramos uma versão com padding de 20% (cor do tema #000000) pra que
  *     a logo NUNCA seja cortada, independente da máscara.
  *   - A versão "any" usa o SVG full-bleed (sem padding extra).
  *
@@ -28,8 +28,8 @@ const PROJECT_ROOT = path.resolve(__dirname, '..');
 const SRC_SVG = path.join(PROJECT_ROOT, 'src', 'assets', 'icon', 'logo.svg');
 const OUT_DIR = path.join(PROJECT_ROOT, 'public', 'icons');
 
-// Cor de fundo do tema (mesmo theme_color do manifest).
-const BG_COLOR = '#1C2E3D';
+// Cor de fundo do ícone (branco — pra contraste com a logo navy).
+const BG_COLOR = '#ffffff';
 
 // Tamanhos pro purpose "any" — logo full-bleed.
 const SIZES_ANY = [72, 96, 128, 144, 152, 192, 384, 512];
@@ -68,8 +68,9 @@ async function main() {
   // Safe zone: círculo centralizado de 80% do canvas.
   for (const size of SIZES_MASKABLE) {
     const outPath = path.join(OUT_DIR, `icon-maskable-${size}x${size}.png`);
-    // Logo ocupa só 60% do canvas (margem extra pra adaptive icons).
-    const logoSize = Math.round(size * 0.6);
+    // Logo ocupa 78% do canvas — próximo do limite seguro (80% safe zone
+    // do Android adaptive icons) pra ficar o maior possível sem cortar.
+    const logoSize = Math.round(size * 0.78);
     const padding = Math.round((size - logoSize) / 2);
 
     // Renderiza o SVG no tamanho da logo (60% do total).
@@ -102,7 +103,8 @@ async function main() {
   // Tamanho oficial: 180x180.
   {
     const APPLE_SIZE = 180;
-    const logoSize = Math.round(APPLE_SIZE * 0.7);
+    // Logo ocupa 92% do canvas (margem mínima pros cantos arredondados do iOS).
+    const logoSize = Math.round(APPLE_SIZE * 0.92);
     const padding = Math.round((APPLE_SIZE - logoSize) / 2);
 
     const logoPng = await sharp(svgBuffer, { density: 384 })

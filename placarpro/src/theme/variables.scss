@@ -1,17 +1,17 @@
 // PlacarPro — paleta e tokens da marca (modo claro fixo).
 // O app é sempre LIGHT — dark mode foi removido por escolha de design.
-// A identidade visual é navy (#1C2E3D) + verde (#7CC61D).
+// A identidade visual é navy (#000000) + verde (#7CC61D).
 
 /* ============ MODO CLARO (default) ============ */
 :root,
 body.light {
   /* Primary — Navy PlacarPro (constante nos dois modos) */
-  --ion-color-primary: #1C2E3D;
-  --ion-color-primary-rgb: 28, 46, 61;
+  --ion-color-primary: #000000;
+  --ion-color-primary-rgb: 0, 0, 0;
   --ion-color-primary-contrast: #ffffff;
   --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: #192836;
-  --ion-color-primary-tint: #334350;
+  --ion-color-primary-shade: #000000;
+  --ion-color-primary-tint: #1a1a1a;
 
   /* Secondary — Verde PlacarPro */
   --ion-color-secondary: #7CC61D;
@@ -50,7 +50,7 @@ body.light {
   --ion-color-danger-shade: #cf3e3e;
   --ion-color-danger-tint: #ed5959;
 
-  --ion-color-dark: #1C2E3D;
+  --ion-color-dark: #000000;
   --ion-color-dark-rgb: 28, 46, 61;
   --ion-color-dark-contrast: #ffffff;
   --ion-color-dark-contrast-rgb: 255, 255, 255;
@@ -90,12 +90,12 @@ body.light {
   --placar-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
 
   /* Sidebar — sempre escura (identidade) */
-  --placar-sidebar-bg: #1C2E3D;
+  --placar-sidebar-bg: #000000;
   --placar-sidebar-text: #ffffff;
   --placar-sidebar-text-muted: rgba(255, 255, 255, 0.65);
   --placar-sidebar-active-bg: rgba(124, 198, 29, 0.18);
   --placar-sidebar-active-border: #7CC61D;
-  --placar-header-bg: #1C2E3D;
+  --placar-header-bg: #000000;
   --placar-accent: #7CC61D;
   --placar-card-bg: #ffffff;
   --placar-card-radius: 12px;

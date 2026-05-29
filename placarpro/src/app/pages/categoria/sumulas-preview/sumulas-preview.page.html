@@ -1,21 +1,15 @@
-<ion-header class="no-print">
+<!-- `force-mobile-header` força exibir esse ion-header também no mobile,
+     mesmo dentro do shell-layout que esconde ion-headers de child pages
+     por padrão pra evitar duplicação de barra navy. Necessário pro user
+     ter acesso aos botões PDF/Imprimir + back no mobile. -->
+<ion-header class="no-print force-mobile-header">
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
       <ion-button (click)="voltar()" aria-label="Voltar">
         <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
-    <ion-title>Imprimir súmulas ({{ qtdSelecionadas }})</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="baixarPdf()" [disabled]="qtdSelecionadas === 0" aria-label="Baixar PDF">
-        <ion-icon slot="start" name="download-outline"></ion-icon>
-        PDF
-      </ion-button>
-      <ion-button (click)="imprimir()" [disabled]="qtdSelecionadas === 0" aria-label="Imprimir">
-        <ion-icon slot="start" name="print-outline"></ion-icon>
-        Imprimir
-      </ion-button>
-    </ion-buttons>
+    <ion-title>Súmulas</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -32,55 +26,25 @@
       <select
         class="sp-modelo-select"
         [(ngModel)]="modeloSelecionado"
+        (ngModelChange)="onModeloChange()"
         aria-label="Modelo de súmula"
       >
         <option *ngFor="let m of modelosSumula" [ngValue]="m.id">{{ m.label }}</option>
       </select>
     </label>
-    <div class="sp-toolbar-acoes">
-      <button
-        type="button"
-        class="sp-toolbar-pdf"
-        (click)="baixarPdf()"
-        [disabled]="qtdSelecionadas === 0"
-      >
-        <ion-icon name="download-outline"></ion-icon>
-        <span>Baixar PDF ({{ qtdSelecionadas }})</span>
-      </button>
-      <button
-        type="button"
-        class="sp-toolbar-imprimir"
-        (click)="imprimir()"
-        [disabled]="qtdSelecionadas === 0"
-      >
-        <ion-icon name="print-outline"></ion-icon>
-        <span>Imprimir ({{ qtdSelecionadas }})</span>
-      </button>
-    </div>
   </div>
 
   <div class="sp-layout">
 
-    <!-- ============ Painel lateral de seleção ============ -->
+    <!-- ============ Painel lateral de lista de partidas ============ -->
     <aside class="sp-painel no-print">
       <div class="sp-painel-head">
-        <h3>Partidas <span class="sp-cnt" *ngIf="qtdSelecionadas > 0">({{ qtdSelecionadas }})</span></h3>
+        <h3>Partidas</h3>
       </div>
 
       <div class="sp-busca">
         <ion-icon name="search-outline"></ion-icon>
         <input type="text" placeholder="Buscar por equipe ou fase..." [(ngModel)]="busca" />
-      </div>
-
-      <div class="sp-acoes">
-        <button type="button" class="sp-acao" (click)="selecionarTodas()">
-          <ion-icon name="checkmark-done-outline"></ion-icon>
-          Todas
-        </button>
-        <button type="button" class="sp-acao limpar" [disabled]="qtdSelecionadas === 0" (click)="limparSelecao()">
-          <ion-icon name="close-outline"></ion-icon>
-          Limpar
-        </button>
       </div>
 
       <div class="sp-lista">
@@ -91,12 +55,8 @@
         <div
           *ngFor="let l of linhasFiltradas; trackBy: trackByLinha"
           class="sp-card"
-          [class.selecionada]="isSelecionada(l.jogo.id)"
         >
-          <button type="button" class="sp-card-main" (click)="toggle(l.jogo.id)">
-            <span class="sp-check" [class.on]="isSelecionada(l.jogo.id)">
-              <ion-icon [name]="isSelecionada(l.jogo.id) ? 'checkbox' : 'square-outline'"></ion-icon>
-            </span>
+          <button type="button" class="sp-card-main" (click)="abrirVisualizacao(l.jogo.id)">
             <div class="sp-card-body">
               <div class="sp-times">
                 <span class="sp-time-nome">{{ l.mandante?.nome || '?' }}</span>
@@ -109,7 +69,7 @@
               </div>
             </div>
           </button>
-          <button type="button" class="sp-ver-btn" (click)="abrirVisualizacao(l.jogo.id)" aria-label="Visualizar súmula em PDF">
+          <button type="button" class="sp-ver-btn" (click)="abrirVisualizacao(l.jogo.id)" aria-label="Visualizar súmula">
             <ion-icon name="eye-outline"></ion-icon>
           </button>
         </div>
@@ -125,19 +85,13 @@
       </div>
 
       <!-- ═══════════ MODELO PADRÃO (genérico) ═══════════ -->
-      <!-- Cada súmula vira uma folha A4 paisagem com page-break-after.
-           Quando `previewImagens[s.jogo.id]` está pronta, mostramos a
-           IMAGEM (pixel-perfect ao PDF) e escondemos o HTML cru. O HTML
-           continua no DOM pra que imprimir/baixarPdf reutilizem. -->
-      <img *ngFor="let s of sumulas; trackBy: trackBySumula"
-           class="sumula-preview-img"
-           [src]="previewImagens[s.jogo.id || '']"
-           [hidden]="modeloSelecionado !== 'padrao' || !previewImagens[s.jogo.id || '']"
-           alt="Súmula renderizada" />
+      <!-- Modelo PADRÃO: sempre mostra HTML cru (vetorial, bordas finas).
+           Antes mostrava IMG rasterizada pelo html2canvas com qualidade
+           ruim. Agora é o template real. -->
       <div
         class="sumula-folha"
         *ngFor="let s of sumulas; trackBy: trackBySumula"
-        [hidden]="modeloSelecionado !== 'padrao' || !!previewImagens[s.jogo.id || '']"
+        [hidden]="modeloSelecionado !== 'padrao'"
       >
 
         <!-- Faixa do título -->

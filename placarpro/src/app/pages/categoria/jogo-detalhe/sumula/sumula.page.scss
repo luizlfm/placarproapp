@@ -118,14 +118,14 @@ ion-content {
   justify-content: center;
   gap: 12px;
   padding: 60px 20px;
-  color: var(--ion-color-primary, #1c2e3d);
+  color: var(--ion-color-primary, #000000);
   font-size: 14px;
   font-weight: 500;
 
   ion-spinner {
     width: 40px;
     height: 40px;
-    --color: var(--ion-color-primary, #1c2e3d);
+    --color: var(--ion-color-primary, #000000);
   }
 }
 
@@ -177,7 +177,7 @@ ion-content {
     align-items: center;
     justify-content: center;
     gap: 12px;
-    color: var(--ion-color-primary, #1c2e3d);
+    color: var(--ion-color-primary, #000000);
     font-size: 14px;
     font-weight: 500;
     background: #f7f7f7;
@@ -186,7 +186,7 @@ ion-content {
     ion-spinner {
       width: 40px;
       height: 40px;
-      --color: var(--ion-color-primary, #1c2e3d);
+      --color: var(--ion-color-primary, #000000);
     }
   }
 }

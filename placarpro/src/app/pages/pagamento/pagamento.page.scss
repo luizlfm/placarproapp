@@ -12,7 +12,7 @@
 
 /* ============ Card de Resumo ============ */
 .pg-resumo {
-  background: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 100%);
+  background: linear-gradient(135deg, #000000 0%, #2d4a63 100%);
   color: #fff;
   border-radius: 14px;
   padding: 20px 22px;
@@ -136,7 +136,7 @@
 
   &:hover { background: #f3f4f6; }
   &.on {
-    background: #1C2E3D;
+    background: #000000;
     color: #fff;
     box-shadow: 0 2px 6px rgba(28, 46, 61, 0.2);
   }
@@ -158,7 +158,7 @@
   margin: 0 0 6px;
   font-size: 16px;
   font-weight: 800;
-  color: var(--ion-color-primary, #1C2E3D);
+  color: var(--ion-color-primary, #000000);
 
   ion-icon { font-size: 22px; color: #7CC61D; }
 }
@@ -205,9 +205,9 @@
     aspect-ratio: 1;
 
     /* "Pixels" pseudo-random — alterna cores em padrão pra parecer QR */
-    &:nth-child(3n)  { background: #1C2E3D; }
-    &:nth-child(7n)  { background: #1C2E3D; }
-    &:nth-child(11n) { background: #1C2E3D; }
+    &:nth-child(3n)  { background: #000000; }
+    &:nth-child(7n)  { background: #000000; }
+    &:nth-child(11n) { background: #000000; }
     &:nth-child(13n) { background: rgba(28, 46, 61, 0.7); }
   }
 }
@@ -262,7 +262,7 @@
 }
 
 .pg-btn-icon {
-  background: #1C2E3D;
+  background: #000000;
   color: #fff;
   border: 0;
   border-radius: 6px;
@@ -341,9 +341,9 @@
 .pg-boleto-acoes a.pg-btn-secondary {
   text-decoration: none;
   flex: 1;
-  background: #1C2E3D;
+  background: #000000;
   color: #fff;
-  border-color: #1C2E3D;
+  border-color: #000000;
   &:hover { background: #102433; }
 }
 

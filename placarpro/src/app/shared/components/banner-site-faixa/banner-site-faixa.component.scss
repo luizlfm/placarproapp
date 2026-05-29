@@ -92,7 +92,7 @@
   transition: background 200ms ease, transform 200ms ease;
 
   &.ativo {
-    background: var(--ion-color-primary, #1C2E3D);
+    background: var(--ion-color-primary, #000000);
     transform: scale(1.3);
   }
 }

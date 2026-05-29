@@ -12,7 +12,7 @@
 
 /* ============ Hero card ============ */
 .ph-hero {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1C2E3D 45%, #16a34a 100%);
+  background: linear-gradient(135deg, #1d4ed8 0%, #000000 45%, #16a34a 100%);
   border-radius: 16px;
   padding: 28px 28px;
   color: #fff;
@@ -124,7 +124,7 @@
     margin: 0 0 8px;
     font-size: 20px;
     font-weight: 800;
-    color: #1C2E3D;
+    color: #000000;
   }
   p {
     margin: 0 auto;
@@ -133,6 +133,6 @@
     line-height: 1.6;
     color: #4b5563;
 
-    strong { color: #1C2E3D; font-weight: 700; }
+    strong { color: #000000; font-weight: 700; }
   }
 }

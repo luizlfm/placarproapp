@@ -285,7 +285,7 @@ export class EquipeModalComponent implements OnInit {
   }
 
   readonly coresPreset: string[] = [
-    '#1C2E3D', // navy
+    '#000000', // navy
     '#7CC61D', // verde marca
     '#EB4747', // vermelho
     '#F5C518', // amarelo

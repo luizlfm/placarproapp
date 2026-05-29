@@ -71,6 +71,23 @@
       </button>
     </div>
 
+    <!-- ═══ Banner PENDENTE (convite ainda não gerado) ═══
+         Clique leva direto pra tela de gerenciar/ativar. Mostra na tela
+         o que precisa pra ativar de verdade (em vez de só usar toast). -->
+    <button
+      type="button"
+      class="ri-wc-pendente"
+      *ngIf="!racha.codigoConvite && !racha.conviteToken"
+      (click)="gerenciarRacha()"
+    >
+      <ion-icon name="alert-circle" class="ri-wc-pend-icon"></ion-icon>
+      <span class="ri-wc-pend-texto">
+        <strong>Convite ainda não gerado</strong>
+        <small>Toque pra finalizar a ativação do racha</small>
+      </span>
+      <ion-icon name="chevron-forward-outline" class="ri-wc-pend-chev"></ion-icon>
+    </button>
+
     <!-- Features em breve — preview do que vem por aí -->
     <div class="ri-wc-em-breve">
       <span class="ri-wc-eb-label">Em breve:</span>
@@ -90,11 +107,16 @@
   </section>
 
   <!-- ═══════════ Card "Ative seu racha em 4 passos" ═══════════
-       Aparece quando: tem pendência (não ativado OU < 4 passos) E o usuário
-       não dispensou recentemente (snooze de 7 dias via localStorage). -->
+       Aparece quando: tem pendência (não ativado OU < 4 passos OU
+       convite não gerado). Se o convite NÃO foi gerado, ignoramos
+       o snooze (`ativacaoDispensada`) pra forçar o card a aparecer
+       até a ativação acabar de verdade. */ -->
   <section
     class="ri-ativacao"
-    *ngIf="(!racha.ativado || passosConcluidos < 4) && !ativacaoDispensada"
+    *ngIf="
+      ((!racha.codigoConvite && !racha.conviteToken)) ||
+      ((!racha.ativado || passosConcluidos < 4) && !ativacaoDispensada)
+    "
   >
     <div class="ri-ativacao-head">
       <ion-icon name="hourglass-outline" class="ri-ativ-icon"></ion-icon>

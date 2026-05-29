@@ -71,7 +71,7 @@ export class ConfigPage implements OnInit {
     contatoTelefone: [''],
     contatoEmail: [''],
     contatoWhatsapp: [''],
-    cor: ['#1C2E3D'],
+    cor: ['#000000'],
     regras: [''],
     premiacoes: [''],
     localizacaoTipo: ['presencial'],
@@ -111,7 +111,7 @@ export class ConfigPage implements OnInit {
         contatoTelefone: camp.contatoTelefone ?? '',
         contatoEmail: camp.contatoEmail ?? '',
         contatoWhatsapp: camp.contatoWhatsapp ?? '',
-        cor: camp.cor ?? '#1C2E3D',
+        cor: camp.cor ?? '#000000',
         regras: camp.regras ?? '',
         premiacoes: camp.premiacoes ?? '',
         localizacaoTipo: camp.localizacaoTipo ?? 'presencial',
@@ -126,7 +126,7 @@ export class ConfigPage implements OnInit {
       // Preview em tempo real: aplica a cor no tema assim que o campo é
       // carregado, sem precisar salvar. O valueChanges mantém sincronizado
       // enquanto o usuário interage com o color picker.
-      this.campTheme.setCor(camp.cor ?? '#1C2E3D');
+      this.campTheme.setCor(camp.cor ?? '#000000');
     });
 
     // Preview ao vivo do color picker — reflete instantaneamente na toolbar.

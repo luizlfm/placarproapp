@@ -4,7 +4,8 @@
       <img class="hdr-logo" src="assets/images/logo3.png" alt="PlacarPro" />
     </ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="confirmLogout()" aria-label="Sair">
+      <!-- Sair só aparece se logado (sem login, esconde o botão). -->
+      <ion-button *ngIf="user$ | async" (click)="confirmLogout()" aria-label="Sair">
         <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
       </ion-button>
     </ion-buttons>

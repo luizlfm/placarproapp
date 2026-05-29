@@ -20,17 +20,102 @@
 /* @import "@ionic/angular/css/palettes/dark.system.css"; */
 
 /* ============================================================
-   DARK MODE BLOQUEADO GLOBALMENTE
-   `color-scheme: light` no CSS é mais forte que só o
-   `<meta name="color-scheme">` no index.html — cobre form
-   controls (inputs, scrollbars, pickers nativos), autofill do
-   Chrome, etc. Aplicado no html+body pra cobrir ambos contextos
-   (Ionic ora renderiza no body, ora cria overlays no html). */
+   DARK MODE BLOQUEADO GLOBALMENTE — TUDO LIGHT
+   ============================================================
+   IMPORTANTE: declaramos `light dark` (não só `light`!) porque:
+   - Chrome Android tem um recurso "Auto Dark Mode for Web Contents"
+     que ESCURECE sites declarados como só-light quando o sistema do
+     usuário tá em dark mode.
+   - Com `light dark`, o Chrome assume que o site já lida com ambos
+     os modos e NÃO aplica force-dark.
+   - Nosso CSS dentro de `@media (prefers-color-scheme: dark)` força
+     tudo branco visualmente — então mesmo o sistema em dark, o site
+     renderiza claro.
+
+   `!important` garante que extensões, Ionic dark palette ou
+   qualquer regra futura NÃO consigam virar o esquema do app. */
 :root,
 html,
 body {
-  color-scheme: light;
+  color-scheme: only light !important;
+  background: #ffffff;
 }
+
+/* Ignora qualquer paleta dark do Ionic que tenha entrado por
+   side-effect de algum import indireto. Anula as classes
+   `.ion-palette-dark` (modo novo do Ionic 7+) e `.dark` antigas. */
+html.ion-palette-dark,
+body.ion-palette-dark,
+html.dark,
+body.dark {
+  color-scheme: only light !important;
+  --ion-background-color: #ffffff !important;
+  --ion-background-color-rgb: 255, 255, 255 !important;
+  --ion-text-color: #1F2937 !important;
+  --ion-text-color-rgb: 31, 41, 55 !important;
+}
+
+/* `@media (prefers-color-scheme: dark)` = sistema do user em dark.
+   Quando isso bate (mesmo com Chrome force-dark tentando inverter),
+   forçamos TUDO branco visualmente. Resultado: sistema em dark, mas
+   site renderiza light. */
+@media (prefers-color-scheme: dark) {
+  :root,
+  html,
+  body {
+    color-scheme: only light !important;
+    background-color: #ffffff !important;
+    color: #1F2937 !important;
+    --ion-background-color: #ffffff !important;
+    --ion-background-color-rgb: 255, 255, 255 !important;
+    --ion-text-color: #1F2937 !important;
+    --ion-text-color-rgb: 31, 41, 55 !important;
+    --placar-bg: #ffffff !important;
+    --placar-surface: #ffffff !important;
+    --placar-surface-2: #FAFBFC !important;
+    --placar-text: #1F2937 !important;
+    --placar-text-muted: #6B7280 !important;
+  }
+  ion-app,
+  ion-router-outlet,
+  ion-content,
+  ion-page,
+  .pub-content,
+  .pub-page {
+    background-color: #ffffff !important;
+    color: #1F2937 !important;
+    filter: none !important;
+    -webkit-filter: none !important;
+  }
+}
+
+/* `@media (prefers-color-scheme: dark)` — anula QUALQUER override
+   que algum SCSS de componente ou bundle de terceiro tenha deixado
+   passar. Mesmo que o SO esteja em dark, o app continua light. */
+// @media (prefers-color-scheme: dark) {
+//   :root,
+//   html,
+//   body {
+//     color-scheme: light !important;
+//     --ion-background-color: #ffffff !important;
+//     --ion-background-color-rgb: 255, 255, 255 !important;
+//     --ion-text-color: #1F2937 !important;
+//     --ion-text-color-rgb: 31, 41, 55 !important;
+//     background: #ffffff !important;
+//     color: #1F2937 !important;
+//   }
+
+//   /* Bloqueia inversões automáticas em ion-content/ion-card/etc. que
+//      algum tema dark do Ionic possa estar puxando via media query. */
+//   ion-content,
+//   ion-card,
+//   ion-list,
+//   ion-item,
+//   ion-toolbar:not([color]) {
+//     --background: #ffffff !important;
+//     --color: #1F2937 !important;
+//   }
+// }
 
 /* ============ Tipografia base ============ */
 body {
@@ -168,6 +253,44 @@ ion-toolbar {
   }
 }
 
+/* ═══ Modo "imprimindo súmulas" — usado pra disparar o window.print()
+   nativo. Esconde TODO o app exceto as `.sumula-folha`. Funciona com
+   qualquer quantidade sem html2canvas/jsPDF. iOS abre o diálogo de
+   print onde o user escolhe Salvar como PDF ou AirPrint. ═══ */
+@media print {
+  body.imprimindo-sumulas {
+    background: #fff !important;
+    margin: 0 !important;
+  }
+  body.imprimindo-sumulas ion-header,
+  body.imprimindo-sumulas .shell-mobile-header,
+  body.imprimindo-sumulas .sp-toolbar,
+  body.imprimindo-sumulas .sp-painel,
+  body.imprimindo-sumulas .sp-preview-empty,
+  body.imprimindo-sumulas .sp-msg,
+  body.imprimindo-sumulas .no-print {
+    display: none !important;
+  }
+  body.imprimindo-sumulas .sumula-folha {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    width: 100% !important;
+    max-width: none !important;
+    transform: none !important;
+    zoom: 1 !important;
+  }
+  /* Esconde imgs de preview (já tem o HTML cru renderizado) */
+  body.imprimindo-sumulas img.sumula-preview-img {
+    display: none !important;
+  }
+}
+
 /* Utility helpers — esconde elementos por breakpoint. Usado em
    ion-toolbar pra mostrar só ícones no mobile e texto+ícone no desktop. */
 @media (max-width: 767px) {
@@ -272,6 +395,22 @@ ion-modal.modal-large {
   --height: 92%;
   --max-height: 900px;
   --border-radius: 14px;
+}
+
+/* Popup compacto pra confirmar download de PDF gerado. Aparece centralizado,
+   sem cabeçalho do Ionic — o componente desenha seu próprio close-btn. */
+ion-modal.pdf-popup-modal {
+  --width: 320px;
+  --max-width: 92%;
+  --height: auto;
+  --border-radius: 16px;
+  --background: transparent;
+  --box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+
+  &::part(content) {
+    position: relative;
+    height: auto;
+  }
 }
 
 /* Modal de seleção de equipes do relatório de jogadores — médio,
@@ -800,7 +939,7 @@ ion-modal.fase-equipes-modal {
    por todas as páginas do shell `/racha/*`.
    ============================================================ */
 :root {
-  --rp-navy:        #1C2E3D;
+  --rp-navy:        #000000;
   --rp-navy-soft:   #2d4a63;
   --rp-navy-deep:   #0f1d2b;
   --rp-lime:        #7CC61D;
@@ -818,14 +957,14 @@ ion-modal.fase-equipes-modal {
 
   /* Gradientes padrão pros heroes. Mais suaves do que antes pra
      aproximar do visual mais clean da área de campeonatos. */
-  --rp-grad-hero:      linear-gradient(135deg, #1C2E3D 0%, #2d4a63 60%, #4a7e0e 110%);
-  --rp-grad-hero-soft: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 50%, #4a7e0e 100%);
+  --rp-grad-hero:      linear-gradient(135deg, #000000 0%, #2d4a63 60%, #4a7e0e 110%);
+  --rp-grad-hero-soft: linear-gradient(135deg, #000000 0%, #2d4a63 50%, #4a7e0e 100%);
 
   /* Neutros usados em fundos, bordas e textos. */
   --rp-bg:         #f5f6f8;
   --rp-card:       #ffffff;
   --rp-border:     #e5e7eb;
-  --rp-text:       #1C2E3D;
+  --rp-text:       #000000;
   --rp-text-muted: #6b7280;
   --rp-text-soft:  #94a3b8;
 }

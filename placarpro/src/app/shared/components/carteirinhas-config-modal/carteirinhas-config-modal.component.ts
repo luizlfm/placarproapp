@@ -35,7 +35,7 @@ export class CarteirinhasConfigModalComponent implements OnInit {
   @Input() tamanho!: TamanhoCarteirinha;
   @Input() nomeCampeonatoDefault = '';
   @Input() subtituloDefault = '';
-  @Input() corDefault = '#1C2E3D';
+  @Input() corDefault = '#000000';
   @Input() organizacaoDefault = '';
 
   private readonly modalCtrl = inject(ModalController);
@@ -44,7 +44,7 @@ export class CarteirinhasConfigModalComponent implements OnInit {
 
   nomeCampeonato = '';
   subtitulo = '';
-  cor = '#1C2E3D';
+  cor = '#000000';
   organizacao = '';
   incluirEscudo = true;
   incluirVerso = false;
@@ -65,7 +65,7 @@ export class CarteirinhasConfigModalComponent implements OnInit {
   ngOnInit(): void {
     this.nomeCampeonato = this.nomeCampeonatoDefault;
     this.subtitulo = this.subtituloDefault;
-    this.cor = this.corDefault || '#1C2E3D';
+    this.cor = this.corDefault || '#000000';
     this.organizacao = this.organizacaoDefault;
   }
 

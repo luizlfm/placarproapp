@@ -74,7 +74,7 @@ export class ArteDoJogoModalComponent implements OnInit {
     diaSemana: [''],
     data: [''],
     hora: [''],
-    cor1: ['#1C2E3D'],
+    cor1: ['#000000'],
     cor2: ['#F2C500'],
     fundo: ['gramado'],
     decoracao: [true],

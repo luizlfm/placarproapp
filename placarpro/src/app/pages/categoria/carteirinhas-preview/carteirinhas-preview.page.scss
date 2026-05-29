@@ -108,7 +108,7 @@ ion-header ion-toolbar ion-buttons[slot="end"] ion-button {
     margin: 0;
     font-size: 15px;
     font-weight: 800;
-    color: #1C2E3D;
+    color: #000000;
     text-transform: uppercase;
     letter-spacing: 0.3px;
   }
@@ -161,7 +161,7 @@ ion-header ion-toolbar ion-buttons[slot="end"] ion-button {
 }
 .campo-select {
   appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%231C2E3D' d='M0 0l5 6 5-6z'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23000000' d='M0 0l5 6 5-6z'/></svg>");
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 28px;
@@ -231,7 +231,7 @@ ion-header ion-toolbar ion-buttons[slot="end"] ion-button {
   &:hover { background: #f8f8fb; }
   &.marcada {
     background: rgba(28, 46, 61, 0.04);
-    ion-icon { color: #1C2E3D; }
+    ion-icon { color: #000000; }
   }
 
   .eq-nome {
@@ -313,7 +313,7 @@ ion-header ion-toolbar ion-buttons[slot="end"] ion-button {
   gap: 8px;
   font-size: 12.5px;
   font-weight: 700;
-  color: #1C2E3D;
+  color: #000000;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   margin-bottom: 10px;
@@ -581,14 +581,14 @@ ion-header ion-toolbar ion-buttons[slot="end"] ion-button {
   justify-content: center;
   gap: 12px;
   padding: 80px 20px;
-  color: var(--ion-color-primary, #1c2e3d);
+  color: var(--ion-color-primary, #000000);
   font-size: 14px;
   font-weight: 500;
 
   ion-spinner {
     width: 40px;
     height: 40px;
-    --color: var(--ion-color-primary, #1c2e3d);
+    --color: var(--ion-color-primary, #000000);
   }
 }
 

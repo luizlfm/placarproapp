@@ -12,19 +12,19 @@
       </ion-button>
 
       <!-- Mobile: botões icon-only compactos -->
-      <ion-button class="hide-desktop" (click)="baixarPdf()" [disabled]="cartoes.length === 0" aria-label="Baixar PDF">
+      <ion-button class="hide-desktop" (click)="baixarPdf()" aria-label="Baixar PDF">
         <ion-icon slot="icon-only" name="download-outline"></ion-icon>
       </ion-button>
-      <ion-button class="hide-desktop" (click)="imprimir()" [disabled]="cartoes.length === 0" aria-label="Imprimir">
+      <ion-button class="hide-desktop" (click)="imprimir()" aria-label="Imprimir">
         <ion-icon slot="icon-only" name="print-outline"></ion-icon>
       </ion-button>
 
       <!-- Desktop: botões com texto + ícone -->
-      <ion-button class="hide-mobile" (click)="baixarPdf()" [disabled]="cartoes.length === 0" aria-label="Baixar PDF">
+      <ion-button class="hide-mobile" (click)="baixarPdf()" aria-label="Baixar PDF">
         <ion-icon slot="start" name="download-outline"></ion-icon>
         PDF
       </ion-button>
-      <ion-button class="hide-mobile" (click)="imprimir()" [disabled]="cartoes.length === 0" aria-label="Imprimir">
+      <ion-button class="hide-mobile" (click)="imprimir()" aria-label="Imprimir">
         <ion-icon slot="start" name="print-outline"></ion-icon>
         Imprimir
       </ion-button>

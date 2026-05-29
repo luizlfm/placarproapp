@@ -4,7 +4,7 @@
 
 .fem-header ion-toolbar {
   --background: #ffffff;
-  --color: var(--placar-text, #1C2E3D);
+  --color: var(--placar-text, #000000);
   border-bottom: 1px solid var(--placar-border);
 
   ion-title {
@@ -46,7 +46,7 @@
 .fem-label {
   flex: 1;
   font-size: 14px;
-  color: var(--placar-text, #1C2E3D);
+  color: var(--placar-text, #000000);
 }
 
 .fem-tick {

@@ -299,7 +299,7 @@
   position: sticky;
   top: 0;
   z-index: 50;
-  background: var(--placar-sidebar-bg, #1C2E3D);
+  background: var(--placar-sidebar-bg, #000000);
   color: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
@@ -420,7 +420,7 @@
 .sidebar {
   flex: 0 0 280px;
   width: 280px;
-  background: var(--placar-sidebar-bg, #1C2E3D);
+  background: var(--placar-sidebar-bg, #000000);
   color: var(--placar-sidebar-text, #fff);
   display: flex;
   flex-direction: column;
@@ -744,7 +744,7 @@
   position: relative;
   border-radius: 14px;
   overflow: hidden;
-  background: #1C2E3D;
+  background: #000000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   margin-bottom: 16px;
   /* Reserva altura mínima enquanto a img (skel) carrega — evita que o
@@ -782,7 +782,9 @@
     linear-gradient(0deg, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0) 45%);
   pointer-events: none;
 
-  > * { pointer-events: auto; }
+  >* {
+    pointer-events: auto;
+  }
 }
 
 .hero-meta {
@@ -801,6 +803,7 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
+
   .hero-meta-value {
     font-size: 12px;
     font-weight: 800;
@@ -896,8 +899,8 @@
   aspect-ratio: 1600 / 400;
   border-radius: 12px;
   overflow: hidden;
-  background-color: #1C2E3D;
-  background-image: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 100%);
+  background-color: #000000;
+  background-image: linear-gradient(135deg, #000000 0%, #2d4a63 100%);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -1086,6 +1089,8 @@
     font-size: 18px;
     flex: 0 0 auto;
   }
+
+ 
 }
 
 .eq-logo-mini {
@@ -1766,7 +1771,7 @@
   }
 
   .jogos-header {
-    background: var(--ion-color-primary, #1C2E3D);
+    background: var(--ion-color-primary, #000000);
     color: #fff;
     padding: 14px 16px;
     display: flex;
@@ -1972,7 +1977,7 @@
   gap: 6px;
   background: none;
   border: none;
-  color: var(--ion-color-primary, #1C2E3D);
+  color: var(--ion-color-primary, #000000);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -2142,7 +2147,7 @@
   justify-content: center;
   gap: 8px;
   width: 100%;
-  background: var(--ion-color-primary, #1C2E3D);
+  background: var(--ion-color-primary, #000000);
   color: #fff;
   border: none;
   padding: 14px;
@@ -2198,7 +2203,7 @@
   }
 
   &.active {
-    background: var(--ion-color-primary, #1C2E3D);
+    background: var(--ion-color-primary, #000000);
     color: #fff;
   }
 }
@@ -2238,15 +2243,16 @@
   text-transform: uppercase;
   cursor: pointer;
   transition: background 140ms ease, color 140ms ease;
-  min-width: 0; /* permite truncar */
+  min-width: 0;
+  /* permite truncar */
 
   &:hover {
     background: rgba(0, 0, 0, 0.04);
-    color: var(--placar-text, #1C2E3D);
+    color: var(--placar-text, #000000);
   }
 
   &.active {
-    background: var(--ion-color-primary, #1C2E3D);
+    background: var(--ion-color-primary, #000000);
     color: #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   }
@@ -2262,8 +2268,17 @@
     justify-content: center;
     overflow: hidden;
     padding: 1px;
-    img { width: 100%; height: 100%; object-fit: contain; }
-    ion-icon { font-size: 14px; color: #92949c; }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    ion-icon {
+      font-size: 14px;
+      color: #92949c;
+    }
   }
 
   .jd-esc-seg-nome {
@@ -2276,7 +2291,11 @@
   @media (max-width: 480px) {
     padding: 7px 8px;
     font-size: 11.5px;
-    .jd-esc-seg-logo { width: 20px; height: 20px; }
+
+    .jd-esc-seg-logo {
+      width: 20px;
+      height: 20px;
+    }
   }
 }
 
@@ -3010,7 +3029,7 @@
 
 /* Gradientes específicos por tipo */
 .midia-card[data-tipo="video"] .card-thumb {
-  background: linear-gradient(135deg, #1c2e3d 0%, #2d4a63 100%);
+  background: linear-gradient(135deg, #000000 0%, #2d4a63 100%);
 }
 
 .midia-card[data-tipo="youtube"] .card-thumb {
@@ -3138,7 +3157,7 @@
   padding: 0 36px 0 14px;
   border-radius: 10px;
   border: 1px solid #d8d8dd;
-  background: #fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%231C2E3D' d='M0 0l5 6 5-6z'/></svg>") right 12px center no-repeat;
+  background: #fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23000000' d='M0 0l5 6 5-6z'/></svg>") right 12px center no-repeat;
   font-size: 13.5px;
   font-weight: 600;
   color: #2d2d2d;
@@ -3801,7 +3820,7 @@
     align-items: center;
     gap: 6px;
     padding: 9px 16px;
-    background: var(--ion-color-primary, #1C2E3D);
+    background: var(--ion-color-primary, #000000);
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -3824,6 +3843,7 @@
     }
   }
 }
+
 /* ═══════════ Botão "Ver Transmissão" + badge YouTube ═══════════
    Aparecem nos cards de jogo (lista pública) quando o jogo tem
    `youtubeVideoId` configurado. */
@@ -3845,9 +3865,14 @@
   box-shadow: 0 2px 8px rgba(225, 29, 72, 0.4);
   transition: transform 120ms ease, filter 120ms ease;
 
-  ion-icon { font-size: 13px; }
+  ion-icon {
+    font-size: 13px;
+  }
 
-  &:hover { transform: translateY(-1px); filter: brightness(1.1); }
+  &:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+  }
 
   &.live {
     animation: ytBadgeBlink 1.6s ease-in-out infinite;
@@ -3855,8 +3880,15 @@
 }
 
 @keyframes ytBadgeBlink {
-  0%, 100% { box-shadow: 0 2px 8px rgba(225, 29, 72, 0.4); }
-  50%      { box-shadow: 0 4px 16px rgba(225, 29, 72, 0.85); }
+
+  0%,
+  100% {
+    box-shadow: 0 2px 8px rgba(225, 29, 72, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 4px 16px rgba(225, 29, 72, 0.85);
+  }
 }
 
 .btn-ver-transmissao {
@@ -3867,7 +3899,7 @@
   width: 100%;
   margin-top: 10px;
   padding: 10px 18px;
-  background: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 100%);
+  background: linear-gradient(135deg, #000000 0%, #2d4a63 100%);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -3879,10 +3911,17 @@
   font-family: inherit;
   transition: filter 120ms ease, transform 100ms ease;
 
-  ion-icon { font-size: 18px; }
+  ion-icon {
+    font-size: 18px;
+  }
 
-  &:hover { filter: brightness(1.12); }
-  &:active { transform: scale(0.98); }
+  &:hover {
+    filter: brightness(1.12);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
 
   &.live {
     background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
@@ -3892,8 +3931,15 @@
 }
 
 @keyframes btnLivePulse {
-  0%, 100% { box-shadow: 0 4px 14px rgba(225, 29, 72, 0.45); }
-  50%      { box-shadow: 0 6px 24px rgba(225, 29, 72, 0.8); }
+
+  0%,
+  100% {
+    box-shadow: 0 4px 14px rgba(225, 29, 72, 0.45);
+  }
+
+  50% {
+    box-shadow: 0 6px 24px rgba(225, 29, 72, 0.8);
+  }
 }
 
 
@@ -3914,7 +3960,7 @@
   gap: 24px;
   padding: 40px 24px;
   margin: 12px 0 20px;
-  background: linear-gradient(180deg, #0e1a26 0%, #1c2e3d 60%, #0e1a26 100%);
+  background: linear-gradient(180deg, #0e1a26 0%, #000000 60%, #0e1a26 100%);
   border-radius: 16px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
   color: #fff;
@@ -3962,8 +4008,16 @@
   padding: 4px;
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15), 0 6px 16px rgba(0, 0, 0, 0.5);
 
-  img { width: 100%; height: 100%; object-fit: contain; }
-  ion-icon { font-size: 32px; color: #92949c; }
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  ion-icon {
+    font-size: 32px;
+    color: #92949c;
+  }
 }
 
 .assistir-nome {
@@ -4039,13 +4093,18 @@
   transition: transform 120ms ease, box-shadow 180ms ease;
   animation: btnLivePulse 1.8s ease-in-out infinite;
 
-  ion-icon { font-size: 22px; }
+  ion-icon {
+    font-size: 22px;
+  }
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 32px rgba(225, 29, 72, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.18) inset;
   }
-  &:active { transform: scale(0.97); }
+
+  &:active {
+    transform: scale(0.97);
+  }
 }
 
 /* Mobile: encolhe proporcionalmente */
@@ -4055,17 +4114,48 @@
     gap: 18px;
     margin: 8px 0 14px;
   }
-  .assistir-times { gap: 10px; }
-  .assistir-escudo { width: 48px; height: 48px; ion-icon { font-size: 24px; } }
-  .assistir-nome { font-size: 11px; }
-  .assistir-placar { padding: 7px 12px; min-width: 70px; }
-  .assistir-gols { font-size: 22px; }
-  .assistir-vs { font-size: 18px; }
-  .assistir-status { font-size: 8.5px; }
+
+  .assistir-times {
+    gap: 10px;
+  }
+
+  .assistir-escudo {
+    width: 48px;
+    height: 48px;
+
+    ion-icon {
+      font-size: 24px;
+    }
+  }
+
+  .assistir-nome {
+    font-size: 11px;
+  }
+
+  .assistir-placar {
+    padding: 7px 12px;
+    min-width: 70px;
+  }
+
+  .assistir-gols {
+    font-size: 22px;
+  }
+
+  .assistir-vs {
+    font-size: 18px;
+  }
+
+  .assistir-status {
+    font-size: 8.5px;
+  }
+
   .assistir-btn {
     padding: 11px 22px;
     font-size: 13px;
-    ion-icon { font-size: 18px; }
+
+    ion-icon {
+      font-size: 18px;
+    }
   }
 }
 
@@ -4146,8 +4236,15 @@
     color: var(--ion-color-primary);
     border: 2px solid rgba(28, 46, 61, 0.15);
 
-    img { width: 100%; height: 100%; object-fit: cover; }
-    ion-icon { font-size: 26px; }
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    ion-icon {
+      font-size: 26px;
+    }
   }
 
   .nome {
@@ -4174,7 +4271,10 @@
     gap: 4px;
     font-size: 12px;
 
-    .b-gol { font-size: 16px; }
+    .b-gol {
+      font-size: 16px;
+    }
+
     .b-am {
       display: inline-block;
       width: 14px;
@@ -4183,6 +4283,7 @@
       border-radius: 2px;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
     }
+
     .b-vm {
       display: inline-block;
       width: 14px;
@@ -4208,9 +4309,13 @@
   gap: 8px;
   justify-content: center;
 
-  ion-icon { font-size: 18px; }
+  ion-icon {
+    font-size: 18px;
+  }
 
-  &.leitor { cursor: default; }
+  &.leitor {
+    cursor: default;
+  }
 }
 
 /* ── Lances: section-head + escudos-bar + trava ──────────────── */
@@ -4239,7 +4344,9 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
 
-  ion-icon { font-size: 14px; }
+  ion-icon {
+    font-size: 14px;
+  }
 }
 
 .lances-escudos-bar {
@@ -4272,6 +4379,7 @@
     height: 100%;
     object-fit: contain;
   }
+
   ion-icon {
     font-size: 20px;
     color: var(--ion-color-medium, #92949c);
@@ -4281,7 +4389,10 @@
     width: 30px;
     height: 30px;
     padding: 2px;
-    ion-icon { font-size: 16px; }
+
+    ion-icon {
+      font-size: 16px;
+    }
   }
 }
 
@@ -4319,4 +4430,3 @@
     font-size: 13px;
   }
 }
-

@@ -111,6 +111,32 @@
             </div>
             <ion-icon class="tx-card-chevron" name="chevron-forward-outline"></ion-icon>
           </button>
+
+          <!-- ═══ Ações de COMPARTILHAR transmissão — só durante live ═══
+               Botões compactos lado a lado, aparecem só quando a
+               transmissão está ATIVA (transmissaoLiveAtiva$ === true).
+               Usam o link PÚBLICO `/transmissao/:campId/:catId/:jogoId`
+               pra qualquer visitante assistir sem login. -->
+          <div class="tx-share-actions" *ngIf="(transmissaoLiveAtiva$ | async)">
+            <button
+              type="button"
+              class="tx-share-btn"
+              (click)="compartilharLinkTransmissao()"
+              title="Compartilhar transmissão"
+            >
+              <ion-icon name="share-social-outline"></ion-icon>
+              <span>Compartilhar</span>
+            </button>
+            <button
+              type="button"
+              class="tx-share-btn"
+              (click)="copiarLinkTransmissao()"
+              title="Copiar link da transmissão"
+            >
+              <ion-icon name="link-outline"></ion-icon>
+              <span>Copiar link</span>
+            </button>
+          </div>
         </section>
 
         <!-- Antes havia aqui um `<app-transmissao-player modo="compacto">`

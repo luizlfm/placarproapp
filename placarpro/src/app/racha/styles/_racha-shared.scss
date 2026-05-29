@@ -15,7 +15,7 @@
    das pages do /app/*. Sticky para acompanhar scroll, estende até as bordas do
    `shell-main` (que tem padding 24px 28px). */
 .r-toolbar {
-  background: var(--placar-sidebar-bg, #1C2E3D);
+  background: var(--placar-sidebar-bg, #000000);
   color: #fff;
   padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
   display: flex;
@@ -98,7 +98,7 @@
    page-head plano + canto superior do strip plano também). */
 .r-page-head {
   position: relative;
-  background: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 55%, #3d7820 100%);
+  background: linear-gradient(135deg, #000000 0%, #2d4a63 55%, #3d7820 100%);
   border-radius: 14px 14px 14px 14px;
   padding: 20px 22px;
   margin: 0 0 14px;
@@ -202,7 +202,7 @@
   gap: 8px;
   padding: 10px 22px;
   background: rgba(255, 255, 255, 0.95);
-  color: var(--rp-navy, #1C2E3D);
+  color: var(--rp-navy, #000000);
   border: none;
   border-radius: 999px;
   font-family: inherit;
@@ -261,7 +261,7 @@
   color: var(--rp-text-muted, #6b7280);
 
   strong {
-    color: var(--rp-navy, #1C2E3D);
+    color: var(--rp-navy, #000000);
     font-weight: 800;
     font-variant-numeric: tabular-nums;
   }

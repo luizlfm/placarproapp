@@ -74,8 +74,8 @@
     &:hover { background: #fafafb; }
 
     &.ativo {
-      background: var(--ion-color-primary, #1C2E3D);
-      border-color: var(--ion-color-primary, #1C2E3D);
+      background: var(--ion-color-primary, #000000);
+      border-color: var(--ion-color-primary, #000000);
       color: #fff;
     }
 
@@ -148,7 +148,7 @@
 @mixin fundo-estadio {
   background:
     radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.08) 0%, transparent 60%),
-    linear-gradient(180deg, #0e1820 0%, #1c2e3d 100%);
+    linear-gradient(180deg, #0e1820 0%, #000000 100%);
 }
 
 @mixin fundo-quadra {

@@ -579,6 +579,12 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
     // Cascata de tentativas — vai do MELHOR pro mais conservador.
     // Tenta SEMPRE 60fps primeiro em cada resolução (iPhone 15 captura
     // 4K@60 nativamente). Se não conseguir 60, tenta 30fps.
+    //
+    // `comFacingMode = true` força câmera específica (frontal/traseira) —
+    // funciona bem em mobile. Em DESKTOP/NOTEBOOK alguns browsers
+    // tratam como constraint estrita e dão NotFoundError mesmo tendo
+    // webcam → por isso a SEGUNDA passada repete tudo SEM facingMode
+    // (deixa o browser escolher qualquer câmera disponível).
     const tentativas: { width: number; height: number; fps: number; rotulo: string }[] = [
       { width: 3840, height: 2160, fps: 60, rotulo: '4K @ 60fps' },
       { width: 3840, height: 2160, fps: 30, rotulo: '4K @ 30fps' },
@@ -586,9 +592,12 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
       { width: 1920, height: 1080, fps: 30, rotulo: '1080p @ 30fps' },
       { width: 1280, height: 720,  fps: 60, rotulo: '720p @ 60fps' },
       { width: 1280, height: 720,  fps: 30, rotulo: '720p @ 30fps' },
+      { width: 640,  height: 480,  fps: 30, rotulo: '480p @ 30fps' },
     ];
 
     let ultimoErro: unknown = null;
+
+    // ── 1ª passada: COM facingMode (ideal pra mobile) ──
     for (const t of tentativas) {
       try {
         const track = await createLocalVideoTrack({
@@ -597,7 +606,7 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
         });
         this.resolucaoAtual = { width: t.width, height: t.height };
         this.framerateAtual = t.fps;
-        console.log(`[Transmissao] vídeo capturado em ${t.rotulo}`);
+        console.log(`[Transmissao] vídeo capturado em ${t.rotulo} (facingMode=${this.facingMode})`);
         if (t.width !== 3840 || t.fps !== 60) {
           this.toast(
             `Câmera não suporta 4K@60fps — usando ${t.rotulo}.`,
@@ -606,11 +615,44 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
         }
         return track;
       } catch (err) {
-        console.warn(`[Transmissao] ${t.rotulo} indisponível, tentando próxima`, err);
+        console.warn(`[Transmissao] ${t.rotulo} (com facingMode) indisponível`, err);
         ultimoErro = err;
       }
     }
-    throw ultimoErro ?? new Error('Nenhuma resolução suportada pela câmera.');
+
+    // ── 2ª passada: SEM facingMode (desktop/webcam fixa) ──
+    console.log('[Transmissao] tentativas com facingMode falharam; tentando SEM facingMode (desktop)');
+    for (const t of tentativas) {
+      try {
+        const track = await createLocalVideoTrack({
+          resolution: { width: t.width, height: t.height, frameRate: t.fps },
+        });
+        this.resolucaoAtual = { width: t.width, height: t.height };
+        this.framerateAtual = t.fps;
+        console.log(`[Transmissao] vídeo capturado em ${t.rotulo} (sem facingMode)`);
+        return track;
+      } catch (err) {
+        console.warn(`[Transmissao] ${t.rotulo} (sem facingMode) indisponível`, err);
+        ultimoErro = err;
+      }
+    }
+
+    // ── 3ª passada (último recurso): SEM CONSTRAINTS NENHUMA ──
+    // Deixa o browser escolher a configuração que ele quiser. Webcams
+    // antigas / virtuais que rejeitam qualquer width/height/fps específico
+    // costumam aceitar quando não tem constraint.
+    console.log('[Transmissao] tentando sem qualquer constraint (default browser)');
+    try {
+      const track = await createLocalVideoTrack();
+      this.resolucaoAtual = { width: 1280, height: 720 }; // estimativa
+      this.framerateAtual = 30;
+      console.log('[Transmissao] vídeo capturado em modo default');
+      return track;
+    } catch (err) {
+      ultimoErro = err;
+    }
+
+    throw ultimoErro ?? new Error('Nenhuma câmera disponível.');
   }
 
   private async prepararPreview(): Promise<void> {
@@ -649,10 +691,35 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
       console.error('[Transmissao] erro ao obter câmera/microfone', err);
       this.estado = 'erro';
       const msg = (err instanceof Error) ? err.message : String(err);
-      if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('denied')) {
-        this.mensagemErro = 'Permissão de câmera/microfone negada. Habilite nas configurações do navegador e tente novamente.';
-      } else if (msg.toLowerCase().includes('notfound') || msg.toLowerCase().includes('device')) {
-        this.mensagemErro = 'Nenhuma câmera/microfone encontrado neste dispositivo.';
+      const lower = msg.toLowerCase();
+
+      // Detecta acesso por HTTP (não-HTTPS): getUserMedia é bloqueado
+      // fora de localhost/HTTPS. Mensagem específica é mais útil que
+      // o NotFoundError genérico que o browser retorna nesse caso.
+      const ehSeguro = typeof window !== 'undefined' && (
+        window.isSecureContext ||
+        location.protocol === 'https:' ||
+        location.hostname === 'localhost' ||
+        location.hostname === '127.0.0.1'
+      );
+      if (!ehSeguro) {
+        this.mensagemErro =
+          'Câmera bloqueada: o site precisa ser HTTPS pra acessar câmera/microfone. ' +
+          'Use placarproapp.com em vez do IP.';
+      } else if (lower.includes('permission') || lower.includes('denied') || lower.includes('notallowed')) {
+        this.mensagemErro =
+          'Permissão de câmera/microfone NEGADA. Clique no cadeado/info do navegador ' +
+          'na barra de endereço e libere "Câmera" e "Microfone" pra este site.';
+      } else if (lower.includes('notfound') || lower.includes('devicesnotfound')) {
+        this.mensagemErro =
+          'Nenhuma câmera/microfone detectado. Verifique se a webcam está conectada ' +
+          'e se outros apps (Zoom/Meet) não estão usando ela.';
+      } else if (lower.includes('notreadable') || lower.includes('inuse') || lower.includes('trackstart')) {
+        this.mensagemErro =
+          'Câmera em uso por outro app (Zoom, Meet, Teams, OBS, etc). Feche os outros e tente novamente.';
+      } else if (lower.includes('overconstrained')) {
+        this.mensagemErro =
+          'Câmera não suporta as resoluções tentadas. Atualize o navegador ou troque a webcam.';
       } else {
         this.mensagemErro = 'Falha ao acessar câmera/microfone: ' + msg;
       }

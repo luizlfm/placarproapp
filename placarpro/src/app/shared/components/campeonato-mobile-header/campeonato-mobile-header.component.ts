@@ -54,6 +54,11 @@ export class CampeonatoMobileHeaderComponent {
    *  pra pages que não armazenam o id em variável). */
   @Input() campeonatoId = '';
 
+  /** Stream do usuário logado — usado pra esconder o botão "Sair" quando
+   *  ninguém tá logado (caso edge: visitante anônimo abriu o shell admin
+   *  por deep-link antes do guard rejeitar). */
+  readonly user$ = this.auth.user$;
+
   /** Stream do campeonato — busca o doc pelo `campeonatoId` (input) ou
    *  pelo `id` da rota como fallback. Usado pra exibir logo + título. */
   readonly campeonato$: Observable<Campeonato | undefined> = this.route.paramMap.pipe(

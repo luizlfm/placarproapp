@@ -196,7 +196,7 @@ const PLANO_PROFISSIONAL: PlanoDef = {
   label: 'Profissional',
   preco: -1, // sob consulta
   precos: { mensal: -1, trimestral: -1, semestral: -1, anual: -1 },
-  cor: '#1C2E3D',
+  cor: '#000000',
   resumo: 'Tudo ilimitado + white-label',
   features: [
     { icon: 'infinite-outline', titulo: 'Campeonatos ilimitados' },

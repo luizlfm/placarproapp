@@ -32,7 +32,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--ion-color-primary, #1C2E3D);
+    outline: 2px solid var(--ion-color-primary, #000000);
     outline-offset: 2px;
   }
 }
@@ -49,7 +49,7 @@
   /* Quando NÃO tem banner do app, fallback é gradient navy→lime com
      ícone megafone centralizado (placeholder bonito). */
   &.sem-banner {
-    background: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 55%, #4a7e0e 110%);
+    background: linear-gradient(135deg, #000000 0%, #2d4a63 55%, #4a7e0e 110%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -89,7 +89,7 @@
   color: #fff;
 
   &[data-tipo='apoiador']    { background: rgba(34, 197, 94, 0.85); }
-  &[data-tipo='organizador'] { background: rgba(245, 197, 24, 0.92); color: #1C2E3D; }
+  &[data-tipo='organizador'] { background: rgba(245, 197, 24, 0.92); color: #000000; }
 }
 
 .patro-actions {
@@ -168,7 +168,7 @@
 .patro-nome {
   font-size: 15px;
   font-weight: 800;
-  color: var(--ion-color-primary, #1C2E3D);
+  color: var(--ion-color-primary, #000000);
   letter-spacing: -0.1px;
   line-height: 1.2;
   word-break: break-word;
@@ -234,7 +234,7 @@
 
   > ion-icon {
     font-size: 24px;
-    color: var(--ion-color-primary, #1C2E3D);
+    color: var(--ion-color-primary, #000000);
   }
 
   .ctx-banner-txt {
@@ -243,7 +243,7 @@
       display: block;
       font-size: 13px;
       font-weight: 800;
-      color: var(--ion-color-primary, #1C2E3D);
+      color: var(--ion-color-primary, #000000);
       text-transform: uppercase;
       letter-spacing: 0.4px;
     }
@@ -380,11 +380,11 @@
 
     ion-icon { font-size: 14px; }
 
-    &:hover { color: var(--ion-color-primary, #1C2E3D); }
+    &:hover { color: var(--ion-color-primary, #000000); }
 
     &.ativo {
       background: #fff;
-      color: var(--ion-color-primary, #1C2E3D);
+      color: var(--ion-color-primary, #000000);
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
   }

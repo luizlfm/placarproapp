@@ -349,14 +349,14 @@ export class ConfigPage {
   }
 
   async editarCor(cat: Categoria): Promise<void> {
-    const cores = ['#1C2E3D', '#7CC61D', '#4DABF7', '#E89132', '#6B47C9', '#E55353', '#F1B500', '#1A1A1A'];
+    const cores = ['#000000', '#7CC61D', '#4DABF7', '#E89132', '#6B47C9', '#E55353', '#F1B500', '#1A1A1A'];
     const alert = await this.alertCtrl.create({
       header: 'Cor da categoria',
       inputs: cores.map(c => ({
         type: 'radio',
         label: c,
         value: c,
-        checked: (cat.cor ?? '#1C2E3D') === c,
+        checked: (cat.cor ?? '#000000') === c,
       })),
       buttons: [
         { text: 'Cancelar', role: 'cancel' },

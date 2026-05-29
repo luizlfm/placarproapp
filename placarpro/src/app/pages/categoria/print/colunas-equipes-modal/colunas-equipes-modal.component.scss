@@ -9,7 +9,7 @@
 }
 
 .cem-header ion-toolbar {
-  --background: var(--ion-color-primary, #1C2E3D);
+  --background: var(--ion-color-primary, #000000);
   --color: #fff;
 }
 
@@ -27,14 +27,14 @@
   gap: 6px;
   padding: 6px 16px 4px;
   font-size: 12.5px;
-  color: var(--ion-color-primary, #1C2E3D);
+  color: var(--ion-color-primary, #000000);
   flex-wrap: wrap;
 }
 
 .cem-link {
   background: none;
   border: none;
-  color: var(--ion-color-primary, #1C2E3D);
+  color: var(--ion-color-primary, #000000);
   font-weight: 600;
   cursor: pointer;
   font-size: 12.5px;
@@ -83,7 +83,7 @@
 
   &:hover { border-color: #c1c5cc; }
   &.on {
-    border-color: var(--ion-color-primary, #1C2E3D);
+    border-color: var(--ion-color-primary, #000000);
     background: rgba(28, 46, 61, 0.04);
   }
 }
@@ -107,8 +107,8 @@
   transition: background 120ms ease, border-color 120ms ease;
 
   &.on {
-    background: var(--ion-color-primary, #1C2E3D);
-    border-color: var(--ion-color-primary, #1C2E3D);
+    background: var(--ion-color-primary, #000000);
+    border-color: var(--ion-color-primary, #000000);
     color: #fff;
   }
   ion-icon { font-size: 16px; }

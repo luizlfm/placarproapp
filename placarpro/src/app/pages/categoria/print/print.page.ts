@@ -24,7 +24,7 @@ import { Jogador } from '../../../campeonatos/models/jogador.model';
 import { Jogo } from '../../../campeonatos/models/jogo.model';
 import { Fase } from '../../../campeonatos/models/fase.model';
 import { NavBackService } from '../../../shared/nav-back.service';
-import { salvarPdf } from '../../../shared/pdf-download.helper';
+import { imprimirPdf, salvarPdf } from '../../../shared/pdf-download.helper';
 import {
   ExportarEquipesPopoverComponent,
   AcaoExportarEquipes,
@@ -44,7 +44,6 @@ import {
   EquipesJogadoresModalComponent,
   EquipeSelecaoJog,
 } from './equipes-jogadores-modal/equipes-jogadores-modal.component';
-import domtoimage from 'dom-to-image-more';
 
 export type TipoRelatorio =
   | 'equipes'
@@ -286,37 +285,41 @@ export class PrintPage implements OnInit {
       );
 
       const rect = folhaClone.getBoundingClientRect();
+      console.log('[print] dims', rect.width, 'x', rect.height);
 
-      // 4) Captura PNG via dom-to-image-more (bordas hairline).
-      const dataUrl = await domtoimage.toPng(folhaClone, {
-        bgcolor: '#ffffff',
+      // 4) Captura via html2canvas — dom-to-image-more falha em Safari iOS
+      // quando o SVG-foreignObject interno fica grande (limite ~2MB).
+      // Scale 1.5 pra evitar OOM no Safari iOS com conteúdo grande
+      // (tabela de partidas com 12+ jogos pode estourar memória em scale 2+).
+      console.time('[print] html2canvas');
+      const canvas = await html2canvas(folhaClone, {
+        backgroundColor: '#ffffff',
+        scale: 1.5,
+        useCORS: true,
+        logging: false,
+        imageTimeout: 0,
         width: Math.ceil(rect.width),
         height: Math.ceil(rect.height),
-        scale: 3,
-        cacheBust: false,
       });
+      console.timeEnd('[print] html2canvas');
+      console.log('[print] canvas', canvas.width, 'x', canvas.height);
+      // JPEG 0.92 em vez de PNG: ~5x menor, evita Safari iOS rejeitar
+      // data URLs gigantes. Usa canvas.width/height direto (sem tmpImg).
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
 
-      // 5) Mede o PNG.
-      const tmpImg = new Image();
-      await new Promise<void>((resolve, reject) => {
-        tmpImg.onload = () => resolve();
-        tmpImg.onerror = () => reject(new Error('falha png'));
-        tmpImg.src = dataUrl;
-      });
-
-      // 6) Monta PDF A4 retrato com paginação automática.
+      // 5) Monta PDF A4 retrato com paginação automática.
       const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
       const imgW = pageW;
-      const imgH = (tmpImg.naturalHeight * imgW) / tmpImg.naturalWidth;
+      const imgH = (canvas.height * imgW) / canvas.width;
       if (imgH <= pageH) {
-        pdf.addImage(dataUrl, 'PNG', 0, 0, imgW, imgH);
+        pdf.addImage(dataUrl, 'JPEG', 0, 0, imgW, imgH);
       } else {
         let restante = imgH;
         let offsetY = 0;
         while (restante > 0) {
-          pdf.addImage(dataUrl, 'PNG', 0, -offsetY, imgW, imgH);
+          pdf.addImage(dataUrl, 'JPEG', 0, -offsetY, imgW, imgH);
           restante -= pageH;
           if (restante > 0) {
             pdf.addPage();
@@ -326,18 +329,17 @@ export class PrintPage implements OnInit {
       }
 
       if (destino === 'print') {
-        pdf.autoPrint();
-        const blobUrl = pdf.output('bloburl');
-        window.open(blobUrl, '_blank');
+        await imprimirPdf(pdf, this.nomeArquivoPdf(), this.toastCtrl, this.modalCtrl);
       } else {
         // iOS Safari abre PDF inline — salvarPdf usa Web Share API no iOS.
         await salvarPdf(pdf, this.nomeArquivoPdf(), this.toastCtrl, this.modalCtrl);
       }
     } catch (err) {
       console.error(`[print/${destino}] erro`, err);
+      const msg = err instanceof Error ? err.message : String(err);
       const t = await this.toastCtrl.create({
-        message: 'Erro ao gerar PDF.',
-        duration: 2400,
+        message: `Erro ao gerar PDF: ${msg}`,
+        duration: 8000,
         color: 'danger',
         position: 'top',
       });
@@ -604,20 +606,69 @@ export class PrintPage implements OnInit {
    * por causa de CORS no Firebase Storage. Mesma lógica da sumula.
    */
   private async inlineImagens(container: HTMLElement): Promise<void> {
+    const FALLBACK_TRANSPARENT =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
     const imgs = Array.from(container.querySelectorAll('img')) as HTMLImageElement[];
     await Promise.all(
       imgs.map(async imgEl => {
         const src = imgEl.getAttribute('src') || '';
-        if (!src || src.startsWith('data:')) return;
+        if (!src) return;
+        if (src.startsWith('data:image/png') || src.startsWith('data:image/jpeg')) return;
+        let dataUrl: string | null = null;
         try {
-          const dataUrl = await this.urlParaDataUrl(src);
-          if (dataUrl) {
-            imgEl.src = dataUrl;
-            if (imgEl.decode) await imgEl.decode().catch(() => undefined);
-          }
+          dataUrl = await this.urlParaDataUrl(src);
         } catch {
-          /* segue sem essa imagem */
+          dataUrl = null;
         }
+        if (dataUrl && dataUrl.startsWith('data:image/svg+xml')) {
+          try { dataUrl = await this.svgParaPng(dataUrl); } catch { dataUrl = null; }
+        }
+        imgEl.src = dataUrl || FALLBACK_TRANSPARENT;
+        if (imgEl.decode) await imgEl.decode().catch(() => undefined);
+      }),
+    );
+  }
+
+  private svgParaPng(svgDataUrl: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth || 512;
+          c.height = img.naturalHeight || 512;
+          const ctx = c.getContext('2d');
+          if (!ctx) return reject(new Error('no-ctx'));
+          ctx.drawImage(img, 0, 0);
+          resolve(c.toDataURL('image/png'));
+        } catch (e) { reject(e); }
+      };
+      img.onerror = () => reject(new Error('svg-load-fail'));
+      img.src = svgDataUrl;
+    });
+  }
+
+  /**
+   * Varre o clone e converte qualquer `<img src="data:image/svg+xml...">`
+   * sobrevivente para PNG. dom-to-image-more falha tentando renderizar
+   * SVG inline, então qualquer imagem que tenha passado pelo `inlineImagens`
+   * sem virar PNG (ex: injetada por componente filho) é normalizada aqui.
+   */
+  private async normalizarSvgImgs(container: HTMLElement): Promise<void> {
+    const FALLBACK_TRANSPARENT =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    const imgs = Array.from(container.querySelectorAll('img')) as HTMLImageElement[];
+    await Promise.all(
+      imgs.map(async imgEl => {
+        const src = imgEl.getAttribute('src') || '';
+        if (!src.startsWith('data:image/svg+xml')) return;
+        try {
+          imgEl.src = await this.svgParaPng(src);
+        } catch {
+          imgEl.src = FALLBACK_TRANSPARENT;
+        }
+        if (imgEl.decode) await imgEl.decode().catch(() => undefined);
       }),
     );
   }

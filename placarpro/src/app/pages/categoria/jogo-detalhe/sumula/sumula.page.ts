@@ -12,8 +12,7 @@ import { LoadingController, ModalController, ToastController } from '@ionic/angu
 import { Observable, combineLatest, firstValueFrom, of } from 'rxjs';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import domtoimage from 'dom-to-image-more';
-import { catchError, map, startWith } from 'rxjs/operators';
+import { catchError, filter, map, startWith } from 'rxjs/operators';
 import { CampeonatosService } from '../../../../campeonatos/campeonatos.service';
 import { CategoriasService } from '../../../../campeonatos/categorias.service';
 import { JogosService } from '../../../../campeonatos/jogos.service';
@@ -130,6 +129,10 @@ export class SumulaPage implements OnInit, AfterViewInit, OnDestroy {
   @Input() campeonatoIdInput?: string;
   @Input() categoriaIdInput?: string;
   @Input() jogoIdInput?: string;
+  /** Imagem pré-renderizada passada pelo caller (ex: sumulas-preview
+   *  passa `previewImagens[jogoId]` que respeita o modelo selecionado).
+   *  Se setada, pula `gerarPreviewMobile` e usa essa imagem direto. */
+  @Input() previewImagemUrlInput?: string;
 
   /** IDs efetivos — vindos do @Input (modal) ou do paramMap (rota). */
   campeonatoId = '';
@@ -183,7 +186,21 @@ readonly  COLUNAS_VAZIAS = Array.from({ length: 13 });
     // casos, o HTML original fica visibility:hidden por baixo (continua
     // no DOM pra imprimir/baixarPdf reutilizarem).
     if (this.isModal) {
-      this.gerarPreviewMobile();
+      // Se o caller passou uma imagem pré-renderizada (ex: sumulas-preview
+      // com modelo correto), usa ela direto em vez de re-gerar com o
+      // template padrão da SumulaPage.
+      if (this.previewImagemUrlInput) {
+        this.previewImagemUrl = this.previewImagemUrlInput;
+        this.previewGerado = true;
+        // Ativa pinch-zoom após Angular renderizar a <img>.
+        Promise.resolve().then(async () => {
+          await new Promise<void>(r => requestAnimationFrame(() => r()));
+          await new Promise<void>(r => requestAnimationFrame(() => r()));
+          if (this.ehMobile()) this.ativarPinchZoomImgPreview();
+        });
+      } else {
+        this.gerarPreviewMobile();
+      }
     }
   }
 
@@ -350,14 +367,15 @@ readonly  COLUNAS_VAZIAS = Array.from({ length: 13 });
       const rect = clone.getBoundingClientRect();
       // Scale 2× pro mobile (menos memória que 3×, ainda nítido pro
       // tamanho da tela em portrait).
-      const dataUrl = await domtoimage.toPng(clone, {
-        bgcolor: '#ffffff',
+      const canvas = await html2canvas(clone, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
         width: Math.ceil(rect.width),
         height: Math.ceil(rect.height),
-        scale: 2,
-        cacheBust: false,
       });
-      return dataUrl;
+      return canvas.toDataURL('image/png');
     } catch (err) {
       console.error('[capturarFolhaParaPreview] erro', err);
       return null;
@@ -715,28 +733,19 @@ ${folha.outerHTML}
       // Mede dimensões REAIS do clone fora do modal.
       const rect = folhaClone.getBoundingClientRect();
 
-      // Usa `dom-to-image-more` em vez de html2canvas — implementação
-      // SVG-foreignObject diferente, com melhor handling de sub-pixel
-      // borders (preserva 0.3-0.5px CSS como hairline no canvas final).
-      // Retorna PNG data URL direto pronto pra embutir no jsPDF.
-      const dataUrl = await domtoimage.toPng(folhaClone, {
-        bgcolor: '#ffffff',
+      // Scale 3 pra alta resolução — bordas hairline + texto nítido.
+      // É só 1 súmula por vez (não acumula RAM como capturar várias).
+      const canvas = await html2canvas(folhaClone, {
+        backgroundColor: '#ffffff',
+        scale: 3,
+        useCORS: true,
+        logging: false,
+        imageTimeout: 0,
         width: Math.ceil(rect.width),
         height: Math.ceil(rect.height),
-        // Pixel ratio 3× pra resolução alta (texto/borders nítidos).
-        // dom-to-image usa este multiplicador na renderização SVG.
-        scale: 3,
-        cacheBust: true,
       });
-
-      // Cria um canvas auxiliar SÓ pra extrair as dimensões finais.
-      const tmpImg = new Image();
-      const carregado = new Promise<void>((resolve, reject) => {
-        tmpImg.onload = () => resolve();
-        tmpImg.onerror = () => reject(new Error('falha ao carregar PNG do dom-to-image'));
-      });
-      tmpImg.src = dataUrl;
-      await carregado;
+      // JPEG quality alta pra preservar nitidez do texto.
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
       const pdf = new jsPDF({
         orientation: 'landscape',
@@ -746,14 +755,26 @@ ${folha.outerHTML}
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgRatio = tmpImg.naturalHeight / tmpImg.naturalWidth;
+      const imgRatio = canvas.height / canvas.width;
       const imgWidth = pdfWidth;
       let imgHeight = imgWidth * imgRatio;
       if (imgHeight > pdfHeight) imgHeight = pdfHeight;
 
-      pdf.addImage(dataUrl, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.addImage(dataUrl, 'JPEG', 0, 0, imgWidth, imgHeight);
 
-      await salvarPdf(pdf, `sumula-${this.jogoId}.pdf`, this.toastCtrl, this.modalCtrl);
+      const snap = await firstValueFrom(
+        this.sumula$.pipe(filter((s): s is SumulaView => !!s)),
+      );
+      const slug = (s: string) => s
+        .normalize('NFD')
+        .replace(/\p{M}/gu, '')
+        .replace(/[^a-zA-Z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .toLowerCase();
+      const mandanteNome = snap?.mandante?.nome ? slug(snap.mandante.nome) : 'mandante';
+      const visitanteNome = snap?.visitante?.nome ? slug(snap.visitante.nome) : 'visitante';
+      const fileName = `sumula-${mandanteNome}-vs-${visitanteNome}.pdf`;
+      await salvarPdf(pdf, fileName, this.toastCtrl, this.modalCtrl);
     } catch (err) {
       console.error('[baixarPdf] erro', err);
       const t = await this.toastCtrl.create({
@@ -849,22 +870,47 @@ ${folha.outerHTML}
    * não responde com CORS adequado. Só processa em separado pro PDF.
    */
   private async inlineImagens(container: HTMLElement): Promise<void> {
+    const FALLBACK_TRANSPARENT =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
     const imgs = Array.from(container.querySelectorAll('img')) as HTMLImageElement[];
     await Promise.all(
       imgs.map(async imgEl => {
         const src = imgEl.getAttribute('src') || '';
-        if (!src || src.startsWith('data:')) return;
+        if (!src) return;
+        if (src.startsWith('data:image/png') || src.startsWith('data:image/jpeg')) return;
+        let dataUrl: string | null = null;
         try {
-          const dataUrl = await this.urlParaDataUrl(src);
-          if (dataUrl) {
-            imgEl.src = dataUrl;
-            if (imgEl.decode) await imgEl.decode().catch(() => undefined);
-          }
+          dataUrl = await this.urlParaDataUrl(src);
         } catch {
-          /* segue sem essa imagem */
+          dataUrl = null;
         }
+        if (dataUrl && dataUrl.startsWith('data:image/svg+xml')) {
+          try { dataUrl = await this.svgParaPng(dataUrl); } catch { dataUrl = null; }
+        }
+        imgEl.src = dataUrl || FALLBACK_TRANSPARENT;
+        if (imgEl.decode) await imgEl.decode().catch(() => undefined);
       }),
     );
+  }
+
+  private svgParaPng(svgDataUrl: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth || 512;
+          c.height = img.naturalHeight || 512;
+          const ctx = c.getContext('2d');
+          if (!ctx) return reject(new Error('no-ctx'));
+          ctx.drawImage(img, 0, 0);
+          resolve(c.toDataURL('image/png'));
+        } catch (e) { reject(e); }
+      };
+      img.onerror = () => reject(new Error('svg-load-fail'));
+      img.src = svgDataUrl;
+    });
   }
 
   /**

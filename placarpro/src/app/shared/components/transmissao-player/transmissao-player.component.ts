@@ -10,6 +10,7 @@ import {
   inject,
 } from '@angular/core';
 import { Observable, Subscription, of } from 'rxjs';
+import { ModalController } from '@ionic/angular';
 import {
   RemoteTrack,
   RemoteTrackPublication,
@@ -25,6 +26,8 @@ import { Transmissao } from '../../../campeonatos/models/transmissao.model';
 import { UsersService } from '../../../users/users.service';
 import { Patrocinador } from '../../../users/models/patrocinador.model';
 import { PatrocinadorJogo } from '../../../campeonatos/models/jogo.model';
+import { precisaTutorialPwaIos, tutorialPwaJaVisto, marcarTutorialPwaVisto } from '../../utils/pwa.utils';
+import { IosPwaTutorialModalComponent } from '../ios-pwa-tutorial-modal/ios-pwa-tutorial-modal.component';
 
 /**
  * Player de Transmissão ao Vivo — usado nas páginas que exibem o jogo
@@ -259,6 +262,7 @@ export class TransmissaoPlayerComponent implements OnChanges, OnDestroy {
   private readonly livekit = inject(LiveKitService);
   private readonly transmissoesSrv = inject(TransmissoesService);
   private readonly usersSrv = inject(UsersService);
+  private readonly modalCtrl = inject(ModalController);
 
   // ════ Patrocinador overlay state ════
   /** Lista de patrocinadores filtrada por escopo (campeonato/categoria). */
@@ -646,16 +650,29 @@ export class TransmissaoPlayerComponent implements OnChanges, OnDestroy {
   /**
    * Toggle fullscreen com prioridade:
    *  1. Se já em fullscreen → exitFullscreen.
-   *  2. Tenta fullscreen no ANCESTOR informado via `[fullscreenAncestor]`
+   *  2. iOS Safari não-PWA: mostra tutorial PWA ANTES (pra preservar
+   *     placar overlay no fullscreen). Se já viu, cai no fallback abaixo.
+   *  3. Tenta fullscreen no ANCESTOR informado via `[fullscreenAncestor]`
    *     (mantém scoreboard + banner + outros overlays visíveis no fs).
-   *  3. Cai pro `.tp-card` (próprio card do player com badges + footer).
-   *  4. iOS Safari sem `requestFullscreen` no <html>: usa
+   *  4. Cai pro `.tp-card` (próprio card do player com badges + footer).
+   *  5. iOS Safari sem `requestFullscreen` no <html>: usa
    *     `webkitEnterFullscreen` direto no <video> — só vídeo vai, perde
    *     scoreboard (limitação fundamental do Safari iOS, só PWA resolve).
    */
   async toggleFullscreen(): Promise<void> {
     if (document.fullscreenElement) {
       try { await document.exitFullscreen(); } catch { /* ignore */ }
+      return;
+    }
+
+    // ── iOS Safari NÃO-PWA: oferece tutorial pra instalar como PWA ──
+    // Só assim o placar overlay aparece em fullscreen. Sem PWA, o user
+    // perde o placar (limitação fundamental do Safari iOS).
+    if (precisaTutorialPwaIos() && !tutorialPwaJaVisto()) {
+      await this.abrirTutorialPwaIos();
+      // Após o tutorial fechar, cai no fallback nativo (só vídeo) pra
+      // user que escolheu não instalar conseguir pelo menos VER fullscreen.
+      this.fallbackFullscreenVideoIos();
       return;
     }
 
@@ -687,16 +704,40 @@ export class TransmissaoPlayerComponent implements OnChanges, OnDestroy {
       console.info('[Player] requestFullscreen falhou — tentando <video>', err);
     }
 
-    // 4) iOS Safari: só o <video> pode ir fullscreen (perde overlays).
+    // 4) iOS Safari (já viu tutorial): só o <video> vai fullscreen.
+    this.fallbackFullscreenVideoIos();
+  }
+
+  /** Fallback nativo do iOS — só o `<video>` vai fullscreen. */
+  private fallbackFullscreenVideoIos(): void {
     const v = this.videoElRef?.nativeElement;
-    if (v) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const anyV = v as any;
-      if (anyV.webkitEnterFullscreen) {
-        try { anyV.webkitEnterFullscreen(); } catch { /* ignore */ }
-      } else if (v.requestFullscreen) {
-        try { await v.requestFullscreen(); } catch { /* ignore */ }
-      }
+    if (!v) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anyV = v as any;
+    if (anyV.webkitEnterFullscreen) {
+      try { anyV.webkitEnterFullscreen(); } catch { /* ignore */ }
+    } else if (v.requestFullscreen) {
+      v.requestFullscreen().catch(() => undefined);
     }
+  }
+
+  /**
+   * Abre o tutorial PWA iOS (mesmo modal usado pelo broadcaster). Marca
+   * como visto após fechar — assim numa próxima vez o user já vai direto
+   * pro fallback (não fica recebendo o mesmo tutorial toda hora).
+   */
+  private async abrirTutorialPwaIos(): Promise<void> {
+    const urlAtual = window.location.pathname + window.location.search;
+    const modal = await this.modalCtrl.create({
+      component: IosPwaTutorialModalComponent,
+      componentProps: {
+        redirectUrl: urlAtual,
+        contextoLabel: 'tela cheia da transmissão',
+      },
+      backdropDismiss: false,
+    });
+    await modal.present();
+    await modal.onDidDismiss();
+    marcarTutorialPwaVisto();
   }
 }

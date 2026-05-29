@@ -38,9 +38,11 @@
           <ng-template #iMhBrand><ion-icon name="trophy-outline"></ion-icon></ng-template>
         </div>
         <div class="mh-title">{{ camp.titulo }}</div>
-        <button class="mh-login" type="button" *ngIf="!(user$ | async)" (click)="fazerLogin()" aria-label="Login">
-          <ion-icon name="log-in-outline"></ion-icon>
+        <!-- Ícone de pessoa = ENTRAR (não confunde com sair). -->
+        <button class="mh-login" type="button" *ngIf="!(user$ | async)" (click)="fazerLogin()" aria-label="Entrar">
+          <ion-icon name="person-circle-outline"></ion-icon>
         </button>
+        <!-- Só renderiza se logado (já protegido por *ngIf). -->
         <button class="mh-login logado" type="button" *ngIf="(user$ | async)" (click)="sair()" aria-label="Sair">
           <ion-icon name="log-out-outline"></ion-icon>
         </button>
@@ -206,7 +208,7 @@
               <div class="eq-grid" *ngIf="eqs.length > 0; else nadaEq">
                 <a class="eq-card-row"
                    *ngFor="let e of eqs; trackBy: trackByEquipeId"
-                   [routerLink]="['equipe', e.id]"
+                  
                    role="button"
                    [attr.aria-label]="'Ver detalhes da equipe ' + e.nome">
                   <div class="eq-logo-mini">
@@ -223,7 +225,6 @@
                       </ng-container>
                     </div>
                   </div>
-                  <ion-icon class="eq-chevron" name="chevron-forward-outline" aria-hidden="true"></ion-icon>
                 </a>
               </div>
               <ng-template #nadaEq>

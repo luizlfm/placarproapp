@@ -30,8 +30,9 @@
         <div class="cmh-title">Carregando...</div>
       </ng-template>
 
-      <!-- Sair — ícone vermelho na ponta direita. -->
+      <!-- Sair — ícone vermelho na ponta direita. Só aparece se logado. -->
       <button
+        *ngIf="user$ | async"
         class="cmh-logout"
         type="button"
         (click)="confirmLogout()"

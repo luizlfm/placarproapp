@@ -29,6 +29,15 @@ export class PdfViewerModalComponent implements OnInit, OnDestroy {
 
   @Input() blob!: Blob;
   @Input() fileName = 'arquivo.pdf';
+  @Input() acao: 'salvar' | 'imprimir' = 'salvar';
+
+  get botaoLabel(): string {
+    return this.acao === 'imprimir' ? 'Imprimir PDF' : 'Salvar PDF';
+  }
+
+  get botaoIcone(): string {
+    return this.acao === 'imprimir' ? 'print-outline' : 'download-outline';
+  }
 
   blobUrl?: string;
   safeBlobUrl?: SafeResourceUrl;

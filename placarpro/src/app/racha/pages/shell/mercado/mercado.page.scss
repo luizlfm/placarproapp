@@ -11,7 +11,7 @@
 
 /* ============ Market cap row ============ */
 .mc-cap {
-  background: linear-gradient(135deg, #1C2E3D 0%, #2d4a63 100%);
+  background: linear-gradient(135deg, #000000 0%, #2d4a63 100%);
   color: #fff;
   border-radius: 12px;
   padding: 14px 18px;
@@ -120,7 +120,7 @@
       display: block;
       font-size: 13px;
       font-weight: 700;
-      color: #1C2E3D;
+      color: #000000;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -148,7 +148,7 @@
 .mc-valor {
   font-size: 16px;
   font-weight: 800;
-  color: var(--rp-navy, #1C2E3D);
+  color: var(--rp-navy, #000000);
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -213,7 +213,7 @@
     color: var(--rp-text-muted, #4b5563);
     line-height: 1.5;
 
-    strong { color: #1C2E3D; font-weight: 800; }
+    strong { color: #000000; font-weight: 800; }
   }
 
   .mc-formula-nota {

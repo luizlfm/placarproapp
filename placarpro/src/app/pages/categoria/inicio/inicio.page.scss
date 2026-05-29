@@ -34,7 +34,7 @@ ion-content::part(scroll) {
   margin: 16px auto;
   border-radius: 14px;
   overflow: hidden;
-  background: #1C2E3D;
+  background: #000000;
   /* Reserva altura mínima ENQUANTO a img (skel) carrega — sem isso o
      card colapsa e o layout pula quando a capa aparece. */
   min-height: 200px;
@@ -42,6 +42,7 @@ ion-content::part(scroll) {
   @media (max-width: 767px) {
     min-height: 140px;
   }
+
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 
   @media (max-width: 640px) {
@@ -84,7 +85,9 @@ app-patrocinadores-faixa {
     linear-gradient(0deg, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0) 45%);
   pointer-events: none;
 
-  > * { pointer-events: auto; }
+  >* {
+    pointer-events: auto;
+  }
 }
 
 .hero-meta {
@@ -103,6 +106,7 @@ app-patrocinadores-faixa {
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
+
   .hero-meta-value {
     font-size: 12px;
     font-weight: 800;
@@ -183,16 +187,12 @@ app-patrocinadores-faixa {
      quando algum ancestral está mais largo que a viewport. Aplicado
      como base (sem media query) pra cobrir QUALQUER tamanho mobile —
      evita problemas de cache/specificity em breakpoints específicos. */
-  width: 90%;
-  margin: 0 auto;
 
   /* Desktop (≥601px, quando o `.eq-grid` vira múltiplas colunas): cada
      card preenche 100% da célula do grid — sem respiração lateral que
      ficaria estranha em layout multi-coluna. */
-  @media (min-width: 601px) {
-    width: 100%;
-    margin: 0;
-  }
+  
+
 
   &:hover {
     transform: translateY(-1px);
@@ -200,7 +200,14 @@ app-patrocinadores-faixa {
     border-color: var(--ion-color-secondary, #7CC61D);
   }
 }
-
+.times{
+  .eq-card-row {
+   @media (min-width: 461px) {
+    width: 90%;
+    margin: 0;
+  }
+}
+}
 .eq-logo-mini {
   flex: 0 0 auto;
   width: 44px;
@@ -257,12 +264,13 @@ app-patrocinadores-faixa {
 
   /* `> ion-icon` (filho direto) — só o ícone decorativo grande,
      evita inflar o "+" dentro do botão "Cadastrar equipes". */
-  > ion-icon {
+  >ion-icon {
     font-size: 60px;
     color: var(--ion-color-medium);
     opacity: 0.4;
     margin-bottom: 14px;
   }
+
   p {
     color: var(--ion-color-medium);
     margin-bottom: 18px;

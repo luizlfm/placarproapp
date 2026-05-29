@@ -277,90 +277,26 @@
 @include print-media;
 
 /* =========================================================
-   Responsivo — mobile: empilha time/placar/time em coluna
+   Responsivo — preview do PDF no mobile.
    ========================================================= */
+/* Mantém A4 (~210mm) e usa `zoom` pra encolher TUDO proporcionalmente.
+   Resultado: user vê a folha EXATAMENTE como sairá no PDF, só em escala
+   menor que cabe no celular. Sem mexer em layout, fonts ou grids. */
 @media (max-width: 760px) {
   .folha {
-    margin: 8px 8px;
-    padding: 14px 12px;
-    border-radius: 8px;
-  }
-
-  /* Cabeçalho: vira layout vertical compacto */
-  .ip-head {
-    grid-template-columns: 48px 1fr;
-    gap: 10px;
-
-    .ph-logo { width: 48px; height: 48px; }
-    .ph-titulo-bloco h1 { font-size: 16px; }
-    .ph-titulo-bloco h2 { font-size: 12px; }
-    .ph-sub { font-size: 11px; }
-
-    .ip-resumo {
-      grid-column: 1 / -1;
-      justify-content: stretch;
-      .r-item {
-        flex: 1;
-        min-width: 0;
-        padding: 6px 8px;
-      }
-      .r-num { font-size: 17px; }
-      .r-lbl { font-size: 9px; }
-    }
-  }
-
-  .g-banner {
-    flex-wrap: wrap;
-    padding: 8px 10px;
-    font-size: 11.5px;
-    .g-qtd { width: 100%; margin-left: 0; margin-top: 2px; font-size: 10.5px; }
+    width: 210mm;
+    max-width: none;
+    margin: 8px auto;
+    zoom: 0.45;
   }
 }
 
-@media (max-width: 640px) {
-  .mc-body {
-    grid-template-columns: 1fr;
-    gap: 6px;
-    text-align: center;
-    padding: 10px 12px;
-  }
-
-  .mc-mandante,
-  .mc-visitante {
-    justify-content: center;
-    text-align: center;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .mc-time-info { align-items: center; }
-  .mc-time-nome { font-size: 12.5px; }
-
-  .mc-placar {
-    width: fit-content;
-    margin: 0 auto;
-    min-width: 78px;
-    padding: 4px 12px;
-  }
-  .mc-placar-num { font-size: 18px; }
-
-  .mc-meta {
-    padding: 4px 10px;
-    gap: 6px;
-    flex-wrap: wrap;
-
-    .mc-meta-left {
-      gap: 10px;
-      flex-wrap: wrap;
-      font-size: 10px;
-    }
-  }
+@media (max-width: 480px) {
+  .folha { zoom: 0.38; }
 }
 
 @media (max-width: 380px) {
-  .folha { padding: 12px 10px; }
-  .mc-time-nome { font-size: 11.5px; }
-  .mc-shield { width: 32px; height: 32px; }
+  .folha { zoom: 0.32; }
 }
 
 /* Esconde o texto do botão Imprimir em mobile */
