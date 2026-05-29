@@ -204,7 +204,7 @@ ion-content.bg .modal-card {
   overflow: hidden;
   padding: 0;
   margin: 0;
-  box-shadow: 0 2px 8px rgba(28, 46, 61, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: transform 180ms ease, box-shadow 180ms ease;
 
   img {
@@ -219,13 +219,13 @@ ion-content.bg .modal-card {
 
   /* Sem logo: borda tracejada (call to action) */
   &:not(:has(img)) {
-    background: rgba(28, 46, 61, 0.04);
-    border: 2px dashed rgba(28, 46, 61, 0.18);
+    background: rgba(0, 0, 0, 0.04);
+    border: 2px dashed rgba(0, 0, 0, 0.18);
   }
 
   &:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(28, 46, 61, 0.14);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
   }
 
   &:disabled {
@@ -319,7 +319,7 @@ ion-content.bg .modal-card {
   transition: border-color 150ms ease;
 
   &[open] {
-    border-color: rgba(28, 46, 61, 0.18);
+    border-color: rgba(0, 0, 0, 0.18);
   }
 
   summary {
@@ -581,6 +581,24 @@ ion-content.bg .modal-card {
       }
     }
   }
+
+  /* Variante "success" — ficha aberta, ação positiva (fechar). Verde. */
+  &--success {
+    border-color: rgba(16, 185, 129, 0.35);
+    background: rgba(16, 185, 129, 0.04);
+
+    .nav-ic {
+      background: rgba(16, 185, 129, 0.14);
+      color: #059669;
+    }
+    .nav-title { color: #065f46; }
+
+    &:hover {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.08);
+      .nav-chev { color: #10b981; }
+    }
+  }
 }
 
 /* ═══════ FOOTER ═══════ */
@@ -669,11 +687,11 @@ ion-content.bg .modal-card {
 .btn-primary:not([class*="ion-"]):not(.btn-icon):not(.btn-icon-sm):not([data-compact]) {
   background: var(--ion-color-primary, #000000);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(28, 46, 61, 0.28);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
   border: none;
 
   &:hover:not(:disabled) {
-    background: #2d4a63;
+    background: #1a1a1a;
   }
 
   &:disabled {

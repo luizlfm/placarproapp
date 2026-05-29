@@ -14,8 +14,8 @@
   max-width: 280px;
   aspect-ratio: 16 / 9;
   border-radius: 12px;
-  background: rgba(28, 46, 61, 0.06);
-  border: 2px dashed rgba(28, 46, 61, 0.2);
+  background: rgba(0, 0, 0, 0.06);
+  border: 2px dashed rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -29,12 +29,12 @@
 
   &:has(img) {
     border-style: solid;
-    border-color: rgba(28, 46, 61, 0.08);
+    border-color: rgba(0, 0, 0, 0.08);
     background: transparent;
   }
   &:hover:not(:disabled) {
     border-color: var(--ion-color-primary);
-    background: rgba(28, 46, 61, 0.04);
+    background: rgba(0, 0, 0, 0.04);
   }
   &:disabled { cursor: wait; }
 
@@ -99,7 +99,7 @@
   background: #fff;
   border: 1px solid var(--placar-divider, #ececef);
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(28, 46, 61, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   max-height: 280px;
   overflow-y: auto;
   padding: 4px;

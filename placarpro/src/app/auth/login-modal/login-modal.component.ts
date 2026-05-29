@@ -19,6 +19,7 @@ export class LoginModalComponent {
 
   loading = false;
   loadingGoogle = false;
+  mostrarSenha = false;
 
   readonly form: FormGroup = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],

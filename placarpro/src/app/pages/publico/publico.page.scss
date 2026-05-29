@@ -757,7 +757,7 @@
   overflow: hidden;
   background-color: #000000;
   background-image:
-    linear-gradient(135deg, #000000 0%, #2d4a63 100%);
+    linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -783,7 +783,7 @@
 
 .banner-meta {
   display: inline-block;
-  background: rgba(28, 46, 61, 0.7);
+  background: rgba(0, 0, 0, 0.7);
   border-radius: 8px;
   padding: 6px 12px;
   align-self: flex-start;
@@ -810,7 +810,7 @@
   flex-wrap: wrap;
 
   .foot-info {
-    background: rgba(28, 46, 61, 0.7);
+    background: rgba(0, 0, 0, 0.7);
     padding: 6px 10px;
     border-radius: 8px;
     font-size: 12px;
@@ -826,7 +826,7 @@
 }
 
 .foot-info {
-  background: rgba(28, 46, 61, 0.75);
+  background: rgba(0, 0, 0, 0.75);
   padding: 6px 10px;
   border-radius: 8px;
   font-size: 12px;
@@ -851,7 +851,7 @@
   height: 34px;
   border-radius: 50%;
   border: none;
-  background: rgba(28, 46, 61, 0.7);
+  background: rgba(0, 0, 0, 0.7);
   color: #fff;
   display: flex;
   align-items: center;
@@ -860,7 +860,7 @@
   transition: background 120ms ease;
 
   ion-icon { font-size: 18px; }
-  &:hover { background: rgba(28, 46, 61, 0.9); }
+  &:hover { background: rgba(0, 0, 0, 0.9); }
 }
 
 /* ============ Descrição ============ */
@@ -1123,7 +1123,7 @@
   &:hover,
   &:focus-visible {
     transform: translateY(-3px);
-    box-shadow: 0 10px 24px rgba(28, 46, 61, 0.14);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
 
     .card-overlay { opacity: 1; }
     .card-thumb img { transform: scale(1.04); }
@@ -1148,7 +1148,7 @@
 }
 
 /* Gradientes específicos por tipo de mídia (aplicados na thumb vazia). */
-.midia-card[data-tipo="video"]  .card-thumb { background: linear-gradient(135deg, #000000 0%, #2d4a63 100%); }
+.midia-card[data-tipo="video"]  .card-thumb { background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%); }
 .midia-card[data-tipo="youtube"] .card-thumb { background: linear-gradient(135deg, #cc1a1a 0%, #ff3030 100%); }
 .midia-card[data-tipo="link"]    .card-thumb { background: linear-gradient(135deg, #1976d2 0%, #5fa8ee 100%); }
 .midia-card[data-tipo="noticia"] .card-thumb { background: linear-gradient(135deg, #4a7e0e 0%, #7CC61D 100%); }
@@ -1189,7 +1189,7 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  background: rgba(28, 46, 61, 0.85);
+  background: rgba(0, 0, 0, 0.85);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -1385,7 +1385,7 @@
       gap: 4px;
       font-size: 11.5px;
       color: var(--ion-color-primary);
-      background: rgba(28, 46, 61, 0.08);
+      background: rgba(0, 0, 0, 0.08);
       padding: 2px 8px;
       border-radius: 4px;
       margin-top: 6px;

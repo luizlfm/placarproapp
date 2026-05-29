@@ -20,6 +20,7 @@ import { StorageService } from '../../../../shared/storage.service';
 import { ImageCropperModalComponent } from '../../../../shared/components/image-cropper-modal/image-cropper-modal.component';
 import { ImportarJogadoresModalComponent } from '../importar-jogadores-modal/importar-jogadores-modal.component';
 import { ActionModalService } from '../../../../shared/components/action-modal/action-modal.service';
+import { OcrImportModalComponent } from '../../../../shared/ocr/ocr-import-modal/ocr-import-modal.component';
 
 /** Estados internos da modal:
  *  - lista: lista de jogadores da equipe
@@ -703,6 +704,46 @@ export class JogadorModalComponent implements OnInit {
       backdropDismiss: false,
     });
     await modal.present();
+  }
+
+  /**
+   * Abre o modal de escaneamento OCR (foto do RG/CNH → extração automática
+   * de campos). Quando o user confirma, os dados retornam aqui e
+   * pré-preenchem o form de cadastro/edição via `patchValue`.
+   *
+   * - CPF e RG são concatenados no campo `documento` (form tem um campo só)
+   * - Se já tinha algum valor no form, ele é SOBRESCRITO pelo OCR (intencional —
+   *   user clicou explicitamente "Escanear" pra esse fim)
+   */
+  async escanearDocumento(): Promise<void> {
+    const modal = await this.modalCtrl.create({
+      component: OcrImportModalComponent,
+      backdropDismiss: false,
+    });
+    await modal.present();
+    const { data } = await modal.onDidDismiss<{
+      saved?: boolean;
+      dados?: { nome?: string; cpf?: string; rg?: string; dataNascimento?: string };
+    }>();
+    if (!data?.saved || !data.dados) return;
+
+    const { nome, cpf, rg, dataNascimento } = data.dados;
+    // Combina CPF + RG no campo `documento` (formato: "CPF / RG")
+    const documento = [cpf, rg].filter(Boolean).join(' / ') || undefined;
+
+    this.form.patchValue({
+      ...(nome ? { nome } : {}),
+      ...(documento ? { documento } : {}),
+      ...(dataNascimento ? { dataNascimento } : {}),
+    });
+
+    const t = await this.toastCtrl.create({
+      message: 'Dados importados do documento. Revise e salve.',
+      duration: 2200,
+      position: 'top',
+      color: 'success',
+    });
+    await t.present();
   }
 
   async selecionarFoto(): Promise<void> {

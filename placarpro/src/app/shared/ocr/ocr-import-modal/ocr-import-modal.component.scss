@@ -1,0 +1,271 @@
+.ocr-content {
+  --background: var(--placar-bg, #f5f5f7);
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 20px;
+  --padding-bottom: 32px;
+}
+
+/* ============ ESTADO: INICIAL ============ */
+.ocr-inicial {
+  text-align: center;
+  padding: 32px 8px;
+  max-width: 420px;
+  margin: 0 auto;
+
+  h2 {
+    margin: 16px 0 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--placar-text);
+  }
+
+  p {
+    margin: 0 0 24px;
+    font-size: 14px;
+    color: var(--placar-text-muted);
+    line-height: 1.5;
+  }
+
+  .hint {
+    margin-top: 20px;
+    font-size: 12.5px;
+    color: var(--placar-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+    line-height: 1.4;
+
+    ion-icon {
+      font-size: 16px;
+      color: var(--ion-color-secondary);
+      flex-shrink: 0;
+    }
+  }
+}
+
+.ocr-icon-grande {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 8px;
+  border-radius: 50%;
+  background: rgba(var(--ion-color-secondary-rgb), 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 48px;
+    color: var(--ion-color-secondary-shade);
+  }
+}
+
+.btn-tirar-foto {
+  --border-radius: 12px;
+  height: 52px;
+  font-weight: 800;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin: 0;
+
+  ion-icon { font-size: 20px; }
+}
+
+/* ============ ESTADO: CAPTURADO ============ */
+.ocr-capturado {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.ocr-preview {
+  position: relative;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  /* Mantém proporção da foto sem quebrar layout */
+  display: flex;
+  justify-content: center;
+
+  img {
+    max-width: 100%;
+    max-height: 60vh;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+/* Badge "PDF" no canto sup-direito do preview — sinaliza que o
+   arquivo original era PDF e está sendo mostrada a 1ª página. */
+.badge-pdf {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(var(--ion-color-danger-rgb, 235, 71, 71), 0.92);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+
+  ion-icon { font-size: 13px; }
+}
+
+.ocr-acoes-preview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+
+  ion-button {
+    margin: 0;
+    height: 48px;
+    --border-radius: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+/* ============ ESTADO: PROCESSANDO ============ */
+.ocr-processando {
+  text-align: center;
+  padding: 60px 20px;
+
+  ion-spinner {
+    width: 56px;
+    height: 56px;
+    --color: var(--ion-color-primary);
+  }
+
+  h3 {
+    margin: 20px 0 6px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--placar-text);
+  }
+
+  p {
+    margin: 0;
+    color: var(--placar-text-muted);
+    font-size: 13.5px;
+  }
+}
+
+/* ============ ESTADO: REVISÃO ============ */
+.ocr-revisao {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.confianca-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.4;
+
+  ion-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  strong { font-weight: 800; }
+
+  .hint-confianca {
+    font-weight: 500;
+    opacity: 0.85;
+  }
+
+  &.alta {
+    background: rgba(var(--ion-color-success-rgb, 124, 198, 29), 0.12);
+    color: var(--ion-color-success-shade);
+    ion-icon { color: var(--ion-color-success); }
+  }
+  &.media {
+    background: rgba(var(--ion-color-warning-rgb, 255, 196, 9), 0.15);
+    color: #8a6300;
+    ion-icon { color: var(--ion-color-warning-shade); }
+  }
+  &.baixa {
+    background: rgba(var(--ion-color-danger-rgb, 235, 71, 71), 0.12);
+    color: var(--ion-color-danger-shade);
+    ion-icon { color: var(--ion-color-danger); }
+  }
+}
+
+.instrucao {
+  margin: 0 4px 4px;
+  font-size: 13px;
+  color: var(--placar-text-muted);
+}
+
+.texto-bruto {
+  margin-top: 8px;
+  background: #fff;
+  border: 1px solid var(--placar-border);
+  border-radius: 8px;
+  padding: 0;
+
+  summary {
+    cursor: pointer;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--placar-text-muted);
+    font-weight: 600;
+    user-select: none;
+  }
+
+  pre {
+    margin: 0;
+    padding: 10px 14px;
+    border-top: 1px solid var(--placar-border);
+    background: var(--placar-surface-2);
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--placar-text-muted);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+}
+
+/* ============ Footer padrão do sistema (Cancelar/Importar) ============ */
+ion-footer ion-toolbar {
+  --background: #fff;
+  --border-color: #ececef;
+}
+
+.acoes-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+  background: #fff;
+
+  .btn-acao {
+    margin: 0;
+    width: 100%;
+    --border-radius: 999px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}

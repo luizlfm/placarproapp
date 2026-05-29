@@ -12,11 +12,11 @@
 
 /* ============ Card de Resumo ============ */
 .pg-resumo {
-  background: linear-gradient(135deg, #000000 0%, #2d4a63 100%);
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
   color: #fff;
   border-radius: 14px;
   padding: 20px 22px;
-  box-shadow: 0 6px 18px rgba(28, 46, 61, 0.18);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
   margin-bottom: 16px;
 }
 
@@ -138,7 +138,7 @@
   &.on {
     background: #000000;
     color: #fff;
-    box-shadow: 0 2px 6px rgba(28, 46, 61, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -201,14 +201,14 @@
   gap: 1px;
 
   span {
-    background: rgba(28, 46, 61, 0.1);
+    background: rgba(0, 0, 0, 0.1);
     aspect-ratio: 1;
 
     /* "Pixels" pseudo-random — alterna cores em padrão pra parecer QR */
     &:nth-child(3n)  { background: #000000; }
     &:nth-child(7n)  { background: #000000; }
     &:nth-child(11n) { background: #000000; }
-    &:nth-child(13n) { background: rgba(28, 46, 61, 0.7); }
+    &:nth-child(13n) { background: rgba(0, 0, 0, 0.7); }
   }
 }
 
@@ -296,7 +296,7 @@
   ol {
     margin: 0;
     padding-left: 20px;
-    color: #1f2937;
+    color: #000000;
     font-size: 13px;
     line-height: 1.7;
 

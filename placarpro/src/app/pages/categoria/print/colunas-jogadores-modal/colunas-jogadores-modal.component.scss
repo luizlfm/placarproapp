@@ -70,7 +70,7 @@
 
   &.locked {
     cursor: not-allowed;
-    background: rgba(28, 46, 61, 0.04);
+    background: rgba(0, 0, 0, 0.04);
     .cjm-label::after {
       content: '🔒';
       margin-left: 6px;

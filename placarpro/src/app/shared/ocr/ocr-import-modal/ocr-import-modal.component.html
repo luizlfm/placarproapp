@@ -1,0 +1,156 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-title>Escanear documento</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()" aria-label="Fechar">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ocr-content">
+  <!-- ============ ESTADO: INICIAL ============ -->
+  <div class="ocr-inicial" *ngIf="estado === 'inicial'">
+    <div class="ocr-icon-grande">
+      <ion-icon name="document-text-outline"></ion-icon>
+    </div>
+    <h2>Foto ou imagem do documento</h2>
+    <p>
+      Tire uma foto na hora (câmera) ou selecione uma imagem do
+      celular/computador (galeria/arquivos). Os dados (nome, CPF,
+      RG, nascimento) serão extraídos automaticamente.
+    </p>
+    <ion-button
+      expand="block"
+      color="primary"
+      class="btn-tirar-foto"
+      (click)="tirarFoto()"
+    >
+      <ion-icon slot="start" name="camera-outline"></ion-icon>
+      Câmera ou galeria
+    </ion-button>
+    <p class="hint">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      Aceita JPG, PNG ou foto direto da câmera. Funciona melhor com boa
+      iluminação e documento plano.
+    </p>
+  </div>
+
+  <!-- ============ ESTADO: CAPTURADO (preview + confirmar) ============ -->
+  <div class="ocr-capturado" *ngIf="estado === 'capturado' && imagemDataUrl">
+    <div class="ocr-preview">
+      <!-- Badge "PDF" quando o arquivo original foi PDF — o preview
+           mostra a 1ª página já renderizada como imagem. -->
+      <span class="badge-pdf" *ngIf="ehPdf">
+        <ion-icon name="document-attach-outline"></ion-icon>
+        PDF
+      </span>
+      <img [src]="imagemDataUrl" alt="Preview do documento" />
+    </div>
+    <div class="ocr-acoes-preview">
+      <ion-button fill="outline" color="medium" (click)="trocarFoto()">
+        <ion-icon slot="start" name="refresh-outline"></ion-icon>
+        Trocar arquivo
+      </ion-button>
+      <ion-button color="primary" (click)="processar()">
+        <ion-icon slot="start" name="scan-outline"></ion-icon>
+        Extrair dados
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- ============ ESTADO: PROCESSANDO ============ -->
+  <div class="ocr-processando" *ngIf="estado === 'processando'">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <h3>Lendo documento...</h3>
+    <p>Isso pode levar alguns segundos.</p>
+  </div>
+
+  <!-- ============ ESTADO: REVISÃO (campos editáveis) ============ -->
+  <div class="ocr-revisao" *ngIf="estado === 'revisao' && dados">
+    <div class="confianca-banner"
+         [class.alta]="dados.confianca >= 0.66"
+         [class.media]="dados.confianca >= 0.33 && dados.confianca < 0.66"
+         [class.baixa]="dados.confianca < 0.33">
+      <ion-icon
+        [name]="dados.confianca >= 0.66 ? 'checkmark-circle-outline' :
+                dados.confianca >= 0.33 ? 'alert-circle-outline' :
+                'warning-outline'"
+      ></ion-icon>
+      <span>
+        Confiança: <strong>{{ (dados.confianca * 100) | number:'1.0-0' }}%</strong>
+        <span class="hint-confianca" *ngIf="dados.confianca < 0.66">
+          — revise os campos antes de importar.
+        </span>
+      </span>
+    </div>
+
+    <p class="instrucao">Revise os dados extraídos. Você pode editar antes de importar.</p>
+
+    <ion-input
+      fill="outline"
+      label="Nome completo *"
+      labelPlacement="stacked"
+      [(ngModel)]="nome"
+      placeholder="Nome do jogador"
+      autocapitalize="words"
+    ></ion-input>
+
+    <ion-input
+      fill="outline"
+      label="CPF"
+      labelPlacement="stacked"
+      [(ngModel)]="cpf"
+      placeholder="123.456.789-00"
+      inputmode="numeric"
+    ></ion-input>
+
+    <ion-input
+      fill="outline"
+      label="RG"
+      labelPlacement="stacked"
+      [(ngModel)]="rg"
+      placeholder="00.000.000-0"
+    ></ion-input>
+
+    <ion-input
+      fill="outline"
+      label="Data de nascimento"
+      labelPlacement="stacked"
+      [(ngModel)]="dataNascimento"
+      type="date"
+    ></ion-input>
+
+    <details class="texto-bruto" *ngIf="dados.textoOriginal">
+      <summary>Ver texto bruto reconhecido (debug)</summary>
+      <pre>{{ dados.textoOriginal }}</pre>
+    </details>
+  </div>
+</ion-content>
+
+<!-- Footer só aparece na revisão (botões padrão do sistema) -->
+<ion-footer *ngIf="estado === 'revisao'">
+  <ion-toolbar>
+    <div class="acoes-footer">
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="danger"
+        (click)="trocarFoto()"
+      >
+        <ion-icon slot="start" name="trash-outline"></ion-icon>
+        Cancelar
+      </ion-button>
+      <ion-button
+        class="btn-acao"
+        size="small"
+        color="primary"
+        (click)="importar()"
+      >
+        <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+        Importar
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

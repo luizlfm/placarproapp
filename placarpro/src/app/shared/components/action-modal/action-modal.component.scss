@@ -102,11 +102,11 @@
   }
 
   &:hover:not(:disabled) {
-    background: rgba(28, 46, 61, 0.05);
+    background: rgba(0, 0, 0, 0.05);
   }
 
   &:active:not(:disabled) {
-    background: rgba(28, 46, 61, 0.08);
+    background: rgba(0, 0, 0, 0.08);
   }
 
   &:disabled {

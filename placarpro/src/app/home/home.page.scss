@@ -1,43 +1,135 @@
-/* Logo no ion-title — altura limitada à toolbar */
-.hdr-logo {
-  height: 32px;
-  width: auto;
+/* =====================================================================
+   Home pós-login — Hero preto com logo + welcome card + atalhos rápidos.
+   Paleta: --ion-color-primary (preto) + --ion-color-secondary (verde).
+   Sem hex hardcoded — tudo via variáveis pra trocar tema num lugar só.
+   ===================================================================== */
+
+:host {
   display: block;
-  object-fit: contain;
+  background: var(--ion-color-primary);
 }
 
-.home-welcome {
-  max-width: 560px;
-  margin: 40px auto 0;
-  padding: 24px 20px;
+/* Header transparente — não compete visualmente com o hero. */
+.home-header {
+  ion-toolbar {
+    --background: transparent;
+    --color: var(--ion-color-primary-contrast);
+    --border-color: transparent;
+    --min-height: 56px;
+    --box-shadow: none;
+  }
+
+  .btn-sair {
+    --color: var(--ion-color-primary-contrast);
+    --background: rgba(255, 255, 255, 0.08);
+    --background-hover: rgba(var(--ion-color-danger-rgb), 0.25);
+    --border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    margin-right: 6px;
+
+    ion-icon { font-size: 20px; }
+  }
+}
+
+.home-content {
+  --background: var(--placar-bg);
+  --padding-top: 0;
+}
+
+/* ============ HERO ============ */
+.home-hero {
+  position: relative;
+  background:
+    radial-gradient(ellipse at top right, rgba(var(--ion-color-secondary-rgb), 0.18), transparent 55%),
+    radial-gradient(ellipse at bottom left, rgba(var(--ion-color-secondary-rgb), 0.12), transparent 55%),
+    var(--ion-color-primary);
+  padding: 32px 24px 96px;
   text-align: center;
+  overflow: hidden;
+  /* Margin-top negativo no welcome cobre essa parte — visualmente o
+     card "se ergue" sobre o hero, criando profundidade. */
+}
 
-  h1 {
-    margin: 12px 0 4px;
-    font-size: 24px;
-    color: #2d2d2d;
-  }
+.hero-glow {
+  position: absolute;
+  top: -40%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 70%;
+  background: radial-gradient(circle, rgba(var(--ion-color-secondary-rgb), 0.22), transparent 65%);
+  pointer-events: none;
+  filter: blur(40px);
+}
 
-  .welcome-sub {
-    color: #6b6b70;
-    margin: 0 0 24px;
+.hero-logo {
+  position: relative;
+  display: block;
+  max-width: 320px;
+  width: 80%;
+  height: auto;
+  margin: 16px auto 18px;
+  /* Logo exibida pura, sem filtros/shadows/transformações — preserva
+     a identidade original do arquivo. */
+
+  @media (max-width: 480px) {
+    max-width: 260px;
+    margin: 8px auto 14px;
   }
+}
+
+.hero-tagline {
+  position: relative;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+
+  @media (max-width: 480px) {
+    font-size: 13px;
+  }
+}
+
+/* ============ WELCOME ============ */
+.home-welcome {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 16px 32px;
+  /* Levanta o card sobre o hero pra criar profundidade. */
+  margin-top: -64px;
+  position: relative;
+  z-index: 2;
+}
+
+.welcome-card {
+  background: var(--placar-surface);
+  border-radius: 16px;
+  padding: 20px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+  margin-bottom: 18px;
 }
 
 .welcome-avatar {
-  width: 84px;
-  height: 84px;
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  margin: 0 auto;
   overflow: hidden;
-  background: var(--ion-color-primary);
+  background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-primary-tint) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  font-size: 32px;
-  font-weight: 700;
-  box-shadow: 0 6px 16px rgba(28, 46, 61, 0.35);
+  color: var(--ion-color-secondary);
+  font-size: 22px;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  /* Borda verde (acento da marca = secondary) sutil pra ressaltar. */
+  border: 2px solid var(--ion-color-secondary);
 
   img {
     width: 100%;
@@ -46,7 +138,126 @@
   }
 }
 
-.welcome-card {
-  text-align: left;
+.welcome-text {
+  flex: 1;
+  min-width: 0;
+
+  h1 {
+    margin: 0 0 2px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--placar-text);
+    line-height: 1.2;
+    /* Ellipsis pra emails/nomes longos */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    .nome {
+      color: var(--ion-color-primary);
+      font-weight: 800;
+    }
+  }
+
+  .welcome-sub {
+    margin: 0;
+    color: var(--placar-text-muted);
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+}
+
+/* ============ ATALHOS RÁPIDOS ============ */
+.atalhos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.atalho {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--placar-surface);
   border-radius: 12px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.10);
+    border-color: rgba(var(--ion-color-secondary-rgb), 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.atalho-icon {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 22px;
+  }
+
+  /* Variantes de cor — paleta da marca (secondary = verde +
+     primary = preto/escuro), sem tons de azul. */
+  &.icon-verde {
+    background: rgba(var(--ion-color-secondary-rgb), 0.15);
+    color: var(--ion-color-secondary-shade);
+  }
+  &.icon-verde-escuro {
+    background: rgba(var(--ion-color-secondary-rgb), 0.25);
+    color: var(--ion-color-secondary-shade);
+  }
+  &.icon-cinza {
+    background: rgba(var(--ion-color-primary-rgb), 0.08);
+    color: var(--ion-color-primary);
+  }
+}
+
+.atalho-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  strong {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--placar-text);
+    /* Ellipsis em textos longos */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  span {
+    font-size: 12px;
+    color: var(--placar-text-muted);
+    line-height: 1.3;
+    /* Truncate descrição se ficar grande */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.atalho-chevron {
+  flex: 0 0 auto;
+  font-size: 18px;
+  color: var(--placar-text-muted);
 }

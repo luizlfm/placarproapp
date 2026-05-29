@@ -160,10 +160,24 @@
           <ion-icon class="nav-chev" name="chevron-forward-outline"></ion-icon>
         </button>
 
-        <button *ngIf="equipeExistente?.inscricaoToken" type="button" class="nav-card nav-card--warning"
-          (click)="reabrirFichaInscricao()">
+        <!-- Ficha ABERTA — representante pode editar. Botão verde "Fechar ficha". -->
+        <button *ngIf="equipeExistente?.inscricaoToken && fichaAberta === true" type="button"
+          class="nav-card nav-card--success" (click)="fecharFichaInscricao()">
           <span class="nav-ic">
             <ion-icon name="lock-open-outline"></ion-icon>
+          </span>
+          <span class="nav-text">
+            <span class="nav-title">Ficha aberta — Fechar</span>
+            <span class="nav-sub">Bloquear edição pelo link de inscrição</span>
+          </span>
+          <ion-icon class="nav-chev" name="chevron-forward-outline"></ion-icon>
+        </button>
+
+        <!-- Ficha FECHADA — já preenchida. Botão laranja "Reabrir ficha". -->
+        <button *ngIf="equipeExistente?.inscricaoToken && fichaAberta === false" type="button"
+          class="nav-card nav-card--warning" (click)="reabrirFichaInscricao()">
+          <span class="nav-ic">
+            <ion-icon name="lock-closed-outline"></ion-icon>
           </span>
           <span class="nav-text">
             <span class="nav-title">Reabrir ficha</span>

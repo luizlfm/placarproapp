@@ -38,7 +38,7 @@
   span { flex: 1; }
 
   &:hover {
-    background: rgba(28, 46, 61, 0.06);
+    background: rgba(0, 0, 0, 0.06);
   }
 }
 
@@ -66,7 +66,7 @@
   cursor: pointer;
   text-transform: none;
 
-  &:hover { background: rgba(28, 46, 61, 0.08); }
+  &:hover { background: rgba(0, 0, 0, 0.08); }
 
   &.primary { color: var(--ion-color-primary, #000000); }
 }

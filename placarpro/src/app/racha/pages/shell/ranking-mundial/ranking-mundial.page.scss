@@ -5,14 +5,14 @@
    ============================================================ */
 
 .rrm-hero {
-  background: linear-gradient(135deg, #0f1d2b 0%, #1d4ed8 60%, #16a34a 110%);
+  background: linear-gradient(135deg, #000000 0%, #1d4ed8 60%, #16a34a 110%);
 }
 
 .rrm-globo {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, rgba(124, 198, 29, 0.6), rgba(28, 46, 61, 0.8));
+  background: radial-gradient(circle at 30% 30%, rgba(124, 198, 29, 0.6), rgba(0, 0, 0, 0.8));
   border: 2px solid rgba(255, 255, 255, 0.25);
   display: flex;
   align-items: center;

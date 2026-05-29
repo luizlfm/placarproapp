@@ -35,7 +35,7 @@
   height: 64px;
   flex: 0 0 auto;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--ion-color-primary), #2d4a63);
+  background: linear-gradient(135deg, var(--ion-color-primary), #1a1a1a);
   color: #fff;
   display: flex;
   align-items: center;
@@ -43,7 +43,7 @@
   font-size: 22px;
   font-weight: 700;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(28, 46, 61, 0.18);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 
   img { width: 100%; height: 100%; object-fit: cover; }
 }
@@ -75,7 +75,7 @@
   align-items: center;
   gap: 12px;
   width: 100%;
-  background: rgba(28, 46, 61, 0.04);
+  background: rgba(0, 0, 0, 0.04);
   border: 1px solid var(--placar-border);
   border-radius: 10px;
   padding: 12px 14px;
@@ -86,7 +86,7 @@
   transition: background 120ms ease, border-color 120ms ease;
 
   &:hover {
-    background: rgba(28, 46, 61, 0.07);
+    background: rgba(0, 0, 0, 0.07);
     border-color: var(--ion-color-primary);
   }
 
@@ -124,8 +124,8 @@
   width: 130px;
   height: 130px;
   flex: 0 0 auto;
-  background: rgba(28, 46, 61, 0.04);
-  border: 2px dashed rgba(28, 46, 61, 0.2);
+  background: rgba(0, 0, 0, 0.04);
+  border: 2px dashed rgba(0, 0, 0, 0.2);
   border-radius: 14px;
   display: flex;
   flex-direction: column;
@@ -144,7 +144,7 @@
   /* Quando tem imagem, esconde dashed border */
   &:has(img) {
     border-style: solid;
-    border-color: rgba(28, 46, 61, 0.08);
+    border-color: rgba(0, 0, 0, 0.08);
   }
 
   img { width: 100%; height: 100%; object-fit: cover; }
@@ -183,7 +183,7 @@
 .banner-box {
   position: relative;
   background: none;
-  border: 2px dashed rgba(28, 46, 61, 0.2);
+  border: 2px dashed rgba(0, 0, 0, 0.2);
   padding: 0;
   cursor: pointer;
   width: 100%;
@@ -191,7 +191,7 @@
   /* Quando tem imagem, esconde dashed e usa border solid leve */
   &:has(img) {
     border-style: solid;
-    border-color: rgba(28, 46, 61, 0.08);
+    border-color: rgba(0, 0, 0, 0.08);
     background: transparent;
   }
 }
@@ -201,7 +201,7 @@
 
   &:hover {
     border-color: var(--ion-color-primary);
-    box-shadow: 0 4px 12px rgba(28, 46, 61, 0.12);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 
     .upload-overlay { opacity: 1; }
   }
@@ -212,7 +212,7 @@
 .upload-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(28, 46, 61, 0.55);
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -243,7 +243,7 @@
 }
 
 .banner-box {
-  background: rgba(28, 46, 61, 0.06);
+  background: rgba(0, 0, 0, 0.06);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -298,7 +298,7 @@
   gap: 8px;
 
   .link-prefix {
-    background: rgba(28, 46, 61, 0.06);
+    background: rgba(0, 0, 0, 0.06);
     color: var(--ion-color-primary);
     padding: 0 14px;
     border-radius: 10px;
@@ -341,7 +341,7 @@
 
   &:hover {
     border-color: var(--ion-color-primary);
-    background: rgba(28, 46, 61, 0.04);
+    background: rgba(0, 0, 0, 0.04);
   }
 
   &:active { transform: scale(0.98); }
@@ -350,12 +350,12 @@
     background: var(--ion-color-primary);
     color: #fff;
     border-color: var(--ion-color-primary);
-    box-shadow: 0 4px 12px rgba(28, 46, 61, 0.22);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
 
     ion-icon { color: #fff; }
 
     &:hover {
-      background: var(--ion-color-primary-shade, #2d4a63);
+      background: var(--ion-color-primary-shade, #1a1a1a);
     }
   }
 }
@@ -363,7 +363,7 @@
 .link-hint {
   font-size: 12.5px;
   color: var(--ion-color-medium);
-  background: rgba(28, 46, 61, 0.04);
+  background: rgba(0, 0, 0, 0.04);
   border-radius: 8px;
   padding: 10px 12px;
   line-height: 1.4;
@@ -385,7 +385,7 @@
   &:hover { border-color: var(--ion-color-primary); }
   &.active {
     border-color: var(--ion-color-primary);
-    background: rgba(28, 46, 61, 0.04);
+    background: rgba(0, 0, 0, 0.04);
   }
 
   .r-text { flex: 1; }
@@ -411,7 +411,7 @@
 /* ===== Submit ===== */
 .btn-save {
   --border-radius: 12px;
-  --box-shadow: 0 6px 18px rgba(28, 46, 61, 0.35);
+  --box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
   height: 48px;
   font-weight: 600;
   letter-spacing: 0.2px;

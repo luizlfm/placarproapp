@@ -23,18 +23,17 @@
   <ng-container *ngIf="categoria$ | async as cat">
     <h1 class="page-title">{{ cat.titulo }}</h1>
 
-    <!-- HERO CARD: imagem real + overlay compacto (mesmo padrão das telas
-         públicas e do admin do campeonato). Estrutura idêntica à
-         publico-categoria.page pra ficar consistente entre admin e
-         visualização pública. -->
+    <!-- HERO CARD: imagem real + overlay compacto. Estrutura idêntica
+         à publico-categoria.page pra ficar consistente entre admin e
+         visualização pública.
+         `capaCategoria(cat, camp)` — fallback chain:
+           categoria(mobile→web→banner) → CAMPEONATO(mobile→web→banner)
+           → banner default. Isso garante que categorias sem capa
+           própria herdem a do campeonato pai. -->
     <article class="hero-card">
-      <!-- `capaCategoria()` escolhe a variante conforme viewport:
-           mobile → capaMobileUrl ?? capaUrl ?? bannerUrl
-           web    → capaUrl ?? bannerUrl
-           Mesma lógica de `capaCamp()` do publico-categoria. -->
       <img skel
         class="hero-img"
-        [src]="capaCategoria(cat)"
+        [src]="capaCategoria(cat, campeonato$ | async)"
         [alt]="cat.titulo"
       />
       <div class="hero-info">

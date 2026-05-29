@@ -159,6 +159,23 @@
       </div>
     </div>
 
+    <!-- ============ OCR — Escanear documento ============
+         Atalho pra capturar foto do RG/CNH/CPF e pré-preencher
+         nome + documento + dataNascimento via OCR (Tesseract.js). -->
+    <button
+      type="button"
+      class="btn-escanear-doc"
+      (click)="escanearDocumento()"
+      aria-label="Escanear documento do jogador"
+    >
+      <ion-icon name="scan-outline"></ion-icon>
+      <span>
+        <strong>Escanear documento</strong>
+        <small>Tire foto do RG/CNH e preencha automaticamente</small>
+      </span>
+      <ion-icon class="chevron" name="chevron-forward-outline"></ion-icon>
+    </button>
+
     <div class="field-group">
       <ion-input fill="outline" label="Nome do jogador" labelPlacement="stacked" placeholder="Ex: Ronaldo Nazário"
         formControlName="nome" required></ion-input>

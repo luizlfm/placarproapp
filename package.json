@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@capacitor/camera": "^8.2.0",
+    "tesseract.js": "^7.0.0"
+  }
+}

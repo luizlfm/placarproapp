@@ -22,12 +22,22 @@
 
       <label class="fld">
         <span class="lbl">Senha</span>
-        <input
-          type="password"
-          formControlName="senha"
-          autocomplete="current-password"
-          placeholder="••••••••"
-        />
+        <div class="senha-wrap">
+          <input
+            [type]="mostrarSenha ? 'text' : 'password'"
+            formControlName="senha"
+            autocomplete="current-password"
+            placeholder="••••••••"
+          />
+          <button
+            type="button"
+            class="toggle-senha"
+            (click)="mostrarSenha = !mostrarSenha"
+            [attr.aria-label]="mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'"
+          >
+            <ion-icon [name]="mostrarSenha ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+          </button>
+        </div>
       </label>
 
       <div class="row-links">

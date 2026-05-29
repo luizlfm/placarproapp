@@ -98,13 +98,13 @@
    page-head plano + canto superior do strip plano também). */
 .r-page-head {
   position: relative;
-  background: linear-gradient(135deg, #000000 0%, #2d4a63 55%, #3d7820 100%);
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 55%, #3d7820 100%);
   border-radius: 14px 14px 14px 14px;
   padding: 20px 22px;
   margin: 0 0 14px;
   color: #fff;
   overflow: hidden;
-  box-shadow: 0 6px 18px rgba(28, 46, 61, 0.15);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
 
   /* Bolha verde decorativa no canto direito — mesma identidade da home racha. */
   &::before {
@@ -281,7 +281,7 @@
   grid-template-columns: 1fr auto;
   gap: 16px;
   align-items: center;
-  box-shadow: 0 2px 10px rgba(28, 46, 61, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   margin-bottom: 14px;
 
   @media (max-width: 720px) { grid-template-columns: 1fr; padding: 16px; }
@@ -435,7 +435,7 @@
   border-radius: 12px;
   padding: 18px 20px;
   border: 1px solid var(--rp-border);
-  box-shadow: 0 1px 3px rgba(28, 46, 61, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 
   @media (max-width: 720px) { padding: 14px 14px; }
 }

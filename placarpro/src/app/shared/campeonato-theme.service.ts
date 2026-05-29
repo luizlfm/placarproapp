@@ -32,15 +32,25 @@ export class CampeonatoThemeService {
       const body = this.doc.body;
 
       if (!c) {
-        // Remove todas as overrides inline — volta para variables.scss
-        root.style.removeProperty('--campeonato-cor');
-        root.style.removeProperty('--campeonato-cor-rgb');
-        root.style.removeProperty('--ion-color-primary');
-        root.style.removeProperty('--ion-color-primary-rgb');
-        root.style.removeProperty('--ion-color-primary-shade');
-        root.style.removeProperty('--ion-color-primary-tint');
-        root.style.removeProperty('--ion-color-primary-contrast');
-        root.style.removeProperty('--ion-color-primary-contrast-rgb');
+        // Remove TODAS as overrides inline (incluindo sidebar/header bg
+        // que ficavam grudadas depois de sair de um campeonato — bug que
+        // deixava o sidebar com o tom navy/cor do campeonato anterior
+        // mesmo na home global). Aplica em html + body porque
+        // `aplicarSincrono()` seta nos dois.
+        const targets = [root, body];
+        const vars = [
+          '--campeonato-cor',
+          '--campeonato-cor-rgb',
+          '--ion-color-primary',
+          '--ion-color-primary-rgb',
+          '--ion-color-primary-shade',
+          '--ion-color-primary-tint',
+          '--ion-color-primary-contrast',
+          '--ion-color-primary-contrast-rgb',
+          '--placar-sidebar-bg',
+          '--placar-header-bg',
+        ];
+        targets.forEach(t => vars.forEach(v => t.style.removeProperty(v)));
         body.classList.remove('campeonato-themed');
         return;
       }

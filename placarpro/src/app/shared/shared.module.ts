@@ -46,6 +46,7 @@ import { ActionModalComponent } from './components/action-modal/action-modal.com
 import { ImgSkeletonDirective } from './directives/img-skeleton.directive';
 import { IosPwaTutorialModalComponent } from './components/ios-pwa-tutorial-modal/ios-pwa-tutorial-modal.component';
 import { PdfViewerModalComponent } from './components/pdf-viewer-modal/pdf-viewer-modal.component';
+import { OcrImportModalComponent } from './ocr/ocr-import-modal/ocr-import-modal.component';
 
 /**
  * Componentes/diretivas/pipes reutilizáveis pelo app inteiro.
@@ -91,6 +92,7 @@ import { PdfViewerModalComponent } from './components/pdf-viewer-modal/pdf-viewe
     ImgSkeletonDirective,
     IosPwaTutorialModalComponent,
     PdfViewerModalComponent,
+    OcrImportModalComponent,
   ],
   exports: [
     CampeonatoMobileHeaderComponent,
@@ -130,6 +132,7 @@ import { PdfViewerModalComponent } from './components/pdf-viewer-modal/pdf-viewe
     ImgSkeletonDirective,
     IosPwaTutorialModalComponent,
     PdfViewerModalComponent,
+    OcrImportModalComponent,
   ],
 })
 export class SharedModule {}

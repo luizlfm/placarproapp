@@ -181,4 +181,17 @@ export class ConvitesEquipeService {
       });
     });
   }
+
+  /**
+   * Fecha um convite — marca como `usado: true` pra que o representante
+   * não consiga mais editar a ficha pelo link.
+   */
+  async fecharConvite(token: string): Promise<void> {
+    return runInInjectionContext(this.injector, async () => {
+      await updateDoc(this.docRef(token), {
+        usado: true,
+        atualizadoEm: serverTimestamp(),
+      });
+    });
+  }
 }

@@ -51,7 +51,7 @@ body.dark {
   color-scheme: only light !important;
   --ion-background-color: #ffffff !important;
   --ion-background-color-rgb: 255, 255, 255 !important;
-  --ion-text-color: #1F2937 !important;
+  --ion-text-color: #000000 !important;
   --ion-text-color-rgb: 31, 41, 55 !important;
 }
 
@@ -65,15 +65,15 @@ body.dark {
   body {
     color-scheme: only light !important;
     background-color: #ffffff !important;
-    color: #1F2937 !important;
+    color: #000000 !important;
     --ion-background-color: #ffffff !important;
     --ion-background-color-rgb: 255, 255, 255 !important;
-    --ion-text-color: #1F2937 !important;
+    --ion-text-color: #000000 !important;
     --ion-text-color-rgb: 31, 41, 55 !important;
     --placar-bg: #ffffff !important;
     --placar-surface: #ffffff !important;
     --placar-surface-2: #FAFBFC !important;
-    --placar-text: #1F2937 !important;
+    --placar-text: #000000 !important;
     --placar-text-muted: #6B7280 !important;
   }
   ion-app,
@@ -83,7 +83,7 @@ body.dark {
   .pub-content,
   .pub-page {
     background-color: #ffffff !important;
-    color: #1F2937 !important;
+    color: #000000 !important;
     filter: none !important;
     -webkit-filter: none !important;
   }
@@ -99,10 +99,10 @@ body.dark {
 //     color-scheme: light !important;
 //     --ion-background-color: #ffffff !important;
 //     --ion-background-color-rgb: 255, 255, 255 !important;
-//     --ion-text-color: #1F2937 !important;
+//     --ion-text-color: #000000 !important;
 //     --ion-text-color-rgb: 31, 41, 55 !important;
 //     background: #ffffff !important;
-//     color: #1F2937 !important;
+//     color: #000000 !important;
 //   }
 
 //   /* Bloqueia inversões automáticas em ion-content/ion-card/etc. que
@@ -113,7 +113,7 @@ body.dark {
 //   ion-item,
 //   ion-toolbar:not([color]) {
 //     --background: #ffffff !important;
-//     --color: #1F2937 !important;
+//     --color: #000000 !important;
 //   }
 // }
 
@@ -695,7 +695,7 @@ ion-button ion-icon[slot="end"] {
   width: var(--btn-circle-md);
   height: var(--btn-circle-md);
   border-radius: 50%;
-  background: rgba(28, 46, 61, 0.06);
+  background: rgba(0, 0, 0, 0.06);
   color: var(--placar-text);
   border: none;
   padding: 0;
@@ -705,7 +705,7 @@ ion-button ion-icon[slot="end"] {
   ion-icon { font-size: 18px; }
 
   &:hover:not(:disabled) {
-    background: rgba(28, 46, 61, 0.12);
+    background: rgba(0, 0, 0, 0.12);
   }
   &:active:not(:disabled) { transform: scale(0.94); }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -742,7 +742,7 @@ ion-button ion-icon[slot="end"] {
     background: transparent;
     color: var(--placar-text-muted);
     &:hover:not(:disabled) {
-      background: rgba(28, 46, 61, 0.06);
+      background: rgba(0, 0, 0, 0.06);
       color: var(--placar-text);
     }
   }
@@ -940,8 +940,8 @@ ion-modal.fase-equipes-modal {
    ============================================================ */
 :root {
   --rp-navy:        #000000;
-  --rp-navy-soft:   #2d4a63;
-  --rp-navy-deep:   #0f1d2b;
+  --rp-navy-soft:   #1a1a1a;
+  --rp-navy-deep:   #000000;
   --rp-lime:        #7CC61D;
   --rp-lime-soft:   #95d63f;
   --rp-lime-deep:   #4a7e0e;
@@ -957,8 +957,8 @@ ion-modal.fase-equipes-modal {
 
   /* Gradientes padrão pros heroes. Mais suaves do que antes pra
      aproximar do visual mais clean da área de campeonatos. */
-  --rp-grad-hero:      linear-gradient(135deg, #000000 0%, #2d4a63 60%, #4a7e0e 110%);
-  --rp-grad-hero-soft: linear-gradient(135deg, #000000 0%, #2d4a63 50%, #4a7e0e 100%);
+  --rp-grad-hero:      linear-gradient(135deg, #000000 0%, #1a1a1a 60%, #4a7e0e 110%);
+  --rp-grad-hero-soft: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #4a7e0e 100%);
 
   /* Neutros usados em fundos, bordas e textos. */
   --rp-bg:         #f5f6f8;
@@ -1318,7 +1318,7 @@ img.is-img-loading {
 
 img.is-img-error {
   opacity: 1;
-  background: rgba(28, 46, 61, 0.06);
+  background: rgba(0, 0, 0, 0.06);
 }
 
 /* Fade-in suave quando a imagem termina de carregar */

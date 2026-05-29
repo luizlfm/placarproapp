@@ -121,12 +121,12 @@
   height: 8px;
   border-radius: 50%;
   border: none;
-  background: rgba(28, 46, 61, 0.18);
+  background: rgba(0, 0, 0, 0.18);
   cursor: pointer;
   padding: 0;
   transition: background 200ms ease, transform 200ms ease;
 
-  &:hover { background: rgba(28, 46, 61, 0.35); }
+  &:hover { background: rgba(0, 0, 0, 0.35); }
 
   &.ativo {
     background: var(--ion-color-secondary, #7CC61D);
@@ -168,7 +168,7 @@
   position: relative;
   width: 100%;
   aspect-ratio: 805 / 453;
-  background: linear-gradient(135deg, #000000 0%, #2d4a63 100%);
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
   overflow: hidden;
 
   /* Em viewport mobile, usa 380×126 (3:1) — formato wide pensado pra

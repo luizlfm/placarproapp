@@ -95,7 +95,7 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: rgba(28, 46, 61, 0.08);
+  background: rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -213,7 +213,7 @@
     background: #fff;
     border: 1px solid var(--placar-divider);
     border-radius: 14px;
-    box-shadow: 0 2px 6px rgba(28, 46, 61, 0.06);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
     border-top: 0;
     overflow: hidden;
     transition: transform 140ms ease, box-shadow 140ms ease;
@@ -222,7 +222,7 @@
 
     &:active {
       transform: scale(0.99);
-      box-shadow: 0 1px 3px rgba(28, 46, 61, 0.08);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
   }
 
@@ -232,7 +232,7 @@
     margin: 14px 0 14px 14px;
     width: 56px;
     height: 56px;
-    background: rgba(28, 46, 61, 0.06);
+    background: rgba(0, 0, 0, 0.06);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 
     ion-icon { font-size: 26px; }
@@ -266,12 +266,12 @@
     grid-template-columns: repeat(4, 1fr);
     gap: 0;
     border-top: 1px solid var(--placar-divider);
-    background: rgba(28, 46, 61, 0.02);
+    background: rgba(0, 0, 0, 0.02);
 
     ion-button {
       --background: transparent;
-      --background-hover: rgba(28, 46, 61, 0.05);
-      --background-activated: rgba(28, 46, 61, 0.08);
+      --background-hover: rgba(0, 0, 0, 0.05);
+      --background-activated: rgba(0, 0, 0, 0.08);
       --color: var(--ion-color-medium);
       --padding-start: 0;
       --padding-end: 0;

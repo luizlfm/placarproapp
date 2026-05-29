@@ -134,7 +134,7 @@
   align-items: center;
   margin-bottom: 12px;
   padding: 12px 4px;
-  background: rgba(28, 46, 61, 0.02);
+  background: rgba(0, 0, 0, 0.02);
   border-radius: 10px;
 
   .rpa-time {
@@ -196,7 +196,7 @@
     background: var(--rp-navy, #000000);
     color: #fff;
 
-    &:hover { transform: translateY(-1px); background: #0f1d2b; }
+    &:hover { transform: translateY(-1px); background: #000000; }
   }
 
   &.danger {

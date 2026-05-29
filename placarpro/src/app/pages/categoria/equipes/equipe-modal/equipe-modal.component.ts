@@ -51,6 +51,12 @@ export class EquipeModalComponent implements OnInit {
     cor: [''],
   });
 
+  /** Status do convite/ficha:
+   *  - null  = não checado ainda OU sem token
+   *  - true  = ficha ABERTA (representante pode editar)
+   *  - false = ficha FECHADA (já preenchida e travada) */
+  fichaAberta: boolean | null = null;
+
   ngOnInit(): void {
     this.grupos$ = this.gruposSrv.list$(this.campeonatoId, this.categoriaId);
     if (this.equipeExistente) {
@@ -62,7 +68,53 @@ export class EquipeModalComponent implements OnInit {
         logoUrl: this.equipeExistente.logoUrl ?? '',
         cor: this.equipeExistente.cor ?? '',
       });
+      void this.atualizarStatusFicha();
     }
+  }
+
+  /** Carrega o status do convite (aberta/fechada) a partir do token. */
+  private async atualizarStatusFicha(): Promise<void> {
+    const token = this.equipeExistente?.inscricaoToken;
+    if (!token) { this.fichaAberta = null; return; }
+    try {
+      const c = await this.convitesSrv.getByToken(token);
+      // `usado=true` → fechada; `usado=false`/ausente → aberta
+      this.fichaAberta = c ? !c.usado : null;
+    } catch {
+      this.fichaAberta = null;
+    }
+  }
+
+  /** Fecha a ficha (impede o representante de editar pelo link). */
+  async fecharFichaInscricao(): Promise<void> {
+    const token = this.equipeExistente?.inscricaoToken;
+    if (!token) return;
+    const alert = await this.alertCtrl.create({
+      header: 'Fechar ficha de inscrição?',
+      message: 'O representante não poderá mais editar a ficha pelo link.',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Fechar',
+          role: 'confirm',
+          handler: async () => {
+            const loader = await this.loadingCtrl.create({ message: 'Fechando ficha...' });
+            await loader.present();
+            try {
+              await this.convitesSrv.fecharConvite(token);
+              await this.toast('Ficha fechada.', 'success');
+              await this.atualizarStatusFicha();
+            } catch (err) {
+              console.error('[EquipeModal] fechar ficha erro', err);
+              await this.toast('Erro ao fechar ficha.', 'danger');
+            } finally {
+              await loader.dismiss();
+            }
+          },
+        },
+      ],
+    });
+    await alert.present();
   }
 
   get titulo(): string {
@@ -250,6 +302,7 @@ export class EquipeModalComponent implements OnInit {
             try {
               await this.convitesSrv.reabrirConvite(token);
               await this.toast('Ficha reaberta. O representante pode editar novamente.', 'success');
+              await this.atualizarStatusFicha();
             } catch (err) {
               console.error('[EquipeModal] reabrir ficha erro', err);
               await this.toast('Erro ao reabrir ficha.', 'danger');

@@ -76,7 +76,7 @@
    Substitui os blocos `.r-page-head` + `.r-hero-strip` antigos. Em mobile
    colapsa pra 1 coluna; em desktop fica side-by-side. */
 .mr-hero-v2 {
-  background: linear-gradient(135deg, #000000 0%, #2d4a63 55%, #3d7820 100%);
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 55%, #3d7820 100%);
   color: #fff;
   border-radius: 16px;
   padding: 22px 22px;
@@ -85,7 +85,7 @@
   gap: 20px;
   align-items: center;
   margin-bottom: 22px;
-  box-shadow: 0 8px 22px rgba(28, 46, 61, 0.18);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
   position: relative;
   overflow: hidden;
 
@@ -184,7 +184,7 @@
 
 /* ============ Hero card ============ */
 .mr-hero {
-  background: linear-gradient(135deg, #000000 0%, #2d4a63 50%, #1e7e34 100%);
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #1e7e34 100%);
   border-radius: 18px;
   padding: 28px 28px;
   color: #fff;
@@ -192,7 +192,7 @@
   grid-template-columns: 1fr auto;
   gap: 28px;
   align-items: center;
-  box-shadow: 0 10px 32px rgba(28, 46, 61, 0.25);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.25);
   margin-bottom: 32px;
 
   @media (max-width: 720px) {
@@ -284,7 +284,7 @@
   margin-bottom: 28px;
   /* Separador sutil acima pra desencostar do card "Meus rachas" anterior. */
   padding-top: 24px;
-  border-top: 1px solid rgba(28, 46, 61, 0.06);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .mr-features-head {
@@ -340,7 +340,7 @@
   &:hover {
     transform: translateY(-1px);
     border-color: var(--rp-lime, #7CC61D);
-    box-shadow: 0 4px 12px rgba(28, 46, 61, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 
   .mr-feat-icon {
@@ -503,7 +503,7 @@
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 22px rgba(28, 46, 61, 0.1);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
     border-color: #7CC61D;
   }
 
@@ -644,7 +644,7 @@
     flex: 1;
     background: #000000;
     color: #fff;
-    &:hover { background: #0f1d2b; }
+    &:hover { background: #000000; }
   }
   &.danger {
     background: #fef2f2;

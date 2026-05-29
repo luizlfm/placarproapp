@@ -105,17 +105,26 @@ export class AppComponent {
    * ServiceWorkerModule ativo (production); em dev o inject retorna null.
    */
   /**
-   * Aplica a `corPrimaria` salva no profile do organizador como CSS vars
-   * globais — afeta toolbar primary, botões primary etc. em todo o app.
+   * DESATIVADO — Antes aplicava a `corPrimaria` salva no profile do
+   * organizador como CSS vars globais. O problema: ao dar F5 numa rota
+   * GLOBAL (ex: /app/meus-campeonatos), esse subscribe re-emitia e
+   * sobrescrevia o `#000000` padrão do `variables.scss` com a cor
+   * antiga salva no profile (ex: #00212d navy-teal), fazendo o
+   * sidebar/header "perderem" o preto puro.
    *
-   * Atualizado em tempo real via observable: ao mudar e salvar a cor na
-   * Página do Organizador, o `users/{uid}` é re-emitido e a cor é
-   * reaplicada sem precisar de F5.
+   * Agora a brand é fixa preto (--ion-color-primary: #000000) — não
+   * existe mais "cor do organizador" customizável em nível global.
+   * A cor por CAMPEONATO continua funcionando: shell.page.ts aplica
+   * `camp.cor` ao entrar num campeonato específico e limpa ao sair.
+   *
+   * Pra reativar: descomentar o subscribe abaixo. Mas antes garantir
+   * que o profile do usuário NÃO tenha `corPrimaria` salva (ou ela
+   * será aplicada globalmente de novo).
    */
   private aplicarCorDoOrganizador(): void {
-    this.usersSrv.profile$().subscribe(p => {
-      this.campTheme.setCor(p?.corPrimaria ?? null);
-    });
+    // this.usersSrv.profile$().subscribe(p => {
+    //   this.campTheme.setCor(p?.corPrimaria ?? null);
+    // });
   }
 
   // ═══════════════════════════════════════════════════════════════════

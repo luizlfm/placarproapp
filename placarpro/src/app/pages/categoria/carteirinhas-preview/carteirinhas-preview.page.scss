@@ -230,7 +230,7 @@ ion-header ion-toolbar ion-buttons[slot="end"] ion-button {
   &:last-child { border-bottom: none; }
   &:hover { background: #f8f8fb; }
   &.marcada {
-    background: rgba(28, 46, 61, 0.04);
+    background: rgba(0, 0, 0, 0.04);
     ion-icon { color: #000000; }
   }
 

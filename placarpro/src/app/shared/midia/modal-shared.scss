@@ -105,13 +105,13 @@ ion-textarea.ion-invalid.ion-touched {
   justify-content: center;
   overflow: hidden;
   cursor: pointer;
-  border: 2px dashed rgba(28, 46, 61, 0.18);
+  border: 2px dashed rgba(0, 0, 0, 0.18);
   transition: border-color 150ms ease, background 150ms ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 
   &:hover {
     border-color: var(--ion-color-primary);
-    background: rgba(28, 46, 61, 0.02);
+    background: rgba(0, 0, 0, 0.02);
   }
 
   img {

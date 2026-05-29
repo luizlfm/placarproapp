@@ -320,8 +320,24 @@ export class ShellPage {
         this.updateMode();
         // Auto-fecha a sidebar ao navegar no mobile
         if (this.mobile()) this.sidebarAberta.set(false);
+
+        // CRÍTICO: força clear do tema do campeonato SEMPRE que entrar
+        // numa rota global. Antes dependia só do `campeonato$` re-emitir
+        // — mas quando o stream estava em cache do RxJS e não re-emitia
+        // ao navegar pra global, o sidebar/header ficava com a cor do
+        // último campeonato visitado. Resultado: tons "perdidos" mesmo
+        // com a página em modo global. Agora a limpeza acontece SEMPRE
+        // no NavigationEnd, independente do estado do observable.
+        if (this.mode() === 'global') {
+          this.campTheme.clear();
+        }
       });
     this.updateMode();
+    // Também aplica no boot inicial — se o user abrir direto numa URL
+    // global, o tema fica garantido limpo desde o primeiro frame.
+    if (this.mode() === 'global') {
+      this.campTheme.clear();
+    }
 
     // Sincroniza a cor do campeonato com o tema visual da rota corrente.
     // Também atualiza o `campeonatoTipo` signal — usado no menuCategoriaBase

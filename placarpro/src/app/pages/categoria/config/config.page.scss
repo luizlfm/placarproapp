@@ -117,7 +117,7 @@ ion-content {
   width: 140px;
   height: 168px;
   flex: 0 0 auto;
-  background: rgba(28, 46, 61, 0.06);
+  background: rgba(0, 0, 0, 0.06);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -143,14 +143,14 @@ ion-content {
 /* Variante Mobile do logo — mesmo aspecto, borda tracejada pra deixar
    visualmente claro que é uma versão alternativa/opcional. */
 .logo-box-mobile {
-  border: 1px dashed rgba(28, 46, 61, 0.35);
-  background: rgba(28, 46, 61, 0.03);
+  border: 1px dashed rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 /* ===== Toggle Web/Mobile (reutilizável pras duas seções) ===== */
 .modo-toggle {
   display: inline-flex;
-  background: rgba(28, 46, 61, 0.08);
+  background: rgba(0, 0, 0, 0.08);
   border-radius: 999px;
   padding: 3px;
   gap: 2px;
@@ -182,7 +182,7 @@ ion-content {
   }
 
   &:not(.ativo):hover {
-    background: rgba(28, 46, 61, 0.06);
+    background: rgba(0, 0, 0, 0.06);
   }
 }
 
@@ -245,7 +245,7 @@ ion-content {
   position: relative;
   width: 100%;
   aspect-ratio: 1600 / 400;
-  background: rgba(28, 46, 61, 0.06);
+  background: rgba(0, 0, 0, 0.06);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -268,8 +268,8 @@ ion-content {
   aspect-ratio: 1600 / 533;
   max-width: 420px;
   margin-inline: auto;
-  border: 1px dashed rgba(28, 46, 61, 0.35);
-  background: rgba(28, 46, 61, 0.03);
+  border: 1px dashed rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 /* ===== Upload hover (compartilhado por .logo-box e .capa-box) ===== */

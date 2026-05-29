@@ -36,13 +36,13 @@
     :root, html, body {
       color-scheme: only light !important;
       background-color: #ffffff !important;
-      color: #1F2937 !important;
+      color: #000000 !important;
     }
     html, body, ion-app, ion-router-outlet, ion-content, ion-page {
       filter: none !important;
       -webkit-filter: none !important;
       background-color: #ffffff !important;
-      color: #1F2937 !important;
+      color: #000000 !important;
     }
     /* `prefers-color-scheme: dark` = sistema do user tá em dark. Force tudo
        branco aqui pra anular qualquer regra dark de bibliotecas (Ionic,
@@ -51,11 +51,11 @@
       :root, html, body {
         color-scheme: only light !important;
         background-color: #ffffff !important;
-        color: #1F2937 !important;
+        color: #000000 !important;
       }
       html, body, ion-app, ion-router-outlet, ion-content, ion-page {
         background-color: #ffffff !important;
-        color: #1F2937 !important;
+        color: #000000 !important;
         filter: none !important;
         -webkit-filter: none !important;
       }
@@ -64,7 +64,7 @@
       ion-card, .placar-card, .pub-content, .pub-page,
       .grupo-card, .tabela, .tabela tbody td, .tabela thead th {
         background-color: #ffffff !important;
-        color: #1F2937 !important;
+        color: #000000 !important;
       }
     }
   </style>
@@ -85,17 +85,17 @@
         var body = document.body;
         if (!body) return;
         html.style.setProperty('background-color', '#ffffff', 'important');
-        html.style.setProperty('color', '#1F2937', 'important');
+        html.style.setProperty('color', '#000000', 'important');
         html.style.setProperty('color-scheme', 'only light', 'important');
         body.style.setProperty('background-color', '#ffffff', 'important');
-        body.style.setProperty('color', '#1F2937', 'important');
+        body.style.setProperty('color', '#000000', 'important');
         body.style.setProperty('color-scheme', 'only light', 'important');
         // Failsafe extra: aplica os mesmos overrides em ion-app/router-outlet
         // (que o Ionic cria via JS, então CSS estático não pega no boot).
         var ionApp = document.querySelector('ion-app');
         if (ionApp) {
           ionApp.style.setProperty('background-color', '#ffffff', 'important');
-          ionApp.style.setProperty('color', '#1F2937', 'important');
+          ionApp.style.setProperty('color', '#000000', 'important');
         }
 
         // Teste: cria um elem branco e mede a cor renderizada.

@@ -174,7 +174,7 @@ ion-content {
     font-variant-numeric: tabular-nums;
 
     &.agendado {
-      background: rgba(28, 46, 61, 0.05);
+      background: rgba(0, 0, 0, 0.05);
       color: var(--placar-text-muted);
       border-color: var(--placar-divider);
 
@@ -460,7 +460,7 @@ ion-content {
       border: 1px solid rgba(124, 198, 29, 0.35);
     }
     &[data-st="agendado"] {
-      background: rgba(28, 46, 61, 0.06);
+      background: rgba(0, 0, 0, 0.06);
       color: var(--placar-text-muted, #6b6b70);
       border: 1px solid var(--placar-divider, #e5e7eb);
     }
@@ -739,12 +739,12 @@ ion-content {
     height: 36px;
     border-radius: 50%;
     overflow: hidden;
-    background: rgba(28, 46, 61, 0.08);
+    background: rgba(0, 0, 0, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--ion-color-primary);
-    border: 2px solid rgba(28, 46, 61, 0.15);
+    border: 2px solid rgba(0, 0, 0, 0.15);
 
     img { width: 100%; height: 100%; object-fit: cover; }
     ion-icon { font-size: 26px; }
@@ -1237,7 +1237,7 @@ ion-content {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: rgba(28, 46, 61, 0.08);
+    background: rgba(0, 0, 0, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1293,8 +1293,8 @@ ion-content {
       display: inline-block;
       margin-left: 6px;
       padding: 1px 6px;
-      background: rgba(28, 46, 61, 0.08);
-      border: 1px solid rgba(28, 46, 61, 0.12);
+      background: rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(0, 0, 0, 0.12);
       color: var(--placar-text-muted);
       border-radius: 4px;
       font-size: 10px;
@@ -1573,7 +1573,7 @@ ion-content {
       width: 48px;
       height: 48px;
       border-radius: 50%;
-      background: rgba(28, 46, 61, 0.06);
+      background: rgba(0, 0, 0, 0.06);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -2140,7 +2140,7 @@ ion-content {
   gap: 6px;
   padding: 4px 56px;
   margin: 0 auto;
-  background: linear-gradient(180deg, rgba(28, 46, 61, 0.94) 0%, rgba(20, 33, 44, 0.96) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.94) 0%, rgba(20, 33, 44, 0.96) 100%);
   border-radius: 6px 6px 0 0;
   border: 1px solid rgba(255, 255, 255, 0.10);
   border-bottom: none;
@@ -2186,9 +2186,9 @@ ion-content {
   height: 38px;
   padding: 3px;
   background: linear-gradient(180deg,
-    var(--ion-color-primary-shade, #192836) 0%,
+    var(--ion-color-primary-shade, #000000) 0%,
     var(--ion-color-primary, #000000) 50%,
-    var(--ion-color-primary-shade, #192836) 100%);
+    var(--ion-color-primary-shade, #000000) 100%);
   border-radius: 0 0 5px 5px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-top: none;

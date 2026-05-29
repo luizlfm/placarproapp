@@ -39,7 +39,7 @@
 
   &:hover {
     border-color: var(--ion-color-primary);
-    box-shadow: 0 6px 16px rgba(28, 46, 61, 0.08);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
   }
   &:active { transform: scale(0.99); }
 
@@ -108,7 +108,7 @@
 
   &:hover {
     border-color: var(--ion-color-primary);
-    box-shadow: 0 2px 6px rgba(28, 46, 61, 0.08);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   }
 }
 
@@ -177,7 +177,7 @@
   transition: background 120ms ease;
 
   &:last-of-type { border-bottom: none; }
-  &:hover { background: rgba(28, 46, 61, 0.03); }
+  &:hover { background: rgba(0, 0, 0, 0.03); }
 
   &.active {
     background: rgba(124, 198, 29, 0.08);
@@ -233,7 +233,7 @@
 
 .btn-submit {
   --border-radius: 12px;
-  --box-shadow: 0 6px 18px rgba(28, 46, 61, 0.35);
+  --box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
   height: 48px;
   font-weight: 600;
   letter-spacing: 0.2px;

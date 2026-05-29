@@ -1,42 +1,88 @@
-<ion-header [translucent]="true">
-  <ion-toolbar color="primary">
-    <ion-title>
-      <img class="hdr-logo" src="assets/images/logo3.png" alt="PlacarPro" />
-    </ion-title>
+<!-- Home pós-login: hero com logo destacada + welcome card + atalhos rápidos. -->
+<ion-header [translucent]="true" class="home-header">
+  <ion-toolbar>
     <ion-buttons slot="end">
       <!-- Sair só aparece se logado (sem login, esconde o botão). -->
-      <ion-button *ngIf="user$ | async" (click)="confirmLogout()" aria-label="Sair">
+      <ion-button *ngIf="user$ | async" (click)="confirmLogout()" aria-label="Sair" class="btn-sair">
         <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <div class="home-welcome" *ngIf="user$ | async as user">
-    <div class="welcome-avatar">
-      <img
-        *ngIf="user.photoURL; else initials"
-        [src]="user.photoURL"
-        alt="{{ user.displayName || user.email }}"
-      />
-      <ng-template #initials>
-        <span>{{ (user.displayName || user.email || '?').charAt(0).toUpperCase() }}</span>
-      </ng-template>
-    </div>
-    <h1>Olá, {{ user.displayName || user.email }}!</h1>
-    <p class="welcome-sub">Você está logado no PlacarPro.</p>
+<ion-content [fullscreen]="true" class="home-content">
+  <!-- ============ HERO ============
+       Fundo preto com gradient sutil verde no canto, logo PlacarPro
+       centralizada e destaque visual. Versão "Placar" branco + "Pro"
+       verde (logo3) por ficar legível em fundo escuro. -->
+  <section class="home-hero">
+    <div class="hero-glow"></div>
+    <img
+      class="hero-logo"
+      src="assets/images/logo3.png"
+      alt="PlacarPro"
+    />
+    <p class="hero-tagline">Organize seus campeonatos com facilidade.</p>
+  </section>
 
-    <ion-card class="welcome-card">
-      <ion-card-header>
-        <ion-card-title>Próximos passos</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <p>
-          A tela de login está completa. O próximo marco é o
-          <strong>shell com sidebar</strong> e a lista de "Meus campeonatos".
-        </p>
-      </ion-card-content>
-    </ion-card>
-  </div>
+  <!-- ============ WELCOME ============
+       Card branco "elevado" sobre o hero (margin-top negativo). Avatar
+       circular do user, saudação personalizada e botões de ação rápida. -->
+  <section class="home-welcome" *ngIf="user$ | async as user">
+    <div class="welcome-card">
+      <div class="welcome-avatar">
+        <img
+          *ngIf="user.photoURL; else initials"
+          [src]="user.photoURL"
+          alt="{{ user.displayName || user.email }}"
+          referrerpolicy="no-referrer"
+        />
+        <ng-template #initials>
+          <span>{{ (user.displayName || user.email || '?').charAt(0).toUpperCase() }}</span>
+        </ng-template>
+      </div>
+      <div class="welcome-text">
+        <h1>Olá, <span class="nome">{{ user.displayName || user.email }}</span></h1>
+        <p class="welcome-sub">Bem-vindo de volta ao PlacarPro.</p>
+      </div>
+    </div>
+
+    <!-- ============ ATALHOS RÁPIDOS ============
+         3 cards principais — leva o user direto pra ações mais comuns
+         em vez do antigo card "Próximos passos" estático. -->
+    <div class="atalhos">
+      <a class="atalho" routerLink="/app/meus-campeonatos">
+        <div class="atalho-icon icon-verde">
+          <ion-icon name="trophy-outline"></ion-icon>
+        </div>
+        <div class="atalho-info">
+          <strong>Meus campeonatos</strong>
+          <span>Gerencie e crie torneios</span>
+        </div>
+        <ion-icon class="atalho-chevron" name="chevron-forward-outline"></ion-icon>
+      </a>
+
+      <a class="atalho" routerLink="/app/seguindo">
+        <div class="atalho-icon icon-verde-escuro">
+          <ion-icon name="thumbs-up-outline"></ion-icon>
+        </div>
+        <div class="atalho-info">
+          <strong>Acompanhando</strong>
+          <span>Campeonatos que você segue</span>
+        </div>
+        <ion-icon class="atalho-chevron" name="chevron-forward-outline"></ion-icon>
+      </a>
+
+      <a class="atalho" routerLink="/app/configuracoes">
+        <div class="atalho-icon icon-cinza">
+          <ion-icon name="settings-outline"></ion-icon>
+        </div>
+        <div class="atalho-info">
+          <strong>Configurações</strong>
+          <span>Perfil, plano e preferências</span>
+        </div>
+        <ion-icon class="atalho-chevron" name="chevron-forward-outline"></ion-icon>
+      </a>
+    </div>
+  </section>
 </ion-content>

@@ -54,7 +54,7 @@
   width: 140px;
   height: 140px;
   flex: 0 0 auto;
-  background: rgba(28, 46, 61, 0.06);
+  background: rgba(0, 0, 0, 0.06);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -78,14 +78,14 @@
 /* Variante Mobile do logo — mesmo aspecto quadrado (240×240) mas borda
    tracejada pra deixar visualmente claro que é uma versão opcional. */
 .logo-box-mobile {
-  border: 1px dashed rgba(28, 46, 61, 0.35);
-  background: rgba(28, 46, 61, 0.03);
+  border: 1px dashed rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 /* ===== Toggle Web/Mobile (reutilizável pras duas seções) ===== */
 .modo-toggle {
   display: inline-flex;
-  background: rgba(28, 46, 61, 0.08);
+  background: rgba(0, 0, 0, 0.08);
   border-radius: 999px;
   padding: 3px;
   gap: 2px;
@@ -116,7 +116,7 @@
   }
 
   &:not(.ativo):hover {
-    background: rgba(28, 46, 61, 0.06);
+    background: rgba(0, 0, 0, 0.06);
   }
 }
 
@@ -133,7 +133,7 @@
   width: 100%;
   /* 1600×400 (4:1) — mesma proporção do `.banner` exibido na pública. */
   aspect-ratio: 1600 / 400;
-  background: rgba(28, 46, 61, 0.06);
+  background: rgba(0, 0, 0, 0.06);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -158,8 +158,8 @@
   aspect-ratio: 1600 / 533;
   max-width: 420px;
   margin-inline: auto;
-  border: 1px dashed rgba(28, 46, 61, 0.35);
-  background: rgba(28, 46, 61, 0.03);
+  border: 1px dashed rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 /* ===== Upload hover ===== */
@@ -239,7 +239,7 @@
   text-align: left;
 
   &:first-of-type { border-top: none; }
-  &:hover { background: rgba(28, 46, 61, 0.03); }
+  &:hover { background: rgba(0, 0, 0, 0.03); }
 
   > ion-icon:first-child {
     color: var(--ion-color-medium);
@@ -274,7 +274,7 @@
   &:last-of-type { margin-bottom: 0; }
   &.active {
     border-color: var(--ion-color-primary);
-    background: rgba(28, 46, 61, 0.04);
+    background: rgba(0, 0, 0, 0.04);
   }
 
   .r-text { flex: 1; font-size: 14px; color: var(--placar-text); font-weight: 500; }
@@ -288,7 +288,7 @@
   flex-wrap: wrap;
 
   .link-prefix {
-    background: rgba(28, 46, 61, 0.06);
+    background: rgba(0, 0, 0, 0.06);
     color: var(--ion-color-primary);
     padding: 0 14px;
     border-radius: 10px;

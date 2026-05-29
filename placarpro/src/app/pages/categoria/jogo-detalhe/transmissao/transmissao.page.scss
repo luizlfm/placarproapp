@@ -1252,7 +1252,7 @@
   padding: 10px 56px 4px;
   /* top maior pra esquivar da pill mini de período */
   margin: 0 auto;
-  background: linear-gradient(180deg, rgba(28, 46, 61, 0.94) 0%, rgba(20, 33, 44, 0.96) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.94) 0%, rgba(20, 33, 44, 0.96) 100%);
   border-radius: 6px 6px 0 0;
   border: 1px solid rgba(255, 255, 255, 0.10);
   border-bottom: none;
@@ -1315,9 +1315,9 @@
   /* Navy PlacarPro (#000000 primary) — gradiente sutil pra dar profundidade
      mantendo identidade da marca. Antes era #1e40af (azul royal genérico). */
   background: linear-gradient(180deg,
-      var(--ion-color-primary-shade, #192836) 0%,
+      var(--ion-color-primary-shade, #000000) 0%,
       var(--ion-color-primary, #000000) 50%,
-      var(--ion-color-primary-shade, #192836) 100%);
+      var(--ion-color-primary-shade, #000000) 100%);
   border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
@@ -1561,7 +1561,7 @@
   gap: 3px;
   padding: 2px 8px;
   background: linear-gradient(180deg,
-      rgba(28, 46, 61, 0.94) 0%,
+      rgba(0, 0, 0, 0.94) 0%,
       rgba(20, 33, 44, 0.96) 100%);
   border: 1px solid rgba(124, 198, 29, 0.55);
   /* verde secondary */
@@ -2854,7 +2854,7 @@
     max-width: 50vw;
     z-index: 40;
     /* Background semi-transparente + blur — vídeo aparece levemente por trás. */
-    background: rgba(28, 46, 61, 0.88);
+    background: rgba(0, 0, 0, 0.88);
     backdrop-filter: blur(8px);
     box-shadow: -4px 0 18px rgba(0, 0, 0, 0.45);
     border-radius: 6px;
@@ -3276,7 +3276,7 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: rgba(28, 46, 61, 0.08);
+    background: rgba(0, 0, 0, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3325,7 +3325,7 @@
 
   .lance-nome {
     font-size: 12.5px;
-    color: #1f2937;
+    color: #000000;
     text-transform: uppercase;
     letter-spacing: 0.2px;
     font-weight: 700;
@@ -3970,7 +3970,7 @@
   inset: 0;
   z-index: 9999;
   background: radial-gradient(ellipse at center,
-      rgba(28, 46, 61, 0.96) 0%,
+      rgba(0, 0, 0, 0.96) 0%,
       rgba(10, 14, 18, 0.99) 100%);
   display: flex;
   align-items: center;

@@ -3,7 +3,7 @@
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#000000" />
-      <stop offset="50%" stop-color="#2d4a63" />
+      <stop offset="50%" stop-color="#1a1a1a" />
       <stop offset="100%" stop-color="#4a6580" />
     </linearGradient>
     <radialGradient id="spotlight" cx="50%" cy="40%" r="60%">

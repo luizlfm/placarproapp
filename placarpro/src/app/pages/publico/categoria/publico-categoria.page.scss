@@ -88,8 +88,8 @@
   transition: background 120ms ease, border-color 120ms ease, transform 80ms ease;
 
   &:hover:not(:disabled) {
-    background: rgba(28, 46, 61, 0.06);
-    border-color: rgba(28, 46, 61, 0.18);
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.18);
   }
 
   &:active:not(:disabled) {
@@ -102,7 +102,7 @@
   }
 
   &.selecionada {
-    background: rgba(28, 46, 61, 0.08);
+    background: rgba(0, 0, 0, 0.08);
     border-color: var(--ion-color-primary);
 
     .alt-radio ion-icon {
@@ -147,7 +147,7 @@
   }
 
   &.minha .alt-bar-fill {
-    background: linear-gradient(90deg, var(--ion-color-primary), #2d4a63);
+    background: linear-gradient(90deg, var(--ion-color-primary), #1a1a1a);
   }
 }
 
@@ -900,7 +900,7 @@
   border-radius: 12px;
   overflow: hidden;
   background-color: #000000;
-  background-image: linear-gradient(135deg, #000000 0%, #2d4a63 100%);
+  background-image: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -941,7 +941,7 @@
 
 .banner-meta {
   display: inline-block;
-  background: rgba(28, 46, 61, 0.7);
+  background: rgba(0, 0, 0, 0.7);
   border-radius: 8px;
   padding: 6px 12px;
   align-self: flex-start;
@@ -1015,7 +1015,7 @@
   height: 34px;
   border-radius: 50%;
   border: none;
-  background: rgba(28, 46, 61, 0.7);
+  background: rgba(0, 0, 0, 0.7);
   color: #fff;
   display: flex;
   align-items: center;
@@ -1028,7 +1028,7 @@
   }
 
   &:hover {
-    background: rgba(28, 46, 61, 0.9);
+    background: rgba(0, 0, 0, 0.9);
   }
 }
 
@@ -1181,7 +1181,7 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: rgba(28, 46, 61, 0.08);
+    background: rgba(0, 0, 0, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1415,7 +1415,7 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: rgba(28, 46, 61, 0.08);
+  background: rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1545,7 +1545,7 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: rgba(28, 46, 61, 0.08);
+    background: rgba(0, 0, 0, 0.08);
     font-weight: 700;
     font-size: 13px;
     color: var(--placar-text, #2d2d2d);
@@ -1555,7 +1555,7 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: rgba(28, 46, 61, 0.08);
+    background: rgba(0, 0, 0, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1630,7 +1630,7 @@
       width: 18px;
       height: 18px;
       border-radius: 50%;
-      background: rgba(28, 46, 61, 0.08);
+      background: rgba(0, 0, 0, 0.08);
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -1845,7 +1845,7 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: rgba(28, 46, 61, 0.06);
+  background: rgba(0, 0, 0, 0.06);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2024,7 +2024,7 @@
   width: 96px;
   height: 96px;
   border-radius: 50%;
-  background: rgba(28, 46, 61, 0.06);
+  background: rgba(0, 0, 0, 0.06);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2236,7 +2236,7 @@
      não o `prefers-color-scheme` do SO. Antes o usuário com SO em dark
      mas app em light via `prefers-color-scheme: dark` deixava o texto
      branco sobre fundo claro = invisível (o caso reportado). */
-  color: var(--placar-text-muted, rgba(28, 46, 61, 0.72));
+  color: var(--placar-text-muted, rgba(0, 0, 0, 0.72));
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.3px;
@@ -2420,7 +2420,7 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: rgba(28, 46, 61, 0.08);
+    background: rgba(0, 0, 0, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2717,7 +2717,7 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: rgba(28, 46, 61, 0.08);
+  background: rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2999,7 +2999,7 @@
   &:hover,
   &:focus-visible {
     transform: translateY(-3px);
-    box-shadow: 0 10px 24px rgba(28, 46, 61, 0.14);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
 
     .card-overlay {
       opacity: 1;
@@ -3029,7 +3029,7 @@
 
 /* Gradientes específicos por tipo */
 .midia-card[data-tipo="video"] .card-thumb {
-  background: linear-gradient(135deg, #000000 0%, #2d4a63 100%);
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
 }
 
 .midia-card[data-tipo="youtube"] .card-thumb {
@@ -3084,7 +3084,7 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  background: rgba(28, 46, 61, 0.85);
+  background: rgba(0, 0, 0, 0.85);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -3265,7 +3265,7 @@
     }
 
     .tag-fase {
-      background: rgba(28, 46, 61, 0.08);
+      background: rgba(0, 0, 0, 0.08);
       color: var(--ion-color-primary);
     }
 
@@ -3302,7 +3302,7 @@
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background: rgba(28, 46, 61, 0.08);
+      background: rgba(0, 0, 0, 0.08);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -3373,7 +3373,7 @@
     }
 
     &.encerrado {
-      background: rgba(28, 46, 61, 0.04);
+      background: rgba(0, 0, 0, 0.04);
 
       .numeros {
         color: var(--ion-color-primary);
@@ -3630,7 +3630,7 @@
       .et-bar {
         width: 100%;
         height: 4px;
-        background: rgba(28, 46, 61, 0.08);
+        background: rgba(0, 0, 0, 0.08);
         border-radius: 999px;
         overflow: hidden;
         margin-top: 2px;
@@ -3899,7 +3899,7 @@
   width: 100%;
   margin-top: 10px;
   padding: 10px 18px;
-  background: linear-gradient(135deg, #000000 0%, #2d4a63 100%);
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -4229,12 +4229,12 @@
     height: 36px;
     border-radius: 50%;
     overflow: hidden;
-    background: rgba(28, 46, 61, 0.08);
+    background: rgba(0, 0, 0, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--ion-color-primary);
-    border: 2px solid rgba(28, 46, 61, 0.15);
+    border: 2px solid rgba(0, 0, 0, 0.15);
 
     img {
       width: 100%;

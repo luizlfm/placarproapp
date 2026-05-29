@@ -90,7 +90,7 @@ ion-content { --background: #f3f4f6; }
   cursor: pointer;
   color: var(--ion-color-medium);
 
-  &:hover { background: rgba(28, 46, 61, 0.06); color: var(--ion-color-primary); }
+  &:hover { background: rgba(0, 0, 0, 0.06); color: var(--ion-color-primary); }
   ion-icon { font-size: 20px; }
 }
 
@@ -258,7 +258,7 @@ ion-content { --background: #f3f4f6; }
 }
 
 .logo-add {
-  border: 2px dashed rgba(28, 46, 61, 0.25);
+  border: 2px dashed rgba(0, 0, 0, 0.25);
   border-radius: 8px;
   background: transparent;
   color: var(--ion-color-primary);
@@ -278,7 +278,7 @@ ion-content { --background: #f3f4f6; }
   ion-icon { font-size: 26px; }
 
   &:hover:not(:disabled) {
-    background: rgba(28, 46, 61, 0.04);
+    background: rgba(0, 0, 0, 0.04);
     border-color: var(--ion-color-primary);
   }
   &:disabled { opacity: 0.4; cursor: not-allowed; }

@@ -51,11 +51,11 @@ body.light {
   --ion-color-danger-tint: #ed5959;
 
   --ion-color-dark: #000000;
-  --ion-color-dark-rgb: 28, 46, 61;
+  --ion-color-dark-rgb: 0, 0, 0;
   --ion-color-dark-contrast: #ffffff;
   --ion-color-dark-contrast-rgb: 255, 255, 255;
-  --ion-color-dark-shade: #192836;
-  --ion-color-dark-tint: #334350;
+  --ion-color-dark-shade: #000000;
+  --ion-color-dark-tint: #1a1a1a;
 
   --ion-color-medium: #8a8d99;
   --ion-color-medium-rgb: 138, 141, 153;
@@ -74,7 +74,7 @@ body.light {
   /* App tokens claros */
   --ion-background-color: #ffffff;
   --ion-background-color-rgb: 246, 247, 249;
-  --ion-text-color: #1F2937;
+  --ion-text-color: #000000;
   --ion-text-color-rgb: 31, 41, 55;
 
   /* Tokens próprios — clean tones */
@@ -83,7 +83,7 @@ body.light {
   --placar-surface-2: #FAFBFC;
   --placar-border: #E5E7EB;
   --placar-border-strong: #D1D5DB;
-  --placar-text: #1F2937;
+  --placar-text: #000000;
   --placar-text-muted: #6B7280;
   --placar-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --placar-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);

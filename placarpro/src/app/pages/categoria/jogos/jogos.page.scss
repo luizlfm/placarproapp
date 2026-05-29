@@ -82,8 +82,8 @@ ion-content {
   ion-icon { font-size: 13px; }
 
   &.sb-total {
-    border-color: rgba(28, 46, 61, 0.15);
-    background: rgba(28, 46, 61, 0.04);
+    border-color: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.04);
   }
   &.sb-vivo {
     border-color: rgba(225, 29, 72, 0.4);
@@ -151,7 +151,7 @@ ion-content {
   align-items: flex-end;
   justify-content: center;
   padding-bottom: 6px;
-  box-shadow: 0 -6px 16px rgba(28, 46, 61, 0.25);
+  box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.25);
   z-index: 5;
   transition: all 180ms ease;
 
@@ -159,7 +159,7 @@ ion-content {
 
   &:hover {
     transform: translateX(-50%) translateY(-2px);
-    box-shadow: 0 -8px 22px rgba(28, 46, 61, 0.35);
+    box-shadow: 0 -8px 22px rgba(0, 0, 0, 0.35);
   }
   &:active { transform: translateX(-50%) translateY(0); }
 }
@@ -340,7 +340,7 @@ ion-content {
     ion-icon { font-size: 11px; }
   }
   .tag-fase {
-    background: rgba(28, 46, 61, 0.08);
+    background: rgba(0, 0, 0, 0.08);
     color: var(--ion-color-primary);
   }
   .tag-rod {

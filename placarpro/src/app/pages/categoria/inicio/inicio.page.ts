@@ -44,15 +44,35 @@ export class InicioPage implements OnInit, OnDestroy {
   }
 
   /** Retorna a capa apropriada — mobile-first fallback chain:
-   *  mobile-variant → web-variant → banner legacy. Espelha `capaCamp` da
-   *  publico-categoria pra dar consistência. */
-  /** Banner padrão exibido quando a categoria/campeonato não tem capa. */
+   *  categoria(mobile) → categoria(web) → categoria(banner legacy) →
+   *  CAMPEONATO(mobile) → CAMPEONATO(web) → CAMPEONATO(banner legacy) →
+   *  banner default SVG.
+   *
+   *  Antes só caía pra `bannerPadrao` se a categoria não tinha capa,
+   *  ignorando o banner/capa do campeonato pai. Agora a categoria
+   *  herda a imagem do campeonato quando não tem a sua própria —
+   *  mesmo padrão da `publico-categoria.page.ts`. */
+  /** Banner padrão exibido quando categoria E campeonato não têm capa. */
   readonly bannerPadrao = 'assets/branding/banner-default.svg';
 
-  capaCategoria(c: Categoria | null | undefined): string {
-    if (!c) return this.bannerPadrao;
-    if (this.ehMobile && c.capaMobileUrl) return c.capaMobileUrl;
-    return c.capaUrl || c.bannerUrl || this.bannerPadrao;
+  capaCategoria(
+    c: Categoria | null | undefined,
+    camp?: Campeonato | null,
+  ): string {
+    // 1) Categoria — prioridade total
+    if (c) {
+      if (this.ehMobile && c.capaMobileUrl) return c.capaMobileUrl;
+      const cap = c.capaUrl || c.bannerUrl;
+      if (cap) return cap;
+    }
+    // 2) Fallback pro Campeonato pai
+    if (camp) {
+      if (this.ehMobile && camp.capaMobileUrl) return camp.capaMobileUrl;
+      const cap = camp.capaUrl || camp.bannerUrl;
+      if (cap) return cap;
+    }
+    // 3) Banner default
+    return this.bannerPadrao;
   }
 
   readonly campeonatoId = this.route.snapshot.paramMap.get('id') ?? '';

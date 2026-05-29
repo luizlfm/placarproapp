@@ -11,12 +11,12 @@
 
 /* ============ Market cap row ============ */
 .mc-cap {
-  background: linear-gradient(135deg, #000000 0%, #2d4a63 100%);
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
   color: #fff;
   border-radius: 12px;
   padding: 14px 18px;
   margin-bottom: 16px;
-  box-shadow: 0 4px 14px rgba(28, 46, 61, 0.18);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
 }
 
 .mc-cap-row {
@@ -186,7 +186,7 @@
 .mc-formula {
   margin-top: 16px;
   background: #f9fafb;
-  border: 1px dashed rgba(28, 46, 61, 0.12);
+  border: 1px dashed rgba(0, 0, 0, 0.12);
   border-radius: 10px;
   padding: 12px 14px;
 

@@ -1,22 +1,28 @@
 /* ============================================================
    PlacarPro — Home pública (landing) MODERNA
-   Paleta: navy (#000000) + verde lime (#7CC61D) + glass + glow.
+   Paleta: PRETO (#000000) + verde lime (#7CC61D) + glass + glow.
+   Sem tons de azul — toda referência a azul foi remapeada pra
+   variantes do verde da marca, mantendo a identidade.
    ============================================================ */
 
 :host {
-  --navy: #000000;
-  --navy-soft: #2d4a63;
-  --navy-deep: #0f1d2b;
-  --lime: #7CC61D;
-  --lime-soft: #95d63f;
-  --lime-deep: #4a7e0e;
-  --azul: #4DABF7;
-  --amarelo: #f5c518;
+  /* Aliases locais que apontam pras variáveis do sistema (variables.scss).
+     Trocar `--ion-color-primary` ou `--ion-color-secondary` no tema
+     reflete em TODA esta página automaticamente. */
+  --navy: var(--ion-color-primary);
+  --navy-soft: var(--ion-color-primary-tint);
+  --navy-deep: var(--ion-color-primary-shade);
+  --lime: var(--ion-color-secondary);
+  --lime-soft: var(--ion-color-secondary-tint);
+  --lime-deep: var(--ion-color-secondary-shade);
+  /* `--azul` é alias do secondary (verde) — elimina referências azuis. */
+  --azul: var(--ion-color-secondary-shade);
+  --amarelo: var(--ion-color-warning);
   --laranja: #ff9f43;
   --roxo: #845EF7;
   --rosa: #FF6B9D;
-  --grad-hero: linear-gradient(135deg, #0f1d2b 0%, #000000 45%, #2d4a63 100%);
-  --grad-acento: linear-gradient(135deg, #7CC61D 0%, #95d63f 100%);
+  --grad-hero: linear-gradient(135deg, var(--ion-color-primary-shade) 0%, var(--ion-color-primary) 45%, var(--ion-color-primary-tint) 100%);
+  --grad-acento: linear-gradient(135deg, var(--ion-color-secondary) 0%, var(--ion-color-secondary-tint) 100%);
   --grad-glass: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
 }
 
@@ -35,7 +41,7 @@
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: saturate(180%) blur(14px);
   -webkit-backdrop-filter: saturate(180%) blur(14px);
-  border-bottom: 1px solid rgba(28, 46, 61, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   position: sticky;
   top: 0;
   z-index: 30;
@@ -191,11 +197,11 @@
 .btn-primary {
   background: var(--navy);
   color: #fff;
-  box-shadow: 0 4px 14px rgba(28, 46, 61, 0.25);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 
   &:hover {
     background: var(--navy-deep);
-    box-shadow: 0 8px 24px rgba(28, 46, 61, 0.35);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 }
 
@@ -223,13 +229,13 @@
 .btn-ghost {
   background: transparent;
   color: var(--navy);
-  border: 2px solid rgba(28, 46, 61, 0.25);
+  border: 2px solid rgba(0, 0, 0, 0.25);
 
   &:hover {
     background: var(--navy);
     color: #fff;
     border-color: var(--navy);
-    box-shadow: 0 4px 14px rgba(28, 46, 61, 0.18);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
   }
 }
 
@@ -250,9 +256,10 @@
 }
 
 /* ============ CTA "Entrar no PlacarPro Pelada" ============
-   Botão exclusivo do módulo Racha, no hero. Visual diferenciado:
-   gradient azul→verde (mistura das duas paletas — bola + grama) com
-   leve glow azul pra não competir com o verde do btn-secondary. */
+   Botão exclusivo do módulo Racha, no hero. Antes tinha gradient
+   azul→verde — agora é gradient preto→verde-escuro pra ficar dentro
+   da paleta da marca (sem azul) e ainda diferenciar do btn-secondary
+   verde-claro. */
 .btn-pelada {
   display: inline-flex;
   align-items: center;
@@ -269,9 +276,13 @@
   overflow: hidden;
   transition: transform 180ms ease, box-shadow 220ms ease;
 
-  background: linear-gradient(135deg, #4DABF7 0%, #1d4ed8 55%, #16a34a 100%);
+  /* Gradient construído usando os aliases (--navy, --lime-deep) que
+     apontam pras vars do sistema. Trocar primary/secondary no theme
+     reflete aqui automaticamente. */
+
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 55%, var(--lime-deep) 100%);
   color: #fff;
-  box-shadow: 0 6px 18px rgba(77, 171, 247, 0.4);
+  box-shadow: 0 6px 18px rgba(var(--ion-color-secondary-rgb), 0.35);
 
   ion-icon { font-size: 17px; }
 
@@ -293,7 +304,7 @@
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(77, 171, 247, 0.55);
+    box-shadow: 0 12px 28px rgba(124, 198, 29, 0.55);
     &::before { transform: translateX(100%); }
   }
 
@@ -344,7 +355,7 @@
   position: absolute;
   width: 380px;
   height: 380px;
-  background: radial-gradient(circle, rgba(77, 171, 247, 0.28), transparent 70%);
+  background: radial-gradient(circle, rgba(124, 198, 29, 0.28), transparent 70%);
   bottom: -160px;
   left: -100px;
   border-radius: 50%;
@@ -491,7 +502,8 @@
 }
 
 .mockup-frame {
-  background: linear-gradient(180deg, #0f1d2b 0%, #000000 100%);
+  /* Frame do mockup do hero — usa primary do sistema. */
+  background: linear-gradient(180deg, var(--navy-soft) 0%, var(--navy) 100%);
   border-radius: 38px;
   padding: 12px;
   box-shadow:
@@ -587,7 +599,7 @@
     margin-top: 2px;
     font-size: 9.5px;
     font-weight: 700;
-    color: rgba(28, 46, 61, 0.5);
+    color: rgba(0, 0, 0, 0.5);
     letter-spacing: 0.6px;
   }
 }
@@ -596,7 +608,7 @@
 .mock-placar-card {
   background: #fff;
   border-radius: 12px;
-  border: 1px solid rgba(28, 46, 61, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   padding: 12px 8px 10px;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -626,8 +638,11 @@
 
   ion-icon { font-size: 22px; color: #fff; }
 
+  /* `.azul` mantido pra retrocompatibilidade do HTML — mas agora
+     renderiza com gradient PRETO em vez do antigo azul, ficando dentro
+     da paleta da marca (sem azul). */
   &.azul {
-    background: linear-gradient(135deg, #6dcdf8, var(--azul));
+    background: linear-gradient(135deg, #1a1a1a, #000000);
   }
   &.verde {
     background: linear-gradient(135deg, #95d63f, var(--lime-deep));
@@ -681,14 +696,14 @@
   text-align: center;
   font-size: 10px;
   font-weight: 700;
-  color: rgba(28, 46, 61, 0.7);
+  color: rgba(0, 0, 0, 0.7);
   letter-spacing: 0.4px;
   padding: 4px 0 6px;
-  border-bottom: 1px solid rgba(28, 46, 61, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 
   .mock-fase-lbl { color: var(--navy); font-weight: 900; }
   .mock-fase-sep { margin: 0 4px; opacity: 0.4; }
-  .mock-fase-rod { color: rgba(28, 46, 61, 0.55); }
+  .mock-fase-rod { color: rgba(0, 0, 0, 0.55); }
 }
 
 /* Segmento Escalação / Lances */
@@ -708,7 +723,7 @@
     padding: 7px 4px;
     font-size: 10px;
     font-weight: 700;
-    color: rgba(28, 46, 61, 0.55);
+    color: rgba(0, 0, 0, 0.55);
     border-radius: 6px;
     transition: all 0.2s ease;
 
@@ -717,7 +732,7 @@
     &.ativa {
       background: var(--navy);
       color: #fff;
-      box-shadow: 0 2px 4px rgba(28, 46, 61, 0.18);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
     }
   }
 }
@@ -770,7 +785,7 @@
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: rgba(28, 46, 61, 0.12);
+    background: rgba(0, 0, 0, 0.12);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -778,7 +793,7 @@
 
     ion-icon {
       font-size: 13px;
-      color: rgba(28, 46, 61, 0.45);
+      color: rgba(0, 0, 0, 0.45);
     }
   }
 
@@ -797,7 +812,7 @@
       margin-top: 2px;
       font-size: 8.5px;
       font-weight: 700;
-      color: rgba(28, 46, 61, 0.65);
+      color: rgba(0, 0, 0, 0.65);
       letter-spacing: 0.2px;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -855,7 +870,7 @@
   margin: 0 auto 50px;
   text-align: center;
   font-size: 16px;
-  color: rgba(28, 46, 61, 0.6);
+  color: rgba(0, 0, 0, 0.6);
   max-width: 600px;
   line-height: 1.5;
 }
@@ -876,7 +891,7 @@
   background: #fff;
   border-radius: 18px;
   padding: 32px 28px;
-  border: 1px solid rgba(28, 46, 61, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   transition: transform 350ms cubic-bezier(.2,.8,.3,1), box-shadow 350ms ease, border-color 250ms ease;
   position: relative;
@@ -898,7 +913,7 @@
 
   &:hover {
     transform: translateY(-8px);
-    box-shadow: 0 18px 48px rgba(28, 46, 61, 0.12);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
     border-color: rgba(124, 198, 29, 0.35);
     &::before { transform: scaleX(1); }
   }
@@ -915,7 +930,7 @@
     margin: 0;
     font-size: 14.5px;
     line-height: 1.6;
-    color: rgba(28, 46, 61, 0.65);
+    color: rgba(0, 0, 0, 0.65);
   }
 }
 
@@ -933,7 +948,8 @@
   ion-icon { font-size: 28px; color: #fff; }
 
   &.verde { background: linear-gradient(135deg, #95d63f, var(--lime-deep)); }
-  &.azul  { background: linear-gradient(135deg, #6dcdf8, var(--azul)); }
+  /* `.azul` agora é PRETO (sem azul na paleta). */
+  &.azul  { background: linear-gradient(135deg, #1a1a1a, #000000); }
   &.roxo  { background: linear-gradient(135deg, #a78bfa, var(--roxo)); }
   &.rosa  { background: linear-gradient(135deg, #ffb6cb, var(--rosa)); }
   &.amarelo { background: linear-gradient(135deg, #fde047, var(--amarelo)); }
@@ -967,7 +983,7 @@
 .features-sub {
   margin: 12px 0 28px;
   font-size: 16px;
-  color: rgba(28, 46, 61, 0.65);
+  color: rgba(0, 0, 0, 0.65);
   line-height: 1.5;
 
   @media (max-width: 980px) { text-align: center; }
@@ -990,7 +1006,7 @@
     padding: 12px 16px;
     background: #fff;
     border-radius: 10px;
-    border: 1px solid rgba(28, 46, 61, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     transition: transform 250ms ease, border-color 200ms ease;
 
     ion-icon {
@@ -1015,7 +1031,7 @@
 
   .img-card {
     background: linear-gradient(135deg, #fff 0%, #f7fbf3 100%);
-    border: 1px solid rgba(28, 46, 61, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 18px;
     padding: 24px;
     display: flex;
@@ -1023,7 +1039,7 @@
     align-items: center;
     justify-content: center;
     gap: 14px;
-    box-shadow: 0 6px 18px rgba(28, 46, 61, 0.08);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
     transition: transform 300ms ease, box-shadow 300ms ease;
 
     ion-icon {
@@ -1041,7 +1057,7 @@
 
     &:hover {
       transform: translateY(-4px);
-      box-shadow: 0 14px 32px rgba(28, 46, 61, 0.12);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.12);
     }
 
     &.grande {
@@ -1084,8 +1100,8 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  background: linear-gradient(135deg, rgba(77, 171, 247, 0.08), rgba(124, 198, 29, 0.08));
-  border: 1px solid rgba(77, 171, 247, 0.25);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.05), rgba(124, 198, 29, 0.10));
+  border: 1px solid rgba(124, 198, 29, 0.30);
   padding: 16px 20px;
   border-radius: 12px;
   margin-bottom: 32px;
@@ -1108,13 +1124,13 @@
     position: absolute;
     left: 18px;
     font-size: 20px;
-    color: rgba(28, 46, 61, 0.4);
+    color: rgba(0, 0, 0, 0.4);
     pointer-events: none;
   }
 
   input {
     width: 100%;
-    border: 2px solid rgba(28, 46, 61, 0.12);
+    border: 2px solid rgba(0, 0, 0, 0.12);
     background: #fff;
     border-radius: 999px;
     padding: 14px 50px 14px 48px;
@@ -1129,7 +1145,7 @@
       box-shadow: 0 0 0 4px rgba(124, 198, 29, 0.15);
     }
 
-    &::placeholder { color: rgba(28, 46, 61, 0.4); }
+    &::placeholder { color: rgba(0, 0, 0, 0.4); }
   }
 
   .clear {
@@ -1139,7 +1155,7 @@
     border: 0;
     cursor: pointer;
     padding: 4px;
-    color: rgba(28, 46, 61, 0.5);
+    color: rgba(0, 0, 0, 0.5);
     transition: color 150ms ease;
 
     ion-icon { font-size: 22px; }
@@ -1164,7 +1180,7 @@
     gap: 8px;
     padding: 9px 16px;
     border-radius: 999px;
-    border: 2px solid rgba(28, 46, 61, 0.12);
+    border: 2px solid rgba(0, 0, 0, 0.12);
     background: #fff;
     color: var(--navy);
     font-size: 13.5px;
@@ -1182,14 +1198,14 @@
       height: 20px;
       padding: 0 6px;
       border-radius: 999px;
-      background: rgba(28, 46, 61, 0.08);
+      background: rgba(0, 0, 0, 0.08);
       color: var(--navy);
       font-size: 11px;
       font-weight: 800;
     }
 
     &:hover {
-      border-color: rgba(28, 46, 61, 0.25);
+      border-color: rgba(0, 0, 0, 0.25);
       transform: translateY(-1px);
     }
 
@@ -1209,7 +1225,7 @@
        aparece com ícone de cadeado + cor mais suave indicando que precisa
        de autenticação pra usar. */
     &.disabled {
-      color: rgba(28, 46, 61, 0.55);
+      color: rgba(0, 0, 0, 0.55);
       border-style: dashed;
 
       .chip-lock {
@@ -1437,8 +1453,8 @@
   background: #fff;
   border-radius: 20px;
   overflow: hidden;
-  border: 1px solid rgba(28, 46, 61, 0.08);
-  box-shadow: 0 2px 10px rgba(28, 46, 61, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   text-align: left;
   cursor: pointer;
   font-family: inherit;
@@ -1470,7 +1486,7 @@
   &:hover {
     transform: translateY(-8px);
     box-shadow:
-      0 22px 50px rgba(28, 46, 61, 0.18),
+      0 22px 50px rgba(0, 0, 0, 0.18),
       0 0 0 1px rgba(124, 198, 29, 0.25);
     border-color: rgba(124, 198, 29, 0.35);
 
@@ -1571,7 +1587,7 @@
     justify-content: center;
     overflow: hidden;
     border: 3px solid #fff;
-    box-shadow: 0 6px 18px rgba(28, 46, 61, 0.22);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
     z-index: 4;
     transition: transform 350ms cubic-bezier(.2, .8, .3, 1);
 
@@ -1602,7 +1618,7 @@
   .subtitulo {
     margin-top: 4px;
     font-size: 12.5px;
-    color: rgba(28, 46, 61, 0.55);
+    color: rgba(0, 0, 0, 0.55);
     font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1623,7 +1639,7 @@
     align-items: center;
     gap: 5px;
     padding: 4px 9px;
-    background: rgba(28, 46, 61, 0.06);
+    background: rgba(0, 0, 0, 0.06);
     color: var(--navy, #000000);
     border-radius: 999px;
     font-size: 11px;
@@ -1648,7 +1664,7 @@
   .rodape {
     margin-top: 14px;
     padding-top: 12px;
-    border-top: 1px dashed rgba(28, 46, 61, 0.10);
+    border-top: 1px dashed rgba(0, 0, 0, 0.10);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1659,7 +1675,7 @@
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: rgba(28, 46, 61, 0.65);
+    color: rgba(0, 0, 0, 0.65);
     font-weight: 500;
     min-width: 0;
 
@@ -1671,7 +1687,7 @@
     align-items: center;
     gap: 4px;
     padding: 6px 12px;
-    background: rgba(28, 46, 61, 0.06);
+    background: rgba(0, 0, 0, 0.06);
     color: var(--navy, #000000);
     border-radius: 999px;
     font-size: 12px;
@@ -1737,7 +1753,7 @@
 .empty {
   text-align: center;
   padding: 80px 20px;
-  color: rgba(28, 46, 61, 0.55);
+  color: rgba(0, 0, 0, 0.55);
 
   ion-icon {
     font-size: 80px;
@@ -1763,13 +1779,13 @@
 
 /* =====================================================
    PELADA / RACHA — seção dedicada (estilo FutBora)
-   Fundo navy escuro com grid + glow azul/verde.
+   Fundo preto com grid + glow verde (sem azul na paleta).
    ===================================================== */
 .racha-section {
   background:
-    radial-gradient(circle at 80% 30%, rgba(34, 197, 94, 0.22), transparent 55%),
-    radial-gradient(circle at 15% 70%, rgba(77, 171, 247, 0.22), transparent 55%),
-    linear-gradient(180deg, #0f1d2b 0%, #000000 70%, #1d4ed8 100%);
+    radial-gradient(circle at 80% 30%, rgba(124, 198, 29, 0.28), transparent 55%),
+    radial-gradient(circle at 15% 70%, rgba(124, 198, 29, 0.18), transparent 55%),
+    linear-gradient(180deg, #0a0a0a 0%, #000000 70%, #1a1a1a 100%);
   color: #fff;
   padding: 100px 24px 100px;
   position: relative;
@@ -1872,7 +1888,8 @@
   width: 290px;
   border-radius: 38px;
   padding: 12px 10px 14px;
-  background: linear-gradient(180deg, #000000, #0f1d2b);
+  /* Bezel do "celular" — preto puro (era #000000 com tom azulado). */
+  background: linear-gradient(180deg, #000000, #1a1a1a);
   border: 2px solid rgba(255, 255, 255, 0.08);
   box-shadow:
     0 30px 70px rgba(0, 0, 0, 0.5),
@@ -1899,7 +1916,10 @@
   z-index: 5;
 }
 .rk-screen {
-  background: linear-gradient(180deg, #000000 0%, #173a5e 40%, #0d4d7a 100%);
+  /* Tela do "celular" — era gradient azul navy → azul médio (#173a5e
+     → #0d4d7a). Agora é preto → cinza-escuro → verde-escuro, dentro
+     da paleta da marca sem tons azulados. */
+  background: linear-gradient(180deg, #000000 0%, #1a1a1a 40%, #2a3d10 100%);
   border-radius: 26px;
   min-height: 580px;
   padding: 26px 10px 0;
@@ -1953,7 +1973,7 @@
 
 .rk-card {
   background:
-    linear-gradient(135deg, rgba(124, 198, 29, 0.22), rgba(77, 171, 247, 0.18)),
+    linear-gradient(135deg, rgba(124, 198, 29, 0.22), rgba(0, 0, 0, 0.22)),
     rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;

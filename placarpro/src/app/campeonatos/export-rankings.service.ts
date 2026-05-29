@@ -60,7 +60,7 @@ export class ExportRankingsService {
     const pageH = pdf.internal.pageSize.getHeight();
 
     // ── Header navy ─────────────────────────────────────
-    pdf.setFillColor(28, 46, 61); // primary navy
+    pdf.setFillColor(0, 0, 0); // primary navy
     pdf.rect(0, 0, pageW, 36, 'F');
 
     // Logo do campeonato (opcional)
@@ -111,7 +111,7 @@ export class ExportRankingsService {
       body: rows,
       theme: 'grid',
       headStyles: {
-        fillColor: [28, 46, 61],
+        fillColor: [0, 0, 0],
         textColor: 255,
         fontStyle: 'bold',
         fontSize: 10,
@@ -133,7 +133,7 @@ export class ExportRankingsService {
           halign: 'right',
           cellWidth: 22,
           fontStyle: 'bold',
-          textColor: [28, 46, 61],
+          textColor: [0, 0, 0],
         },
       },
       didParseCell: data => {

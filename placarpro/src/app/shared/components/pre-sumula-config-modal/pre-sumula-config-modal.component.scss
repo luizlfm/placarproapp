@@ -196,7 +196,7 @@
 }
 
 .psc-logo-add {
-  border: 2px dashed rgba(28, 46, 61, 0.25);
+  border: 2px dashed rgba(0, 0, 0, 0.25);
   border-radius: 10px;
   background: transparent;
   color: var(--ion-color-primary);
@@ -216,7 +216,7 @@
   ion-icon { font-size: 32px; }
 
   &:hover:not(:disabled) {
-    background: rgba(28, 46, 61, 0.04);
+    background: rgba(0, 0, 0, 0.04);
     border-color: var(--ion-color-primary);
   }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
