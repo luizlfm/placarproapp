@@ -1,0 +1,91 @@
+/* ════════════════════════════════════════════════════════════════
+   Banner rotativo de patrocínios PAGOS — visual idêntico ao banner
+   gratuito do `transmissao-player` (.tp-banner-patrocinador).
+
+   IMPORTANTE: o componente `app-esteira-ads` deve estar posicionado
+   como `position: absolute` (configurado pela página hospedeira em
+   .ld-esteira-ads / .pub-esteira-ads). O `.ads-banner` ABAIXO usa
+   posição RELATIVA ao próprio host, mas como o host preenche 100%
+   do container do vídeo (left/right/bottom: 0), o banner aparece
+   no canto inferior esquerdo.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Host é apenas um "espelho" — o `pointer-events: none` fica nele pra
+   não bloquear cliques no vídeo embaixo (controles, fullscreen). O
+   `.ads-banner` filho RE-HABILITA com `pointer-events: auto` pra
+   permitir inspeção via DevTools e futuras interações (ex: clique no
+   logo abrir link patrocinado). */
+:host {
+  display: block;
+  pointer-events: none;
+}
+
+.ads-banner {
+  /* Posicionamento ajustado via DevTools — banner alinhado AO LADO do
+     badge AO VIVO (que ocupa ~50px à esquerda no topo), na mesma linha
+     horizontal do scoreboard. Valores finais validados pelo usuário. */
+  position: absolute;
+  top: max(11px, env(safe-area-inset-top, 0px) + 6px);
+  left: max(57px, env(safe-area-inset-left, 0px));
+  z-index: 5;
+  display: block;
+  padding: 0;
+  /* Re-habilita pointer events só no banner (host fica `none`).
+     Permite inspecionar pelo DevTools e abre caminho pra clique
+     futuro em URL patrocinada. */
+  pointer-events: auto;
+  /* Proporção 360×202 = 16:9 exato. Largura 50→140px (responsiva a 9vw). */
+  width: clamp(50px, 9vw, 140px);
+  max-width: 14%;
+  aspect-ratio: 360 / 202;
+  opacity: 1;
+  transition: opacity 250ms ease;
+
+  &.fading {
+    opacity: 0;
+  }
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 5px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Landscape mobile — mantém a mesma proporção, banner um pouco menor */
+  @media (max-width: 768px) and (orientation: landscape) {
+    top: max(8px, env(safe-area-inset-top, 0px) + 4px);
+    left: max(52px, env(safe-area-inset-left, 0px));
+    width: clamp(45px, 10vw, 110px);
+  }
+
+  /* Landscape mobile com altura baixa — valores validados pelo usuário
+     via DevTools. Banner colocado mais à direita do AO VIVO + um pouco
+     maior pra ser legível em landscape compacto. */
+  @media (orientation: landscape) and (max-height: 500px) {
+    left: max(99px, env(safe-area-inset-left, 0px));
+    width: clamp(50px, 12vw, 140px);
+  }
+
+  /* Mobile portrait — valores validados pelo usuário via DevTools.
+     Banner colado bem no canto top-left, à esquerda do scoreboard
+     (que em mobile começa em left:89px). */
+  @media (max-width: 600px) {
+    top: max(6px, env(safe-area-inset-top, 0px) + 4px);
+    left: max(29px, env(safe-area-inset-left, 0px));
+    width: clamp(42px, 11vw, 83px);
+    img { border-radius: 4px; }
+  }
+}
+
+/* prefers-reduced-motion: desabilita fade — o swap é instantâneo */
+@media (prefers-reduced-motion: reduce) {
+  .ads-banner {
+    transition: none;
+    &.fading { opacity: 1; }
+  }
+}

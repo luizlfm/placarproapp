@@ -83,7 +83,7 @@
 
   <!-- ============ SIDEBAR CAMPEONATO ============ -->
   <aside class="shell-aside campeonato" *ngIf="mode() === 'campeonato'">
-    <button class="ctx-header" type="button" (click)="voltarParaLista()">
+    <button class="ctx-header" type="button" (click)="voltarDoHeader()">
       <ng-container *ngIf="campeonato$ | async as camp; else loadingC">
         <div class="ctx-logo">
           <img *ngIf="camp.logoUrl; else iconC" [src]="camp.logoUrl" [alt]="camp.titulo" />
@@ -129,7 +129,7 @@
 
   <!-- ============ SIDEBAR CATEGORIA ============ -->
   <aside class="shell-aside categoria" *ngIf="mode() === 'categoria'">
-    <button class="ctx-header" type="button" (click)="voltarParaCampeonato()">
+    <button class="ctx-header" type="button" (click)="voltarDoHeader()">
       <ng-container *ngIf="campeonato$ | async as camp; else loadingCat">
         <div class="ctx-logo">
           <img *ngIf="camp.logoUrl; else iconCat" [src]="camp.logoUrl" [alt]="camp.titulo" />

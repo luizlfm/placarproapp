@@ -1,0 +1,178 @@
+/* Hero (header destacado) */
+.hero {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 14px;
+  padding: 4px 0;
+}
+.hero-icon {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--ion-color-secondary, #7CC61D) 0%, #5a9912 100%);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 10px rgba(124, 198, 29, 0.30);
+
+  ion-icon { font-size: 32px; }
+
+  &.premium {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
+  }
+}
+.hero-text {
+  flex: 1; min-width: 0;
+  h2 {
+    margin: 0 0 2px;
+    font-size: 17px;
+    font-weight: 800;
+    color: #1f2937;
+  }
+  p {
+    margin: 0;
+    font-size: 12.5px;
+    color: #6b7280;
+    display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  }
+}
+
+.tipo-tag {
+  display: inline-block;
+  background: var(--ion-color-secondary, #7CC61D);
+  color: #fff;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 0.4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  text-transform: uppercase;
+
+  &.premium {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  }
+}
+
+/* Saldo */
+.saldo-line {
+  display: flex; align-items: baseline; gap: 8px;
+  background: rgba(124, 198, 29, 0.10);
+  color: #000;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 14px;
+  strong { font-size: 18px; }
+
+  &.saldo-premium {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.06) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+}
+
+/* Step header */
+.step-h {
+  font-size: 13px;
+  font-weight: 800;
+  margin: 8px 0 8px;
+  color: #1f2937;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Stepper */
+.creditos-stepper {
+  display: grid;
+  grid-template-columns: 52px 1fr 52px;
+  gap: 10px;
+  align-items: stretch;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 14px;
+}
+.step-btn {
+  background: var(--ion-color-secondary, #7CC61D);
+  color: #fff;
+  border: 0;
+  border-radius: 10px;
+  width: 52px;
+  min-height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease, transform 120ms ease;
+
+  ion-icon { font-size: 24px; }
+
+  &:hover:not(:disabled) { background: #6db317; }
+  &:active:not(:disabled) { transform: scale(0.95); }
+  &:disabled {
+    background: #e5e7eb;
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+}
+.step-info {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  text-align: center;
+
+  .step-num {
+    font-size: 30px;
+    font-weight: 800;
+    color: #1f2937;
+    line-height: 1;
+  }
+  .step-lbl {
+    font-size: 11px;
+    font-weight: 700;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-top: 2px;
+  }
+  .step-sub {
+    font-size: 11.5px;
+    color: var(--ion-color-secondary, #7CC61D);
+    font-weight: 700;
+    margin-top: 1px;
+  }
+}
+
+/* Resumo */
+.resumo {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #f9fafb;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+.resumo-line {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; padding: 4px 0;
+  color: #4b5563;
+  strong { color: #1f2937; }
+  &.custo {
+    border-top: 1px dashed #d1d5db;
+    margin-top: 6px; padding-top: 8px;
+    font-weight: 700;
+    color: var(--ion-color-secondary, #7CC61D);
+    strong { color: var(--ion-color-secondary, #7CC61D); font-size: 15px; }
+  }
+}
+.resumo-preco {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-left: 4px;
+}
+
+.saldo-warning {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: #dc2626;
+  display: flex; align-items: center; gap: 6px;
+  text-align: center; justify-content: center;
+  ion-icon { font-size: 16px; }
+  a { color: var(--ion-color-secondary, #7CC61D); font-weight: 700; text-decoration: underline; }
+}

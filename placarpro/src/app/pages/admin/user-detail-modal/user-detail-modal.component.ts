@@ -79,6 +79,11 @@ export class UserDetailModalComponent implements OnInit {
     { value: 'racha',       label: 'Racha (pelada)' },
   ];
 
+  /** Preços unitários dos créditos (editáveis no admin → Valores). */
+  get precoCreditoNormal(): number { return this.planosSrv.precoCreditoNormal; }
+  get precoCreditoPremium(): number { return this.planosSrv.precoCreditoPremium; }
+  get precoTransmissaoAvulsa(): number { return this.planosSrv.VALOR_TRANSMISSAO_AVULSA; }
+
   constructor() {
     this.planos = inject(PlanosService).planos;
   }
@@ -185,6 +190,66 @@ export class UserDetailModalComponent implements OnInit {
     }
   }
 
+  // ============ Créditos de patrocínio (ads) ============
+  salvandoCreditos = false;
+  deltaCreditos = 0;
+
+  ajustarCreditosPatrocinio(delta: number): void {
+    const saldoAtual = (this.usuario.creditosPatrocinio ?? 0);
+    const novoTotal = saldoAtual + this.deltaCreditos + delta;
+    if (novoTotal < 0) return;
+    this.deltaCreditos += delta;
+  }
+
+  async salvarCreditosPatrocinio(): Promise<void> {
+    if (this.deltaCreditos === 0) return;
+    this.salvandoCreditos = true;
+    try {
+      await this.usersSrv.updateCreditosPatrocinio(this.usuario.uid, this.deltaCreditos);
+      this.usuario.creditosPatrocinio = (this.usuario.creditosPatrocinio ?? 0) + this.deltaCreditos;
+      this.deltaCreditos = 0;
+      await this.toast(
+        `Créditos atualizados. Saldo: ${this.usuario.creditosPatrocinio}`,
+        'success',
+      );
+    } catch (err) {
+      console.error('[UserDetail] erro créditos', err);
+      await this.toast('Falha ao atualizar créditos.', 'danger');
+    } finally {
+      this.salvandoCreditos = false;
+    }
+  }
+
+  // ============ Créditos PREMIUM (banner vertical 9:16) ============
+  salvandoCreditosPremium = false;
+  deltaCreditosPremium = 0;
+
+  ajustarCreditosPremium(delta: number): void {
+    const saldoAtual = (this.usuario.creditosPatrocinioPremium ?? 0);
+    const novoTotal = saldoAtual + this.deltaCreditosPremium + delta;
+    if (novoTotal < 0) return;
+    this.deltaCreditosPremium += delta;
+  }
+
+  async salvarCreditosPremium(): Promise<void> {
+    if (this.deltaCreditosPremium === 0) return;
+    this.salvandoCreditosPremium = true;
+    try {
+      await this.usersSrv.updateCreditosPatrocinioPremium(this.usuario.uid, this.deltaCreditosPremium);
+      this.usuario.creditosPatrocinioPremium = (this.usuario.creditosPatrocinioPremium ?? 0) + this.deltaCreditosPremium;
+      this.deltaCreditosPremium = 0;
+      await this.toast(
+        `Créditos PREMIUM atualizados. Saldo: ${this.usuario.creditosPatrocinioPremium}`,
+        'success',
+      );
+    } catch (err) {
+      console.error('[UserDetail] erro créditos premium', err);
+      await this.toast('Falha ao atualizar créditos premium.', 'danger');
+    } finally {
+      this.salvandoCreditosPremium = false;
+    }
+  }
+
   async salvarPlano(): Promise<void> {
     const planoAtual = (this.usuario.plano ?? 'gratis') as PlanoId;
     if (this.planoSelecionado === planoAtual) {
@@ -196,28 +261,13 @@ export class UserDetailModalComponent implements OnInit {
       await this.planosSrv.alterarPlanoDoUsuario(this.usuario.uid, this.planoSelecionado);
       this.usuario.plano = this.planoSelecionado;
 
-      // ── Auto-ajuste de créditos de transmissão ──────────────────────────
-      // Quando o plano muda, recalcula transmissoesExtras preservando
-      // os créditos avulsos comprados e substituindo apenas a parcela
-      // incluída no plano (ex.: gratis → grande: +1; grande → profissional: +2).
-      const oldDef        = this.planosSrv.getPlanoDef(planoAtual);
-      const newDef        = this.planosSrv.getPlanoDef(this.planoSelecionado);
-      const oldPlanCred   = oldDef.limites.maxTransmisoesSimultaneas === -1 ? 999 : oldDef.limites.maxTransmisoesSimultaneas;
-      const newPlanCred   = newDef.limites.maxTransmisoesSimultaneas === -1 ? 999 : newDef.limites.maxTransmisoesSimultaneas;
-
-      if (newPlanCred !== oldPlanCred) {
-        // Créditos avulsos = total atual − parcela do plano antigo
-        const totalAtual    = this.usuario.transmissoesExtras ?? oldPlanCred;
-        const avulsosAtuais = Math.max(0, totalAtual - oldPlanCred);
-        const novoTotal     = avulsosAtuais + newPlanCred;
-        await this.usersSrv.adminAtualizarUser(this.usuario.uid, { transmissoesExtras: novoTotal });
-        this.usuario.transmissoesExtras = novoTotal;
-      }
-      // ────────────────────────────────────────────────────────────────────
-
-      const txInfo = newPlanCred > 0 ? ` (${newPlanCred} transmissão(ões) incluída(s))` : '';
+      // NOTA: o plano NÃO concede mais créditos de transmissão. Os créditos
+      // de transmissão vêm exclusivamente da compra avulsa ("Crédito de
+      // transmissão" em /app/meus-creditos), gravada em `transmissoesExtras`.
+      // Por isso não mexemos em `transmissoesExtras` ao alterar o plano.
+      const newDef = this.planosSrv.getPlanoDef(this.planoSelecionado);
       await this.toast(
-        `Plano alterado para "${newDef.label}"${txInfo}.`,
+        `Plano alterado para "${newDef.label}".`,
         'success',
       );
     } catch (err) {

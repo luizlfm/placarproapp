@@ -79,14 +79,16 @@
            o banner do patrocinador na transmissao.page. Agora o contador
            aparece no footer bottom-right da tela, fora da área de vídeo.) -->
 
-      <!-- ════════ BANNER PATROCINADOR (overlay rotativo) ════════
-           Aparece no canto inferior ESQUERDO do vídeo. Rotaciona entre
-           os patrocinadores carregados via `[ownerIdPatrocinadores]`,
-           respeitando escopo de campeonato/categoria. Some quando não
-           há nenhum patrocinador disponível. -->
-      <div class="tp-banner-patrocinador" *ngIf="bannerUrlAtual() as bUrl">
+      <!-- ════════ BANNER PATROCINADOR ANTIGO — DESATIVADO ════════
+           O banner gratuito rotativo via `[ownerIdPatrocinadores]` foi
+           removido em favor do banner de patrocínios PAGOS (componente
+           `app-esteira-ads`), agora posicionado no canto superior
+           direito do vídeo, ao lado do scoreboard. A lógica de rotação
+           no .ts é mantida pra não quebrar outros usos do componente,
+           só o render foi removido aqui. -->
+      <!-- <div class="tp-banner-patrocinador" *ngIf="bannerUrlAtual() as bUrl">
         <img [src]="bUrl" alt="" loading="lazy" />
-      </div>
+      </div> -->
 
       <!-- Controles (mute / qualidade / fullscreen) — canto inferior direito. -->
       <div class="tp-controles">

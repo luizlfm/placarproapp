@@ -1,7 +1,10 @@
 import { Component, Input, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LoadingController, ModalController, PopoverController, ToastController } from '@ionic/angular';
+import { firstValueFrom } from 'rxjs';
 import { CategoriasService } from '../../../../campeonatos/categorias.service';
+import { CampeonatosService } from '../../../../campeonatos/campeonatos.service';
+import { PlanosService } from '../../../../users/planos.service';
 import { TipoFase } from '../../../../campeonatos/categoria.model';
 import { MODALIDADES, Modalidade, ModalidadeId, getModalidade } from '../../../../campeonatos/modalidades';
 import { ModalidadePickerComponent } from '../../../../shared/components/modalidade-picker/modalidade-picker.component';
@@ -17,6 +20,8 @@ export class NovaCategoriaModalComponent {
 
   private readonly fb = inject(FormBuilder);
   private readonly categoriasSrv = inject(CategoriasService);
+  private readonly campeonatosSrv = inject(CampeonatosService);
+  private readonly planosSrv = inject(PlanosService);
   private readonly modalCtrl = inject(ModalController);
   private readonly subModalCtrl = inject(ModalController);
   private readonly loadingCtrl = inject(LoadingController);
@@ -76,6 +81,24 @@ export class NovaCategoriaModalComponent {
       this.form.markAllAsTouched();
       return;
     }
+
+    // ── Limite de categorias por campeonato (plano do DONO) ─────────────
+    const camp = await firstValueFrom(this.campeonatosSrv.get$(this.campeonatoId));
+    const [limites, cats] = await Promise.all([
+      firstValueFrom(this.planosSrv.limitesParaOwner$(camp?.ownerId)),
+      firstValueFrom(this.categoriasSrv.list$(this.campeonatoId)),
+    ]);
+    if (!this.planosSrv.podeAdicionar(cats.length, limites.maxCategoriasPorCampeonato)) {
+      const aviso = await this.toastCtrl.create({
+        message: `O plano permite até ${limites.maxCategoriasPorCampeonato} categoria(s) por campeonato. Faça upgrade pra criar mais.`,
+        duration: 3500,
+        position: 'top',
+        color: 'warning',
+      });
+      await aviso.present();
+      return;
+    }
+
     const loader = await this.loadingCtrl.create({ message: 'Criando...' });
     await loader.present();
     this.loading = true;

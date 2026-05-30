@@ -1,21 +1,5 @@
 import { Component, OnDestroy, OnInit, inject, ChangeDetectorRef, ElementRef, ViewChild, AfterViewInit, signal } from '@angular/core';
-
-/** Tipo mínimo do YouTube IFrame Player (não tem types oficial). */
-interface YTPlayer {
-  seekTo(seconds: number, allowSeekAhead: boolean): void;
-  playVideo(): void;
-  pauseVideo(): void;
-  getCurrentTime(): number;
-  destroy?(): void;
-}
-declare global {
-  interface Window {
-    YT: { Player: new (el: HTMLElement | string, opts: unknown) => YTPlayer };
-    onYouTubeIframeAPIReady?: () => void;
-  }
-}
 import { ActivatedRoute, Router } from '@angular/router';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom, Observable, of, Subscription } from 'rxjs';
 import { Campeonato } from '../../../../campeonatos/campeonato.model';
 import { Categoria } from '../../../../campeonatos/categoria.model';
@@ -31,6 +15,7 @@ import { JogadoresService } from '../../../../campeonatos/jogadores.service';
 import { JogosService } from '../../../../campeonatos/jogos.service';
 import { TransmissoesService } from '../../../../campeonatos/transmissoes.service';
 import { Transmissao } from '../../../../campeonatos/models/transmissao.model';
+import { PatrociniosService } from '../../../../campeonatos/patrocinios.service';
 import { UsersService } from '../../../../users/users.service';
 import { PlanosService } from '../../../../users/planos.service';
 import { NavBackService } from '../../../../shared/nav-back.service';
@@ -62,14 +47,14 @@ export interface JogadorEscaladoView {
 }
 
 /**
- * Página de transmissão de jogo — embute player do YouTube + overlay
+ * Página de transmissão de jogo — player LiveKit (câmera) + overlay
  * com placar/escudos/cronômetro renderizado pelo PWA.
  *
  * Rota: `/app/campeonato/:id/categoria/:catId/jogo/:jogoId/transmissao`
  *
  * Stream real-time:
- *  - O jogo é assinado via Firestore onSnapshot — placar, status, golsX
- *    e youtubeVideoId atualizam sem refresh.
+ *  - O jogo é assinado via Firestore onSnapshot — placar, status e golsX
+ *    atualizam sem refresh.
  *  - Eventos (gols/cartões) aparecem como "feed" lateral em tempo real.
  *  - Patrocinadores do dono do campeonato rotacionam no rodapé.
  */
@@ -81,9 +66,6 @@ export interface JogadorEscaladoView {
   host: { class: 'ion-page' },
 })
 export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
-  /** Container DOM onde o YouTube IFrame Player vai ser montado. */
-  @ViewChild('ytPlayerEl') ytPlayerEl?: ElementRef<HTMLDivElement>;
-
   /** Container do PÔSTER de fim de jogo (capturado via html2canvas
    *  pra gerar PNG baixável). */
   @ViewChild('posterCaptura') posterCaptura?: ElementRef<HTMLDivElement>;
@@ -102,23 +84,17 @@ export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
    *  se houve novo evento (e só aí scrollar). */
   private ultimoCountEventos = 0;
 
-  /** Instância do player do YouTube (carrega via IFrame API). */
-  private ytPlayer?: YTPlayer;
-  /** True quando o IFrame API já carregou. */
-  private ytReady = false;
-  /** Quando o player é criado, guarda o videoId atual pra detectar mudança. */
-  private ytVideoAtual?: string;
   /** Highlight visual do evento que foi "Ver lance" (animação flash). */
   eventoDestacadoId?: string;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly sanitizer = inject(DomSanitizer);
   private readonly campsSrv = inject(CampeonatosService);
   private readonly catsSrv = inject(CategoriasService);
   private readonly equipesSrv = inject(EquipesService);
   private readonly jogadoresSrv = inject(JogadoresService);
   private readonly jogosSrv = inject(JogosService);
   private readonly transmissoesSrv = inject(TransmissoesService);
+  private readonly patrSrv = inject(PatrociniosService);
   private readonly usersSrv = inject(UsersService);
   private readonly planosSrv = inject(PlanosService);
   private readonly navBack = inject(NavBackService);
@@ -159,9 +135,6 @@ export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
   corMandante = '#8b94a3';
   corVisitante = '#8b94a3';
 
-  /** URL segura do iframe do YouTube (calculada quando jogo.youtubeVideoId muda). */
-  youtubeEmbedUrl?: SafeResourceUrl;
-
   /** Transmissão LiveKit ATIVA pro jogo (ou null se ninguém transmitindo).
    *  Inicializado em `ngOnInit` após termos campeonatoId/categoriaId/jogoId. */
   transmissaoAtiva$: Observable<Transmissao | null> = of(null);
@@ -181,6 +154,25 @@ export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
   /** ID da transmissão LiveKit que estou monitorando (pro broadcaster encerrar
    *  via botão "Encerrar transmissão" na page sem precisar reabrir modal). */
   transmissaoAtivaId?: string;
+
+  /** Flag pra disparar `iniciarPatrociniosDoJogo` UMA vez por sessão da
+   *  página quando detectamos transmissão ativa. A função do service é
+   *  idempotente (só toca patrocínios com status='agendado'), mas evita
+   *  re-execução desnecessária em todo emit do observable. */
+  private patrociniosIniciados = false;
+
+  /** True quando a janela PREMIUM está aberta (6s). */
+  premiumOverlayAtivo = false;
+  onPremiumOverlayMudou(visivel: boolean): void {
+    this.premiumOverlayAtivo = visivel;
+    // Alterna classe no <body> pra esconder o FAB do feed (que tem
+    // position:fixed e ficaria no canto inferior direito competindo
+    // visualmente com o banner premium vertical).
+    if (typeof document !== 'undefined') {
+      document.body.classList.toggle('premium-on-stage', visivel);
+    }
+    this.cdr.markForCheck();
+  }
 
   loading = true;
   erro = false;
@@ -251,8 +243,7 @@ export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
     // SÓ APLICA na rota AUTENTICADA (/app/campeonato/.../transmissao) —
     // a rota PÚBLICA (/transmissao/:id/:catId/:jogoId) é compartilhável
     // e aberta a qualquer torcedor SEM login. Quem paga é o ORGANIZADOR
-    // que CONFIGURA o link de YouTube (modal Editar Partida); quem
-    // ASSISTE não precisa de plano.
+    // que INICIA a transmissão pela câmera; quem ASSISTE não precisa de plano.
     //
     // Detecta o contexto pela URL: prefixo `/app/` = área autenticada;
     // prefixo `/transmissao/` = público.
@@ -288,14 +279,25 @@ export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
 
     // Inicializa observables que dependem dos params da rota.
     // - `transmissaoAtiva$` → reativo, controla se o player LiveKit aparece
-    //   no lugar do YouTube (e se mostra "Encerrar transmissão" pro broadcaster).
+    //   (e se mostra "Encerrar transmissão" pro broadcaster).
     // - `permissoes$` → owner/moderador podem ver botão "Iniciar transmissão"
-    //   no empty state quando não há nem YouTube nem LiveKit ativo.
+    //   no empty state quando não há transmissão LiveKit ativa.
     this.transmissaoAtiva$ = this.transmissoesSrv.ativa$(
       this.campeonatoId, this.categoriaId, this.jogoId,
     );
     const subAtiva = this.transmissaoAtiva$.subscribe(t => {
       this.transmissaoAtivaId = t?.id;
+      // Quando uma transmissão ATIVA aparece pela primeira vez nessa
+      // sessão da página, dispara o "start" dos patrocínios pagos:
+      // marca todos com status='agendado' como 'ativo' e calcula
+      // expiraEm = agora + 60min. Idempotente — se rodar duas vezes
+      // não duplica, mas evitamos chamar a cada emit do observable.
+      if (t && !this.patrociniosIniciados) {
+        this.patrociniosIniciados = true;
+        this.patrSrv
+          .iniciarPatrociniosDoJogo(this.campeonatoId, this.categoriaId, this.jogoId)
+          .catch(err => console.warn('[Transmissao] erro ao iniciar patrocínios', err));
+      }
       this.cdr.markForCheck();
     });
     this.subs.push(subAtiva);
@@ -312,13 +314,12 @@ export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
       this.campeonato = camp;
       this.categoria = cat;
 
-      // Subscribe realtime ao jogo (placar/status/videoId atualizam ao vivo).
+      // Subscribe realtime ao jogo (placar/status atualizam ao vivo).
       // Também re-sincroniza patrocinadores da partida, pra refletir add/remove
       // feitos no editor sem precisar reload da página da transmissão.
       const subJogo = this.jogosSrv.get$(this.campeonatoId, this.categoriaId, this.jogoId)
         .subscribe(j => {
           this.jogo = j;
-          this.atualizarEmbed();
           this.sincronizarCronometro();
           this.sincronizarPatrocinadores();
           this.cdr.markForCheck();
@@ -423,7 +424,6 @@ export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.carregarYTApi();
     // Auto fullscreen + landscape no primeiro TOQUE/CLIQUE em mobile.
     // Browsers (incluindo Chrome Android, Firefox, Safari) exigem user
     // gesture pra disparar `requestFullscreen()` e `orientation.lock()`,
@@ -483,8 +483,12 @@ export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
     this.subs.forEach(s => s.unsubscribe());
     if (this.rotacaoTimer) window.clearInterval(this.rotacaoTimer);
     if (this.eventoToastTimer) window.clearTimeout(this.eventoToastTimer);
+    // Garante que a classe `premium-on-stage` não fica grudada no <body>
+    // se sairmos da página durante uma janela premium ativa.
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('premium-on-stage');
+    }
     this.pararCronometro();
-    try { this.ytPlayer?.destroy?.(); } catch { /* ignore */ }
     try { this.audioCtx?.close(); } catch { /* ignore */ }
     // Destrava landscape ao sair da página (pra não afetar outras telas)
     this.destravarLandscape();
@@ -598,103 +602,6 @@ export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
     this.landscapeLockOk = false;
   }
 
-  /** Carrega o YouTube IFrame Player API (script global, idempotente). */
-  private carregarYTApi(): void {
-    if (window.YT?.Player) {
-      this.ytReady = true;
-      this.criarYtPlayerSeNecessario();
-      return;
-    }
-    // Hook global pro YouTube avisar quando o script carregou
-    const previo = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = () => {
-      previo?.();
-      this.ytReady = true;
-      this.criarYtPlayerSeNecessario();
-    };
-    // Injeta o script só uma vez (verifica se já existe)
-    if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-      const s = document.createElement('script');
-      s.src = 'https://www.youtube.com/iframe_api';
-      document.head.appendChild(s);
-    }
-  }
-
-  /** Cria a instância do player quando a API + videoId estiverem prontos. */
-  private criarYtPlayerSeNecessario(): void {
-    if (!this.ytReady) return;
-    const videoId = this.jogo?.youtubeVideoId;
-    if (!videoId) return;
-    if (!this.ytPlayerEl?.nativeElement) return;
-    // Se já criou pro mesmo vídeo, não recria
-    if (this.ytPlayer && this.ytVideoAtual === videoId) return;
-
-    // Destrói player antigo se trocou o vídeo
-    if (this.ytPlayer && this.ytVideoAtual !== videoId) {
-      try { this.ytPlayer.destroy?.(); } catch { /* ignore */ }
-      this.ytPlayer = undefined;
-    }
-
-    this.ytVideoAtual = videoId;
-    this.ytPlayer = new window.YT.Player(this.ytPlayerEl.nativeElement, {
-      videoId,
-      // 100% pra ocupar todo o container `.tr-video` (que tem aspect-ratio 16:9).
-      // Sem isso, a API cria iframe default 640×360 fixo.
-      width: '100%',
-      height: '100%',
-      playerVars: {
-        autoplay: 1,
-        modestbranding: 1,
-        rel: 0,
-        playsinline: 1,
-      },
-      events: {
-        // Quando o player tá pronto pra ser controlado
-        onReady: () => { /* já tá tocando por autoplay */ },
-      },
-    });
-  }
-
-  /** Pula pro segundo X do vídeo (chamado pelos botões "Ver lance"). */
-  verLance(evento: EventoJogo | EventoEnriquecido): void {
-    if (!evento.minuto) return;
-    // Converte minuto do jogo pra segundo do vídeo (assumindo que o vídeo
-    // começa no segundo 0 = minuto 0 do jogo). Ajuste fino aqui pra
-    // compensar atraso de início pode ser feito com um offset salvo no Jogo.
-    const segundos = Math.max(0, evento.minuto * 60);
-    try {
-      this.ytPlayer?.seekTo(segundos, true);
-      this.ytPlayer?.playVideo();
-    } catch (err) {
-      console.warn('[Transmissao] seek falhou', err);
-    }
-    // Feedback visual no feed
-    this.eventoDestacadoId = evento.id;
-    setTimeout(() => {
-      if (this.eventoDestacadoId === evento.id) this.eventoDestacadoId = undefined;
-      this.cdr.markForCheck();
-    }, 1800);
-  }
-
-  /** (Re)cria o player do YouTube quando o videoId muda. Mantém a URL
-   *  fallback (sanitizada) caso a API IFrame falhe em carregar. */
-  private atualizarEmbed(): void {
-    if (!this.jogo?.youtubeVideoId) {
-      this.youtubeEmbedUrl = undefined;
-      try { this.ytPlayer?.destroy?.(); } catch { /* ignore */ }
-      this.ytPlayer = undefined;
-      this.ytVideoAtual = undefined;
-      return;
-    }
-    // Fallback URL pra caso a API IFrame não carregue (raro)
-    const params = new URLSearchParams({
-      autoplay: '1', modestbranding: '1', rel: '0', playsinline: '1',
-    });
-    const url = `https://www.youtube.com/embed/${this.jogo.youtubeVideoId}?${params.toString()}`;
-    this.youtubeEmbedUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
-    // Cria/recria o player controlável (precisa do AfterViewInit ter rodado)
-    setTimeout(() => this.criarYtPlayerSeNecessario(), 0);
-  }
 
   /** Rotaciona patrocinadores em modo esteira a cada 6s. O card anterior
    *  desliza pra esquerda e o novo entra pela direita (CSS faz a animação). */
@@ -759,8 +666,8 @@ export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
    * Abre o modal de broadcaster LiveKit — preview da câmera + botão iniciar.
    * Quando o admin confirma "INICIAR TRANSMISSÃO", o modal cria o doc Firestore
    * (ativa: true) → o `transmissaoAtiva$` desta página detecta e renderiza
-   * o `app-transmissao-player` no lugar do YouTube. Modal continua aberto
-   * pra o broadcaster ver os controles (mute mic, cam toggle, stop).
+   * o `app-transmissao-player`. Modal continua aberto pra o broadcaster
+   * ver os controles (mute mic, cam toggle, stop).
    */
   async iniciarTransmissaoCamera(): Promise<void> {
     const rotulo = `${this.mandante?.nome ?? '?'} x ${this.visitante?.nome ?? '?'}`;

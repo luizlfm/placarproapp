@@ -59,6 +59,12 @@ export class PublicoJogoPage implements OnInit {
   catId = '';
   jogoId = '';
   loading = true;
+
+  /** Janela PREMIUM aberta (6s) — controla `.premium-on` no `.live-wrap`. */
+  premiumOverlayAtivo = false;
+  onPremiumOverlayMudou(visivel: boolean): void {
+    this.premiumOverlayAtivo = visivel;
+  }
   erro = false;
 
   /** Viewport mobile? Sincronizado via matchMedia. */

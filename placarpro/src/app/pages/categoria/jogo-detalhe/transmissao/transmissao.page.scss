@@ -1,5 +1,5 @@
 /* ==========================================================
-   Página de transmissão — player YouTube + overlay de placar
+   Página de transmissão — player ao vivo + overlay de placar
    ========================================================== */
 
 .tr-content {
@@ -96,6 +96,9 @@
      escalação) rola internamente. Assim o vídeo nunca sai de vista. */
   height: calc(100vh - 56px);
   overflow: hidden;
+  /* Position relative pra ancorar o `<app-premium-overlay>` que é filho
+     direto do stage e ocupa a altura COMPLETA da tela. */
+  position: relative;
 
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
@@ -471,77 +474,6 @@
   }
 }
 
-/* ════════════════════════════════════════════════════════════════════
-   BOTÃO "TRANSMITIR COM MINHA CÂMERA" — banner inferior sobre YouTube
-   ════════════════════════════════════════════════════════════════════
-   Aparece pro broadcaster quando o jogo tem YouTube configurado mas
-   ele quer publicar com a própria câmera. Posicionado CENTRAL-BOTTOM
-   do vídeo (não topo-direito, que conflita com AO VIVO / CC do YT /
-   logo PlacarPro). Verde primário da marca pra destacar como ação
-   primária; pulse sutil pra chamar atenção sem irritar. */
-.tr-btn-trocar-camera {
-  position: absolute;
-  bottom: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 15;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #7CC61D 0%, #5fa317 100%);
-  border: none;
-  border-radius: 28px;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 0 6px 24px rgba(124, 198, 29, 0.45), 0 2px 6px rgba(0, 0, 0, 0.4);
-  transition: transform 120ms ease, box-shadow 150ms ease, background 150ms ease;
-  animation: tr-btn-camera-pulse 2.2s ease-in-out infinite;
-
-  ion-icon {
-    font-size: 20px;
-  }
-
-  &:hover {
-    background: linear-gradient(135deg, #8dd620 0%, #6cb31a 100%);
-    box-shadow: 0 8px 30px rgba(124, 198, 29, 0.55), 0 3px 10px rgba(0, 0, 0, 0.45);
-    transform: translateX(-50%) translateY(-2px);
-  }
-
-  &:active {
-    transform: translateX(-50%) scale(0.97);
-  }
-
-  /* Mobile: barra mais compacta mas ainda óbvia (texto mantido — é a
-     ação principal). */
-  @media (max-width: 520px) {
-    bottom: 12px;
-    padding: 10px 16px;
-    font-size: 11.5px;
-    gap: 7px;
-
-    ion-icon {
-      font-size: 16px;
-    }
-  }
-}
-
-@keyframes tr-btn-camera-pulse {
-
-  0%,
-  100% {
-    box-shadow: 0 6px 24px rgba(124, 198, 29, 0.45), 0 2px 6px rgba(0, 0, 0, 0.4);
-  }
-
-  50% {
-    box-shadow: 0 6px 30px rgba(124, 198, 29, 0.75), 0 2px 6px rgba(0, 0, 0, 0.4);
-  }
-}
-
 /* ============ Vídeo + overlay ============ */
 .tr-video-wrap {
   display: flex;
@@ -558,9 +490,8 @@
   overflow: hidden;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
 
-  /* O YouTube IFrame API SUBSTITUI o div pelo iframe — então o iframe
-     fica como filho DIRETO de .tr-video. Garante que o iframe ocupe
-     100% mesmo se a API setar width/height inline fixos. */
+  /* Garante que qualquer iframe/vídeo embutido ocupe 100% do container,
+     mesmo se setar width/height inline fixos. */
   >iframe,
   iframe {
     position: absolute !important;
@@ -570,6 +501,52 @@
     border: 0 !important;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   Banner rotativo de patrocínios PAGOS — preenche `.tr-video` com
+   pointer-events:none e o filho `.ads-banner` se ancora no canto
+   inferior esquerdo via position interna. Acompanha o vídeo
+   inclusive em fullscreen.
+   ════════════════════════════════════════════════════════════════ */
+.tr-esteira-ads {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  /* `pointer-events: none` removido pra permitir inspeção via DevTools.
+     O componente filho `.ads-banner` continua com pointer-events: auto
+     (definido no premium-overlay.component.scss) — mas a área vazia
+     fora dele agora deixa passar pra elementos abaixo (vídeo, FAB). */
+}
+.tr-esteira-ads:empty {
+  pointer-events: none;
+}
+
+/* ═══════ Estado PREMIUM ATIVO ═══════
+   Durante a janela PREMIUM (6s):
+   - Esteira normal + scoreboard sobreposto SOMEM (fade-out)
+   - Vídeo CONTINUA exibindo (decisão do user)
+   - Painel lateral de eventos/escalação CONTINUA visível
+   - Banner premium ocupa a altura COMPLETA da viewport, encostado na
+     borda direita */
+.tr-stage.premium-on {
+  .tr-esteira-ads,
+  .tr-scoreboard {
+    opacity: 0;
+    transition: opacity 350ms ease;
+    pointer-events: none;
+  }
+}
+.tr-stage:not(.premium-on) {
+  .tr-esteira-ads,
+  .tr-scoreboard {
+    transition: opacity 200ms ease;
+  }
+}
+
+/* A regra `body.premium-on-stage .tr-feed-fab` foi MOVIDA pro
+   global.scss porque CSS scoped do componente não consegue selecionar
+   o <body> (que não tem o `_ngcontent-xxx` do componente). Vide
+   global.scss na seção "FAB do feed durante banner premium". */
 
 /* ════════════════════════════════════════════════════════════════════
    PÔSTER DE FIM DE JOGO — full overlay sobre o vídeo
@@ -1228,16 +1205,18 @@
    ════════════════════════════════════════════════════════════════════ */
 .tr-scoreboard {
   position: absolute;
-  /* 48px de clearance pro título do YouTube não cortar o pill. */
-  top: 48px;
+  /* `top: 10px` conforme pedido — fica colado no topo. */
+  top: 10px;
   left: 14px;
   right: 14px;
   max-width: 520px;
-  /* MUITO mais compacto — versão "broadcast mini" */
   margin: 0 auto;
   padding: 0;
   color: #fff;
-  pointer-events: none;
+  /* `pointer-events: none` removido pra permitir inspeção via DevTools.
+     O scoreboard não tem botões interativos, então é seguro deixar
+     pointer-events: auto. Os controles do player (mute/fullscreen) ficam
+     em outro nível e não são afetados. */
   z-index: 2;
 }
 
@@ -1560,13 +1539,11 @@
   justify-content: center;
   gap: 3px;
   padding: 2px 8px;
-  background: linear-gradient(180deg,
-      rgba(0, 0, 0, 0.94) 0%,
-      rgba(20, 33, 44, 0.96) 100%);
-  border: 1px solid rgba(124, 198, 29, 0.55);
-  /* verde secondary */
+  /* Fundo VERMELHO ESCURO (paleta broadcast tipo "AO VIVO"). */
+  background: linear-gradient(180deg, #7f1d1d 0%, #450a0a 100%);
+  border: 1px solid rgba(248, 113, 113, 0.55);
   border-radius: 999px;
-  color: var(--ion-color-secondary, #7CC61D);
+  color: #fff;
   font-size: 8px;
   font-weight: 800;
   text-transform: uppercase;
@@ -1580,7 +1557,7 @@
 
   ion-icon {
     font-size: 8.5px;
-    color: var(--ion-color-secondary, #7CC61D);
+    color: #fff;
   }
 }
 
@@ -1706,14 +1683,12 @@
   margin: 5px auto 0;
   padding: 5px 16px;
   width: fit-content;
-  background: linear-gradient(180deg,
-      var(--ion-color-secondary-tint, #8ccf33) 0%,
-      var(--ion-color-secondary, #7CC61D) 50%,
-      var(--ion-color-secondary-shade, #6dae1a) 100%);
+  /* Fundo VERMELHO ESCURO (paleta broadcast tipo "AO VIVO") */
+  background: linear-gradient(180deg, #7f1d1d 0%, #450a0a 50%, #2f0606 100%);
   border-radius: 999px;
   border: 1.5px solid rgba(255, 255, 255, 0.40);
   box-shadow:
-    0 5px 14px rgba(124, 198, 29, 0.40),
+    0 5px 14px rgba(127, 29, 29, 0.45),
     0 2px 6px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.30);
   color: #fff;
@@ -1759,6 +1734,14 @@
       box-shadow: 0 0 6px rgba(255, 255, 255, 0.80);
       animation: trTempoPulse 1.2s ease-in-out infinite;
     }
+    @media (orientation: landscape) and (max-height: 500px) {
+      .tr-sb-tempo-relogio {
+        font-size: 9px;
+      }
+      .tr-sb-tempo-relogio.ion-icon {
+        font-size: 6px;
+      }
+    }
   }
 
   .tr-sb-tempo-acrescimo {
@@ -1772,13 +1755,19 @@
   }
 
   @media (max-width: 600px) {
-    margin-top: 4px;
-    padding: 4px 12px;
-    font-size: 11px;
-    gap: 5px;
+    /* Mobile: cronômetro MENOR — pílula compacta. */
+    margin-top: 2px;
+    padding: 2px 8px;
+    font-size: 9px;
+    gap: 3px;
+    border-width: 1px;
 
     .tr-sb-tempo-relogio {
-      font-size: 11.5px;
+      font-size: 9px;
+    }
+    .tr-sb-tempo-acrescimo {
+      font-size: 8px;
+      padding: 0 4px;
     }
   }
 }
@@ -2567,17 +2556,21 @@
   right: 18px;
   z-index: 50;
 
-  /* MODIFICADOR `--in-video`: prende o FAB DENTRO da área do vídeo
-     (`.tr-video`) em vez de colar no canto inferior direito da
-     viewport. Sem isso, em desktops com `.tr-video` que não enche
-     a tela (ex: 1565x945 com aspect-ratio 16:9 deixando ~150px
-     livre embaixo), o FAB ficava visualmente desligado do player.
-     Com position: absolute + offset parent .tr-video, ele acompanha
-     o canto do vídeo independente do tamanho da viewport. */
+  /* MODIFICADOR `--in-video`: ANTES prendia o FAB dentro da área do
+     `.tr-video` (position absolute), mas como o vídeo pode ficar
+     centralizado com letterbox preto em desktops grandes, o FAB
+     ficava DENTRO da área do vídeo e em algumas situações invisível
+     (sobreposto à imagem do vídeo, ou cortado por outros overlays).
+     Voltamos a usar `position: fixed` no canto inferior direito da
+     VIEWPORT — sempre visível em qualquer tamanho de tela.
+     z-index alto pra ficar acima de qualquer overlay (premium/etc). */
   &.tr-feed-fab--in-video {
-    position: absolute;
-    bottom: 100px;
-    right: 14px;
+    /* Posicionamento ajustado via DevTools pelo usuário. `bottom: 91px`
+       fica acima dos controles do player (mute/auto/fullscreen). */
+    position: fixed;
+    bottom: 91px;
+    right: 24px;
+    z-index: 100;
   }
   width: 52px;
   height: 52px;
@@ -3843,11 +3836,13 @@
     }
   }
 
-  /* Pill do período (1º TEMPO) mini. */
+  /* Pill do período (1º TEMPO) mini — sobe pra cima do scoreboard pra
+     não cobrir o nome do campeonato logo abaixo. Valor `top: -17px`
+     validado via DevTools pelo usuário. */
   .tr-sb-periodo {
     font-size: clamp(5.5px, 1.7vw, 7.5px);
     padding: 1px 5px;
-    top: -7px;
+    top: -17px;
 
     ion-icon {
       font-size: clamp(6px, 1.8vw, 7.5px);
@@ -4163,6 +4158,14 @@
     max-width: 320px;
   }
 
+  /* Pílula "1º TEMPO" em landscape — valor validado pelo usuário via
+     DevTools (top: -16px). */
+  .tr-sb-periodo {
+    top: -16px !important;
+    font-size: 7px !important;
+    padding: 1px 6px !important;
+  }
+
   .tr-sb-camp-bar {
     padding: 1px 22px;
     font-size: 7.5px;
@@ -4196,6 +4199,7 @@
 
   .tr-sb-team .tr-sb-nome {
     font-size: 8.5px;
+    font-weight: normal;
   }
 
   /* Banner do patrocinador em landscape — POSITION FIXED pra não ser
@@ -4218,10 +4222,12 @@
   /* Stage herda 100% do wrapper (sem altura fixa — aspect-ratio cuida). */
 
   /* Logo PlacarPro em landscape — tamanho ajustado pra ficar bem
-     reconhecível sem competir muito com o vídeo. */
+     reconhecível sem competir muito com o vídeo. `margin-top` negativo
+     pra encostar no topo do container, ganhando espaço vertical. */
   .tr-logo2 {
-    width: 54px !important;
-    max-height: 29px !important;
+    width: 60px !important;
+    max-height: 39px !important;
+    margin-top: -10px;
   }
 
   .tr-live-tag {
@@ -4270,6 +4276,41 @@
       font-size: 12px;
     }
   }
+
+  /* Cronômetro (.tr-sb-tempo + .tr-sb-tempo-relogio) em landscape —
+     valores validados pelo usuário via DevTools. Compacto pra caber
+     bem em landscape mobile. */
+  .tr-sb-tempo {
+    margin: 2px auto 0;
+
+    .tr-sb-tempo-relogio {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 9px;
+      font-weight: 800;
+      color: #fff;
+
+      &.pausado ion-icon {
+        font-size: 10px;
+        color: #f1b500;
+      }
+    }
+  }
+
+  /* Nome do campeonato na faixa superior — `display: contents` faz o
+     elemento sumir do fluxo (filhos sobem) + font normal pra reduzir
+     peso visual em landscape. Valores validados via DevTools. */
+  .tr-sb-camp-bar .tr-sb-camp-nome {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: contents;
+    font-weight: normal;
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -4296,6 +4337,14 @@
 
   .tr-scoreboard {
     top: 12px;
+  }
+
+  /* Em landscape ultra-estreito o `.tr-sb-camp-bar` some, então o
+     período pode ficar bem perto do top do scoreboard. */
+  .tr-sb-periodo {
+    top: -10px !important;
+    font-size: 6.5px !important;
+    padding: 1px 5px !important;
   }
 }
 

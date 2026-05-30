@@ -92,6 +92,15 @@
       <button
         type="button"
         class="ad-tab"
+        [class.active]="secao === 'valores'"
+        (click)="selecionarSecao('valores')"
+      >
+        <ion-icon name="pricetags-outline"></ion-icon>
+        <span>Valores</span>
+      </button>
+      <button
+        type="button"
+        class="ad-tab"
         [class.active]="secao === 'cobrancas'"
         (click)="selecionarSecao('cobrancas')"
       >
@@ -129,6 +138,70 @@
 
     <!-- ============ Seção: DASHBOARD ============ -->
     <section class="ad-secao" *ngIf="secao === 'dashboard'">
+      <!-- Card de AÇÕES PENDENTES — alertas pro admin agir
+           Aparece no topo do dashboard quando há qualquer item pendente.
+           Cada chip leva direto pra aba/filtro relevante. -->
+      <ng-container *ngIf="acoesPendentes$ | async as ap">
+        <div class="ad-alertas" *ngIf="ap.total > 0 || ap.jogosAoVivo > 0 || ap.contasBanidas > 0">
+          <div class="ad-alertas-head">
+            <ion-icon name="notifications-outline"></ion-icon>
+            <strong>Ações pendentes</strong>
+            <span class="ad-alertas-total" *ngIf="ap.total > 0">{{ ap.total }}</span>
+          </div>
+          <div class="ad-alertas-chips">
+            <button
+              *ngIf="ap.moderadoresPendentes > 0"
+              type="button"
+              class="ad-alerta-chip warn"
+              (click)="selecionarSecao('usuarios'); setFiltroStatusUsuario('pendentes')"
+              title="Validar moderadores aguardando aprovação"
+            >
+              <ion-icon name="hourglass-outline"></ion-icon>
+              <strong>{{ ap.moderadoresPendentes }}</strong>
+              moderador{{ ap.moderadoresPendentes === 1 ? '' : 'es' }} pendente{{ ap.moderadoresPendentes === 1 ? '' : 's' }}
+            </button>
+            <button
+              *ngIf="ap.contasBloqueadas > 0"
+              type="button"
+              class="ad-alerta-chip danger"
+              (click)="selecionarSecao('usuarios'); setFiltroStatusUsuario('bloqueados')"
+              title="Ver contas bloqueadas"
+            >
+              <ion-icon name="lock-closed-outline"></ion-icon>
+              <strong>{{ ap.contasBloqueadas }}</strong>
+              bloqueada{{ ap.contasBloqueadas === 1 ? '' : 's' }}
+            </button>
+            <button
+              *ngIf="ap.contasBanidas > 0"
+              type="button"
+              class="ad-alerta-chip danger"
+              (click)="selecionarSecao('usuarios'); setFiltroStatusUsuario('banidos')"
+              title="Ver contas banidas"
+            >
+              <ion-icon name="ban-outline"></ion-icon>
+              <strong>{{ ap.contasBanidas }}</strong>
+              banida{{ ap.contasBanidas === 1 ? '' : 's' }}
+            </button>
+            <button
+              *ngIf="ap.cobrancasAtrasadas > 0"
+              type="button"
+              class="ad-alerta-chip warn"
+              (click)="selecionarSecao('cobrancas')"
+              title="Ver cobranças atrasadas"
+            >
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              <strong>{{ ap.cobrancasAtrasadas }}</strong>
+              cobrança{{ ap.cobrancasAtrasadas === 1 ? '' : 's' }} atrasada{{ ap.cobrancasAtrasadas === 1 ? '' : 's' }}
+            </button>
+            <div *ngIf="ap.jogosAoVivo > 0" class="ad-alerta-chip success" title="Jogos transmitindo agora">
+              <span class="dot-live"></span>
+              <strong>{{ ap.jogosAoVivo }}</strong>
+              jogo{{ ap.jogosAoVivo === 1 ? '' : 's' }} ao vivo
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
       <ng-container *ngIf="stats$ | async as s">
         <h2 class="ad-secao-title">Visão geral</h2>
         <div class="ad-cards">
@@ -233,6 +306,55 @@
           </div>
         </div>
       </ng-container>
+
+      <!-- ============ TOPS — Organizadores + Campeonatos ============ -->
+      <div class="ad-tops-grid">
+        <!-- Top 5 organizadores por # campeonatos -->
+        <div class="ad-top-card">
+          <div class="ad-top-head">
+            <ion-icon name="trophy-outline"></ion-icon>
+            <strong>Top organizadores</strong>
+            <small>por número de campeonatos</small>
+          </div>
+          <ng-container *ngIf="topOrganizadores$ | async as tops">
+            <div class="ad-top-vazio" *ngIf="tops.length === 0">Nenhum organizador com campeonato ainda.</div>
+            <div class="ad-top-lista" *ngIf="tops.length > 0">
+              <div class="ad-top-row" *ngFor="let o of tops; let i = index">
+                <span class="ad-top-pos" [class.gold]="i === 0" [class.silver]="i === 1" [class.bronze]="i === 2">{{ i + 1 }}</span>
+                <div class="ad-top-avatar">
+                  <img *ngIf="o.fotoUrl; else iniO" [src]="o.fotoUrl" [alt]="o.nome" loading="lazy" referrerpolicy="no-referrer" />
+                  <ng-template #iniO><span>{{ (o.nome.charAt(0)) | uppercase }}</span></ng-template>
+                </div>
+                <span class="ad-top-nome">{{ o.nome }}</span>
+                <span class="ad-top-num">{{ o.total }}</span>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Top 5 campeonatos por # equipes -->
+        <div class="ad-top-card">
+          <div class="ad-top-head">
+            <ion-icon name="shield-outline"></ion-icon>
+            <strong>Campeonatos mais ativos</strong>
+            <small>por número de equipes</small>
+          </div>
+          <ng-container *ngIf="topCampeonatos$ | async as tops">
+            <div class="ad-top-vazio" *ngIf="tops.length === 0">Nenhum campeonato com equipes.</div>
+            <div class="ad-top-lista" *ngIf="tops.length > 0">
+              <div class="ad-top-row" *ngFor="let c of tops; let i = index">
+                <span class="ad-top-pos" [class.gold]="i === 0" [class.silver]="i === 1" [class.bronze]="i === 2">{{ i + 1 }}</span>
+                <div class="ad-top-avatar">
+                  <img *ngIf="c.logoUrl; else iniC" [src]="c.logoUrl" [alt]="c.titulo" loading="lazy" referrerpolicy="no-referrer" />
+                  <ng-template #iniC><ion-icon name="trophy-outline"></ion-icon></ng-template>
+                </div>
+                <span class="ad-top-nome">{{ c.titulo }}</span>
+                <span class="ad-top-num">{{ c.totalEquipes }}</span>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
     </section>
 
     <!-- ============ Seção: USUÁRIOS ============ -->
@@ -246,6 +368,27 @@
             placeholder="Buscar por nome, email, tipo ou UID..."
             (input)="setBuscaUsuarios($any($event.target).value)"
           />
+        </div>
+      </div>
+
+      <!-- Filtros rápidos: chips de status + tipo -->
+      <div class="ad-filtros">
+        <div class="ad-filtros-grupo">
+          <span class="ad-filtros-lbl">Status:</span>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroStatusUsuario === 'todos'"      (click)="setFiltroStatusUsuario('todos')">Todos</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroStatusUsuario === 'ativos'"     (click)="setFiltroStatusUsuario('ativos')">Ativos</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroStatusUsuario === 'pendentes'"  (click)="setFiltroStatusUsuario('pendentes')">Pendentes</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroStatusUsuario === 'bloqueados'" (click)="setFiltroStatusUsuario('bloqueados')">Bloqueados</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroStatusUsuario === 'banidos'"    (click)="setFiltroStatusUsuario('banidos')">Banidos</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroStatusUsuario === 'admins'"     (click)="setFiltroStatusUsuario('admins')">Admins</button>
+        </div>
+        <div class="ad-filtros-grupo">
+          <span class="ad-filtros-lbl">Tipo:</span>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroTipoUsuario === 'todos'"       (click)="setFiltroTipoUsuario('todos')">Todos</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroTipoUsuario === 'organizador'" (click)="setFiltroTipoUsuario('organizador')">Organizador</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroTipoUsuario === 'cliente'"     (click)="setFiltroTipoUsuario('cliente')">Cliente</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroTipoUsuario === 'moderador'"   (click)="setFiltroTipoUsuario('moderador')">Moderador</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroTipoUsuario === 'racha'"       (click)="setFiltroTipoUsuario('racha')">Racha</button>
         </div>
       </div>
 
@@ -281,25 +424,104 @@
               </div>
             </div>
             <div class="td nome">
-              <div class="ad-nome">{{ u.nome || '(sem nome)' }}</div>
-              <div class="ad-uid">{{ u.uid }}</div>
+              <div class="ad-nome">
+                {{ u.nome || '(sem nome)' }}
+                <!-- Status badge inline ao lado do nome -->
+                <span
+                  *ngIf="u.banido"
+                  class="ad-status-chip banido"
+                  [title]="u.banidoMotivo || 'Conta banida'"
+                >
+                  <ion-icon name="ban-outline"></ion-icon> BANIDO
+                </span>
+                <span
+                  *ngIf="!u.banido && u.bloqueado"
+                  class="ad-status-chip bloqueado"
+                  title="Conta bloqueada"
+                >
+                  <ion-icon name="lock-closed-outline"></ion-icon> BLOQUEADO
+                </span>
+                <span
+                  *ngIf="u.tipo === 'moderador' && !u.moderadorValidado && !u.banido && !u.bloqueado"
+                  class="ad-status-chip pendente"
+                  title="Moderador aguardando aprovação"
+                >
+                  <ion-icon name="hourglass-outline"></ion-icon> PENDENTE
+                </span>
+              </div>
+              <div class="ad-uid">
+                <span class="ad-uid-text">{{ u.uid }}</span>
+                <!-- Cidade abaixo do UID quando disponível -->
+                <span *ngIf="u.cidade" class="ad-cidade">
+                  <ion-icon name="location-outline"></ion-icon>{{ u.cidade }}
+                </span>
+              </div>
             </div>
-            <div class="td email">{{ u.email || '—' }}</div>
+            <div class="td email">
+              <div class="ad-email-main">{{ u.email || '—' }}</div>
+              <!-- Telefone como info secundária abaixo do email -->
+              <div *ngIf="u.telefone" class="ad-telefone">
+                <ion-icon name="call-outline"></ion-icon>{{ u.telefone }}
+              </div>
+            </div>
             <div class="td tipo">
               <span class="ad-chip" [attr.data-tipo]="u.tipo || 'na'">
                 <ion-icon [name]="iconTipo(u.tipo)"></ion-icon>
                 {{ u.tipo || '—' }}
               </span>
             </div>
-            <div class="td plano">{{ u.plano || '—' }}</div>
+            <div class="td plano">
+              <div>{{ u.plano || '—' }}</div>
+              <!-- Saldo de créditos compacto (TX/NORM/PREM) — só mostra
+                   se tem algum saldo não-zero. -->
+              <div
+                *ngIf="(u.transmissoesExtras ?? 0) > 0 || (u.creditosPatrocinio ?? 0) > 0 || (u.creditosPatrocinioPremium ?? 0) > 0"
+                class="ad-creditos"
+                title="Transmissões | Patrocínio Normal | Patrocínio Premium"
+              >
+                <span *ngIf="(u.transmissoesExtras ?? 0) > 0">
+                  📺 {{ u.transmissoesExtras }}
+                </span>
+                <span *ngIf="(u.creditosPatrocinio ?? 0) > 0">
+                  💚 {{ u.creditosPatrocinio }}
+                </span>
+                <span *ngIf="(u.creditosPatrocinioPremium ?? 0) > 0" class="premium">
+                  ⭐ {{ u.creditosPatrocinioPremium }}
+                </span>
+              </div>
+            </div>
             <div class="td admin">
-              <ion-icon
-                *ngIf="u.isMaster"
-                name="shield-checkmark"
-                color="warning"
-                title="Admin Master"
-              ></ion-icon>
-              <span *ngIf="!u.isMaster">—</span>
+              <div class="ad-admin-cell">
+                <ion-icon
+                  *ngIf="u.isMaster"
+                  name="shield-checkmark"
+                  color="warning"
+                  title="Admin Master"
+                ></ion-icon>
+                <span *ngIf="!u.isMaster" class="ad-dash-cell">—</span>
+
+                <!-- Quick actions inline (clique para no abrir modal — usa stopPropagation) -->
+                <div class="ad-quick-acoes">
+                  <button
+                    *ngIf="u.tipo === 'moderador' && !u.moderadorValidado && !u.banido"
+                    type="button"
+                    class="ad-quick-btn validar"
+                    (click)="validarModeradorRapido(u, $event)"
+                    title="Validar moderador agora"
+                  >
+                    <ion-icon name="checkmark-circle-outline"></ion-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="ad-quick-btn"
+                    [class.bloqueado]="u.bloqueado"
+                    (click)="toggleBloqueio(u, $event)"
+                    [title]="u.bloqueado ? 'Desbloquear conta' : 'Bloquear conta'"
+                  >
+                    <ion-icon [name]="u.bloqueado ? 'lock-open-outline' : 'lock-closed-outline'"></ion-icon>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -317,6 +539,22 @@
             placeholder="Buscar por título, organizador, cidade..."
             (input)="setBuscaCampeonatos($any($event.target).value)"
           />
+        </div>
+      </div>
+
+      <!-- Filtros rápidos pra campeonatos: visibilidade + presença de capa -->
+      <div class="ad-filtros">
+        <div class="ad-filtros-grupo">
+          <span class="ad-filtros-lbl">Visibilidade:</span>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroVisibilidadeCampeonato === 'todos'"   (click)="setFiltroVisibilidadeCampeonato('todos')">Todos</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroVisibilidadeCampeonato === 'publico'" (click)="setFiltroVisibilidadeCampeonato('publico')">Públicos</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroVisibilidadeCampeonato === 'privado'" (click)="setFiltroVisibilidadeCampeonato('privado')">Privados</button>
+        </div>
+        <div class="ad-filtros-grupo">
+          <span class="ad-filtros-lbl">Capa:</span>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroCapaCampeonato === 'todos'"    (click)="setFiltroCapaCampeonato('todos')">Todos</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroCapaCampeonato === 'com-capa'" (click)="setFiltroCapaCampeonato('com-capa')">Com capa</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroCapaCampeonato === 'sem-capa'" (click)="setFiltroCapaCampeonato('sem-capa')">Sem capa (incompletos)</button>
         </div>
       </div>
 
@@ -634,6 +872,150 @@
       </ng-container>
     </section>
 
+    <!-- ============ Seção: VALORES (preços/limites/créditos) ============ -->
+    <section class="ad-secao ad-valores" *ngIf="secao === 'valores'">
+      <!-- Cabeçalho -->
+      <div class="ad-val-hero">
+        <div class="ad-val-hero-ic"><ion-icon name="pricetags"></ion-icon></div>
+        <div class="ad-val-hero-txt">
+          <h2>Valores de planos e créditos</h2>
+          <p>
+            Edite preços, limites e o valor dos créditos. Salvo em
+            <code>config/comercial</code> e válido no app imediatamente.
+          </p>
+        </div>
+      </div>
+
+      <!-- ===== Bloco: PLANOS ===== -->
+      <div class="ad-val-bloco-titulo">
+        <ion-icon name="card-outline"></ion-icon>
+        <span>Planos</span>
+        <small>Use <strong>-1</strong> num limite para ilimitado</small>
+      </div>
+
+      <div class="ad-val-planos">
+        <div class="ad-val-card ad-val-plano" *ngFor="let p of valoresPlanos"
+          [hidden]="!valoresForm.planos[p.id]" [style.--cor]="p.cor">
+          <div class="ad-val-plano-bar"></div>
+          <div class="ad-val-plano-head">
+            <div class="ad-val-plano-ic"><ion-icon [name]="p.icon"></ion-icon></div>
+            <h3>{{ p.label }}</h3>
+            <span class="ad-val-plano-badge">{{ p.temPreco ? 'Pago' : 'Grátis' }}</span>
+          </div>
+
+          <ng-container *ngIf="valoresForm.planos[p.id] as f">
+            <!-- Preços (só planos pagos) -->
+            <div class="ad-val-grupo" *ngIf="p.temPreco">
+              <span class="ad-val-grupo-titulo">
+                <ion-icon name="cash-outline"></ion-icon> Preços por período
+              </span>
+              <div class="ad-val-grid">
+                <label class="ad-val-field money" *ngFor="let c of camposPreco">
+                  <span class="ad-val-lbl">{{ c.label }}</span>
+                  <input brlMask type="text" inputmode="numeric"
+                    [(ngModel)]="f.precos[c.key]" />
+                </label>
+              </div>
+            </div>
+
+            <!-- Limites -->
+            <div class="ad-val-grupo">
+              <span class="ad-val-grupo-titulo">
+                <ion-icon name="options-outline"></ion-icon> Limites
+              </span>
+              <div class="ad-val-grid">
+                <label class="ad-val-field" *ngFor="let c of camposLimite">
+                  <span class="ad-val-lbl">
+                    <ion-icon [name]="c.icon"></ion-icon> {{ c.label }}
+                  </span>
+                  <input type="number" step="1" [(ngModel)]="f.limites[c.key]" />
+                </label>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- ===== Bloco: CRÉDITOS ===== -->
+      <div class="ad-val-bloco-titulo">
+        <ion-icon name="pricetags-outline"></ion-icon>
+        <span>Créditos</span>
+        <small>Preço, tempo e patrocinadores liberados</small>
+      </div>
+
+      <div class="ad-val-creditos-grid">
+        <!-- Patrocinador normal -->
+        <div class="ad-val-card ad-val-credito" style="--cor:#7CC61D">
+          <div class="ad-val-credito-ic"><ion-icon name="ribbon-outline"></ion-icon></div>
+          <span class="ad-val-credito-lbl">Patrocinador normal</span>
+          <input brlMask type="text" inputmode="numeric"
+            [(ngModel)]="valoresForm.creditos.patrocinioNormal.preco" />
+          <div class="ad-val-credito-params">
+            <label class="ad-val-field">
+              <span class="ad-val-lbl"><ion-icon name="people-outline"></ion-icon> Patrocinadores / crédito</span>
+              <input type="number" min="1" step="1" [(ngModel)]="valoresForm.creditos.patrocinioNormal.patrocinadores" />
+            </label>
+            <label class="ad-val-field">
+              <span class="ad-val-lbl"><ion-icon name="time-outline"></ion-icon> Tempo aceso (min)</span>
+              <input type="number" min="1" step="1" [(ngModel)]="valoresForm.creditos.patrocinioNormal.duracaoMin" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Patrocinador premium -->
+        <div class="ad-val-card ad-val-credito" style="--cor:#f59e0b">
+          <div class="ad-val-credito-ic"><ion-icon name="star-outline"></ion-icon></div>
+          <span class="ad-val-credito-lbl">Patrocinador premium</span>
+          <input brlMask type="text" inputmode="numeric"
+            [(ngModel)]="valoresForm.creditos.patrocinioPremium.preco" />
+          <div class="ad-val-credito-params">
+            <label class="ad-val-field">
+              <span class="ad-val-lbl"><ion-icon name="people-outline"></ion-icon> Patrocinadores / jogo</span>
+              <input type="number" min="1" step="1" [(ngModel)]="valoresForm.creditos.patrocinioPremium.patrocinadores" />
+            </label>
+            <label class="ad-val-field">
+              <span class="ad-val-lbl"><ion-icon name="timer-outline"></ion-icon> Janela visível (s)</span>
+              <input type="number" min="1" step="1" [(ngModel)]="valoresForm.creditos.patrocinioPremium.janelaSeg" />
+            </label>
+            <label class="ad-val-field">
+              <span class="ad-val-lbl"><ion-icon name="time-outline"></ion-icon> Intervalo (min)</span>
+              <input type="number" min="1" step="1" [(ngModel)]="valoresForm.creditos.patrocinioPremium.intervaloMin" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Transmissão avulsa -->
+        <div class="ad-val-card ad-val-credito" style="--cor:#2c5364">
+          <div class="ad-val-credito-ic"><ion-icon name="radio-outline"></ion-icon></div>
+          <span class="ad-val-credito-lbl">Transmissão avulsa</span>
+          <input brlMask type="text" inputmode="numeric"
+            [(ngModel)]="valoresForm.creditos.transmissaoAvulsa.preco" />
+          <div class="ad-val-credito-params">
+            <label class="ad-val-field">
+              <span class="ad-val-lbl"><ion-icon name="time-outline"></ion-icon> Tempo por crédito (min)</span>
+              <input type="number" min="1" step="1" [(ngModel)]="valoresForm.creditos.transmissaoAvulsa.duracaoMin" />
+            </label>
+            <label class="ad-val-field">
+              <span class="ad-val-lbl"><ion-icon name="calendar-outline"></ion-icon> Validade (meses)</span>
+              <input type="number" min="1" step="1" [(ngModel)]="valoresForm.creditos.transmissaoAvulsa.validadeMeses" />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Barra de ações (sticky) ===== -->
+      <div class="ad-val-actionbar">
+        <button type="button" class="ad-val-reset" (click)="carregarValores()" [disabled]="salvandoValores">
+          <ion-icon name="refresh-outline"></ion-icon>
+          Recarregar
+        </button>
+        <button type="button" class="ad-val-salvar" (click)="salvarValores()" [disabled]="salvandoValores">
+          <ion-icon [name]="salvandoValores ? 'hourglass-outline' : 'save-outline'"></ion-icon>
+          {{ salvandoValores ? 'Salvando...' : 'Salvar valores' }}
+        </button>
+      </div>
+    </section>
+
     <!-- ============ Seção: COBRANÇAS ============ -->
     <section class="ad-secao" *ngIf="secao === 'cobrancas'">
       <div class="ad-section-head">
@@ -644,17 +1026,28 @@
         </p>
       </div>
 
-      <!-- ===== Botão Nova Cobrança + Form inline ===== -->
+      <!-- ===== Botão Nova Cobrança + Export CSV + Form inline ===== -->
       <div class="ad-nova-cob-wrap">
-        <button
-          type="button"
-          class="ad-nova-cob-btn"
-          [class.aberto]="novaCobAberta"
-          (click)="toggleNovaCobranca()"
-        >
-          <ion-icon [name]="novaCobAberta ? 'close-outline' : 'add-circle-outline'"></ion-icon>
-          {{ novaCobAberta ? 'Cancelar' : 'Nova Cobrança' }}
-        </button>
+        <div class="ad-acoes-row">
+          <button
+            type="button"
+            class="ad-nova-cob-btn"
+            [class.aberto]="novaCobAberta"
+            (click)="toggleNovaCobranca()"
+          >
+            <ion-icon [name]="novaCobAberta ? 'close-outline' : 'add-circle-outline'"></ion-icon>
+            {{ novaCobAberta ? 'Cancelar' : 'Nova Cobrança' }}
+          </button>
+          <button
+            type="button"
+            class="ad-export-btn"
+            (click)="exportarCobrancasCsv()"
+            title="Exportar lista filtrada em CSV"
+          >
+            <ion-icon name="download-outline"></ion-icon>
+            Exportar CSV
+          </button>
+        </div>
 
         <div class="ad-nova-cob-form" *ngIf="novaCobAberta">
           <div class="ad-nova-cob-grid">

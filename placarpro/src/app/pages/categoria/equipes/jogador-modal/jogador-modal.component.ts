@@ -14,7 +14,7 @@ import {
   JogadorEstatisticas,
   JogadorSuspensao,
 } from '../../../../campeonatos/models/jogador.model';
-import { JogadoresService } from '../../../../campeonatos/jogadores.service';
+import { JogadoresService, LimiteExcedidoError } from '../../../../campeonatos/jogadores.service';
 import { EquipesService } from '../../../../campeonatos/equipes.service';
 import { StorageService } from '../../../../shared/storage.service';
 import { ImageCropperModalComponent } from '../../../../shared/components/image-cropper-modal/image-cropper-modal.component';
@@ -182,9 +182,11 @@ export class JogadorModalComponent implements OnInit {
     } catch (err) {
       console.error('[JogadorModal] criar erro', err);
       const msg =
-        (err as { code?: string })?.code === 'permission-denied'
-          ? 'Sem permissão. Verifique as Firestore Rules.'
-          : 'Erro ao cadastrar jogador.';
+        err instanceof LimiteExcedidoError
+          ? err.message
+          : (err as { code?: string })?.code === 'permission-denied'
+            ? 'Sem permissão. Verifique as Firestore Rules.'
+            : 'Erro ao cadastrar jogador.';
       await this.toast(msg, 'danger');
     } finally {
       this.criando = false;
@@ -547,7 +549,10 @@ export class JogadorModalComponent implements OnInit {
       this.voltar();
     } catch (err) {
       console.error('[JogadorModal] salvar erro', err);
-      await this.toast('Erro ao salvar.', 'danger');
+      await this.toast(
+        err instanceof LimiteExcedidoError ? err.message : 'Erro ao salvar.',
+        'danger',
+      );
     } finally {
       this.loading = false;
     }

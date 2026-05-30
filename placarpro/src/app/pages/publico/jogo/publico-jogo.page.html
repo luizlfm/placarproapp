@@ -89,7 +89,7 @@
          este componente detecta e se conecta automaticamente como viewer.
          Se nada estiver ao vivo, o componente renderiza null (some).
          ════════════════════════════════════════════════════════ -->
-    <div class="live-wrap" *ngIf="campeonato?.id">
+    <div class="live-wrap" [class.premium-on]="premiumOverlayAtivo" *ngIf="campeonato?.id">
       <!-- `[patrocinadoresPartida]` (jogo) tem prioridade sobre
            `[ownerIdPatrocinadores]` (globais do organizador).
            `[fullscreenAncestor]=".live-wrap"` faz o expand fullscreenar
@@ -113,6 +113,23 @@
         }"
         modo="compacto"
       ></app-transmissao-player>
+
+      <!-- ═══════ ESTEIRA DE PATROCÍNIOS PAGOS (ads) ═══════
+           Mesma esteira do admin — em tempo real do Firestore. -->
+      <app-esteira-ads
+        class="pub-esteira-ads"
+        [campeonatoId]="campeonato!.id!"
+        [categoriaId]="catId"
+        [jogoId]="jogoId"
+      ></app-esteira-ads>
+
+      <!-- ═══════ PREMIUM OVERLAY ═══════ -->
+      <app-premium-overlay
+        [campeonatoId]="campeonato!.id!"
+        [categoriaId]="catId"
+        [jogoId]="jogoId"
+        (visibilidadeMudou)="onPremiumOverlayMudou($event)"
+      ></app-premium-overlay>
     </div>
     </div>
     <!-- ════════ FIM WRAPPER FULLSCREEN ════════ -->

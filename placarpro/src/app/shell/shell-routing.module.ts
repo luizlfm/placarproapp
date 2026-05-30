@@ -61,6 +61,11 @@ const routes: Routes = [
           import('../pages/planos/planos.module').then(m => m.PlanosPageModule),
       },
       {
+        path: 'meus-creditos',
+        loadChildren: () =>
+          import('../pages/meus-creditos/meus-creditos.module').then(m => m.MeusCreditosPageModule),
+      },
+      {
         path: 'seguindo',
         loadChildren: () =>
           import('../pages/seguindo/seguindo.module').then(m => m.SeguindoPageModule),

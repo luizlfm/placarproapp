@@ -41,11 +41,20 @@
       </div>
     </section>
 
-    <!-- EQUIPE -->
+    <!-- EQUIPE
+         Quando `bloquearEquipe = true` (lance iniciado via Quick Action de
+         um time específico), só o time do `ladoPadrao` aparece — em
+         destaque, NÃO clicável. Sem ambiguidade sobre quem fez a ação. -->
     <section class="bloco">
       <h3>Equipe</h3>
-      <div class="equipes">
-        <button type="button" class="eq-btn" [class.ativa]="equipeSelecionada(mandante.id)"
+      <div class="equipes" [class.travada]="bloquearEquipe">
+        <button
+          type="button"
+          class="eq-btn"
+          *ngIf="!bloquearEquipe || ladoPadrao === 'mandante'"
+          [class.ativa]="equipeSelecionada(mandante.id)"
+          [class.travada]="bloquearEquipe"
+          [disabled]="bloquearEquipe"
           (click)="selecionarEquipe(mandante.id)">
           <div class="eq-logo">
             <img *ngIf="mandante.logoUrl; else iconM" [src]="mandante.logoUrl" [alt]="mandante.nome" />
@@ -57,7 +66,13 @@
           </div>
         </button>
 
-        <button type="button" class="eq-btn" [class.ativa]="equipeSelecionada(visitante.id)"
+        <button
+          type="button"
+          class="eq-btn"
+          *ngIf="!bloquearEquipe || ladoPadrao === 'visitante'"
+          [class.ativa]="equipeSelecionada(visitante.id)"
+          [class.travada]="bloquearEquipe"
+          [disabled]="bloquearEquipe"
           (click)="selecionarEquipe(visitante.id)">
           <div class="eq-logo">
             <img *ngIf="visitante.logoUrl; else iconV" [src]="visitante.logoUrl" [alt]="visitante.nome" />

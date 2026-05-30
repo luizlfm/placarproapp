@@ -1,0 +1,219 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/app/meus-campeonatos"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Meus créditos</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <!-- ════ Saldos atuais (3 cards padronizados) ════ -->
+    <div class="saldos-row">
+      <section class="card saldo-card">
+        <div class="saldo-info">
+          <span class="saldo-lbl">Patrocinador normal</span>
+          <span class="saldo-num">{{ saldo$ | async }}</span>
+          <span class="saldo-sub">crédito{{ (saldo$ | async) === 1 ? '' : 's' }} (R$ {{ precoNormal }})</span>
+        </div>
+        <ion-icon name="ribbon-outline" class="saldo-ic"></ion-icon>
+      </section>
+
+      <section class="card saldo-card saldo-card-premium">
+        <div class="saldo-info">
+          <span class="saldo-lbl">Patrocinador premium</span>
+          <span class="saldo-num">{{ saldoPremium$ | async }}</span>
+          <span class="saldo-sub">crédito{{ (saldoPremium$ | async) === 1 ? '' : 's' }} (R$ {{ precoPremium }})</span>
+        </div>
+        <ion-icon name="star" class="saldo-ic"></ion-icon>
+      </section>
+
+      <section class="card saldo-card saldo-card-transmissao">
+        <div class="saldo-info">
+          <span class="saldo-lbl">Crédito de transmissão</span>
+          <span class="saldo-num">{{ transmissoes$ | async }}</span>
+          <span class="saldo-sub">crédito{{ (transmissoes$ | async) === 1 ? '' : 's' }} (R$ {{ VALOR_AVULSO }})</span>
+        </div>
+        <ion-icon name="radio-outline" class="saldo-ic"></ion-icon>
+      </section>
+    </div>
+
+    <!-- ════ O que é — 3 tipos de crédito ════ -->
+    <section class="card explica-card">
+      <h3><ion-icon name="information-circle-outline"></ion-icon> Como funciona</h3>
+      <p>
+        Você usa créditos pra dois objetivos: exibir <strong>patrocinadores</strong>
+        e <strong>transmitir</strong> seus jogos ao vivo. São
+        <strong>três tipos</strong> de crédito, cada um com saldo próprio:
+      </p>
+
+      <!-- Tipo 1: PATROCINADOR NORMAL -->
+      <div class="regra-box">
+        <div class="regra-num">N</div>
+        <div class="regra-txt">
+          <strong>PATROCINADOR NORMAL · R$ {{ precoNormal }} / crédito</strong>
+          <span>
+            Banner pequeno rotativo no canto do vídeo. <strong>1 crédito</strong>
+            ativa até <strong>{{ patrocinadoresNormal }} patrocinadores</strong>
+            por <strong>{{ duracaoNormalHoras }}h</strong>.
+          </span>
+        </div>
+      </div>
+
+      <!-- Tipo 2: PATROCINADOR PREMIUM -->
+      <div class="regra-box premium">
+        <div class="regra-num">P</div>
+        <div class="regra-txt">
+          <strong>PATROCINADOR PREMIUM · R$ {{ precoPremium }} / crédito</strong>
+          <span>
+            Banner vertical 9:16 EXCLUSIVO na lateral direita.
+            Aparece por <strong>{{ premiumJanelaSeg }}s</strong>
+            a cada <strong>{{ premiumIntervaloMin }}min</strong> de transmissão.
+            Máximo de <strong>{{ premiumMaxPorJogo }} anunciantes</strong> premium por jogo
+            (rotação automática).
+          </span>
+        </div>
+      </div>
+
+      <!-- Tipo 3: TRANSMISSÃO -->
+      <div class="regra-box transmissao">
+        <div class="regra-num">T</div>
+        <div class="regra-txt">
+          <strong>TRANSMISSÃO · R$ {{ VALOR_AVULSO }} / crédito</strong>
+          <span>
+            Libera <strong>{{ transmissaoDuracaoLabel }} de transmissão ao vivo</strong> do seu jogo
+            (placar, eventos e chat). O tempo é <strong>acumulado</strong> — se a transmissão cair,
+            é só reiniciar que continua somando até completar {{ transmissaoDuracaoLabel }}.
+            Crédito válido por <strong>{{ transmissaoValidadeMeses }} meses</strong>, em qualquer plano.
+          </span>
+        </div>
+      </div>
+
+      <p class="muted">
+        Cada tipo tem saldo próprio: você escolhe Patrocinador normal ou Premium
+        na hora de ativar o anúncio em cada jogo, e gasta um crédito de transmissão
+        pra colocar a partida ao vivo.
+      </p>
+    </section>
+
+    <!-- ════ Comprar créditos — 3 cards na MESMA LINHA ════
+         Mesmo desenho compacto pros três tipos: Transmissão, Patrocinador
+         normal e Patrocinador premium. Cada card tem stepper de quantidade,
+         total e botão "Comprar via Pix". -->
+    <h3 class="compra-titulo">
+      <ion-icon name="cart-outline"></ion-icon> Comprar créditos
+    </h3>
+
+    <div class="compra-row">
+      <!-- Transmissão -->
+      <section class="card compra-card">
+        <div class="compra-head">
+          <ion-icon name="radio-outline"></ion-icon>
+          <h3>Transmissão</h3>
+        </div>
+        <span class="compra-unit">R$ {{ VALOR_AVULSO }},00 / transmissão</span>
+
+        <div class="compra-stepper">
+          <button type="button" class="compra-step-btn" (click)="ajustarQtdAvulso(-1)"
+            [disabled]="qtdAvulso <= 1" aria-label="Diminuir quantidade">−</button>
+          <span class="compra-qty">{{ qtdAvulso }}</span>
+          <button type="button" class="compra-step-btn" (click)="ajustarQtdAvulso(1)"
+            [disabled]="qtdAvulso >= 50" aria-label="Aumentar quantidade">+</button>
+        </div>
+
+        <span class="compra-total">R$ {{ totalAvulso }},00</span>
+
+        <button type="button" class="compra-btn" (click)="solicitarAvulso()">
+          Comprar via Pix
+        </button>
+      </section>
+
+      <!-- Patrocinador normal -->
+      <section class="card compra-card">
+        <div class="compra-head">
+          <ion-icon name="ribbon-outline"></ion-icon>
+          <h3>Patrocinador normal</h3>
+        </div>
+        <span class="compra-unit">R$ {{ precoNormal }},00 / crédito</span>
+
+        <div class="compra-stepper">
+          <button type="button" class="compra-step-btn" (click)="ajustarQtdNormal(-1)"
+            [disabled]="qtdNormal <= 1" aria-label="Diminuir quantidade">−</button>
+          <span class="compra-qty">{{ qtdNormal }}</span>
+          <button type="button" class="compra-step-btn" (click)="ajustarQtdNormal(1)"
+            [disabled]="qtdNormal >= 50" aria-label="Aumentar quantidade">+</button>
+        </div>
+
+        <span class="compra-total">R$ {{ totalNormal }},00</span>
+
+        <button type="button" class="compra-btn"
+          (click)="comprarCreditoPatrocinio('Patrocinador normal', qtdNormal, totalNormal)">
+          Comprar via Pix
+        </button>
+      </section>
+
+      <!-- Patrocinador premium -->
+      <section class="card compra-card compra-card-premium">
+        <div class="compra-head">
+          <ion-icon name="star"></ion-icon>
+          <h3>Patrocinador premium</h3>
+        </div>
+        <span class="compra-unit">R$ {{ precoPremium }},00 / crédito</span>
+
+        <div class="compra-stepper">
+          <button type="button" class="compra-step-btn" (click)="ajustarQtdPremium(-1)"
+            [disabled]="qtdPremium <= 1" aria-label="Diminuir quantidade">−</button>
+          <span class="compra-qty">{{ qtdPremium }}</span>
+          <button type="button" class="compra-step-btn" (click)="ajustarQtdPremium(1)"
+            [disabled]="qtdPremium >= 50" aria-label="Aumentar quantidade">+</button>
+        </div>
+
+        <span class="compra-total">R$ {{ totalPremium }},00</span>
+
+        <button type="button" class="compra-btn"
+          (click)="comprarCreditoPatrocinio('Patrocinador premium', qtdPremium, totalPremium)">
+          Comprar via Pix
+        </button>
+      </section>
+    </div>
+
+    <!-- ════ Como usar os créditos (2 guias) ════ -->
+    <section class="card">
+      <h3><ion-icon name="rocket-outline"></ion-icon> Como usar seus créditos</h3>
+
+      <div class="guias">
+        <!-- Guia 1: exibir patrocinador -->
+        <div class="guia">
+          <div class="guia-head">
+            <ion-icon name="megaphone-outline"></ion-icon>
+            <span>Exibir um patrocinador</span>
+          </div>
+          <ol class="passos">
+            <li>Abra o jogo em <strong>Jogos</strong> da categoria.</li>
+            <li>Na seção <strong>Patrocínios pagos (ads)</strong>, toque em "Ativar".</li>
+            <li>Escolha <strong>Patrocinador normal</strong> ou <strong>Premium</strong>.</li>
+            <li>Cadastre o(s) anunciante(s) com logo + nome.</li>
+            <li>Confirme — o crédito é debitado e o banner aparece na transmissão.</li>
+          </ol>
+        </div>
+
+        <!-- Guia 2: transmitir ao vivo -->
+        <div class="guia transmissao">
+          <div class="guia-head">
+            <ion-icon name="radio-outline"></ion-icon>
+            <span>Transmitir ao vivo</span>
+          </div>
+          <ol class="passos">
+            <li>Abra o jogo e toque em <strong>Transmissão</strong>.</li>
+            <li>
+              Inicie pela <strong>câmera</strong> do dispositivo ou configure um
+              <strong>link do YouTube Live</strong> no editor da partida.
+            </li>
+            <li>A partida vai ao ar com <strong>placar, eventos e chat</strong> em tempo real.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+  </div>
+</ion-content>

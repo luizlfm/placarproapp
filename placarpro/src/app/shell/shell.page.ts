@@ -2,7 +2,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
-import { Observable, combineLatest, filter, map, of, switchMap } from 'rxjs';
+import { Observable, combineLatest, filter, map, of, switchMap, take } from 'rxjs';
 import { User } from '@angular/fire/auth';
 import { AuthService } from '../auth/auth.service';
 import { CampeonatosService } from '../campeonatos/campeonatos.service';
@@ -144,6 +144,7 @@ export class ShellPage {
     { label: 'Cadastro de jogadores', icon: 'people-outline', path: '/app/jogadores', hideForTipo: ['cliente', 'moderador', 'racha'] },
     { label: 'Página do organizador', icon: 'business-outline', path: '/app/organizador', hideForTipo: ['cliente', 'moderador', 'racha'] },
     { label: 'Planos de assinatura', icon: 'card-outline', path: '/app/planos', hideForTipo: ['cliente', 'moderador', 'racha'] },
+    { label: 'Meus créditos (ads)', icon: 'ribbon-outline', path: '/app/meus-creditos', hideForTipo: ['cliente', 'moderador', 'racha'] },
     { label: 'Campeonatos seguindo', icon: 'thumbs-up-outline', path: '/app/seguindo' },
     { label: 'Arbitragem', icon: 'person-outline', path: '/app/arbitragem', hideForTipo: ['cliente', 'moderador', 'racha'] },
     /* "Apoios e Patrocinadores" foi movido pro menu contextual da categoria
@@ -441,6 +442,24 @@ export class ShellPage {
   voltarParaCampeonato(): void {
     const id = this.campeonatoId();
     this.navBack.back(id ? ['/app/campeonato', id] : '/app/meus-campeonatos');
+  }
+
+  /**
+   * Clique no header do contexto (logo + título do campeonato).
+   *
+   * Pra quem GERENCIA o campeonato (dono, admin-master ou moderador) é um
+   * atalho que volta direto pra "Meus campeonatos". Pra quem só está
+   * navegando sem ser gestor (`nivel === 'nenhum'`), mantém o comportamento
+   * de subir um nível (categoria → campeonato).
+   */
+  voltarDoHeader(): void {
+    this.permissoesCampAtual$.pipe(take(1)).subscribe(perms => {
+      if (perms.nivel !== 'nenhum') {
+        this.voltarParaLista();
+      } else {
+        this.voltarParaCampeonato();
+      }
+    });
   }
 
   /**

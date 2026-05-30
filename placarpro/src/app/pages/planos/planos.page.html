@@ -21,7 +21,7 @@
         <div class="badge-assinado" *ngIf="p.id === atual">ASSINADO</div>
         <h3>{{ p.label }}</h3>
         <div class="preco">
-          <span class="valor">{{ p.preco }}</span>
+          <span class="valor">{{ precoMensalExibicao(p.id) }}</span>
           <span class="detalhe">{{ p.detalhe }}</span>
         </div>
       </div>
@@ -45,83 +45,6 @@
       >
         {{ p.id === atual ? 'Plano atual' : (p.id === 'profissional' ? 'Fale com a gente' : 'Assinar') }}
       </ion-button>
-    </article>
-  </div>
-
-  <!-- ══════════════════════════════════════════════════════════════
-       TRANSMISSÃO AVULSA — card separado, abaixo dos planos.
-       Permite comprar créditos de transmissão sem trocar de plano.
-       ══════════════════════════════════════════════════════════════ -->
-  <div class="avulso-wrap">
-    <article class="avulso-card">
-      <div class="avulso-head">
-        <div class="avulso-icon">
-          <ion-icon name="radio-outline"></ion-icon>
-        </div>
-        <div class="avulso-head-text">
-          <h3>Transmissão Avulsa</h3>
-          <p>Sem precisar mudar de plano — compre créditos extras quando quiser.</p>
-        </div>
-        <!-- Saldo atual -->
-        <div class="avulso-saldo" *ngIf="profile$ | async as pf">
-          <span class="avulso-saldo-num">{{ pf.transmissoesExtras ?? 0 }}</span>
-          <span class="avulso-saldo-lbl">crédito{{ (pf.transmissoesExtras ?? 0) !== 1 ? 's' : '' }} disponível{{ (pf.transmissoesExtras ?? 0) !== 1 ? 'is' : '' }}</span>
-        </div>
-      </div>
-
-      <div class="avulso-body">
-        <!-- Informativo de preço -->
-        <div class="avulso-preco-info">
-          <span class="avulso-unit">R$ {{ VALOR_AVULSO }}</span>
-          <span class="avulso-unit-lbl">por transmissão</span>
-        </div>
-
-        <!-- Stepper -->
-        <div class="avulso-stepper">
-          <button
-            type="button"
-            class="avulso-step-btn"
-            (click)="ajustarQtdAvulso(-1)"
-            [disabled]="qtdAvulso <= 1"
-            aria-label="Diminuir quantidade"
-          >−</button>
-          <span class="avulso-qty">{{ qtdAvulso }}</span>
-          <button
-            type="button"
-            class="avulso-step-btn"
-            (click)="ajustarQtdAvulso(1)"
-            [disabled]="qtdAvulso >= 20"
-            aria-label="Aumentar quantidade"
-          >+</button>
-          <span class="avulso-total">= <strong>R$ {{ totalAvulso }}</strong></span>
-        </div>
-
-        <!-- Lista de features -->
-        <ul class="avulso-features">
-          <li>
-            <ion-icon name="checkmark-circle-outline"></ion-icon>
-            Crédito válido por <strong>12 meses</strong> a partir da ativação
-          </li>
-          <li>
-            <ion-icon name="checkmark-circle-outline"></ion-icon>
-            Funciona em qualquer plano (inclusive Grátis)
-          </li>
-          <li>
-            <ion-icon name="checkmark-circle-outline"></ion-icon>
-            Ativado pelo admin após confirmação do pagamento
-          </li>
-        </ul>
-
-        <ion-button
-          expand="block"
-          color="secondary"
-          class="avulso-btn"
-          (click)="solicitarAvulso()"
-        >
-          <ion-icon slot="start" name="cart-outline"></ion-icon>
-          Solicitar {{ qtdAvulso }} transmissão{{ qtdAvulso !== 1 ? 'ões' : '' }} — R$ {{ totalAvulso }}
-        </ion-button>
-      </div>
     </article>
   </div>
 

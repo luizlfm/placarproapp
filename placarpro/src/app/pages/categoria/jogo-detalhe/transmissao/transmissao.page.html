@@ -79,19 +79,16 @@
     <ion-button (click)="voltar()" color="primary">Voltar</ion-button>
   </div>
 
-  <!-- Sem vídeo configurado E sem transmissão LiveKit ativa.
-       Mostra empty state com 2 opções: iniciar broadcast da câmera (admin)
-       ou voltar pro jogo. Texto explica YouTube (configurar via editor)
-       OU broadcast ao vivo (botão direto). -->
+  <!-- Sem transmissão LiveKit ativa. Mostra empty state com opção de
+       iniciar broadcast da câmera (admin) ou voltar pro jogo. -->
   <div
     class="tr-state vazio"
-    *ngIf="!loading && !erro && jogo && !jogo.youtubeVideoId && !(transmissaoAtiva$ | async)"
+    *ngIf="!loading && !erro && jogo && !(transmissaoAtiva$ | async)"
   >
     <ion-icon name="videocam-off-outline"></ion-icon>
-    <h2>Transmissão não configurada</h2>
+    <h2>Transmissão não iniciada</h2>
     <p>
-      Inicie transmitindo agora pela câmera do seu dispositivo OU configure
-      um link do YouTube Live no editor da partida pra usar o player do YouTube.
+      Inicie transmitindo agora pela câmera do seu dispositivo.
     </p>
 
     <!-- Botão "INICIAR TRANSMISSÃO" — visível APENAS pra owner/moderador
@@ -114,21 +111,19 @@
     </ion-button>
   </div>
 
-  <!-- Layout principal — exibido se há YouTube configurado OU se há
-       transmissão LiveKit ativa. Quando ambos, LiveKit tem prioridade
-       (ver render condicional do `.tr-yt-anchor` mais abaixo). -->
-  <div class="tr-stage" [class.tr-stage-full]="feedRecolhido" *ngIf="!loading && !erro && (jogo?.youtubeVideoId || (transmissaoAtiva$ | async))">
+  <!-- Layout principal — exibido quando há transmissão LiveKit ativa. -->
+  <div class="tr-stage" [class.tr-stage-full]="feedRecolhido" [class.premium-on]="premiumOverlayAtivo" *ngIf="!loading && !erro && (transmissaoAtiva$ | async)">
 
     <!-- ============ Área de vídeo + overlay ============ -->
     <div class="tr-video-wrap">
       <div class="tr-video">
-        <!-- ── LIVEKIT PLAYER (prioridade quando há transmissão ativa) ──
-             Quando há transmissão LiveKit ativa, mostra o `app-transmissao-player`
-             OCUPANDO a área que seria do YouTube. Atende tanto o broadcaster
-             (vê seu próprio feed) quanto espectadores (na rota pública).
-             O componente é auto-suficiente: assim que o doc Firestore vira
-             `ativa: false`, ele desconecta sozinho. -->
-        <ng-container *ngIf="(transmissaoAtiva$ | async); else youtubeOuVazio">
+        <!-- ── LIVEKIT PLAYER ──
+             Mostra o `app-transmissao-player` ocupando a área de vídeo.
+             Atende tanto o broadcaster (vê seu próprio feed) quanto
+             espectadores (na rota pública). O componente é auto-suficiente:
+             assim que o doc Firestore vira `ativa: false`, ele desconecta
+             sozinho. -->
+        <ng-container *ngIf="transmissaoAtiva$ | async">
           <!-- `fullscreenAncestor=".tr-stage"` faz o player ir pra fullscreen
                junto com TUDO que está dentro do stage: vídeo + overlays +
                PAINEL LATERAL DE EVENTOS/ESCALAÇÃO. Assim, em fullscreen,
@@ -178,33 +173,6 @@
                especialmente em telas grandes (>1565x945). -->
 
         </ng-container>
-
-        <!-- ── FALLBACK: YouTube IFrame Player API (legacy) ──
-             Só renderiza quando NÃO há transmissão LiveKit ativa E o admin
-             configurou um link de YouTube no editor da partida. A API
-             substitui essa div pelo iframe. -->
-        <ng-template #youtubeOuVazio>
-          <div #ytPlayerEl class="tr-yt-anchor" *ngIf="jogo?.youtubeVideoId"></div>
-
-          <!-- Banner "Transmitir com minha câmera" — barra grande central-inferior
-               sobreposta no vídeo YouTube. Antes era um botão pequeno no canto
-               superior direito, conflitando visualmente com AO VIVO / CC do YT /
-               logo PlacarPro — invisível na prática. Agora é uma barra óbvia
-               com texto completo, exclusiva pro broadcaster. -->
-          <ng-container *ngIf="permissoes$ | async as p">
-            <button
-              *ngIf="(p.enviarMidias || p.editarResultados) && jogo?.youtubeVideoId"
-              type="button"
-              class="tr-btn-trocar-camera"
-              (click)="iniciarTransmissaoCamera()"
-              title="Iniciar transmissão com sua câmera (substitui o YouTube)"
-              aria-label="Iniciar transmissão com sua câmera"
-            >
-              <ion-icon name="videocam"></ion-icon>
-              <span>TRANSMITIR COM MINHA CÂMERA</span>
-            </button>
-          </ng-container>
-        </ng-template>
 
         <!-- ════════ PÔSTER DE FIM DE JOGO ════════
              Aparece em FULL OVERLAY quando o jogo é encerrado.
@@ -516,6 +484,25 @@
              (não no `.tr-stage`), é imune ao clipping do parent grid em
              telas grandes (>1565x945) que cortava o banner antigo aqui. -->
 
+        <!-- ═══════ ESTEIRA DE PATROCÍNIOS PAGOS (ads) ═══════
+             Sobreposta no rodapé do vídeo, mostra apenas os patrocínios
+             ATIVOS (status === 'ativo') do jogo. Lê em tempo real da
+             subcoleção `patrocinios` do jogo. Auto-some quando expira ou
+             quando não há nenhum ativo. Diferente do banner do player
+             (gratuito, patrocinadores cadastrados globais) — esta esteira
+             só aparece se o organizador pagou créditos pra esta partida. -->
+        <app-esteira-ads
+          class="tr-esteira-ads"
+          [campeonatoId]="campeonatoId"
+          [categoriaId]="categoriaId"
+          [jogoId]="jogoId"
+        ></app-esteira-ads>
+
+        <!-- ═══════ PREMIUM OVERLAY MOVIDO ═══════
+             Agora é filho direto do `.tr-stage` (vide bottom do template)
+             pra ocupar a ALTURA TOTAL do stage (não só do vídeo, que tem
+             aspect 16:9 e fica centralizado com letterbox preto). -->
+
 
         <!-- FAB "Mostrar painel" DENTRO do `.tr-video` pra ficar visível
              também em fullscreen (quando `.tr-video` vira o elemento
@@ -603,14 +590,9 @@
           [class.lado-mandante]="ev.lado === 'm'"
           [class.lado-visitante]="ev.lado === 'v'"
         >
-          <button
-            type="button"
+          <div
             class="lance-bubble"
             [ngClass]="classeTipo(ev.tipo)"
-            [class.destacado]="eventoDestacadoId === ev.id"
-            [class.tem-replay]="ev.minuto"
-            (click)="ev.minuto && verLance(ev)"
-            [title]="ev.minuto ? 'Pular pro momento do lance' : ''"
           >
             <!-- Avatar do jogador (foto ou inicial) -->
             <div class="lance-avatar">
@@ -665,7 +647,7 @@
                 name="swap-horizontal-outline"
               ></ion-icon>
             </div>
-          </button>
+          </div>
         </div>
       </div>
 
@@ -754,6 +736,17 @@
         </ng-template>
       </ng-container>
     </aside>
+
+    <!-- ═══════ PREMIUM OVERLAY (filho direto do `.tr-stage`) ═══════
+         Posicionado FORA do `.tr-video` pra usar a ALTURA TOTAL do stage
+         (a tela inteira, não só a altura do vídeo). O banner 9:16 fica
+         encostado na borda direita da viewport. -->
+    <app-premium-overlay
+      [campeonatoId]="campeonatoId"
+      [categoriaId]="categoriaId"
+      [jogoId]="jogoId"
+      (visibilidadeMudou)="onPremiumOverlayMudou($event)"
+    ></app-premium-overlay>
 
     <!-- FAB "Mostrar painel" foi MOVIDO pra dentro do `.tr-video` (mais
          acima neste template) pra também ficar visível em fullscreen. -->

@@ -10,6 +10,9 @@ import {
   collectionGroup,
   doc,
   docData,
+  getDoc,
+  getDocs,
+  increment,
   limit,
   orderBy,
   query,
@@ -87,6 +90,18 @@ export class TransmissoesService {
    *
    * Emite `null` se ninguém está transmitindo agora.
    */
+  /**
+   * Tempo máximo (em ms) desde o último ping da transmissão antes de
+   * considerá-la ZUMBI (e portanto NÃO ativa pra UI). Sessões inativas
+   * por mais que isso são tratadas como encerradas mesmo com `ativa: true`
+   * no Firestore — evita o bug de "TRANSMITINDO" pra sempre quando o
+   * broadcaster fechou o app sem clicar em Encerrar.
+   *
+   * 3 minutos = balança entre tolerância a reconexões temporárias e
+   * evitar mostrar uma transmissão fantasma por horas.
+   */
+  private readonly TIMEOUT_ULTIMO_PING_MS = 3 * 60 * 1000;
+
   ativa$(campeonatoId: string, categoriaId: string, jogoId: string): Observable<Transmissao | null> {
     if (!campeonatoId || !categoriaId || !jogoId) return of(null);
     return runInInjectionContext(this.injector, () => {
@@ -96,11 +111,23 @@ export class TransmissoesService {
         limit(1),
       );
       return (collectionData(q, { idField: 'id' }) as Observable<Transmissao[]>).pipe(
-        map(list => list[0] ?? null),
+        map(list => {
+          const t = list[0];
+          if (!t) return null;
+          // Filtro anti-zumbi: se ultimoPing é antigo demais, a
+          // transmissão provavelmente foi abandonada (broadcaster
+          // fechou app sem encerrar). Auto-encerra em background +
+          // retorna null pra UI.
+          if (this.estaZumbi(t)) {
+            this.encerrarZumbi(campeonatoId, categoriaId, jogoId, t.id!);
+            return null;
+          }
+          return t;
+        }),
         // Erros do Firestore (índice ausente/em construção, rules, rede)
         // NÃO podem derrubar a UI inteira. Sem este catch, qualquer falha
-        // transitória deixava o template em estado indefinido (nem YouTube,
-        // nem player, nem empty state — só fundo preto). Emitir `null`
+        // transitória deixava o template em estado indefinido (nem player,
+        // nem empty state — só fundo preto). Emitir `null`
         // mantém a página utilizável e o erro vai pro console pra debug.
         catchError(err => {
           console.warn('[TransmissoesService] ativa$ falhou — emitindo null', {
@@ -109,6 +136,29 @@ export class TransmissoesService {
           return of(null);
         }),
       );
+    });
+  }
+
+  /** True quando `ultimoPing` da transmissão é mais antigo que o limite. */
+  private estaZumbi(t: Transmissao): boolean {
+    const ultimoPing = (t.ultimoPing as { toMillis?: () => number } | undefined)?.toMillis?.();
+    if (!ultimoPing) return false; // sem ping = recém-criada, dá margem
+    const agora = Date.now();
+    return (agora - ultimoPing) > this.TIMEOUT_ULTIMO_PING_MS;
+  }
+
+  /**
+   * Encerra automaticamente uma transmissão zumbi em background.
+   * Best-effort — falhas são silenciosas (não bloqueiam a UI).
+   */
+  private encerrarZumbi(
+    campeonatoId: string,
+    categoriaId: string,
+    jogoId: string,
+    transmissaoId: string,
+  ): void {
+    this.encerrar(campeonatoId, categoriaId, jogoId, transmissaoId).catch(err => {
+      console.warn('[TransmissoesService] auto-encerrar zumbi falhou', err);
     });
   }
 
@@ -326,6 +376,117 @@ export class TransmissoesService {
           return of(0);
         }),
       );
+    });
+  }
+
+  /**
+   * Reserva +1 "hora-crédito" de transmissão para o jogo:
+   *  - incrementa `jogo.horasTransmissaoPagas` (libera mais 1 bloco de tempo)
+   *  - debita 1 `transmissoesExtras` do DONO do campeonato
+   *
+   * Débito do crédito: a regra do Firestore só deixa o PRÓPRIO dono (ou
+   * admin) escrever em `users/{ownerId}`. Por isso, quando o broadcaster é
+   * o dono (`meuUid === ownerId`), debitamos de fato; quando é um moderador,
+   * o tempo é liberado (incrementa horas pagas) mas o débito do crédito fica
+   * pendente de reconciliação pelo admin (best-effort).
+   *
+   * NOTA: pra cobrança robusta (moderadores, anti-fraude) o ideal é uma
+   * Cloud Function callable. Esta versão client-side cobre o caso comum
+   * (organizador transmitindo).
+   *
+   * @returns 'ok' | 'sem-creditos' | 'erro'
+   */
+  async reservarHoraTransmissao(
+    campeonatoId: string,
+    categoriaId: string,
+    jogoId: string,
+    ownerId: string,
+    meuUid: string | null,
+  ): Promise<'ok' | 'sem-creditos' | 'erro'> {
+    return runInInjectionContext(this.injector, async () => {
+      try {
+        // Gate: o dono tem saldo? (leitura permitida pra signed-in).
+        const userRef = doc(this.fs, 'users', ownerId);
+        const snap = await getDoc(userRef);
+        const saldo = (snap.data()?.['transmissoesExtras'] as number | undefined) ?? 0;
+        if (saldo <= 0) return 'sem-creditos';
+
+        // Libera mais um bloco de tempo no jogo (owner/moderador podem escrever).
+        const jogoRef = doc(
+          this.fs, 'campeonatos', campeonatoId, 'categorias', categoriaId, 'jogos', jogoId,
+        );
+        // Na 1ª reserva (baseline ainda não definido), grava o tempo já
+        // acumulado como baseline — assim o tempo legado/anterior NÃO
+        // consome o crédito recém-reservado.
+        const jogoSnap = await getDoc(jogoRef);
+        const baseAtual = jogoSnap.data()?.['transmissaoSegundosBase'] as number | undefined | null;
+        const update: Record<string, unknown> = {
+          horasTransmissaoPagas: increment(1),
+          atualizadoEm: serverTimestamp(),
+        };
+        if (baseAtual === undefined || baseAtual === null) {
+          update['transmissaoSegundosBase'] = await this.tempoTotalAtual(campeonatoId, categoriaId, jogoId);
+        }
+        await updateDoc(jogoRef, update);
+
+        // Debita o crédito do dono — só quando EU sou o dono (regra isSelf).
+        if (meuUid && meuUid === ownerId) {
+          await updateDoc(userRef, { transmissoesExtras: increment(-1) }).catch(err => {
+            console.warn('[Transmissao] débito de crédito falhou (best-effort)', err);
+          });
+        } else {
+          console.info('[Transmissao] broadcaster não é o dono — débito de crédito pendente de reconciliação.');
+        }
+        return 'ok';
+      } catch (err) {
+        console.error('[Transmissao] reservarHoraTransmissao falhou', err);
+        return 'erro';
+      }
+    });
+  }
+
+  /** Soma (one-shot) do `duracaoSegundos` de todas as sessões do jogo. */
+  private async tempoTotalAtual(campeonatoId: string, categoriaId: string, jogoId: string): Promise<number> {
+    const snap = await getDocs(this.col(campeonatoId, categoriaId, jogoId));
+    let total = 0;
+    snap.forEach(d => { total += (d.data() as Transmissao).duracaoSegundos ?? 0; });
+    return total;
+  }
+
+  /**
+   * Gate de crédito ANTES de iniciar uma transmissão.
+   *  - Se ainda há tempo dentro do orçamento já pago → 'ok' (não debita).
+   *  - Senão, tenta reservar +1 bloco (debita 1 crédito do dono).
+   *  - Sem crédito → 'sem-creditos'.
+   *
+   * Chamado no momento REAL do início (dentro do modal de broadcast), pra
+   * o crédito só ser debitado quando a transmissão realmente começa.
+   */
+  async garantirTempoParaIniciar(
+    campeonatoId: string,
+    categoriaId: string,
+    jogoId: string,
+    ownerId: string,
+    meuUid: string | null,
+    limiteMin: number,
+  ): Promise<'ok' | 'sem-creditos' | 'erro'> {
+    return runInInjectionContext(this.injector, async () => {
+      try {
+        const total = await this.tempoTotalAtual(campeonatoId, categoriaId, jogoId);
+        const jogoRef = doc(
+          this.fs, 'campeonatos', campeonatoId, 'categorias', categoriaId, 'jogos', jogoId,
+        );
+        const jogoSnap = await getDoc(jogoRef);
+        const horasPagas = (jogoSnap.data()?.['horasTransmissaoPagas'] as number | undefined) ?? 0;
+        const base = (jogoSnap.data()?.['transmissaoSegundosBase'] as number | undefined) ?? 0;
+        const consumido = Math.max(0, total - base);
+        const orcamentoSeg = horasPagas * limiteMin * 60;
+        if (orcamentoSeg > consumido) return 'ok'; // ainda tem tempo pago
+        return await this.reservarHoraTransmissao(campeonatoId, categoriaId, jogoId, ownerId, meuUid);
+      } catch (err) {
+        console.error('[Transmissao] garantirTempoParaIniciar falhou', err);
+        return 'erro';
+      }
     });
   }
 

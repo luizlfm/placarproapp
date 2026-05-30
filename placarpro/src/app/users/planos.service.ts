@@ -2,6 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, combineLatest, map } from 'rxjs';
 import { UsersService } from './users.service';
 import { UserProfile } from './models/user-profile.model';
+import { ConfigComercialService, ConfigComercial, CreditoConfig } from './config-comercial.service';
+import { CREDITO_PATROCINIO, PREMIUM_PATROCINIO } from '../campeonatos/models/patrocinio-jogo.model';
 
 /** ID válido de plano. Mantém compat com o campo já existente em UserProfile. */
 export type PlanoId = 'gratis' | 'pequeno' | 'medio' | 'grande' | 'profissional';
@@ -26,10 +28,8 @@ export interface PlanoLimites {
   permiteEmbedHtml: boolean;
   permiteWhiteLabel: boolean;
   /**
-   * Permite vincular link de transmissão ao vivo (YouTube) à partida.
-   * Desbloqueia:
-   *  - Campo "Link do YouTube" no modal de editar partida
-   *  - Botão de transmissão no header do jogo-detalhe
+   * Permite transmitir a partida ao vivo (câmera/LiveKit). Desbloqueia:
+   *  - Botão "Transmitir ao vivo" no header/ações do jogo-detalhe
    *  - Tela /jogo/:id/transmissao (placar overlay + chat)
    *
    * Quando false, esses controles aparecem como bloqueados com CTA
@@ -242,14 +242,117 @@ const TODOS_PLANOS: PlanoDef[] = [
 @Injectable({ providedIn: 'root' })
 export class PlanosService {
   private readonly usersSrv = inject(UsersService);
+  private readonly configComercial = inject(ConfigComercialService);
 
-  /** Lista completa de planos disponíveis (catálogo). */
-  readonly planos: ReadonlyArray<PlanoDef> = TODOS_PLANOS;
+  /**
+   * Snapshot da config comercial (preços/limites editáveis pelo admin).
+   * Atualizado reativamente no construtor. Quando vazio, os defaults
+   * hardcoded (`TODOS_PLANOS` / constantes de crédito) prevalecem.
+   */
+  private cfg: ConfigComercial = {};
+
+  /** Catálogo de planos com os overrides do admin já aplicados (cacheado). */
+  private mergedPlanos: PlanoDef[] = TODOS_PLANOS.map(p => this.aplicarOverride(p));
+
+  constructor() {
+    // Mantém o snapshot e recalcula o catálogo mesclado quando o admin
+    // editar os valores no painel (config/comercial muda).
+    this.configComercial.config$().subscribe(c => {
+      this.cfg = c ?? {};
+      this.mergedPlanos = TODOS_PLANOS.map(p => this.aplicarOverride(p));
+    });
+  }
+
+  /** Aplica o override de `config/comercial` sobre um plano default. */
+  private aplicarOverride(def: PlanoDef): PlanoDef {
+    const o = this.cfg.planos?.[def.id];
+    if (!o) return def;
+    const precos: PlanoPrecos = {
+      mensal: o.precos?.mensal ?? def.precos.mensal,
+      trimestral: o.precos?.trimestral ?? def.precos.trimestral,
+      semestral: o.precos?.semestral ?? def.precos.semestral,
+      anual: o.precos?.anual ?? def.precos.anual,
+    };
+    return {
+      ...def,
+      // `preco` (legacy, R$/mês) acompanha o mensal pra manter compat.
+      preco: def.preco < 0 ? def.preco : precos.mensal,
+      precos,
+      limites: {
+        ...def.limites,
+        maxCampeonatos: o.limites?.maxCampeonatos ?? def.limites.maxCampeonatos,
+        maxCategoriasPorCampeonato: o.limites?.maxCategoriasPorCampeonato ?? def.limites.maxCategoriasPorCampeonato,
+        maxJogadoresPorCategoria: o.limites?.maxJogadoresPorCategoria ?? def.limites.maxJogadoresPorCategoria,
+        maxPatrocinadores: o.limites?.maxPatrocinadores ?? def.limites.maxPatrocinadores,
+        maxVideoSegundos: o.limites?.maxVideoSegundos ?? def.limites.maxVideoSegundos,
+        maxTransmisoesSimultaneas: o.limites?.maxTransmisoesSimultaneas ?? def.limites.maxTransmisoesSimultaneas,
+      },
+    };
+  }
+
+  /** Lista completa de planos disponíveis (catálogo, com overrides aplicados). */
+  get planos(): ReadonlyArray<PlanoDef> {
+    return this.mergedPlanos;
+  }
 
   /** Resolve a definição de um plano pelo ID. Fallback pra 'gratis'. */
   getPlanoDef(id?: PlanoId | string | null): PlanoDef {
     const valido = (id ?? '') as PlanoId;
-    return this.planos.find(p => p.id === valido) ?? PLANO_GRATIS;
+    return this.mergedPlanos.find(p => p.id === valido)
+      ?? this.aplicarOverride(PLANO_GRATIS);
+  }
+
+  /** Lê a config de um crédito tolerando o formato legado (number = só preço). */
+  private credCfg(key: 'patrocinioNormal' | 'patrocinioPremium' | 'transmissaoAvulsa'): CreditoConfig {
+    const c = this.cfg.creditos?.[key];
+    if (typeof c === 'number') return { preco: c };
+    return c ?? {};
+  }
+
+  /** Preço unitário (R$) do crédito de patrocinador NORMAL. */
+  get precoCreditoNormal(): number {
+    return this.credCfg('patrocinioNormal').preco ?? CREDITO_PATROCINIO.precoBase;
+  }
+
+  /** Preço unitário (R$) do crédito de patrocinador PREMIUM. */
+  get precoCreditoPremium(): number {
+    return this.credCfg('patrocinioPremium').preco ?? PREMIUM_PATROCINIO.precoBase;
+  }
+
+  /** Patrocinadores (logos) liberados por crédito NORMAL. */
+  get patrocinadoresCreditoNormal(): number {
+    return this.credCfg('patrocinioNormal').patrocinadores ?? CREDITO_PATROCINIO.logosPorCredito;
+  }
+
+  /** Tempo (minutos) que o crédito NORMAL fica aceso na transmissão. */
+  get duracaoCreditoNormalMin(): number {
+    return this.credCfg('patrocinioNormal').duracaoMin ?? CREDITO_PATROCINIO.duracaoMin;
+  }
+
+  /** Máx. de patrocínios PREMIUM por jogo. */
+  get premiumMaxPorJogo(): number {
+    return this.credCfg('patrocinioPremium').patrocinadores ?? PREMIUM_PATROCINIO.maxPorJogo;
+  }
+
+  /** Premium: janela visível em segundos. */
+  get premiumJanelaSeg(): number {
+    return this.credCfg('patrocinioPremium').janelaSeg ?? PREMIUM_PATROCINIO.janelaDuracaoSeg;
+  }
+
+  /** Premium: intervalo entre janelas em minutos. */
+  get premiumIntervaloMin(): number {
+    return this.credCfg('patrocinioPremium').intervaloMin ?? PREMIUM_PATROCINIO.intervaloMin;
+  }
+
+  /** Validade (meses) do crédito de transmissão avulsa. */
+  get transmissaoValidadeMeses(): number {
+    return this.credCfg('transmissaoAvulsa').validadeMeses ?? 12;
+  }
+
+  /** Tempo de transmissão ao vivo (minutos) liberado por crédito.
+   *  O tempo é ACUMULADO entre quedas/reinícios do mesmo jogo. Default 60. */
+  get transmissaoDuracaoMin(): number {
+    return this.credCfg('transmissaoAvulsa').duracaoMin ?? 60;
   }
 
   /** Stream do plano atual do usuário logado (reativo). */
@@ -280,10 +383,10 @@ export class PlanosService {
   /**
    * Total de transmissões disponíveis do usuário LOGADO.
    *
-   * Quando `transmissoesExtras` já foi setado pelo admin (novo modelo),
-   * esse campo é a fonte de verdade — inclui créditos do plano + avulsos.
-   * Quando ainda não foi setado (usuários antigos / migração), faz
-   * fallback para `maxTransmisoesSimultaneas` do plano atual.
+   * Quando `transmissoesExtras` já foi setado (compra avulsa), esse campo
+   * é a fonte de verdade. Quando ainda não foi setado, faz fallback para
+   * `maxTransmisoesSimultaneas` do plano atual — ou seja, o plano concede
+   * os créditos de transmissão automaticamente.
    */
   totalTransmisoesDisponiveis$(): Observable<number> {
     return combineLatest([
@@ -305,9 +408,9 @@ export class PlanosService {
    * Usado em jogo-detalhe e transmissao pra que moderadores verifiquem
    * o pool do organizador em vez do próprio — créditos são compartilhados.
    *
-   * `transmissoesExtras` é a fonte de verdade (setada pelo admin ao
-   * alterar o plano). Fallback para créditos do plano quando o campo
-   * ainda não foi gravado (usuários legados).
+   * `transmissoesExtras` é a fonte de verdade (compra avulsa). Fallback para
+   * os créditos do plano quando o campo ainda não foi gravado — o plano
+   * concede os créditos automaticamente.
    */
   totalTransmisoesParaOwner$(ownerId: string): Observable<number> {
     return this.usersSrv.profilePorUid$(ownerId).pipe(
@@ -331,13 +434,29 @@ export class PlanosService {
     return this.totalTransmisoesParaOwner$(ownerId).pipe(map(n => n > 0));
   }
 
-  /** Valor unitário de uma transmissão avulsa em R$. */
-  readonly VALOR_TRANSMISSAO_AVULSA = 30;
+  /** Valor unitário de uma transmissão avulsa em R$ (editável pelo admin). */
+  get VALOR_TRANSMISSAO_AVULSA(): number {
+    return this.credCfg('transmissaoAvulsa').preco ?? 30;
+  }
 
   /** Verifica se o user logado pode adicionar mais X. */
   podeAdicionar(atual: number, max: number): boolean {
     if (max === -1) return true; // ilimitado
     return atual < max;
+  }
+
+  /**
+   * Stream dos limites do plano de um DONO específico (por ownerId).
+   * Usado quando a validação precisa considerar o plano do dono do
+   * campeonato (não do usuário logado) — ex.: moderador cadastrando
+   * jogadores/categorias dentro do campeonato de outro organizador.
+   * Sem ownerId, cai pros limites do usuário logado.
+   */
+  limitesParaOwner$(ownerId?: string | null): Observable<PlanoLimites> {
+    if (!ownerId) return this.meusLimites$();
+    return this.usersSrv.profilePorUid$(ownerId).pipe(
+      map(profile => this.getPlanoDef(profile?.plano).limites),
+    );
   }
 
   /** Formata o preço pra exibição. */

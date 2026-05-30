@@ -542,6 +542,27 @@
   .tp-placar-meio { height: 22px; min-width: 42px; padding: 0 6px; }
   .tp-placar-gols { font-size: 13px; min-width: 12px; }
   .tp-placar-x { font-size: 10px; }
+
+  /* Botões de controle (volume / auto / fullscreen) MENORES em mobile.
+     Desktop usa 38x38 — em smartphone fica enorme comparado ao tamanho
+     do vídeo. Reduzimos pra 26x26 com ícone 12px. */
+  .tp-controles {
+    bottom: 5px;
+    right: 5px;
+    gap: 3px;
+  }
+  .tp-btn-ctrl {
+    width: 26px;
+    height: 26px;
+    ion-icon { font-size: 12px; }
+  }
+  .tp-btn-qualidade {
+    min-width: 26px;
+    padding: 0 6px 0 5px;
+    border-radius: 13px;
+    gap: 2px;
+    .tp-qualidade-label { font-size: 8px; letter-spacing: 0.2px; }
+  }
 }
 
 /* Telas BEM pequenas (iPhone SE / Android compact) */

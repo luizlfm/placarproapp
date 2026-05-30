@@ -1,0 +1,12 @@
+<!-- Banner rotativo de patrocínios PAGOS — visual idêntico ao banner
+     gratuito do app-transmissao-player. Só renderiza se há ao menos
+     1 logo ativo. Position absolute (no canto inferior esquerdo do
+     ancestor com position:relative). -->
+<div
+  class="ads-banner"
+  *ngIf="logos.length > 0 && logos[idxAtual] as l"
+  [class.fading]="fading"
+  aria-label="Patrocinador da partida"
+>
+  <img [src]="l.logoUrl" [alt]="l.nome" loading="lazy" />
+</div>

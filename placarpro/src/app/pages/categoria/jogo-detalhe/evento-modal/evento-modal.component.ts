@@ -69,6 +69,11 @@ export class EventoModalComponent implements OnInit {
   @Input() eventoExistente?: EventoJogo;
   @Input() ladoPadrao: 'mandante' | 'visitante' = 'mandante';
   @Input() tipoPadrao: EventoTipo = 'gol';
+  /** Quando true, esconde o card do OUTRO time e mostra só o
+   *  `ladoPadrao` em destaque (não-clicável). Usado quando o lance é
+   *  iniciado a partir do botão de ação de UM time específico (Quick
+   *  Actions), onde a escolha de equipe já está implícita. */
+  @Input() bloquearEquipe = false;
   /** Minuto sugerido pelo cronômetro da partida (auto-preenche o campo
    *  + ativa o toggle "definir tempo"). Setado pelo editor de partida. */
   @Input() minutoSugerido?: number | null;

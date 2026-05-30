@@ -397,20 +397,6 @@
                   [class.b-wo]="st === 'wo'"
                 >{{ rotuloStatus(j) }}</span>
 
-                <!-- Badge "🔴 AO VIVO YOUTUBE" — visível quando o jogo tem
-                     transmissão configurada. Funciona como destaque visual
-                     pro torcedor saber que pode acompanhar com vídeo. -->
-                <span
-                  class="status-badge yt-badge"
-                  *ngIf="j.youtubeVideoId"
-                  [class.live]="j.status === 'em-andamento'"
-                  (click)="abrirTransmissao(j, $event)"
-                  title="Assistir transmissão ao vivo"
-                >
-                  <ion-icon name="logo-youtube"></ion-icon>
-                  {{ j.status === 'em-andamento' ? 'AO VIVO' : 'Transmissão' }}
-                </span>
-
                 <!-- Tags topo (desktop) -->
                 <div class="tags">
                   <span *ngIf="j.fase" class="tag tag-fase">{{ j.fase }}</span>
@@ -466,18 +452,6 @@
                   </span>
                 </div>
 
-                <!-- Botão "Ver transmissão" — só aparece se o jogo tem YouTube
-                     configurado. Destaque vermelho/pulse se está ao vivo. -->
-                <button
-                  type="button"
-                  class="btn-ver-transmissao"
-                  *ngIf="j.youtubeVideoId"
-                  [class.live]="j.status === 'em-andamento'"
-                  (click)="abrirTransmissao(j, $event)"
-                >
-                  <ion-icon [name]="j.status === 'em-andamento' ? 'radio-outline' : 'play-circle-outline'"></ion-icon>
-                  {{ j.status === 'em-andamento' ? 'Assistir AO VIVO' : 'Ver transmissão' }}
-                </button>
               </button>
             </div>
 

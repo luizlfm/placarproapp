@@ -1,9 +1,8 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { ActionModalService } from '../../../shared/components/action-modal/action-modal.service';
-import { BehaviorSubject, Observable, combineLatest, firstValueFrom, of } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, combineLatest, firstValueFrom, interval, of } from 'rxjs';
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators';
 import { Timestamp } from '@angular/fire/firestore';
 import { PatrocinadorJogoModalComponent } from './patrocinador-jogo-modal/patrocinador-jogo-modal.component';
@@ -27,6 +26,13 @@ import { EventoModalComponent } from './evento-modal/evento-modal.component';
 import { EscalacaoModalComponent } from './escalacao-modal/escalacao-modal.component';
 import { TransmissaoModalComponent } from '../../../shared/components/transmissao-modal/transmissao-modal.component';
 import { TransmissoesService } from '../../../campeonatos/transmissoes.service';
+import { PatrociniosService } from '../../../campeonatos/patrocinios.service';
+import { UsersService } from '../../../users/users.service';
+import { AuthService } from '../../../auth/auth.service';
+import { PatrocinioJogo } from '../../../campeonatos/models/patrocinio-jogo.model';
+import { AtivarPatrocinioModalComponent } from '../../../shared/components/ativar-patrocinio-modal/ativar-patrocinio-modal.component';
+import { EditarPatrocinioModalComponent } from '../../../shared/components/editar-patrocinio-modal/editar-patrocinio-modal.component';
+import { ReativarPatrocinioModalComponent } from '../../../shared/components/reativar-patrocinio-modal/reativar-patrocinio-modal.component';
 import { dataHoraIsoParaBr } from '../../../shared/directives/mask.directive';
 import { NavBackService } from '../../../shared/nav-back.service';
 import {
@@ -85,8 +91,9 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
   private readonly planosSrv = inject(PlanosService);
   private readonly transmissoesSrv = inject(TransmissoesService);
   private readonly pwaInstall = inject(PwaInstallService);
-
-  private readonly sanitizer = inject(DomSanitizer);
+  private readonly patrSrv = inject(PatrociniosService);
+  private readonly usersSrv = inject(UsersService);
+  private readonly auth = inject(AuthService);
 
   // IDs de rota declarados ANTES de qualquer field reativa que dependa
   // deles (ex: `podeTransmissao$` abaixo). Em class field initializers
@@ -96,6 +103,61 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
   readonly campeonatoId = this.route.snapshot.paramMap.get('id') ?? '';
   readonly categoriaId = this.route.snapshot.paramMap.get('catId') ?? '';
   readonly jogoId = this.route.snapshot.paramMap.get('jogoId') ?? '';
+
+  /** True quando a janela PREMIUM está aberta (6s). Usado pra alternar
+   *  classe `.premium-on` no `.live-video`, que recolhe o vídeo +
+   *  esconde esteira-ads + scoreboard sobreposto. */
+  premiumOverlayAtivo = false;
+
+  /** Handler emitido pelo `<app-premium-overlay>` quando a janela abre/fecha. */
+  onPremiumOverlayMudou(visivel: boolean): void {
+    this.premiumOverlayAtivo = visivel;
+  }
+
+  /** Payload de teste passado pro `<app-premium-overlay>` via `[forcedTest]`.
+   *  Setado pelo botão "Testar banner premium". REMOVER junto com o botão
+   *  quando a feature estiver validada. */
+  forcedTestPayload: { patrocinador: { nome: string; logoUrl: string }; duracaoMs: number } | null = null;
+
+  /** DEV/TEST: força a exibição do banner premium por 6s em TODAS as
+   *  telas conectadas (admin, transmissão pública, público-jogo). Grava
+   *  `_testePremiumAt` no doc do jogo → os componentes que escutam
+   *  detectam e disparam a janela local em tempo real via Firestore.
+   *
+   *  REMOVER quando feature for validada em produção. */
+  async testarBannerPremium(): Promise<void> {
+    const ads = await firstValueFrom(this.patrociniosPagos$);
+    // Conta os premium ATIVOS — quando há, o overlay roda a rajada real
+    // (todos em sequência). O logo abaixo serve só de fallback (sem premium).
+    const premiumAtivos = ads.filter(
+      a => a.tipo === 'premium' && a.status === 'ativo' && a.patrocinadores?.[0]?.logoUrl,
+    );
+    const patrocinador = premiumAtivos[0]?.patrocinadores?.[0] ?? {
+      nome: 'Placeholder de teste',
+      logoUrl: 'https://placehold.co/360x640/f59e0b/ffffff?text=PREMIUM',
+    };
+    try {
+      await this.jogosSrv.disparTestePremium(
+        this.campeonatoId, this.categoriaId, this.jogoId,
+        patrocinador.logoUrl, patrocinador.nome,
+      );
+      const msg = premiumAtivos.length > 0
+        ? `Teste disparado! ${premiumAtivos.length} banner(s) premium em sequência (rajada real).`
+        : 'Teste disparado! Nenhum premium ativo — exibindo banner de exemplo.';
+      const t = await this.toastCtrl.create({
+        message: msg,
+        duration: 2600, color: 'success', position: 'top',
+      });
+      await t.present();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const t = await this.toastCtrl.create({
+        message: 'Falha ao disparar teste: ' + msg,
+        duration: 3000, color: 'danger', position: 'top',
+      });
+      await t.present();
+    }
+  }
 
   /**
    * Stream — o organizador deste campeonato tem créditos de transmissão
@@ -115,13 +177,16 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
     : of(false);
 
   /** Transmissão LiveKit ativa pra este jogo (Observable do Firestore).
-   *  Usado no template pra decidir se mostra o LiveKit player NO LUGAR
-   *  do iframe do YouTube no painel "Ao Vivo" abaixo do placar. Quando
-   *  o broadcaster inicia transmissão, esse Observable emite e a UI
-   *  troca de YouTube → LiveKit player automaticamente. */
+   *  Usado no template pra decidir se mostra o LiveKit player no painel
+   *  "Ao Vivo" abaixo do placar. Quando o broadcaster inicia transmissão,
+   *  esse Observable emite e a UI mostra o player automaticamente. */
   readonly transmissaoLiveAtiva$ = this.transmissoesSrv.ativa$(
     this.campeonatoId, this.categoriaId, this.jogoId,
   );
+
+  /** Flag pra evitar disparar o fluxo de "tempo esgotado" várias vezes. */
+  private tratandoLimiteTransmissao = false;
+  private limiteTransmissaoSub?: Subscription;
 
   /** Cronômetro reativo da partida (string formatada "MM:SS").
    *  Atualiza a cada segundo enquanto `j.status === 'em-andamento'`. */
@@ -145,21 +210,6 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
     { tipo: 'falta',     label: 'Falta',    icon: 'hand-left-outline', cor: '#94a3b8' },
     { tipo: 'defesa',    label: 'Defesa',   icon: 'hand-right-outline',cor: '#4dabf7' },
   ];
-
-  /** URL embedável do YouTube (sanitizada). Computada uma vez na primeira
-   *  vez que o `youtubeVideoId` aparece — armazenada em cache pra evitar
-   *  re-sanitização a cada change detection. */
-  private ytEmbedCache?: { id: string; url: SafeResourceUrl };
-
-  youtubeEmbedUrl(videoId: string | undefined | null): SafeResourceUrl | null {
-    if (!videoId) return null;
-    if (this.ytEmbedCache?.id === videoId) return this.ytEmbedCache.url;
-    const url = this.sanitizer.bypassSecurityTrustResourceUrl(
-      `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`,
-    );
-    this.ytEmbedCache = { id: videoId, url };
-    return url;
-  }
 
   /** Posicionamento percentual (0–100) de um lance na timeline. Default
    *  partida de 50 minutos (~25 cada tempo) — ajusta automaticamente se o
@@ -218,6 +268,153 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
       )
     : of<Jogo[]>([]);
 
+  /** Patrocínios pagos (ads) deste jogo — todos os status. */
+  readonly patrociniosPagos$: Observable<PatrocinioJogo[]> =
+    this.campeonatoId && this.categoriaId && this.jogoId
+      ? this.patrSrv.listarTodos$(this.campeonatoId, this.categoriaId, this.jogoId)
+      : of<PatrocinioJogo[]>([]);
+
+  /** Tick do "agora" — refresca a cada 30s pra atualizar tempo restante
+   *  dos patrocínios ATIVO (sem refazer o subscribe do Firestore).
+   *  Emite Date.now() (truthy) pra não quebrar `*ngIf as` no template. */
+  readonly nowTick$ = interval(30_000).pipe(
+    map(() => Date.now()),
+    startWith(Date.now()),
+  );
+
+  /** Tick rápido (3s) usado pra rotação das logos no card de patrocínio
+   *  quando há mais de 1 logo. Emite Date.now() (truthy) pra não quebrar
+   *  `*ngIf as` no template — `0` seria interpretado como falsy. */
+  readonly rotacaoAdsTick$ = interval(3_000).pipe(
+    map(() => Math.floor(Date.now() / 3_000)),
+    startWith(Math.floor(Date.now() / 3_000)),
+  );
+
+  /** Tick de 1 segundo usado pelos countdowns dos cards ATIVOS.
+   *  Emite Date.now() pra recálculo do tempo restante em HH:MM:SS. */
+  readonly secTick$ = interval(1_000).pipe(
+    map(() => Date.now()),
+    startWith(Date.now()),
+  );
+
+  // ════════════════════════════════════════════════════════════
+  // Helpers temporais dos patrocínios pagos (ads)
+  // ════════════════════════════════════════════════════════════
+
+  /** Status EFETIVO considerando o relógio do cliente. Se o Firestore
+   *  ainda diz 'ativo' mas `expiraEm` passou, retornamos 'expirado'.
+   *  Cobre o gap até a Cloud Function (futura) marcar o doc. */
+  statusEfetivo(p: PatrocinioJogo, _tick?: unknown): PatrocinioJogo['status'] {
+    if (p.status === 'ativo') {
+      const expira = (p.expiraEm as Timestamp | null | undefined)?.toMillis?.();
+      if (expira != null && expira <= Date.now()) return 'expirado';
+    }
+    return p.status;
+  }
+
+  /** Minutos restantes até expiração, ou null se já expirou / não ativo. */
+  minutosRestantes(p: PatrocinioJogo, _tick?: unknown): number | null {
+    if (p.status !== 'ativo') return null;
+    const expira = (p.expiraEm as Timestamp | null | undefined)?.toMillis?.();
+    if (expira == null) return null;
+    const restanteMs = expira - Date.now();
+    if (restanteMs <= 0) return null;
+    return Math.ceil(restanteMs / 60_000);
+  }
+
+  /** True quando o card é "ATIVO em curso" ou "AGENDADO" (relevante agora).
+   *  Sempre visível na lista — o resto vira histórico. */
+  isAdRelevante(p: PatrocinioJogo, tick?: unknown): boolean {
+    const eff = this.statusEfetivo(p, tick);
+    return eff === 'ativo' || eff === 'agendado';
+  }
+
+  /** True pra cards que vão pro grupo "histórico" (expirado/cancelado). */
+  isAdHistorico(p: PatrocinioJogo, tick?: unknown): boolean {
+    const eff = this.statusEfetivo(p, tick);
+    return eff === 'expirado' || eff === 'cancelado';
+  }
+
+  /** Toggle pra expandir/recolher a lista (mostra só 2 por default). */
+  mostrarHistoricoAds = false;
+
+  /** Quantos patrocínios mostrar antes do botão "Ver mais". */
+  private readonly LIMITE_ADS_VISIVEIS = 2;
+
+  /** Lista ordenada pra exibição: ATIVOS primeiro, depois AGENDADOS,
+   *  depois EXPIRADOS, depois CANCELADOS. Isso prioriza o que importa
+   *  agora quando exibimos só os primeiros 2. */
+  ordenarAds(ads: PatrocinioJogo[], tick?: unknown): PatrocinioJogo[] {
+    const peso = { ativo: 0, agendado: 1, expirado: 2, cancelado: 3 } as const;
+    return [...ads].sort((a, b) => {
+      const pa = peso[this.statusEfetivo(a, tick)] ?? 9;
+      const pb = peso[this.statusEfetivo(b, tick)] ?? 9;
+      return pa - pb;
+    });
+  }
+
+  /** Retorna os ads a EXIBIR — só os primeiros LIMITE_ADS_VISIVEIS,
+   *  ou todos se `mostrarHistoricoAds` estiver ligado. */
+  adsExibidos(ads: PatrocinioJogo[], tick?: unknown): PatrocinioJogo[] {
+    const ordenados = this.ordenarAds(ads, tick);
+    return this.mostrarHistoricoAds ? ordenados : ordenados.slice(0, this.LIMITE_ADS_VISIVEIS);
+  }
+
+  /** Quantidade que ficou de FORA da exibição (pra rotular o botão). */
+  adsEscondidos(ads: PatrocinioJogo[]): number {
+    return Math.max(0, ads.length - this.LIMITE_ADS_VISIVEIS);
+  }
+
+  /** Índice da logo atual no card de patrocínio (modo rotativo).
+   *  Quando há >1 logo, rotaciona uma a cada 3s. Sem rotação se há 1 só. */
+  adLogoIdx(p: PatrocinioJogo, tick: number): number {
+    const total = p.patrocinadores?.length ?? 0;
+    if (total <= 1) return 0;
+    return tick % total;
+  }
+
+  /** Segundos restantes até `expiraEm` (≥ 0). Retorna null se patrocínio
+   *  não está ativo OU não tem expiraEm definido. Usado pelo countdown
+   *  em tempo real no card. */
+  segundosRestantes(p: PatrocinioJogo, _tickMs: number): number | null {
+    if (p.status !== 'ativo') return null;
+    const expira = (p.expiraEm as Timestamp | null | undefined)?.toMillis?.();
+    if (expira == null) return null;
+    const diffMs = expira - Date.now();
+    return diffMs > 0 ? Math.floor(diffMs / 1000) : 0;
+  }
+
+  /** Formata segundos em HH:MM:SS ou MM:SS (sem horas quando <60min).
+   *  Usado no countdown do card. Exemplo: 3725 → "1:02:05", 350 → "5:50". */
+  formatarCountdown(segundos: number | null): string {
+    if (segundos == null) return '';
+    if (segundos <= 0) return '0:00';
+    const h = Math.floor(segundos / 3600);
+    const m = Math.floor((segundos % 3600) / 60);
+    const s = segundos % 60;
+    const ss = s.toString().padStart(2, '0');
+    if (h > 0) {
+      const mm = m.toString().padStart(2, '0');
+      return `${h}:${mm}:${ss}`;
+    }
+    return `${m}:${ss}`;
+  }
+
+  /** Texto curto pro chip secundário ("EM ANDAMENTO · 35min" etc). */
+  tempoChip(p: PatrocinioJogo, tick?: unknown): string | null {
+    const efetivo = this.statusEfetivo(p, tick);
+    if (efetivo === 'agendado') return 'Aguarda início da transmissão';
+    if (efetivo === 'ativo') {
+      const restMin = this.minutosRestantes(p, tick);
+      if (restMin == null) return 'Em andamento';
+      if (p.tipo === 'premium') return `Em andamento`;
+      if (restMin > 60) return `Em andamento · ${Math.floor(restMin / 60)}h${restMin % 60}min`;
+      return `Em andamento · ${restMin}min`;
+    }
+    if (efetivo === 'expirado') return 'Tempo esgotado';
+    return null;
+  }
+
   readonly jogo$: Observable<JogoView | undefined> = this.jogoId
     ? combineLatest([
         this.jogosSrv.get$(this.campeonatoId, this.categoriaId, this.jogoId),
@@ -238,6 +435,40 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
         catchError(() => of(undefined)),
       )
     : of(undefined);
+
+  /**
+   * Orçamento de tempo de transmissão deste jogo (declarado APÓS `jogo$`
+   * por dependência de inicialização).
+   *  - `totalSeg`     — tempo já transmitido (soma de todas as sessões)
+   *  - `horasPagas`   — quantos créditos (horas) já reservados pra este jogo
+   *  - `orcamentoSeg` — horasPagas × limite (min) × 60
+   *  - `restanteSeg`  — quanto resta antes de precisar de outra hora
+   *  - `cronometrado` — true quando há crédito reservado (modo timed); quando
+   *                     false, a transmissão roda pelo plano (sem limite).
+   */
+  readonly transmissaoTempo$ = (this.campeonatoId && this.categoriaId && this.jogoId)
+    ? combineLatest([
+        this.jogo$,
+        this.transmissoesSrv.tempoTotalDoJogo$(this.campeonatoId, this.categoriaId, this.jogoId),
+      ]).pipe(
+        map(([j, totalSeg]) => {
+          const limiteMin = this.planosSrv.transmissaoDuracaoMin;
+          const horasPagas = j?.horasTransmissaoPagas ?? 0;
+          const base = j?.transmissaoSegundosBase ?? 0;
+          const consumido = Math.max(0, (totalSeg ?? 0) - base);
+          const orcamentoSeg = horasPagas * limiteMin * 60;
+          const restanteSeg = Math.max(0, orcamentoSeg - consumido);
+          return {
+            totalSeg: totalSeg ?? 0,
+            horasPagas,
+            limiteMin,
+            orcamentoSeg,
+            restanteSeg,
+            cronometrado: horasPagas > 0,
+          };
+        }),
+      )
+    : of({ totalSeg: 0, horasPagas: 0, limiteMin: 60, orcamentoSeg: 0, restanteSeg: 0, cronometrado: false });
 
   private readonly jogadores$ = this.campeonatoId && this.categoriaId
     ? this.jogadoresSrv.list$(this.campeonatoId, this.categoriaId).pipe(
@@ -420,6 +651,9 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
     // Quando o status muda pra encerrado, segura o último valor.
     this.jogo$.subscribe(j => this.sincronizarCronometro(j));
 
+    // Vigia o limite de tempo de transmissão (auto-encerra / renova).
+    this.vigiarLimiteTransmissao();
+
     const action = this.route.snapshot.queryParamMap.get('action');
     if (!action) return;
     setTimeout(() => {
@@ -438,6 +672,7 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.pararCronometro();
+    this.limiteTransmissaoSub?.unsubscribe();
   }
 
   /** Sincroniza o estado do cronômetro com o jogo atual.
@@ -570,21 +805,6 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
     ]);
   }
 
-  /** Abre a tela de transmissão (player YouTube + placar overlay). */
-  abrirTransmissao(): void {
-    // Abre direto — sem tutorial. A tela `/transmissao` é responsável
-    // por mostrar a UX em tela cheia simulada quando aplicável.
-    this.router.navigate([
-      '/app/campeonato',
-      this.campeonatoId,
-      'categoria',
-      this.categoriaId,
-      'jogo',
-      this.jogoId,
-      'transmissao',
-    ]);
-  }
-
   /**
    * Monta a URL PÚBLICA da transmissão. Esse link funciona pra qualquer
    * pessoa (sem login) — rota `/transmissao/:campId/:catId/:jogoId`,
@@ -689,9 +909,22 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
    *
    * Quando o admin confirma "INICIAR", o doc Firestore é criado com
    * `ativa: true` → o painel ao vivo desta mesma tela detecta via
-   * `transmissaoLiveAtiva$` e mostra o player no lugar do YouTube.
+   * `transmissaoLiveAtiva$` e mostra o player.
    */
   async iniciarTransmissaoLive(): Promise<void> {
+    // ── Já existe transmissão ativa? ──
+    // Pode ter sido iniciada em OUTRO dispositivo. Não deixa abrir outra
+    // (evita duplicar/conflitar) — apenas informa o estado.
+    const jaAtiva = await firstValueFrom(this.transmissaoLiveAtiva$);
+    if (jaAtiva) {
+      const t = await this.toastCtrl.create({
+        message: 'Transmissão já ativa em outro dispositivo.',
+        duration: 2600, position: 'top', color: 'warning',
+      });
+      await t.present();
+      return;
+    }
+
     // ── iOS Safari não-PWA: BLOQUEIA o modal de câmera ──
     // Em iOS Safari sem PWA instalado, transmitir não vale a pena
     // (sem fullscreen real). Em vez de abrir o modal, mostramos APENAS
@@ -713,6 +946,13 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
       return; // NÃO segue pra abrir modal de câmera
     }
 
+    // ── Valida/reserva o TEMPO de transmissão (crédito = 1 bloco de tempo) ──
+    // Débito "ao iniciar": se ainda não há tempo reservado disponível,
+    // tenta reservar +1 hora (debita 1 crédito avulso do dono). Bloqueia
+    // se não houver crédito nem cobertura do plano.
+    const liberado = await this.garantirTempoTransmissao();
+    if (!liberado) return;
+
     // Outros browsers (Android Chrome, PWA, Capacitor, desktop):
     // mostra prompt nativo de install (se houver) e abre o modal.
     await this.pwaInstall.mostrarPromptSeRelevante();
@@ -732,6 +972,211 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
       },
     });
     await modal.present();
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // Tempo de transmissão (1 crédito = `transmissaoDuracaoMin` minutos,
+  // acumulados entre quedas). Débito ao iniciar; auto-encerra ao esgotar.
+  // ════════════════════════════════════════════════════════════════
+
+  /** Lê o saldo AVULSO (transmissoesExtras) do dono do campeonato. */
+  private async lerSaldoAvulso(ownerId: string): Promise<number> {
+    try {
+      const profile = await firstValueFrom(this.usersSrv.profilePorUid$(ownerId));
+      return profile?.transmissoesExtras ?? 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  /**
+   * Pré-bloqueio (UX) antes de abrir o modal de transmissão: se não há
+   * tempo reservado restante E o dono não tem crédito, BLOQUEIA e oferece
+   * comprar. NÃO debita aqui — o débito/reserva acontece no momento REAL
+   * do início (dentro do modal), pra não cobrar se o usuário cancelar.
+   */
+  private async garantirTempoTransmissao(): Promise<boolean> {
+    const camp = await firstValueFrom(this.campeonato$);
+    const ownerId = camp?.ownerId;
+    if (!ownerId) return true; // sem dono conhecido — não bloqueia
+
+    const t = await firstValueFrom(this.transmissaoTempo$);
+    if (t.cronometrado && t.restanteSeg > 0) return true; // ainda tem tempo pago
+
+    // Sem tempo disponível → EXIGE crédito pra transmitir.
+    const saldo = await this.lerSaldoAvulso(ownerId);
+    if (saldo <= 0) {
+      await this.oferecerComprarCreditos();
+      return false;
+    }
+    return true; // tem crédito — o modal fará a reserva ao iniciar de fato
+  }
+
+  /**
+   * Vigia o tempo restante enquanto transmite. Ao zerar (modo cronometrado):
+   *  - com crédito avulso → pergunta se quer renovar +1h.
+   *  - sem crédito → encerra automaticamente.
+   * Chamado uma vez no ngOnInit.
+   */
+  private vigiarLimiteTransmissao(): void {
+    if (!this.campeonatoId || !this.categoriaId || !this.jogoId) return;
+    this.limiteTransmissaoSub = combineLatest([
+      this.transmissaoLiveAtiva$,
+      this.transmissaoTempo$,
+    ]).subscribe(([ativa, t]) => {
+      if (!ativa || !t.cronometrado || t.restanteSeg > 0) return;
+      if (this.tratandoLimiteTransmissao) return;
+      this.tratandoLimiteTransmissao = true;
+      void this.aoEsgotarTempo(ativa.id ?? null).finally(() => {
+        // Pequeno cooldown pra não re-disparar antes do estado atualizar.
+        setTimeout(() => { this.tratandoLimiteTransmissao = false; }, 4000);
+      });
+    });
+  }
+
+  private async aoEsgotarTempo(transmissaoId: string | null): Promise<void> {
+    const camp = await firstValueFrom(this.campeonato$);
+    const ownerId = camp?.ownerId;
+    const saldo = ownerId ? await this.lerSaldoAvulso(ownerId) : 0;
+
+    // Sem saldo → encerra automaticamente e oferece compra.
+    if (saldo <= 0) {
+      if (transmissaoId) {
+        await this.transmissoesSrv.encerrar(this.campeonatoId, this.categoriaId, this.jogoId, transmissaoId)
+          .catch(() => {});
+      }
+      await this.toastTx('Tempo de transmissão esgotado. Transmissão encerrada.', 'warning');
+      await this.oferecerComprarCreditos();
+      return;
+    }
+
+    // Com saldo → pergunta antes de renovar +1h.
+    const limiteMin = this.planosSrv.transmissaoDuracaoMin;
+    const alert = await this.alertCtrl.create({
+      header: 'Tempo esgotado',
+      message: `O tempo deste crédito acabou. Renovar por mais ${limiteMin} min? Isso debita 1 crédito de transmissão (saldo: ${saldo}).`,
+      buttons: [
+        {
+          text: 'Encerrar',
+          role: 'cancel',
+          handler: () => {
+            if (transmissaoId) {
+              void this.transmissoesSrv
+                .encerrar(this.campeonatoId, this.categoriaId, this.jogoId, transmissaoId)
+                .catch(() => {});
+            }
+          },
+        },
+        {
+          text: 'Renovar +' + limiteMin + 'min',
+          handler: () => { void this.renovarTempoTransmissao(ownerId!, transmissaoId); },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  private async renovarTempoTransmissao(ownerId: string, transmissaoId: string | null): Promise<void> {
+    const meuUid = this.auth.currentUser?.uid ?? null;
+    const r = await this.transmissoesSrv.reservarHoraTransmissao(
+      this.campeonatoId, this.categoriaId, this.jogoId, ownerId, meuUid,
+    );
+    if (r === 'ok') {
+      await this.toastTx('Tempo renovado! +' + this.planosSrv.transmissaoDuracaoMin + ' min.', 'success');
+    } else {
+      if (transmissaoId) {
+        await this.transmissoesSrv
+          .encerrar(this.campeonatoId, this.categoriaId, this.jogoId, transmissaoId)
+          .catch(() => {});
+      }
+      await this.toastTx('Sem créditos pra renovar. Transmissão encerrada.', 'warning');
+    }
+  }
+
+  /**
+   * Ativa proativamente +1 crédito de transmissão (estende o tempo).
+   * Também serve pra começar a cronometrar uma transmissão que está
+   * rodando pelo plano (horasPagas 0 → 1). Pede confirmação (debita 1 crédito).
+   */
+  async ativarCreditoTransmissao(): Promise<void> {
+    const camp = await firstValueFrom(this.campeonato$);
+    const ownerId = camp?.ownerId;
+    if (!ownerId) return;
+
+    const saldo = await this.lerSaldoAvulso(ownerId);
+    if (saldo <= 0) {
+      await this.oferecerComprarCreditos();
+      return;
+    }
+
+    const limiteMin = this.planosSrv.transmissaoDuracaoMin;
+    const restante = saldo - 1;
+    const alert = await this.alertCtrl.create({
+      header: 'Ativar mais tempo de transmissão?',
+      message:
+        `Esta ação <strong>debita 1 crédito</strong> de transmissão e libera ` +
+        `<strong>+${limiteMin} minutos</strong>.<br><br>` +
+        `Saldo: <strong>${saldo}</strong> → ficará com <strong>${restante}</strong> crédito${restante === 1 ? '' : 's'}.<br><br>` +
+        `Deseja realmente ativar?`,
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: `Sim, ativar (−1 crédito)`,
+          handler: () => {
+            const meuUid = this.auth.currentUser?.uid ?? null;
+            void this.transmissoesSrv
+              .reservarHoraTransmissao(this.campeonatoId, this.categoriaId, this.jogoId, ownerId, meuUid)
+              .then(r => {
+                if (r === 'ok') {
+                  return this.toastTx(`+${limiteMin} min ativados! Crédito debitado.`, 'success');
+                }
+                if (r === 'sem-creditos') {
+                  return this.toastTx('Sem créditos disponíveis.', 'danger');
+                }
+                return this.toastTx('Não foi possível ativar o crédito.', 'danger');
+              });
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  /**
+   * Alerta "sem créditos" com atalho pra comprar — redireciona pra
+   * /app/meus-creditos. Reutilizado em todos os pontos de débito.
+   */
+  private async oferecerComprarCreditos(): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header: 'Sem créditos de transmissão',
+      message:
+        'Você não tem créditos de transmissão disponíveis. ' +
+        'Deseja comprar agora? Cada crédito libera ' +
+        `<strong>${this.planosSrv.transmissaoDuracaoMin} min</strong> de transmissão.`,
+      buttons: [
+        { text: 'Agora não', role: 'cancel' },
+        {
+          text: 'Comprar créditos',
+          handler: () => { void this.router.navigate(['/app/meus-creditos']); },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  /** Formata segundos restantes como "MM:SS" (ou "HH:MM:SS" se ≥ 1h). */
+  formatarTempoRestante(seg: number): string {
+    const s = Math.max(0, Math.floor(seg));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const ss = s % 60;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return h > 0 ? `${h}:${pad(m)}:${pad(ss)}` : `${pad(m)}:${pad(ss)}`;
+  }
+
+  private async toastTx(message: string, color: 'success' | 'danger' | 'warning' | 'medium'): Promise<void> {
+    const t = await this.toastCtrl.create({ message, duration: 3000, position: 'top', color });
+    await t.present();
   }
 
   async abrirMenu(ev: Event): Promise<void> {
@@ -905,6 +1350,10 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
         visitante: dados.visitante,
         ladoPadrao: lado,
         tipoPadrao: tipo,
+        // O lance SEMPRE entra via Quick Action de um time específico —
+        // a escolha de equipe já está implícita pelo botão clicado.
+        // O modal esconde o seletor do outro time.
+        bloquearEquipe: true,
         minutoSugerido: minutoAtual > 0 ? minutoAtual : null,
         tempoSugerido: tempoAtual,
       },
@@ -1610,6 +2059,128 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
    * Abre o modal de novo/editar patrocinador da partida.
    * Recebe `idx = -1` para novo, ou o índice do item para edição.
    */
+  /** Abre o modal de ativar patrocínio PAGO (debita créditos). */
+  async abrirAtivarPatrocinio(): Promise<void> {
+    const camp = await firstValueFrom(this.campeonato$);
+    if (!camp?.ownerId) return;
+    const modal = await this.modalCtrl.create({
+      component: AtivarPatrocinioModalComponent,
+      cssClass: 'modal-ativar-patrocinio',
+      componentProps: {
+        campeonatoId: this.campeonatoId,
+        categoriaId: this.categoriaId,
+        jogoId: this.jogoId,
+        ownerId: camp.ownerId,
+      },
+    });
+    await modal.present();
+  }
+
+  /**
+   * Abre o modal de EDIÇÃO de um patrocínio que ainda está agendado
+   * (transmissão não iniciou). Permite trocar logo, nome ou
+   * adicionar/remover anunciantes dentro do limite do crédito original.
+   * Bloqueado após status virar 'ativo'.
+   */
+  async editarAd(p: PatrocinioJogo): Promise<void> {
+    if (p.status !== 'agendado') {
+      const t = await this.toastCtrl.create({
+        message: 'Só patrocínios agendados podem ser editados.',
+        duration: 2500, color: 'warning', position: 'top',
+      });
+      await t.present();
+      return;
+    }
+    const modal = await this.modalCtrl.create({
+      component: EditarPatrocinioModalComponent,
+      cssClass: 'modal-editar-patrocinio',
+      componentProps: {
+        campeonatoId: this.campeonatoId,
+        categoriaId: this.categoriaId,
+        jogoId: this.jogoId,
+        patrocinio: p,
+      },
+    });
+    await modal.present();
+  }
+
+  /** Cancela um patrocínio agendado e estorna o crédito. */
+  async cancelarAd(patrocinioId: string): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header: 'Cancelar patrocínio?',
+      message: 'Os créditos serão estornados.',
+      buttons: [
+        { text: 'Não', role: 'cancel' },
+        {
+          text: 'Sim, cancelar',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await this.patrSrv.cancelarPatrocinio(
+                this.campeonatoId, this.categoriaId, this.jogoId, patrocinioId,
+              );
+              const t = await this.toastCtrl.create({
+                message: 'Patrocínio cancelado. Créditos estornados.',
+                duration: 2200, color: 'success', position: 'top',
+              });
+              await t.present();
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : String(err);
+              const t = await this.toastCtrl.create({
+                message: msg, duration: 3000, color: 'danger', position: 'top',
+              });
+              await t.present();
+            }
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  /** Ativa um patrocínio AGENDADO imediatamente (quando a transmissão
+   *  já está rodando). Não pede confirmação — clique direto e some o
+   *  chip "Aguardando" + vira "EM ANDAMENTO". */
+  async ativarAdAgora(p: PatrocinioJogo): Promise<void> {
+    if (!p.id) return;
+    try {
+      await this.patrSrv.ativarPatrocinioAgora(
+        this.campeonatoId, this.categoriaId, this.jogoId, p.id,
+      );
+      const t = await this.toastCtrl.create({
+        message: 'Patrocínio ativado! Já está aparecendo na transmissão.',
+        duration: 2200, color: 'success', position: 'top',
+      });
+      await t.present();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const t = await this.toastCtrl.create({
+        message: msg, duration: 3000, color: 'danger', position: 'top',
+      });
+      await t.present();
+    }
+  }
+
+  /** Abre modal customizada de reativação (UI rica em vez do alert simples). */
+  async reativarAd(p: PatrocinioJogo): Promise<void> {
+    if (!p.id) return;
+    const modal = await this.modalCtrl.create({
+      component: ReativarPatrocinioModalComponent,
+      cssClass: 'modal-reativar-patrocinio',
+      componentProps: {
+        campeonatoId: this.campeonatoId,
+        categoriaId: this.categoriaId,
+        jogoId: this.jogoId,
+        patrocinio: p,
+      },
+    });
+    await modal.present();
+  }
+
+  statusLabel(s: PatrocinioJogo['status']): string {
+    return ({ agendado: 'Agendado', ativo: 'Ativo', expirado: 'Expirado', cancelado: 'Cancelado' } as const)[s] ?? s;
+  }
+
   async adicionarPatrocinadorJogo(idx = -1): Promise<void> {
     const jogo = await firstValueFrom(this.jogo$);
     if (!jogo?.id) return;

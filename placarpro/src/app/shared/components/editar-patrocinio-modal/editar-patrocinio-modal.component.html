@@ -1,0 +1,150 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="fechar()">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Editar patrocínio</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Aviso fixo: só edita antes de iniciar -->
+  <div class="aviso-line">
+    <ion-icon name="information-circle-outline"></ion-icon>
+    <span>
+      Só é possível editar enquanto o status for <strong>agendado</strong>.
+      Após o início da transmissão, a esteira fica congelada.
+    </span>
+  </div>
+
+  <!-- Lista de anunciantes editáveis -->
+  <h3 class="step-h">
+    Anunciantes
+    <span class="contador">{{ anuncios.length }} / {{ maxLogos }}</span>
+  </h3>
+
+  <div class="lista-edit">
+    <div class="card-edit" *ngFor="let a of anuncios; let i = index">
+      <!-- Logo + trocar foto -->
+      <div class="foto-box">
+        <img *ngIf="a.logoUrl" [src]="a.logoUrl" [alt]="a.nome" />
+        <button
+          *ngIf="trocandoLogoIdx !== i"
+          type="button"
+          class="foto-trocar"
+          aria-label="Trocar foto"
+          title="Trocar foto"
+        >
+          <ion-icon name="camera-outline"></ion-icon>
+          <span>Trocar foto</span>
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            (change)="trocarFoto(i, $event)"
+          />
+        </button>
+        <div class="foto-loading" *ngIf="trocandoLogoIdx === i">
+          <ion-spinner name="dots"></ion-spinner>
+        </div>
+      </div>
+
+      <!-- Nome + remover -->
+      <div class="campo-nome">
+        <label class="field-lbl">Nome</label>
+        <input
+          type="text"
+          [value]="a.nome"
+          (input)="onNomeAlterado(i, $any($event.target).value)"
+          maxlength="40"
+          placeholder="Nome do anunciante"
+        />
+      </div>
+
+      <button
+        type="button"
+        class="btn-remover"
+        (click)="removerAnuncio(i)"
+        [disabled]="anuncios.length <= 1"
+        aria-label="Remover anunciante"
+        title="Remover"
+      >
+        <ion-icon name="trash-outline"></ion-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Adicionar mais (até maxLogos) -->
+  <button
+    type="button"
+    class="btn-add"
+    *ngIf="!formAberto && anuncios.length < maxLogos"
+    (click)="abrirForm()"
+  >
+    <ion-icon name="add-circle-outline"></ion-icon>
+    <span>Adicionar mais um</span>
+    <small>Proporção 16:9 · recomendado 360 × 202 px</small>
+  </button>
+
+  <!-- Form inline pra novo -->
+  <div class="form-add" *ngIf="formAberto">
+    <h4>Novo anunciante</h4>
+
+    <label class="form-field">
+      <span class="field-lbl">Nome</span>
+      <input
+        type="text"
+        [(ngModel)]="novoNome"
+        placeholder="Ex: Loja Acme"
+        maxlength="40"
+      />
+    </label>
+
+    <label class="form-field">
+      <span class="field-lbl">Logo</span>
+      <div class="upload-box" [class.tem-logo]="!!novoLogoUrl">
+        <img *ngIf="novoLogoUrl" [src]="novoLogoUrl" alt="Preview" class="upload-preview" />
+        <div class="upload-placeholder" *ngIf="!novoLogoUrl && !enviandoLogo">
+          <ion-icon name="cloud-upload-outline"></ion-icon>
+          <span>Escolher imagem</span>
+          <small>16:9 · recomendado 360×202</small>
+        </div>
+        <div class="upload-loading" *ngIf="enviandoLogo">
+          <ion-spinner name="dots"></ion-spinner>
+          <span>Enviando…</span>
+        </div>
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          (change)="onLogoSelecionado($event)"
+          [disabled]="enviandoLogo"
+        />
+      </div>
+    </label>
+
+    <div class="form-actions">
+      <ion-button fill="clear" color="medium" (click)="cancelarForm()" [disabled]="enviandoLogo">
+        Cancelar
+      </ion-button>
+      <ion-button color="secondary" (click)="confirmarAdd()" [disabled]="enviandoLogo || !novoNome || !novoLogoUrl">
+        <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+        Adicionar
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Salvar -->
+  <ion-button
+    *ngIf="!formAberto"
+    expand="block"
+    color="secondary"
+    class="ion-margin-top"
+    [disabled]="salvando || anuncios.length === 0"
+    (click)="salvar()"
+  >
+    <ion-spinner *ngIf="salvando" name="dots" slot="start"></ion-spinner>
+    <ion-icon *ngIf="!salvando" slot="start" name="save-outline"></ion-icon>
+    Salvar alterações
+  </ion-button>
+</ion-content>

@@ -65,7 +65,7 @@ const routes: Routes = [
   },
 
   // Transmissão PÚBLICA de um jogo — qualquer pessoa pode acompanhar
-  // (sem login) o player do YouTube + placar overlay + feed de eventos
+  // (sem login) o player ao vivo + placar overlay + feed de eventos
   // em tempo real. URL compartilhável.
   // Reusa o mesmo TransmissaoPageModule do shell (a página é read-only).
   {

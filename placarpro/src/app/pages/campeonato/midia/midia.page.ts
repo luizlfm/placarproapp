@@ -9,6 +9,8 @@ import {
 import { BehaviorSubject, Observable, combineLatest, firstValueFrom, of, switchMap } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { MidiasService } from '../../../campeonatos/midias.service';
+import { CampeonatosService } from '../../../campeonatos/campeonatos.service';
+import { PlanosService } from '../../../users/planos.service';
 import { Midia, MidiaTipo, NovaMidiaInput } from '../../../campeonatos/models/midia.model';
 import { AdicionarLinkModalComponent } from '../../../shared/midia/adicionar-link/adicionar-link.modal';
 import { CriarNoticiaModalComponent } from '../../../shared/midia/criar-noticia/criar-noticia.modal';
@@ -31,6 +33,8 @@ interface FiltroOpcao { id: FiltroMidia; label: string; icon: string; }
 export class MidiaPage {
   private readonly route = inject(ActivatedRoute);
   private readonly midias = inject(MidiasService);
+  private readonly campeonatosSrv = inject(CampeonatosService);
+  private readonly planosSrv = inject(PlanosService);
   private readonly modalCtrl = inject(ModalController);
   private readonly loadingCtrl = inject(LoadingController);
   private readonly toastCtrl = inject(ToastController);
@@ -128,12 +132,32 @@ export class MidiaPage {
     const input = ev.target as HTMLInputElement;
     const files = Array.from(input.files ?? []);
     if (!files.length) return;
+
+    // Limite de duração de vídeo do plano (do DONO do campeonato). -1 = ilimitado.
+    let maxVideoSeg = -1;
+    if (this.galeriaModo === 'video') {
+      const camp = await firstValueFrom(this.campeonatosSrv.get$(this.campeonatoId));
+      const limites = await firstValueFrom(this.planosSrv.limitesParaOwner$(camp?.ownerId));
+      maxVideoSeg = limites.maxVideoSegundos;
+    }
+
     const loader = await this.loadingCtrl.create({ message: `Enviando ${files.length} arquivo(s)...` });
     await loader.present();
     let okCount = 0;
     try {
       for (const file of files) {
         try {
+          // Bloqueia vídeos acima do limite de duração do plano.
+          if (this.galeriaModo === 'video' && maxVideoSeg !== -1) {
+            const dur = await MidiasService.medirDuracaoVideo(file);
+            if (dur > maxVideoSeg + 0.5) {
+              await this.toast(
+                `"${file.name}" tem ${Math.round(dur)}s. O plano permite vídeos de até ${maxVideoSeg}s. Faça upgrade.`,
+                'danger',
+              );
+              continue;
+            }
+          }
           const { url, path } = await this.midias.uploadArquivo(this.campeonatoId, file);
           const input: NovaMidiaInput = {
             campeonatoId: this.campeonatoId,

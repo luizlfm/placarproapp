@@ -298,6 +298,39 @@ export class UsersService {
     );
   }
 
+  /** Incrementa (ou decrementa) o saldo de CRÉDITOS DE PATROCÍNIO NORMAL.
+   *  Usado pelo admin master pra creditar após pagamento Pix manual,
+   *  estornar reembolsos, ou ajustar saldos. */
+  async updateCreditosPatrocinio(uid: string, delta: number): Promise<void> {
+    if (!uid) throw new Error('uid obrigatório');
+    await runInInjectionContext(this.injector, () =>
+      setDoc(
+        doc(this.fs, 'users', uid),
+        {
+          creditosPatrocinio: increment(delta),
+          atualizadoEm: serverTimestamp() as unknown as Timestamp,
+        },
+        { merge: true },
+      ),
+    );
+  }
+
+  /** Incrementa (ou decrementa) o saldo de CRÉDITOS PREMIUM.
+   *  Saldo separado do normal — preço unitário R$ 70 cada. */
+  async updateCreditosPatrocinioPremium(uid: string, delta: number): Promise<void> {
+    if (!uid) throw new Error('uid obrigatório');
+    await runInInjectionContext(this.injector, () =>
+      setDoc(
+        doc(this.fs, 'users', uid),
+        {
+          creditosPatrocinioPremium: increment(delta),
+          atualizadoEm: serverTimestamp() as unknown as Timestamp,
+        },
+        { merge: true },
+      ),
+    );
+  }
+
   /** Toggle de `isMaster` em outro usuário — apenas admin master pode. */
   async toggleUserIsMaster(uid: string, isMaster: boolean): Promise<void> {
     if (!uid) throw new Error('uid obrigatório');

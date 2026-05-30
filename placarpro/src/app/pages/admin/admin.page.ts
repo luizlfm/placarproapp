@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { ModalController } from '@ionic/angular';
+import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import {
   CollectionReference,
   Firestore,
@@ -13,7 +13,7 @@ import {
   limit,
 } from '@angular/fire/firestore';
 import { Injector, runInInjectionContext } from '@angular/core';
-import { Observable, combineLatest, of, BehaviorSubject } from 'rxjs';
+import { Observable, combineLatest, of, BehaviorSubject, firstValueFrom } from 'rxjs';
 import { catchError, map, startWith } from 'rxjs/operators';
 import { CampeonatosService } from '../../campeonatos/campeonatos.service';
 import { UsersService } from '../../users/users.service';
@@ -31,6 +31,7 @@ import { RefreshService } from '../../shared/refresh.service';
 import { PlanosService, PlanoDef, PlanoId, Periodicidade } from '../../users/planos.service';
 import { CobrancasService } from '../../users/cobrancas.service';
 import { ConfigGlobalService, ConfigGlobal } from '../../users/config-global.service';
+import { ConfigComercialService, ConfigComercial } from '../../users/config-comercial.service';
 import { LogsService } from '../../users/logs.service';
 import {
   LogAuditoria,
@@ -54,6 +55,7 @@ type SecaoAdmin =
   | 'inscricoes'
   | 'organizadores'
   | 'planos'
+  | 'valores'
   | 'cobrancas'
   | 'financeiro'
   | 'configuracoes'
@@ -160,11 +162,14 @@ export class AdminPage implements OnInit {
   private readonly fs = inject(Firestore);
   private readonly injector = inject(Injector);
   private readonly modalCtrl = inject(ModalController);
+  private readonly alertCtrl = inject(AlertController);
+  private readonly toastCtrl = inject(ToastController);
   private readonly adminNav = inject(AdminNavigationService);
   private readonly refreshSrv = inject(RefreshService);
   private readonly planosSrv = inject(PlanosService);
   private readonly cobrancasSrv = inject(CobrancasService);
   private readonly configSrv = inject(ConfigGlobalService);
+  private readonly configComercialSrv = inject(ConfigComercialService);
   private readonly logsSrv = inject(LogsService);
 
   /** Expostos pro template. */
@@ -176,8 +181,9 @@ export class AdminPage implements OnInit {
   readonly COBRANCA_STATUS_COR = COBRANCA_STATUS_COR;
   readonly METODO_PAGAMENTO_LABEL = METODO_PAGAMENTO_LABEL;
 
-  /** Catálogo completo de planos (usado no dropdown da tabela de planos). */
-  readonly catalogoPlanos: ReadonlyArray<PlanoDef> = this.planosSrv.planos;
+  /** Catálogo completo de planos (com overrides do admin já aplicados).
+   *  Getter pra refletir mudanças após salvar valores em config/comercial. */
+  get catalogoPlanos(): ReadonlyArray<PlanoDef> { return this.planosSrv.planos; }
 
   /** Seção atualmente aberta (5 tabs). */
   secao: SecaoAdmin = 'dashboard';
@@ -277,6 +283,38 @@ export class AdminPage implements OnInit {
   private readonly buscaInscricoes$ = new BehaviorSubject<string>('');
   private readonly buscaOrganizadores$ = new BehaviorSubject<string>('');
 
+  /**
+   * Filtros adicionais da aba Usuários — chips de filtro rápido.
+   * - status: 'todos' | 'ativos' | 'pendentes' (moderadores não validados)
+   *          | 'bloqueados' | 'banidos' | 'admins'
+   * - tipo: 'todos' | TipoConta
+   */
+  filtroStatusUsuario: 'todos' | 'ativos' | 'pendentes' | 'bloqueados' | 'banidos' | 'admins' = 'todos';
+  filtroTipoUsuario: 'todos' | 'organizador' | 'cliente' | 'moderador' | 'racha' = 'todos';
+  private readonly filtroStatusUsuario$ = new BehaviorSubject<typeof this.filtroStatusUsuario>('todos');
+  private readonly filtroTipoUsuario$ = new BehaviorSubject<typeof this.filtroTipoUsuario>('todos');
+
+  /**
+   * Filtros da aba Campeonatos — visibilidade (público/privado) e
+   * presença de capa (pra catar campeonatos "incompletos" sem branding).
+   */
+  filtroVisibilidadeCampeonato: 'todos' | 'publico' | 'privado' = 'todos';
+  filtroCapaCampeonato: 'todos' | 'com-capa' | 'sem-capa' = 'todos';
+  private readonly filtroVisibilidadeCampeonato$ = new BehaviorSubject<typeof this.filtroVisibilidadeCampeonato>('todos');
+  private readonly filtroCapaCampeonato$ = new BehaviorSubject<typeof this.filtroCapaCampeonato>('todos');
+
+  /**
+   * Top 5 organizadores por número de campeonatos — exibido no
+   * dashboard pra dar visibilidade rápida dos heavy users.
+   */
+  topOrganizadores$: Observable<Array<{ uid: string; nome: string; total: number; fotoUrl?: string }>> = of([]);
+
+  /**
+   * Top 5 campeonatos por número de equipes — exibido no dashboard
+   * pra dar visibilidade dos torneios mais ativos.
+   */
+  topCampeonatos$: Observable<Array<{ id: string; titulo: string; totalEquipes: number; logoUrl?: string }>> = of([]);
+
   organizadoresFiltrados$: Observable<GrupoOrganizador[]> = of([]);
 
   ngOnInit(): void {
@@ -319,15 +357,95 @@ export class AdminPage implements OnInit {
       map(([users, camps]) => this.agruparPorOrganizador(users, camps)),
     );
 
-    // ============ Listas filtradas (busca client-side) ============
-    this.usuariosFiltrados$ = combineLatest([this.usuarios$, this.buscaUsuarios$]).pipe(
-      map(([list, t]) => this.filtrarUsuarios(list, t)),
+    // ============ Ações pendentes (Dashboard — card de alertas) ============
+    // Agrega contagens de itens que precisam de atenção do admin master:
+    // moderadores aguardando validação, cobranças atrasadas, jogos ao vivo
+    // (broadcast ativo) e contas banidas/bloqueadas. Combinado via combineLatest.
+    this.acoesPendentes$ = combineLatest([
+      this.usuarios$,
+      this.jogos$,
+      this.cobrancas$.pipe(startWith([] as Cobranca[])),
+    ]).pipe(
+      map(([users, jogos, cobrancas]) => {
+        const moderadoresPendentes = users.filter(u =>
+          u.tipo === 'moderador' && !u.moderadorValidado && !u.banido && !u.bloqueado,
+        ).length;
+        const contasBloqueadas = users.filter(u => u.bloqueado && !u.banido).length;
+        const contasBanidas = users.filter(u => u.banido).length;
+        const cobrancasAtrasadas = cobrancas.filter(c => c.status === 'atrasado').length;
+        const jogosAoVivo = jogos.filter(j => j.status === 'em-andamento').length;
+        const total = moderadoresPendentes + contasBloqueadas + cobrancasAtrasadas;
+        return {
+          moderadoresPendentes,
+          contasBloqueadas,
+          contasBanidas,
+          cobrancasAtrasadas,
+          jogosAoVivo,
+          total,
+        };
+      }),
+    );
+
+    // ============ Listas filtradas (busca + status + tipo) ============
+    this.usuariosFiltrados$ = combineLatest([
+      this.usuarios$,
+      this.buscaUsuarios$,
+      this.filtroStatusUsuario$,
+      this.filtroTipoUsuario$,
+    ]).pipe(
+      map(([list, t, status, tipo]) => this.filtrarUsuarios(list, t, status, tipo)),
     );
 
     this.campeonatosFiltrados$ = combineLatest([
-      this.campeonatos$, this.usuarios$, this.buscaCampeonatos$,
+      this.campeonatos$,
+      this.usuarios$,
+      this.buscaCampeonatos$,
+      this.filtroVisibilidadeCampeonato$,
+      this.filtroCapaCampeonato$,
     ]).pipe(
-      map(([camps, users, t]) => this.filtrarCampeonatos(camps, users, t)),
+      map(([camps, users, t, vis, capa]) => this.filtrarCampeonatos(camps, users, t, vis, capa)),
+    );
+
+    // ============ Top 5 organizadores por # de campeonatos ============
+    this.topOrganizadores$ = combineLatest([this.usuarios$, this.campeonatos$]).pipe(
+      map(([users, camps]) => {
+        const uMap = new Map(users.map(u => [u.uid, u]));
+        const contagem = new Map<string, number>();
+        for (const c of camps) {
+          if (!c.ownerId) continue;
+          contagem.set(c.ownerId, (contagem.get(c.ownerId) ?? 0) + 1);
+        }
+        return Array.from(contagem.entries())
+          .map(([uid, total]) => ({
+            uid,
+            nome: uMap.get(uid)?.nome ?? uid,
+            fotoUrl: uMap.get(uid)?.logoUrl ?? uMap.get(uid)?.fotoUrl,
+            total,
+          }))
+          .sort((a, b) => b.total - a.total)
+          .slice(0, 5);
+      }),
+    );
+
+    // ============ Top 5 campeonatos por # de equipes ============
+    this.topCampeonatos$ = combineLatest([this.campeonatos$, this.equipes$]).pipe(
+      map(([camps, equipes]) => {
+        const contagem = new Map<string, number>();
+        for (const e of equipes) {
+          if (!e.campeonatoId) continue;
+          contagem.set(e.campeonatoId, (contagem.get(e.campeonatoId) ?? 0) + 1);
+        }
+        return camps
+          .map(c => ({
+            id: c.id ?? '',
+            titulo: c.titulo,
+            logoUrl: c.logoUrl,
+            totalEquipes: contagem.get(c.id ?? '') ?? 0,
+          }))
+          .filter(c => c.totalEquipes > 0)
+          .sort((a, b) => b.totalEquipes - a.totalEquipes)
+          .slice(0, 5);
+      }),
     );
 
     this.inscricoesFiltradas$ = combineLatest([this.inscricoes$, this.buscaInscricoes$]).pipe(
@@ -918,27 +1036,248 @@ export class AdminPage implements OnInit {
     return l.id ?? '';
   }
 
-  private filtrarUsuarios(list: UserProfile[], termo: string): UserProfile[] {
+  private filtrarUsuarios(
+    list: UserProfile[],
+    termo: string,
+    status: typeof this.filtroStatusUsuario = 'todos',
+    tipo: typeof this.filtroTipoUsuario = 'todos',
+  ): UserProfile[] {
     const t = (termo ?? '').trim().toLowerCase();
-    if (!t) return list;
-    return list.filter(u =>
-      (u.nome ?? '').toLowerCase().includes(t) ||
-      (u.email ?? '').toLowerCase().includes(t) ||
-      (u.tipo ?? '').toLowerCase().includes(t) ||
-      (u.uid ?? '').toLowerCase().includes(t),
-    );
+
+    return list.filter(u => {
+      // Busca livre
+      if (t) {
+        const bate =
+          (u.nome ?? '').toLowerCase().includes(t) ||
+          (u.email ?? '').toLowerCase().includes(t) ||
+          (u.tipo ?? '').toLowerCase().includes(t) ||
+          (u.uid ?? '').toLowerCase().includes(t);
+        if (!bate) return false;
+      }
+
+      // Filtro por status
+      switch (status) {
+        case 'ativos':
+          if (u.banido || u.bloqueado) return false;
+          if (u.tipo === 'moderador' && !u.moderadorValidado) return false;
+          break;
+        case 'pendentes':
+          if (u.tipo !== 'moderador' || u.moderadorValidado) return false;
+          break;
+        case 'bloqueados':
+          if (!u.bloqueado || u.banido) return false;
+          break;
+        case 'banidos':
+          if (!u.banido) return false;
+          break;
+        case 'admins':
+          if (!u.isMaster) return false;
+          break;
+        // 'todos' — sem filtro
+      }
+
+      // Filtro por tipo
+      if (tipo !== 'todos' && u.tipo !== tipo) return false;
+
+      return true;
+    });
+  }
+
+  /** Setter chamado pelos chips de filtro de status. */
+  setFiltroStatusUsuario(status: typeof this.filtroStatusUsuario): void {
+    this.filtroStatusUsuario = status;
+    this.filtroStatusUsuario$.next(status);
+  }
+
+  /** Setter chamado pelos chips de filtro de tipo. */
+  setFiltroTipoUsuario(tipo: typeof this.filtroTipoUsuario): void {
+    this.filtroTipoUsuario = tipo;
+    this.filtroTipoUsuario$.next(tipo);
+  }
+
+  setFiltroVisibilidadeCampeonato(v: typeof this.filtroVisibilidadeCampeonato): void {
+    this.filtroVisibilidadeCampeonato = v;
+    this.filtroVisibilidadeCampeonato$.next(v);
+  }
+
+  setFiltroCapaCampeonato(c: typeof this.filtroCapaCampeonato): void {
+    this.filtroCapaCampeonato = c;
+    this.filtroCapaCampeonato$.next(c);
+  }
+
+  /**
+   * Exporta a lista atual de cobranças (já filtrada) em CSV.
+   * Útil pro admin compartilhar com contador / financeiro externo.
+   */
+  async exportarCobrancasCsv(): Promise<void> {
+    const cobs = await firstValueFrom(this.cobrancasFiltradas$);
+    if (cobs.length === 0) {
+      await this.toast('Nenhuma cobrança pra exportar.', 'medium');
+      return;
+    }
+    const header = ['Usuário', 'Email', 'Plano', 'Periodicidade', 'Valor (R$)', 'Status', 'Vencimento', 'Método', 'Pago em'];
+    const rows: string[][] = cobs.map((c: Cobranca) => [
+      c.usuarioNome ?? c.usuarioId ?? '',
+      c.usuarioEmail ?? '',
+      c.planoId ?? '',
+      c.periodicidade ?? '',
+      // valorCentavos vem em centavos — divide por 100 e formata BR
+      ((c.valorCentavos ?? 0) / 100).toFixed(2).replace('.', ','),
+      c.status ?? '',
+      // `vencimento` é string YYYY-MM-DD direto do model
+      this.formatarDataIso(c.vencimento),
+      c.metodoPagamento ?? '',
+      this.formatarTimestamp(c.pagoEm),
+    ]);
+    const csv = [header, ...rows]
+      .map((r: string[]) => r.map((v: string) => `"${(v ?? '').toString().replace(/"/g, '""')}"`).join(';'))
+      .join('\r\n');
+    const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cobrancas-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    await this.toast(`${cobs.length} cobranças exportadas.`, 'success');
+  }
+
+  /** Formata Timestamp do Firestore pra dd/mm/yyyy (CSV). */
+  private formatarTimestamp(ts: unknown): string {
+    if (!ts) return '';
+    const millis = (ts as { toMillis?: () => number }).toMillis?.();
+    if (!millis) return '';
+    const d = new Date(millis);
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  }
+
+  /** Formata string ISO YYYY-MM-DD pra dd/mm/yyyy (CSV). */
+  private formatarDataIso(iso?: string): string {
+    if (!iso) return '';
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // QUICK ACTIONS — botões inline na linha do user (sem abrir modal)
+  // ──────────────────────────────────────────────────────────────────
+
+  /**
+   * Toggle de bloqueio. Confirma via alert pra evitar clique acidental.
+   * `$event.stopPropagation()` no template — pra clique no botão NÃO
+   * abrir o modal de detalhes da linha.
+   */
+  async toggleBloqueio(u: UserProfile, $event: Event): Promise<void> {
+    $event.stopPropagation();
+    if (!u.uid) return;
+    const novoEstado = !u.bloqueado;
+    const alert = await this.alertCtrl.create({
+      header: novoEstado ? 'Bloquear conta?' : 'Desbloquear conta?',
+      message: novoEstado
+        ? `"${u.nome || u.email}" não conseguirá mais fazer login até ser desbloqueado.`
+        : `"${u.nome || u.email}" poderá voltar a acessar o sistema.`,
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: novoEstado ? 'Bloquear' : 'Desbloquear',
+          role: novoEstado ? 'destructive' : undefined,
+          handler: async () => {
+            try {
+              await this.usersSrv.setBloqueado(u.uid, novoEstado);
+              await this.toast(novoEstado ? 'Conta bloqueada.' : 'Conta desbloqueada.', 'success');
+            } catch (err) {
+              console.error('[Admin] toggleBloqueio falhou', err);
+              await this.toast('Erro ao alterar status.', 'danger');
+            }
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  /**
+   * Valida moderador pendente — ativação rápida do dashboard.
+   * Usa o método existente do UsersService que registra timestamp e UID do admin.
+   */
+  async validarModeradorRapido(u: UserProfile, $event: Event): Promise<void> {
+    $event.stopPropagation();
+    if (!u.uid) return;
+    try {
+      await this.usersSrv.setModeradorValidado(u.uid, true);
+      await this.toast(`Moderador "${u.nome}" validado.`, 'success');
+    } catch (err) {
+      console.error('[Admin] validarModerador falhou', err);
+      await this.toast('Erro ao validar moderador.', 'danger');
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // DASHBOARD — Ações pendentes (alertas pro admin agir)
+  // ──────────────────────────────────────────────────────────────────
+
+  /**
+   * Stream de "ações pendentes" pro card de alertas no Dashboard.
+   * Agrega: moderadores aguardando validação, cobranças atrasadas,
+   * jogos em andamento (broadcast ativo) e contas reportadas/banidas.
+   *
+   * Inicializado no ngOnInit junto com os outros streams.
+   */
+  acoesPendentes$: Observable<{
+    moderadoresPendentes: number;
+    contasBloqueadas: number;
+    contasBanidas: number;
+    cobrancasAtrasadas: number;
+    jogosAoVivo: number;
+    total: number;
+  }> = of({
+    moderadoresPendentes: 0,
+    contasBloqueadas: 0,
+    contasBanidas: 0,
+    cobrancasAtrasadas: 0,
+    jogosAoVivo: 0,
+    total: 0,
+  });
+
+  /** Helper privado pra mostrar toast curto (usado pelas quick actions). */
+  private async toast(message: string, color: 'success' | 'danger' | 'medium' = 'success'): Promise<void> {
+    const t = await this.toastCtrl.create({
+      message,
+      duration: 2200,
+      position: 'top',
+      color,
+    });
+    await t.present();
   }
 
   private filtrarCampeonatos(
     camps: Campeonato[],
     users: UserProfile[],
     termo: string,
+    visibilidade: typeof this.filtroVisibilidadeCampeonato = 'todos',
+    capa: typeof this.filtroCapaCampeonato = 'todos',
   ): CampeonatoLinha[] {
     const uMap = new Map(users.map(u => [u.uid, u]));
-    const enriched: CampeonatoLinha[] = camps.map(c => ({
+    let enriched: CampeonatoLinha[] = camps.map(c => ({
       ...c,
       donoNome: c.ownerId ? uMap.get(c.ownerId)?.nome ?? c.ownerId : '—',
     }));
+
+    // Filtro de visibilidade (publico=true/false ou ausente)
+    if (visibilidade === 'publico') {
+      enriched = enriched.filter(c => c.publico !== false);
+    } else if (visibilidade === 'privado') {
+      enriched = enriched.filter(c => c.publico === false);
+    }
+
+    // Filtro de capa (pra catar campeonatos incompletos sem branding)
+    if (capa === 'com-capa') {
+      enriched = enriched.filter(c => !!(c.capaUrl || c.bannerUrl));
+    } else if (capa === 'sem-capa') {
+      enriched = enriched.filter(c => !c.capaUrl && !c.bannerUrl);
+    }
     const t = (termo ?? '').trim().toLowerCase();
     if (!t) return enriched;
     return enriched.filter(c =>
@@ -964,6 +1303,163 @@ export class AdminPage implements OnInit {
 
   selecionarSecao(s: SecaoAdmin): void {
     this.secao = s;
+    // Ao abrir o editor de valores, carrega os valores efetivos atuais.
+    if (s === 'valores') this.carregarValores();
+  }
+
+  // ============================================================
+  // Editor de VALORES (preços/limites dos planos + preços de crédito)
+  // Persistido em config/comercial via ConfigComercialService.
+  // ============================================================
+
+  /** Planos editáveis. Profissional fica de fora (ilimitado / sob consulta). */
+  readonly valoresPlanos: { id: PlanoId; label: string; temPreco: boolean; cor: string; icon: string }[] = [
+    { id: 'gratis', label: 'Grátis', temPreco: false, cor: '#94a3b8', icon: 'gift-outline' },
+    { id: 'pequeno', label: 'Pequeno', temPreco: true, cor: '#4DABF7', icon: 'football-outline' },
+    { id: 'medio', label: 'Médio', temPreco: true, cor: '#7CC61D', icon: 'trophy-outline' },
+    { id: 'grande', label: 'Grande', temPreco: true, cor: '#F39C12', icon: 'ribbon-outline' },
+  ];
+
+  readonly camposPreco: { key: 'mensal' | 'trimestral' | 'semestral' | 'anual'; label: string }[] = [
+    { key: 'mensal', label: 'Mensal' },
+    { key: 'trimestral', label: 'Trimestral' },
+    { key: 'semestral', label: 'Semestral' },
+    { key: 'anual', label: 'Anual' },
+  ];
+
+  readonly camposLimite: { key: string; label: string; icon: string }[] = [
+    { key: 'maxCampeonatos', label: 'Campeonatos', icon: 'trophy-outline' },
+    { key: 'maxCategoriasPorCampeonato', label: 'Categorias / camp.', icon: 'albums-outline' },
+    { key: 'maxJogadoresPorCategoria', label: 'Jogadores / cat.', icon: 'people-outline' },
+    { key: 'maxPatrocinadores', label: 'Patrocinadores', icon: 'megaphone-outline' },
+    { key: 'maxVideoSegundos', label: 'Vídeo (segundos)', icon: 'videocam-outline' },
+    { key: 'maxTransmisoesSimultaneas', label: 'Transmissões simult.', icon: 'radio-outline' },
+  ];
+
+
+  /** Estado do formulário (carregado dos valores efetivos atuais). */
+  valoresForm: {
+    planos: Record<string, { precos: Record<string, number>; limites: Record<string, number> }>;
+    creditos: {
+      patrocinioNormal: { preco: number; patrocinadores: number; duracaoMin: number };
+      patrocinioPremium: { preco: number; patrocinadores: number; janelaSeg: number; intervaloMin: number };
+      transmissaoAvulsa: { preco: number; duracaoMin: number; validadeMeses: number };
+    };
+  } = {
+    planos: {},
+    creditos: {
+      patrocinioNormal: { preco: 0, patrocinadores: 0, duracaoMin: 0 },
+      patrocinioPremium: { preco: 0, patrocinadores: 0, janelaSeg: 0, intervaloMin: 0 },
+      transmissaoAvulsa: { preco: 0, duracaoMin: 0, validadeMeses: 0 },
+    },
+  };
+
+  salvandoValores = false;
+
+  /** Popula o form com os valores efetivos atuais (defaults + overrides). */
+  carregarValores(): void {
+    const planos: Record<string, { precos: Record<string, number>; limites: Record<string, number> }> = {};
+    for (const p of this.valoresPlanos) {
+      const def = this.planosSrv.getPlanoDef(p.id);
+      planos[p.id] = {
+        precos: {
+          mensal: def.precos.mensal,
+          trimestral: def.precos.trimestral,
+          semestral: def.precos.semestral,
+          anual: def.precos.anual,
+        },
+        limites: {
+          maxCampeonatos: def.limites.maxCampeonatos,
+          maxCategoriasPorCampeonato: def.limites.maxCategoriasPorCampeonato,
+          maxJogadoresPorCategoria: def.limites.maxJogadoresPorCategoria,
+          maxPatrocinadores: def.limites.maxPatrocinadores,
+          maxVideoSegundos: def.limites.maxVideoSegundos,
+          maxTransmisoesSimultaneas: def.limites.maxTransmisoesSimultaneas,
+        },
+      };
+    }
+    this.valoresForm = {
+      planos,
+      creditos: {
+        patrocinioNormal: {
+          preco: this.planosSrv.precoCreditoNormal,
+          patrocinadores: this.planosSrv.patrocinadoresCreditoNormal,
+          duracaoMin: this.planosSrv.duracaoCreditoNormalMin,
+        },
+        patrocinioPremium: {
+          preco: this.planosSrv.precoCreditoPremium,
+          patrocinadores: this.planosSrv.premiumMaxPorJogo,
+          janelaSeg: this.planosSrv.premiumJanelaSeg,
+          intervaloMin: this.planosSrv.premiumIntervaloMin,
+        },
+        transmissaoAvulsa: {
+          preco: this.planosSrv.VALOR_TRANSMISSAO_AVULSA,
+          duracaoMin: this.planosSrv.transmissaoDuracaoMin,
+          validadeMeses: this.planosSrv.transmissaoValidadeMeses,
+        },
+      },
+    };
+  }
+
+  /** Salva os valores editados em config/comercial. */
+  async salvarValores(): Promise<void> {
+    this.salvandoValores = true;
+    try {
+      const planosPatch: NonNullable<ConfigComercial['planos']> = {};
+      for (const p of this.valoresPlanos) {
+        const f = this.valoresForm.planos[p.id];
+        if (!f) continue;
+        const limites = {
+          maxCampeonatos: Number(f.limites['maxCampeonatos']),
+          maxCategoriasPorCampeonato: Number(f.limites['maxCategoriasPorCampeonato']),
+          maxJogadoresPorCategoria: Number(f.limites['maxJogadoresPorCategoria']),
+          maxPatrocinadores: Number(f.limites['maxPatrocinadores']),
+          maxVideoSegundos: Number(f.limites['maxVideoSegundos']),
+          maxTransmisoesSimultaneas: Number(f.limites['maxTransmisoesSimultaneas']),
+        };
+        planosPatch[p.id] = p.temPreco
+          ? {
+              precos: {
+                mensal: Number(f.precos['mensal']),
+                trimestral: Number(f.precos['trimestral']),
+                semestral: Number(f.precos['semestral']),
+                anual: Number(f.precos['anual']),
+              },
+              limites,
+            }
+          : { limites };
+      }
+      const cn = this.valoresForm.creditos.patrocinioNormal;
+      const cp = this.valoresForm.creditos.patrocinioPremium;
+      const ct = this.valoresForm.creditos.transmissaoAvulsa;
+      await this.configComercialSrv.salvar({
+        planos: planosPatch,
+        creditos: {
+          patrocinioNormal: {
+            preco: Number(cn.preco),
+            patrocinadores: Number(cn.patrocinadores),
+            duracaoMin: Number(cn.duracaoMin),
+          },
+          patrocinioPremium: {
+            preco: Number(cp.preco),
+            patrocinadores: Number(cp.patrocinadores),
+            janelaSeg: Number(cp.janelaSeg),
+            intervaloMin: Number(cp.intervaloMin),
+          },
+          transmissaoAvulsa: {
+            preco: Number(ct.preco),
+            duracaoMin: Number(ct.duracaoMin),
+            validadeMeses: Number(ct.validadeMeses),
+          },
+        },
+      });
+      await this.toast('Valores salvos! O app já usa os novos preços e limites.', 'success');
+    } catch (err) {
+      console.error('[Admin] salvar valores', err);
+      await this.toast('Falha ao salvar valores. Tente novamente.', 'danger');
+    } finally {
+      this.salvandoValores = false;
+    }
   }
 
   /** Pull-to-refresh — recarrega APENAS esta rota via Angular Router. */

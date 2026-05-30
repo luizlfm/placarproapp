@@ -142,14 +142,6 @@ export interface Jogo {
    *  patrocinadores globais do organizador. Máx. recomendado: 5. */
   patrocinadores?: PatrocinadorJogo[];
 
-  /** ID do vídeo no YouTube (a parte depois de `v=` na URL).
-   *  Quando preenchido, libera a página `/jogo/:id/transmissao` com
-   *  player embutido + overlay de placar/escudos/cronômetro em tempo real. */
-  youtubeVideoId?: string;
-  /** Indica se a transmissão está LIVE no momento (controlado pelo admin).
-   *  Usado pra destacar o card com "🔴 AO VIVO". */
-  transmissaoAoVivo?: boolean;
-
   /** Timestamp de quando o admin clicou em "Iniciar partida".
    *  Base pra calcular o tempo decorrido (cronômetro reativo). */
   iniciadoEm?: Timestamp;
@@ -197,6 +189,33 @@ export interface Jogo {
 
   criadoEm?: Timestamp;
   atualizadoEm?: Timestamp;
+
+  /**
+   * Quantas "horas-crédito" de transmissão já foram pagas/reservadas para
+   * ESTE jogo. Cada crédito libera `transmissaoDuracaoMin` minutos de tempo
+   * ACUMULADO (somando todas as sessões). O orçamento atual de tempo =
+   * `horasTransmissaoPagas × transmissaoDuracaoMin`. Quando o tempo total
+   * transmitido atinge o orçamento, é preciso reservar mais 1 (debitar
+   * outro crédito) pra continuar. 0/ausente = nada reservado ainda.
+   */
+  horasTransmissaoPagas?: number;
+
+  /**
+   * Tempo acumulado de transmissão (em segundos) no momento em que o
+   * PRIMEIRO crédito cronometrado foi reservado para este jogo. Serve de
+   * BASELINE: o orçamento (`horasTransmissaoPagas × limite`) conta apenas o
+   * tempo transmitido A PARTIR daqui. Assim, tempo transmitido ANTES de
+   * existir crédito (legado) não consome o crédito recém-comprado.
+   * Setado uma única vez (quando ainda é `undefined`).
+   */
+  transmissaoSegundosBase?: number;
+
+  /** DEV/TEST — quando admin clica em "Testar banner premium", grava o
+   *  timestamp aqui. Todos os componentes que escutam o jogo veem e
+   *  disparam a janela local. REMOVER junto com a feature de teste. */
+  _testePremiumAt?: Timestamp;
+  _testePremiumLogoUrl?: string;
+  _testePremiumNome?: string;
 }
 
 /**
@@ -217,30 +236,6 @@ export type TempoJogoNome =
   | 'prorrog-int'
   | 'prorrog-2'
   | 'penaltis';
-
-/** Extrai o videoId de uma URL do YouTube (suporta youtu.be, youtube.com/watch?v=,
- *  youtube.com/live/, youtube.com/embed/). Retorna null se não der pra extrair. */
-export function parseYoutubeVideoId(input: string | null | undefined): string | null {
-  if (!input) return null;
-  const trimmed = input.trim();
-  // Já é só o videoId (11 chars alfanuméricos + - + _)
-  if (/^[A-Za-z0-9_-]{11}$/.test(trimmed)) return trimmed;
-  try {
-    const url = new URL(trimmed);
-    // youtu.be/VIDEOID
-    if (url.hostname.includes('youtu.be')) {
-      const id = url.pathname.replace(/^\//, '').split('/')[0];
-      return /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null;
-    }
-    // youtube.com/watch?v=VIDEOID
-    const v = url.searchParams.get('v');
-    if (v && /^[A-Za-z0-9_-]{11}$/.test(v)) return v;
-    // youtube.com/live/VIDEOID OU youtube.com/embed/VIDEOID
-    const m = url.pathname.match(/\/(live|embed|shorts)\/([A-Za-z0-9_-]{11})/);
-    if (m) return m[2];
-  } catch { /* não é URL válida */ }
-  return null;
-}
 
 export type NovoJogoInput = Pick<Jogo, 'mandanteId' | 'visitanteId'> &
   Partial<Pick<Jogo, 'fase' | 'rodada' | 'grupoId' | 'dataHora' | 'local'>>;

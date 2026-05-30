@@ -13,7 +13,7 @@
 }
 
 image-cropper {
-  display: block;
+  display: contents;
   width: 100%;
   /* Altura máxima limitada pra deixar espaço pro header (~56px) +
      footer (~64px) + paddings. Antes era 70vh, que somado ao header+footer

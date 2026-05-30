@@ -1,0 +1,104 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="fechar()">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Reativar patrocínio</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Hero: ícone + título + tipo -->
+  <div class="hero">
+    <div class="hero-icon" [class.premium]="patrocinio?.tipo === 'premium'">
+      <ion-icon name="refresh-circle-outline"></ion-icon>
+    </div>
+    <div class="hero-text">
+      <h2>Reativar patrocínio</h2>
+      <p>
+        <span class="tipo-tag" [class.premium]="patrocinio?.tipo === 'premium'">{{ tipoLabel }}</span>
+        · {{ qtdAnunciantes }} anunciante{{ qtdAnunciantes > 1 ? 's' : '' }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Saldo -->
+  <div class="saldo-line" [class.saldo-premium]="patrocinio?.tipo === 'premium'">
+    <span>Saldo {{ tipoLabel }}:</span>
+    <strong>{{ saldo$ | async }} crédito{{ (saldo$ | async) === 1 ? '' : 's' }}</strong>
+  </div>
+
+  <!-- Stepper de créditos -->
+  <div class="step-h"><span>Créditos a usar</span></div>
+  <div class="creditos-stepper">
+    <button
+      type="button"
+      class="step-btn"
+      (click)="ajustar(-1)"
+      [disabled]="creditos <= 1 || salvando"
+      aria-label="Diminuir créditos"
+    >
+      <ion-icon name="remove-outline"></ion-icon>
+    </button>
+    <div class="step-info">
+      <span class="step-num">{{ creditos }}</span>
+      <span class="step-lbl">crédito{{ creditos > 1 ? 's' : '' }}</span>
+      <span class="step-sub">= {{ duracaoTexto }} de exibição</span>
+    </div>
+    <button
+      type="button"
+      class="step-btn"
+      (click)="ajustar(1)"
+      [disabled]="creditos >= saldo || salvando"
+      aria-label="Aumentar créditos"
+    >
+      <ion-icon name="add-outline"></ion-icon>
+    </button>
+  </div>
+
+  <!-- Resumo -->
+  <div class="resumo">
+    <div class="resumo-line">
+      <span>Anunciantes:</span>
+      <strong>{{ qtdAnunciantes }}</strong>
+    </div>
+    <div class="resumo-line">
+      <span>Tipo:</span>
+      <strong>{{ tipoLabel }}</strong>
+    </div>
+    <div class="resumo-line">
+      <span>Duração:</span>
+      <strong>{{ duracaoTexto }}</strong>
+    </div>
+    <div class="resumo-line">
+      <span>Início:</span>
+      <strong>imediato (ativa agora)</strong>
+    </div>
+    <div class="resumo-line custo">
+      <span>Custo:</span>
+      <strong>
+        {{ creditos }} crédito{{ creditos > 1 ? 's' : '' }}
+        <span class="resumo-preco">(R$ {{ custoTotal }})</span>
+      </strong>
+    </div>
+  </div>
+
+  <ion-button
+    expand="block"
+    [color]="patrocinio?.tipo === 'premium' ? 'warning' : 'secondary'"
+    class="ion-margin-top"
+    [disabled]="salvando || creditos < 1 || creditos > saldo"
+    (click)="confirmar()"
+  >
+    <ion-spinner *ngIf="salvando" name="dots" slot="start"></ion-spinner>
+    <ion-icon *ngIf="!salvando" slot="start" name="flash-outline"></ion-icon>
+    Ativar e debitar {{ creditos }} crédito{{ creditos > 1 ? 's' : '' }}
+  </ion-button>
+
+  <p *ngIf="creditos > saldo" class="saldo-warning">
+    <ion-icon name="warning-outline"></ion-icon>
+    Saldo insuficiente. <a routerLink="/app/meus-creditos" (click)="fechar()">Comprar créditos</a>
+  </p>
+</ion-content>

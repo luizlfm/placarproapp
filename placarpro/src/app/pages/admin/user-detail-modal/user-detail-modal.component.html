@@ -172,11 +172,11 @@
       </div>
     </div>
 
-    <!-- ── Transmissões avulsas ── -->
+    <!-- ── Transmissões AO VIVO ── -->
     <div class="ud-manage-row">
       <label class="ud-manage-lbl">
-        <strong>Transmissões avulsas</strong>
-        <span>Créditos adicionados após pagamento de R$ 30 cada. Saldo atual: <strong>{{ usuario.transmissoesExtras ?? 0 }}</strong></span>
+        <strong>Transmissões AO VIVO</strong>
+        <span>Créditos adicionados após pagamento de R$ {{ precoTransmissaoAvulsa }} cada. Saldo atual: <strong>{{ usuario.transmissoesExtras ?? 0 }}</strong></span>
       </label>
       <div class="ud-manage-acoes">
         <div class="ud-tx-stepper">
@@ -184,7 +184,7 @@
             type="button"
             class="ud-btn-step"
             (click)="ajustarTransmissoesExtras(-1)"
-            [disabled]="salvandoTx || (usuario.transmissoesExtras ?? 0) <= 0"
+            [disabled]="salvandoTx"
             aria-label="Remover 1 crédito"
           >−</button>
           <span class="ud-tx-val">{{ deltaTransmissoes }}</span>
@@ -204,6 +204,78 @@
         >
           <ion-icon name="save-outline"></ion-icon>
           {{ salvandoTx ? 'Salvando...' : (deltaTransmissoes > 0 ? 'Adicionar' : 'Remover') }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Créditos de patrocínio NORMAL ── -->
+    <div class="ud-manage-row">
+      <label class="ud-manage-lbl">
+        <strong>Créditos de patrocínio (Normal)</strong>
+        <span>Cada crédito (R$ {{ precoCreditoNormal }}) ativa até 2 logos na esteira da transmissão por 1h. Saldo atual: <strong>{{ usuario.creditosPatrocinio ?? 0 }}</strong></span>
+      </label>
+      <div class="ud-manage-acoes">
+        <div class="ud-tx-stepper">
+          <button
+            type="button"
+            class="ud-btn-step"
+            (click)="ajustarCreditosPatrocinio(-1)"
+            [disabled]="salvandoCreditos"
+            aria-label="Remover 1 crédito"
+          >−</button>
+          <span class="ud-tx-val">{{ deltaCreditos }}</span>
+          <button
+            type="button"
+            class="ud-btn-step"
+            (click)="ajustarCreditosPatrocinio(1)"
+            [disabled]="salvandoCreditos"
+            aria-label="Adicionar 1 crédito"
+          >+</button>
+        </div>
+        <button
+          type="button"
+          class="ud-btn-primary"
+          [disabled]="salvandoCreditos || deltaCreditos === 0"
+          (click)="salvarCreditosPatrocinio()"
+        >
+          <ion-icon name="save-outline"></ion-icon>
+          {{ salvandoCreditos ? 'Salvando...' : (deltaCreditos > 0 ? 'Adicionar' : 'Remover') }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Créditos de patrocínio PREMIUM (banner vertical 9:16) ── -->
+    <div class="ud-manage-row ud-manage-row-premium">
+      <label class="ud-manage-lbl">
+        <strong>Créditos de patrocínio (Premium)</strong>
+        <span>Cada crédito (R$ {{ precoCreditoPremium }}) ativa banner vertical 9:16 EXCLUSIVO por 6s a cada 7min de transmissão. Saldo atual: <strong>{{ usuario.creditosPatrocinioPremium ?? 0 }}</strong></span>
+      </label>
+      <div class="ud-manage-acoes">
+        <div class="ud-tx-stepper">
+          <button
+            type="button"
+            class="ud-btn-step"
+            (click)="ajustarCreditosPremium(-1)"
+            [disabled]="salvandoCreditosPremium"
+            aria-label="Remover 1 crédito premium"
+          >−</button>
+          <span class="ud-tx-val">{{ deltaCreditosPremium }}</span>
+          <button
+            type="button"
+            class="ud-btn-step"
+            (click)="ajustarCreditosPremium(1)"
+            [disabled]="salvandoCreditosPremium"
+            aria-label="Adicionar 1 crédito premium"
+          >+</button>
+        </div>
+        <button
+          type="button"
+          class="ud-btn-primary ud-btn-primary-premium"
+          [disabled]="salvandoCreditosPremium || deltaCreditosPremium === 0"
+          (click)="salvarCreditosPremium()"
+        >
+          <ion-icon name="save-outline"></ion-icon>
+          {{ salvandoCreditosPremium ? 'Salvando...' : (deltaCreditosPremium > 0 ? 'Adicionar' : 'Remover') }}
         </button>
       </div>
     </div>

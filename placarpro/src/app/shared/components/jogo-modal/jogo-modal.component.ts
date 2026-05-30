@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { Equipe } from '../../../campeonatos/models/equipe.model';
 import { Fase } from '../../../campeonatos/models/fase.model';
-import { Jogo, JogoStatus, parseYoutubeVideoId } from '../../../campeonatos/models/jogo.model';
+import { Jogo, JogoStatus } from '../../../campeonatos/models/jogo.model';
 import { JogosService } from '../../../campeonatos/jogos.service';
 import {
   dataHoraBrParaIso,
@@ -35,7 +35,7 @@ export class JogoModalComponent implements OnInit {
    *  - 'completo'    → todos os campos visíveis (default)
    *  - 'resultado'   → só placar (gols) + botão encerrar/salvar
    *  - 'informacoes' → tudo menos gols/placar (equipes, fase, rodada,
-   *                    data, local, status, YouTube)
+   *                    data, local, status)
    */
   @Input() modo: 'completo' | 'resultado' | 'informacoes' = 'completo';
 
@@ -60,8 +60,6 @@ export class JogoModalComponent implements OnInit {
     status: ['agendado' as JogoStatus],
     golsMandante: [null as number | null],
     golsVisitante: [null as number | null],
-    /** URL OU ID do YouTube — converte pra videoId no salvar. */
-    youtubeUrl: [''],
   });
 
   ngOnInit(): void {
@@ -79,9 +77,6 @@ export class JogoModalComponent implements OnInit {
         status: this.jogoExistente.status,
         golsMandante: this.jogoExistente.golsMandante ?? null,
         golsVisitante: this.jogoExistente.golsVisitante ?? null,
-        youtubeUrl: this.jogoExistente.youtubeVideoId
-          ? `https://youtu.be/${this.jogoExistente.youtubeVideoId}`
-          : '',
       });
     } else {
       this.form.patchValue({
@@ -140,14 +135,10 @@ export class JogoModalComponent implements OnInit {
       // Converte dataHora BR → ISO antes de salvar (se válida).
       const dataDigitada = (v.dataHora as string).trim();
       const dataIso = dataHoraBrParaIso(dataDigitada);
-      // Extrai videoId do link do YouTube (aceita URL completa OU só o ID).
-      const youtubeVideoId = parseYoutubeVideoId(v.youtubeUrl);
-      const { youtubeUrl: _ignored, ...rest } = v as any;
       const payloadBruto: Record<string, unknown> = {
-        ...rest,
+        ...v,
         rodada: v.rodada ? Number(v.rodada) : undefined,
         dataHora: dataIso || dataDigitada || undefined,
-        youtubeVideoId: youtubeVideoId || undefined,
       };
       // Firestore não aceita `undefined` — remove keys vazias.
       const payload = Object.fromEntries(

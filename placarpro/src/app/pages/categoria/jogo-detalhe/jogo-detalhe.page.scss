@@ -94,6 +94,13 @@ ion-content {
   letter-spacing: 0.3px;
   line-height: 1.1;
 
+  /* No desktop (web) o nome do campeonato já aparece em outros lugares
+     (header lateral, scoreboard do vídeo, etc.) — então o h1 grande no
+     topo da página fica redundante e empurra todo o conteúdo pra baixo.
+     Escondemos só no web; mobile mantém pra dar contexto (lá só aparece
+     este título). */
+  @media (min-width: 768px) { display: none; }
+
   @media (max-width: 767px) { font-size: 22px; }
   @media (max-width: 420px) { font-size: 19px; }
 }
@@ -865,6 +872,72 @@ ion-content {
     gap: 10px;
     margin-bottom: 14px;
   }
+
+  /* ═══════ Estado TRANSMITINDO (modo compacto) ═══════
+     Quando há transmissão ATIVA, o card "Transmitindo" + Compartilhar
+     + Copiar link ficam todos em UMA LINHA SÓ (no desktop), mais
+     compactos. Em mobile vira coluna como antes. */
+  &.transmitindo {
+    grid-template-columns: minmax(0, 1.4fr) auto auto;
+    gap: 8px;
+    align-items: stretch;
+
+    @media (max-width: 900px) {
+      grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+
+    /* O card "Transmitindo" fica mais baixo e compacto */
+    .tx-card-camera {
+      padding: 8px 12px;
+      gap: 10px;
+      border-radius: 10px;
+      min-height: 48px;
+
+      .tx-card-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        ion-icon { font-size: 18px; }
+      }
+      .tx-card-title { font-size: 12px; letter-spacing: 0.2px; }
+      .tx-card-sub { font-size: 10.5px; margin-top: 1px; }
+      .tx-card-chevron { font-size: 16px; }
+      .tx-card-live-badge { font-size: 7.5px; }
+    }
+
+    /* Botões share lado a lado, NÃO mais grid-column 1/-1 */
+    .tx-share-actions {
+      display: contents; /* libera os filhos pra entrarem direto no grid */
+    }
+    .tx-share-btn {
+      padding: 8px 14px;
+      font-size: 12.5px;
+      gap: 6px;
+      border-radius: 10px;
+      border-width: 1.5px;
+      align-self: stretch;
+      ion-icon { font-size: 15px; }
+
+      span { display: inline; }
+    }
+
+    /* Em mobile, share-actions volta a ser linha de 2 colunas embaixo */
+    @media (max-width: 600px) {
+      .tx-share-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        grid-column: 1 / -1;
+      }
+      .tx-card-camera {
+        padding: 10px 14px;
+        min-height: 56px;
+      }
+    }
+  }
 }
 
 /* ════ Ações de compartilhamento (abaixo do card "Transmitindo") ════
@@ -990,8 +1063,8 @@ ion-content {
   flex-shrink: 0;
 }
 
-/* ─── Variante YouTube ─── */
-.tx-card-youtube {
+/* ─── Variante "Abrir transmissão" (ao vivo) ─── */
+.tx-card-assistir {
   &::before { background: linear-gradient(180deg, #e11d48 0%, #be123c 100%); }
   &:hover { border-color: rgba(225, 29, 72, 0.4); }
   .tx-card-icon {
@@ -1688,6 +1761,13 @@ ion-content {
   position: relative;
   overflow: hidden;
 
+  /* Web/desktop apenas — painel limitado a 77% de largura e centralizado.
+     Em mobile (≤767px) mantém 100% pra aproveitar a tela estreita. */
+  @media (min-width: 768px) {
+    // margin-left: auto;
+    // margin-right: auto;
+  }
+
   /* Banda diagonal sutil pra ter "personalidade" sem distrair. */
   &::before {
     content: '';
@@ -1716,6 +1796,39 @@ ion-content {
   position: relative;
   z-index: 1;
   flex-wrap: wrap;
+}
+
+/* ═══════ DEV/TEST: botão de testar banner premium ═══════
+   TODO: REMOVER junto com `testarBannerPremium()` quando a feature
+   estiver validada em produção. */
+.dev-test-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: absolute;
+  top: -6px;
+  right: 6px;
+  z-index: 5;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  border: 1px dashed rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+  transition: transform 100ms ease, box-shadow 150ms ease;
+
+  ion-icon { font-size: 14px; }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
+  }
+  &:active { transform: scale(0.96); }
 }
 
 .live-badge {
@@ -2054,8 +2167,88 @@ ion-content {
   }
 }
 
-/* Embed YouTube — 16:9 responsivo. */
-.live-youtube {
+/* ════════════════════════════════════════════════════════════════
+   PAINEL AO VIVO — reduções compactas pra MOBILE.
+   Em telas pequenas os botões de período (1°T, INT, 2°T, FIM) e os
+   chips de duração/acréscimo ficavam grandes demais. Tudo escalado
+   pra ficar denso mas ainda tocável.
+   ════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .live-head {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .live-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    gap: 5px;
+    letter-spacing: 0.6px;
+    .live-dot { width: 6px; height: 6px; }
+  }
+  .live-tempo-atual {
+    font-size: 10px;
+    letter-spacing: 0.3px;
+  }
+  .live-time,
+  .live-time-btn {
+    font-size: 15px !important;
+    padding: 3px 8px !important;
+    gap: 4px !important;
+    letter-spacing: 1px !important;
+    border-radius: 6px !important;
+    ion-icon { font-size: 13px !important; }
+    .live-time-edit-icon { font-size: 11px !important; }
+  }
+  .live-acrescimo {
+    font-size: 10px;
+    padding: 1px 4px;
+    margin-left: 4px;
+  }
+  .live-pausa-chip {
+    font-size: 8px !important;
+    padding: 1px 4px !important;
+  }
+
+  .live-tempos {
+    gap: 3px;
+    margin-bottom: 6px;
+  }
+  .lt-btn {
+    padding: 5px 2px;
+    font-size: 9px;
+    border-radius: 6px;
+    letter-spacing: 0.2px;
+  }
+
+  .live-opcoes {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .lo-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+    gap: 4px;
+    border-radius: 6px;
+    ion-icon { font-size: 12px; }
+  }
+  .lo-acrescimo {
+    gap: 5px;
+    padding: 3px 4px;
+    border-radius: 6px;
+
+    .lo-label { font-size: 9px; padding: 0 2px; }
+    .lo-step {
+      width: 22px;
+      height: 22px;
+      font-size: 13px;
+      border-radius: 5px;
+    }
+    .lo-val { font-size: 11px; min-width: 22px; }
+  }
+}
+
+/* Área do vídeo ao vivo — 16:9 responsivo. */
+.live-video {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -2074,28 +2267,63 @@ ion-content {
   }
 }
 
+/* Wrapper do banner rotativo de patrocínios PAGOS — preenche toda a
+   área do vídeo (.live-video) com pointer-events:none; o filho
+   `.ads-banner` se ancora no canto inferior esquerdo via position
+   absolute interna. Acompanha o player inclusive em fullscreen. */
+.ld-esteira-ads {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* ═══════ Estado PREMIUM ATIVO ═══════
+   Quando a janela PREMIUM está aberta (.live-video.premium-on):
+   - Esteira normal (banner pequeno rotativo) some
+   - Scoreboard sobreposto some
+   - VÍDEO CONTINUA SENDO EXIBIDO NORMALMENTE — o banner premium fica
+     sobreposto no terço direito sem cortar o vídeo (decisão do user).
+   - z-index do overlay garante que ele fica POR CIMA do vídeo, mas
+     o vídeo continua rodando atrás. */
+.live-video.premium-on {
+  .ld-esteira-ads,
+  .ld-scoreboard {
+    opacity: 0;
+    transition: opacity 350ms ease;
+    pointer-events: none;
+  }
+}
+/* Suavidade ao SAIR do estado premium (cobre transition reverso) */
+.live-video:not(.premium-on) {
+  .ld-esteira-ads,
+  .ld-scoreboard {
+    transition: opacity 200ms ease;
+  }
+}
+
 /* ════════════════════════════════════════════════════════════════════
-   Override: `.tp-card.modo-fullscreen` DENTRO de `.live-youtube`
+   Override: `.tp-card.modo-fullscreen` DENTRO de `.live-video`
    ════════════════════════════════════════════════════════════════════
    O player LiveKit em `modo="fullscreen"` quer altura 73-100vh (pra
-   quando ocupa a viewport inteira). DENTRO do `.live-youtube` (que
+   quando ocupa a viewport inteira). DENTRO do `.live-video` (que
    tem aspect-ratio 16:9), isso fazia o card transbordar pra fora do
-   container — e o `overflow:hidden` do `.live-youtube` cortava a
+   container — e o `overflow:hidden` do `.live-video` cortava a
    parte de BAIXO do card, sumindo com o banner do patrocinador e
-   o footer com viewers. Forçamos `height: 100% do .live-youtube`
+   o footer com viewers. Forçamos `height: 100% do .live-video`
    pra o card caber exatamente. */
-:host ::ng-deep .live-youtube .tp-card.modo-fullscreen,
-.live-youtube ::ng-deep .tp-card.modo-fullscreen {
+:host ::ng-deep .live-video .tp-card.modo-fullscreen,
+.live-video ::ng-deep .tp-card.modo-fullscreen {
   height: 100% !important;
 }
-:host ::ng-deep .live-youtube .tp-card.modo-fullscreen .tp-video-wrap,
-.live-youtube ::ng-deep .tp-card.modo-fullscreen .tp-video-wrap {
+:host ::ng-deep .live-video .tp-card.modo-fullscreen .tp-video-wrap,
+.live-video ::ng-deep .tp-card.modo-fullscreen .tp-video-wrap {
   height: auto !important;
   min-height: 0 !important;
   flex: 1 !important;
 }
-:host ::ng-deep .live-youtube .tp-card.modo-fullscreen .tp-footer,
-.live-youtube ::ng-deep .tp-card.modo-fullscreen .tp-footer {
+:host ::ng-deep .live-video .tp-card.modo-fullscreen .tp-footer,
+.live-video ::ng-deep .tp-card.modo-fullscreen .tp-footer {
   flex-shrink: 0 !important;
 }
 
@@ -2116,20 +2344,25 @@ ion-content {
    ════════════════════════════════════════════════════════════════ */
 .ld-scoreboard {
   position: absolute;
-  top: 14px;
-  left: 14px;
-  right: 14px;
+  /* Posicionamento responsivo via clamp() — segue o banner do
+     patrocinador que está no canto superior esquerdo. Em mobile,
+     o left começa após o banner (~100px); em desktop, o margin: auto
+     centraliza. Top e largura também escalam suave. */
+  top: clamp(4px, 1.2vw, 14px);
+  left: clamp(4px, 1.2vw, 14px);
+  right: clamp(4px, 1.2vw, 14px);
   z-index: 3;
   max-width: 520px;
   margin: 0 auto;
-  /* Sem bg/blur no container — cada elemento (camp-bar / main bar)
-     tem seu próprio bg navy translúcido. Sem overflow:hidden — os
-     logos circulares precisam estourar pra fora. */
   background: transparent;
   border: none;
   box-shadow: none;
   color: #fff;
-  pointer-events: none;
+  /* `pointer-events: none` removido — antes bloqueava cliques no vídeo,
+     mas também impedia o DevTools de capturar o elemento via "Select".
+     Como o scoreboard é só visualização (não tem botões clicáveis), liberá-lo
+     é seguro: o vídeo continua funcionando porque o scoreboard fica
+     SOBREPOSTO numa área pequena e não cobre os controles do player. */
 }
 
 /* Faixa CAMP · CATEGORIA centralizada (sem badge AO VIVO) */
@@ -2137,14 +2370,15 @@ ion-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 4px 56px;
+  gap: clamp(3px, 0.6vw, 6px);
+  /* Padding lateral responsivo — em mobile deixa mais apertado */
+  padding: clamp(2px, 0.4vw, 4px) clamp(20px, 5vw, 56px);
   margin: 0 auto;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.94) 0%, rgba(20, 33, 44, 0.96) 100%);
   border-radius: 6px 6px 0 0;
   border: 1px solid rgba(255, 255, 255, 0.10);
   border-bottom: none;
-  font-size: 9.5px;
+  font-size: clamp(6.5px, 1vw, 9.5px);
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.30);
 
   .ld-sb-camp-nome {
@@ -2155,11 +2389,11 @@ ion-content {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 200px;
+    max-width: clamp(90px, 22vw, 200px);
   }
   .ld-sb-camp-sep {
     color: rgba(255, 255, 255, 0.40);
-    font-size: 12px;
+    font-size: clamp(7px, 1.3vw, 12px);
     line-height: 1;
   }
   .ld-sb-camp-cat {
@@ -2170,21 +2404,21 @@ ion-content {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 140px;
+    max-width: clamp(60px, 15vw, 140px);
   }
-  /* "AO VIVO" badge escondido — a cor verde do cronômetro indica live */
   .ld-sb-status { display: none; }
 }
 
-/* Barra principal navy com logos circulares absolutos nas pontas */
+/* Barra principal navy com logos circulares absolutos nas pontas.
+   Height responsivo via clamp() — escala suave entre mobile/desktop. */
 .ld-sb-main {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: stretch;
-  gap: 4px;
-  height: 38px;
-  padding: 3px;
+  gap: clamp(2px, 0.5vw, 4px);
+  height: clamp(26px, 4.5vw, 38px);
+  padding: clamp(2px, 0.4vw, 3px);
   background: linear-gradient(180deg,
     var(--ion-color-primary-shade, #000000) 0%,
     var(--ion-color-primary, #000000) 50%,
@@ -2218,34 +2452,35 @@ ion-content {
   min-width: 0;
 
   &.mandante {
-    padding: 0 8px 0 36px;
+    /* Padding-left responsivo pra acompanhar o tamanho do escudo */
+    padding: 0 clamp(4px, 1vw, 8px) 0 clamp(20px, 4vw, 36px);
     justify-content: flex-start;
-    flex-direction: row;   /* nome após o logo (logo absoluto na esquerda) */
+    flex-direction: row;
     .ld-sb-nome { text-align: left; }
-    .ld-sb-escudo { left: -24px; }
+    .ld-sb-escudo { left: clamp(-14px, -2.4vw, -24px); }
   }
   &.visitante {
-    padding: 0 36px 0 8px;
+    padding: 0 clamp(20px, 4vw, 36px) 0 clamp(4px, 1vw, 8px);
     justify-content: flex-end;
     flex-direction: row-reverse;
     .ld-sb-nome { text-align: right; }
-    .ld-sb-escudo { right: -24px; }
+    .ld-sb-escudo { right: clamp(-14px, -2.4vw, -24px); }
   }
 
-  /* Logo CIRCULAR — sobressai pra fora da barra */
+  /* Logo CIRCULAR responsivo */
   .ld-sb-escudo {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 48px;
-    height: 48px;
+    width: clamp(24px, 5vw, 48px);
+    height: clamp(24px, 5vw, 48px);
     border-radius: 50%;
     background: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    padding: 2px;
+    padding: clamp(1px, 0.25vw, 2px);
     z-index: 3;
     box-shadow:
       0 0 0 2px #fff,
@@ -2253,16 +2488,16 @@ ion-content {
       0 4px 12px rgba(0, 0, 0, 0.55);
 
     img { width: 100%; height: 100%; object-fit: contain; }
-    ion-icon { font-size: 22px; color: var(--ion-color-medium, #92949c); }
+    ion-icon { font-size: clamp(12px, 2.4vw, 22px); color: var(--ion-color-medium, #92949c); }
   }
 
   .ld-sb-nome {
     flex: 1;
     min-width: 0;
-    font-size: 11.5px;
+    font-size: clamp(7.5px, 1.3vw, 11.5px);
     font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 0.7px;
+    letter-spacing: clamp(0px, 0.08vw, 0.7px);
     color: #fff;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.50);
     white-space: nowrap;
@@ -2273,77 +2508,123 @@ ion-content {
 }
 
 /* Mobile (≤ 600px): scoreboard MINI ABSOLUTO — virou um badge pequeno
-   estilo "ESPN bug" no topo do vídeo. Antes ocupava metade do espaço
-   do player. Agora é uma pílula compacta com tudo essencial:
-   logos pequenos + nomes + placar em UMA LINHA SÓ.
-   `!important` em alguns valores pra furar especificidade alta de
-   regras anteriores que vinham do desktop. */
+   estilo "ESPN bug" no topo do vídeo. Valores fixos pra evitar bug
+   do clamp(vw) em containers pequenos (o vw mede a VIEWPORT, não o
+   container do vídeo — então em mobile com painel lateral aberto o
+   vw é grande mas o vídeo é pequeno). `!important` pra furar a
+   especificidade alta do clamp() base. */
 @media (max-width: 600px) {
+  /* Scoreboard centralizado (89px de margem dos dois lados) + max-width
+     212px — valores validados pelo usuário via DevTools. Banner do
+     patrocinador (top:11/left:57, ~50px largura) cabe à esquerda dentro
+     dos 89px de offset. */
   .ld-scoreboard {
     top: 4px !important;
-    left: 4px !important;
-    right: 4px !important;
-    max-width: calc(100% - 80px) !important;
+    left: 89px !important;
+    right: 89px !important;
+    max-width: 212px !important;
+    margin: 0 !important;
   }
-  
+
   .ld-sb-camp-bar {
-    padding: 1px 18px !important;
-    font-size: 6.5px !important;
-    .ld-sb-camp-nome { max-width: 90px; font-size: 6.5px !important; }
-    .ld-sb-camp-cat { max-width: 60px; font-size: 6.5px !important; }
-    .ld-sb-camp-sep { font-size: 7px !important; }
-    img { width: 8px !important; height: 8px !important; }
+    padding: 1px 12px !important;
+    font-size: 5.5px !important;
+    .ld-sb-camp-nome { max-width: 70px; font-size: 5.5px !important; }
+    .ld-sb-camp-cat { max-width: 45px; font-size: 5.5px !important; }
+    .ld-sb-camp-sep { font-size: 6px !important; }
+    img { width: 6px !important; height: 6px !important; }
   }
+  /* Barra principal BEM compacta — 16px de altura. */
   .ld-sb-main {
-    height: 26px !important;
+    height: 16px !important;
     min-height: 0 !important;
-    padding: 2px !important;
+    padding: 1px !important;
   }
   .ld-sb-team {
     &.mandante {
-      padding: 2px 3px 2px 18px !important;
+      padding: 1px 2px 1px 12px !important;
       .ld-sb-escudo {
-        left: -12px !important;
-        width: 22px !important;
-        height: 22px !important;
+        left: -8px !important;
+        width: 14px !important;
+        height: 14px !important;
         padding: 1px !important;
       }
     }
     &.visitante {
-      padding: 2px 18px 2px 3px !important;
+      padding: 1px 12px 1px 2px !important;
       .ld-sb-escudo {
-        right: -12px !important;
-        width: 22px !important;
-        height: 22px !important;
+        right: -8px !important;
+        width: 14px !important;
+        height: 14px !important;
         padding: 1px !important;
       }
     }
     .ld-sb-nome {
-      font-size: 7.5px !important;
+      font-size: 6px !important;
       letter-spacing: 0 !important;
       line-height: 1.0 !important;
-      /* Trunca single-line — economiza altura. */
       white-space: nowrap !important;
       overflow: hidden !important;
       text-overflow: ellipsis !important;
       display: block !important;
     }
-    .ld-sb-escudo ion-icon { font-size: 11px !important; }
+    .ld-sb-escudo ion-icon { font-size: 7px !important; }
   }
   .ld-sb-placar {
-    padding: 0 4px !important;
-    min-width: 28px !important;
+    padding: 0 3px !important;
+    min-width: 20px !important;
+    gap: 2px !important;
     .ld-sb-gols {
-      font-size: 11px !important;
-      min-width: 10px !important;
+      font-size: 8.5px !important;
+      min-width: 8px !important;
     }
-    .ld-sb-x { font-size: 7px !important; }
+    .ld-sb-x { font-size: 6px !important; }
   }
+
+  /* Pílula verde do TEMPO ("1° TEMPO · 01:20") — estava desproporcional
+     em relação ao scoreboard mini (16px de altura). Reduzimos pra ficar
+     uma pílula bem pequena, na escala do resto. */
+  .ld-sb-tempo {
+    margin: 3px auto 0 !important;
+    padding: 1px 6px !important;
+    font-size: 6.5px !important;
+    gap: 3px !important;
+    border-width: 1px !important;
+
+    .ld-sb-tempo-nome { font-size: 6px !important; letter-spacing: 0.3px !important; }
+    .ld-sb-tempo-sep  { font-size: 6.5px !important; }
+    .ld-sb-tempo-relogio {
+      font-size: 7px !important;
+      letter-spacing: 0.4px !important;
+      gap: 2px !important;
+      .ld-tempo-dot { width: 3px !important; height: 3px !important; }
+      ion-icon { font-size: 7px !important; }
+    }
+    .ld-sb-tempo-acrescimo {
+      font-size: 6px !important;
+      padding: 0 3px !important;
+      border-radius: 3px !important;
+    }
+  }
+
+  /* Pílula de período (1º TEMPO, INTERVALO, etc — `.tr-sb-periodo`
+     equivalente no jogo-detalhe). */
+  .ld-sb-periodo {
+    font-size: 6.5px !important;
+    padding: 1px 6px !important;
+    margin: 3px auto 0 !important;
+    ion-icon { font-size: 7px !important; }
+  }
+
+  /* Bolinhas de pênalti */
+  .ld-sb-pen-bola { min-width: 11px !important; height: 11px !important; font-size: 6.5px !important; }
 }
 
-/* Telas BEM pequenas (≤ 380px — iPhone SE / Android compact):
-   reduz mais 1 nível pra caber super confortável. */
+/* Telas BEM pequenas (≤ 380px — iPhone SE / Android compact) */
 @media (max-width: 380px) {
+  .ld-scoreboard {
+    left: 95px !important;
+  }
   .ld-sb-main { height: 22px !important; }
   .ld-sb-team {
     &.mandante .ld-sb-escudo,
@@ -2361,14 +2642,14 @@ ion-content {
   .ld-sb-camp-bar { font-size: 5.5px !important; padding: 0 14px !important; }
 }
 
-/* Placar BRANCO com números navy (sistema) — não verde */
+/* Placar BRANCO com números navy (sistema) — responsivo via clamp() */
 .ld-sb-placar {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 0 10px;
-  min-width: 56px;
+  gap: clamp(2px, 0.6vw, 5px);
+  padding: 0 clamp(4px, 1.2vw, 10px);
+  min-width: clamp(28px, 6.5vw, 56px);
   background: linear-gradient(180deg,
     var(--placar-surface, #fff) 0%,
     var(--ion-color-light, #F6F7F9) 100%);
@@ -2384,18 +2665,18 @@ ion-content {
   font-weight: 900;
 
   .ld-sb-gols {
-    font-size: 18px;
+    font-size: clamp(10px, 2.3vw, 18px);
     font-weight: 900;
     line-height: 1;
     color: var(--ion-color-primary, #000000);
     font-family: 'SF Mono', 'Roboto Mono', 'Menlo', 'Consolas', monospace;
-    min-width: 16px;
+    min-width: clamp(9px, 2vw, 16px);
     text-align: center;
     letter-spacing: -0.5px;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
   }
   .ld-sb-x {
-    font-size: 11px;
+    font-size: clamp(7px, 1.4vw, 11px);
     font-weight: 700;
     color: var(--placar-text-muted, #6B7280);
     font-family: 'SF Mono', 'Roboto Mono', monospace;
@@ -3509,4 +3790,470 @@ ion-content {
   .patjogo-card    { width: 140px; }
   .patjogo-preview { width: 140px; }
   .patjogo-add-card { width: 140px; }
+}
+
+/* ════ Patrocínios pagos (ads) — grid 2 colunas em desktop ════ */
+.ads-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+
+  /* Mobile: 1 coluna */
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Histórico (segunda lista) — visual mais discreto */
+.ads-historico-list .ad-card {
+  opacity: 0.85;
+}
+
+/* Botão "Ver histórico (N)" — full-width discreto entre as listas */
+.ads-historico-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px 12px;
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  transition: background 120ms ease, border-color 120ms ease;
+
+  ion-icon { font-size: 14px; }
+
+  &:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+    color: #374151;
+  }
+}
+.ad-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  /* Garante que o card NÃO encolhe abaixo do mínimo necessário pros 3 itens.
+     Sem isso, em grid mais estreito (2 colunas), o conteúdo do meio era
+     espremido tanto que o texto quebrava letra-por-letra. */
+  min-width: 0;
+  overflow: hidden;
+
+  &[data-status="ativo"]    { border-left: 4px solid #10b981; }
+  &[data-status="agendado"] { border-left: 4px solid #f59e0b; }
+  &[data-status="expirado"] { opacity: 0.6; border-left: 4px solid #9ca3af; }
+  &[data-status="cancelado"]{ opacity: 0.55; border-left: 4px solid #ef4444; }
+}
+.ad-logos {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+  /* Largura fixa do bloco — sempre cabe uma logo 16:9 (64×36). */
+  max-width: 70px;
+}
+
+/* Modo ROTATIVO — 1 logo por vez + dots indicadores embaixo. */
+.ad-logos.rotativo {
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+
+  /* Fade na troca de imagem */
+  .ad-logo {
+    animation: ad-logo-fade 600ms ease both;
+  }
+}
+
+@keyframes ad-logo-fade {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.ad-logos-dots {
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+}
+.ad-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #d1d5db;
+  transition: background 200ms ease, transform 200ms ease;
+
+  &.active {
+    background: var(--ion-color-secondary, #7CC61D);
+    transform: scale(1.3);
+  }
+}
+/* Slot com TAMANHO FIXO + loader profissional embaixo da imagem. */
+.ad-logo-slot {
+  width: 64px;
+  height: 36px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Container do spinner — posicionado no centro do slot, z-index 0
+   (atrás da img). Quando a img carrega, ela cobre. */
+.ad-logo-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Spinner CSS puro — círculo com borda animada. */
+.ad-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #d1d5db;
+  border-top-color: var(--ion-color-secondary, #7CC61D);
+  border-radius: 50%;
+  animation: ad-spinner-rotate 0.8s linear infinite;
+}
+
+@keyframes ad-spinner-rotate {
+  to { transform: rotate(360deg); }
+}
+
+.ad-logo {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+  padding: 2px;
+  box-sizing: border-box;
+  display: block;
+  /* Fade-in suave quando a imagem termina de carregar */
+  animation: ad-logo-fadein 250ms ease-out;
+}
+
+@keyframes ad-logo-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Premium = imagem retrato 9:16 — slot vertical com spinner um pouco maior */
+.ad-logos.premium-logos .ad-logo-slot {
+  width: 32px;
+  height: 56px;
+
+  .ad-spinner {
+    width: 14px;
+    height: 14px;
+  }
+}
+.ad-logos.premium-logos .ad-logo {
+  object-fit: cover;
+}
+
+/* Card com fundo dourado sutil quando premium */
+.ad-card[data-tipo="premium"] {
+  background: linear-gradient(180deg, #fffbeb 0%, #fff 100%);
+  &[data-status="ativo"]    { border-left-color: #f59e0b !important; }
+  &[data-status="agendado"] { border-left-color: #f59e0b !important; }
+}
+
+/* Badge "PREMIUM" inline com o nome */
+.ad-tipo-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.ad-info {
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 0; /* CRÍTICO: permite truncar com ellipsis em grid */
+  overflow: hidden;
+}
+.ad-nome {
+  font-size: 13.5px; font-weight: 700; color: #1f2937;
+  display: flex; align-items: center; gap: 4px;
+  min-width: 0;
+
+  /* O texto após o badge PREMIUM precisa truncar */
+  & > *:not(.ad-tipo-badge) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+.ad-tier {
+  font-size: 11px; color: #6b7280;
+  text-transform: uppercase; letter-spacing: 0.2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ad-status {
+  font-size: 11px; font-weight: 700;
+  padding: 2px 8px; border-radius: 999px;
+  text-transform: uppercase; letter-spacing: 0.4px;
+
+  &.st-ativo    { background: rgba(16, 185, 129, 0.14); color: #047857; }
+  &.st-agendado { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+  &.st-expirado { background: #f3f4f6; color: #6b7280; }
+  &.st-cancelado{ background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+}
+
+/* Linha dos chips (status + tempo) abaixo do nome */
+.ad-chips {
+  display: flex; flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+  align-items: center;
+}
+
+/* Countdown HH:MM:SS — atualizado a cada 1s. Verde claro pra dar
+   sensação de "vivo" e diferenciar do chip de status. */
+.ad-countdown {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: 'SF Mono', 'Roboto Mono', Menlo, monospace;
+  font-size: 10.5px; font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 7px; border-radius: 999px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+  letter-spacing: 0.3px;
+  /* Pulse sutil pra reforçar que está rodando */
+  animation: ad-countdown-pulse 1s ease-in-out infinite;
+
+  ion-icon { font-size: 11px; }
+}
+
+@keyframes ad-countdown-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  50%      { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18); }
+}
+
+/* Chip secundário (tempo restante / aguardando / esgotado) */
+.ad-tempo-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10.5px; font-weight: 700;
+  padding: 2px 7px; border-radius: 999px;
+  text-transform: uppercase; letter-spacing: 0.3px;
+
+  ion-icon { font-size: 11px; }
+
+  &.em-andamento {
+    background: rgba(16, 185, 129, 0.10);
+    color: #047857;
+    /* pulse sutil pra indicar "ao vivo" */
+    animation: ad-chip-pulse 2s ease-in-out infinite;
+  }
+  &.aguardando {
+    background: rgba(245, 158, 11, 0.10);
+    color: #b45309;
+  }
+  &.esgotado {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+}
+
+@keyframes ad-chip-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.7; }
+}
+
+/* Grupo de ações (Ativar + Editar + Cancelar) no card de patrocínio.
+   flex-shrink: 0 garante que NÃO comprime quando o card é estreito —
+   o `.ad-info` que trunca o texto. */
+.ad-acoes {
+  display: flex;
+  gap: 0;
+  align-items: center;
+  flex-shrink: 0;
+
+  /* Botões icon-only (Editar, Cancelar) — compactos. */
+  ion-button[fill="clear"] {
+    --padding-start: 0;
+    --padding-end: 0;
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    ion-icon { font-size: 14px; }
+  }
+
+  /* Botão "Ativar" verde — MICRO (super pequeno). */
+  ion-button[color="secondary"] {
+    --padding-start: 3px;
+    --padding-end: 3px;
+    --padding-top: 0;
+    --padding-bottom: 0;
+    --border-radius: 3px;
+    height: 14px;
+    min-height: 14px;
+    font-size: 6px;
+    font-weight: 800;
+    letter-spacing: 0.15px;
+    text-transform: uppercase;
+    margin: 0 3px 0 0;
+
+    ion-icon { font-size: 7px; margin-right: 1px; }
+  }
+}
+
+/* Badge de tempo restante do crédito no botão "Transmitindo" */
+.tx-card-restante {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+
+  ion-icon { font-size: 13px; }
+}
+
+/* Barra de tempo da transmissão (tempo restante + ativar crédito) */
+.tx-tempo-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(124, 198, 29, 0.10);
+  border: 1px solid rgba(124, 198, 29, 0.30);
+
+  &.acabando {
+    background: rgba(239, 68, 68, 0.10);
+    border-color: rgba(239, 68, 68, 0.35);
+    .tx-tempo-valor { color: #ef4444; }
+    .tx-tempo-info > ion-icon { color: #ef4444; }
+  }
+}
+
+.tx-tempo-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+
+  > ion-icon {
+    font-size: 20px;
+    color: var(--ion-color-secondary, #7CC61D);
+    flex: 0 0 auto;
+  }
+}
+
+.tx-tempo-label {
+  font-size: 12.5px;
+  color: var(--placar-text-muted, #4b5563);
+  font-weight: 600;
+}
+
+.tx-tempo-valor {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--placar-text, #1f2937);
+  font-variant-numeric: tabular-nums;
+}
+
+.tx-tempo-renovar {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 16px;
+  background: var(--ion-color-secondary, #7CC61D);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.12s;
+
+  &:hover { opacity: 0.92; transform: translateY(-1px); }
+  ion-icon { font-size: 17px; }
+}
+
+/* Card "TRANSMITINDO" em coluna (cabeçalho + botão Ativar dentro) */
+.tx-card-camera-live {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  cursor: default;
+
+  &:hover { transform: none; box-shadow: none; }
+
+  /* Tempo acabando → destaca o relógio/valor em vermelho */
+  &.acabando .tx-card-sub strong { color: #ef4444; }
+}
+
+.tx-card-camera-head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 14px;
+
+  .tx-card-sub {
+    white-space: normal;        /* deixa "Restam MM:SS" respirar */
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    strong { color: #be123c; font-variant-numeric: tabular-nums; }
+  }
+  .tx-sub-clock { font-size: 14px; color: #be123c; }
+}
+
+.tx-card-camera-ativar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 14px;
+  background: var(--ion-color-secondary, #7CC61D);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.12s;
+
+  &:hover { opacity: 0.92; transform: translateY(-1px); }
+  ion-icon { font-size: 18px; }
 }

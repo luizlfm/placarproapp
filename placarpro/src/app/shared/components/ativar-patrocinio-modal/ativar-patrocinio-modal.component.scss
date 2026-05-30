@@ -1,0 +1,662 @@
+.saldo-line {
+  display: flex; align-items: baseline; gap: 8px;
+  background: rgba(124, 198, 29, 0.1);
+  color: #000000;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  strong { font-size: 18px; color: #000000; }
+
+  /* Saldo PREMIUM — fundo dourado pra destacar */
+  &.saldo-premium {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.06) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+}
+
+/* ════════ Toggle Normal / Premium ════════ */
+.tipo-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tipo-tab {
+  position: relative;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  padding: 12px 10px;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+
+  &:hover { border-color: var(--ion-color-secondary, #7CC61D); }
+  &:active { transform: scale(0.98); }
+
+  &.active {
+    border-color: var(--ion-color-secondary, #7CC61D);
+    background: rgba(124, 198, 29, 0.06);
+    border-width: 2px;
+  }
+
+  .tipo-tab-nome {
+    font-size: 14px; font-weight: 800;
+    color: #1f2937;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .tipo-tab-preco {
+    font-size: 11.5px; font-weight: 700;
+    color: var(--ion-color-secondary, #7CC61D);
+  }
+  .tipo-tab-badge {
+    position: absolute;
+    top: -7px; right: 8px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #fff;
+    font-size: 8.5px; font-weight: 800;
+    letter-spacing: 0.5px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+  }
+
+  /* Premium tab — destaca com cor diferente quando ativo */
+  &.tipo-tab-premium.active {
+    border-color: #f59e0b;
+    background: linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, rgba(245, 158, 11, 0.10) 100%);
+    .tipo-tab-preco { color: #d97706; }
+  }
+}
+
+/* Preço total exibido ao lado do crédito no resumo */
+.resumo-preco {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-left: 4px;
+}
+
+/* ── Info do modelo (1 crédito = 2 logos / 1h) ── */
+.info-line {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  ion-icon { font-size: 18px; color: var(--ion-color-secondary, #7CC61D); flex-shrink: 0; margin-top: 1px; }
+  strong { color: #1f2937; }
+}
+
+.step-h {
+  font-size: 14px;
+  font-weight: 800;
+  margin: 18px 0 10px;
+  color: #1f2937;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: flex; align-items: center; justify-content: space-between;
+
+  .contador {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--ion-color-secondary, #7CC61D);
+    background: rgba(124, 198, 29, 0.1);
+    padding: 3px 8px;
+    border-radius: 999px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   Stepper de créditos (- valor +)
+   ════════════════════════════════════════════════════════ */
+.creditos-stepper {
+  display: grid;
+  grid-template-columns: 52px 1fr 52px;
+  gap: 10px;
+  align-items: stretch;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 4px;
+}
+
+.step-btn {
+  background: var(--ion-color-secondary, #7CC61D);
+  color: #fff;
+  border: 0;
+  border-radius: 10px;
+  width: 52px;
+  height: 100%;
+  min-height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms ease, transform 120ms ease;
+
+  ion-icon { font-size: 24px; }
+
+  &:hover:not(:disabled) { background: #6db317; }
+  &:active:not(:disabled) { transform: scale(0.95); }
+  &:disabled {
+    background: #e5e7eb;
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+}
+
+.step-info {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  text-align: center;
+
+  .step-num {
+    font-size: 30px;
+    font-weight: 800;
+    color: #1f2937;
+    line-height: 1;
+  }
+  .step-lbl {
+    font-size: 11px;
+    font-weight: 700;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-top: 2px;
+  }
+  .step-sub {
+    font-size: 11px;
+    color: var(--ion-color-secondary, #7CC61D);
+    font-weight: 700;
+    margin-top: 1px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   Lista de anunciantes adicionados (cards horizontais)
+   ════════════════════════════════════════════════════════ */
+.anuncios-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.anuncio-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.anuncio-logo {
+  width: 72px; height: 40px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  img, video { width: 100%; height: 100%; object-fit: contain; }
+  video { background: #000; object-fit: cover; }
+}
+
+.anuncio-info {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+}
+.anuncio-nome {
+  font-size: 14px; font-weight: 700; color: #1f2937;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.anuncio-tag {
+  font-size: 11px; color: var(--ion-color-secondary, #7CC61D);
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+}
+
+.anuncio-remover {
+  background: transparent;
+  border: 0;
+  color: #ef4444;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 120ms ease;
+  ion-icon { font-size: 20px; }
+  &:hover { background: rgba(239, 68, 68, 0.1); }
+}
+
+/* ════════════════════════════════════════════════════════
+   Botão "Adicionar patrocinador" — tile 16:9 centralizado
+   pra combinar com o aspecto 16:9 dos logos finais.
+   ════════════════════════════════════════════════════════ */
+.btn-add {
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 16 / 9;
+  margin: 0 auto;
+  background: #fafafb;
+  border: 2px dashed #d1d5db;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px;
+  font-family: inherit;
+  color: var(--ion-color-secondary, #7CC61D);
+  font-weight: 700;
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease, aspect-ratio 250ms ease;
+
+  ion-icon { font-size: 30px; }
+  small {
+    color: #6b7280;
+    font-size: 11.5px;
+    font-weight: 500;
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+
+  &:hover {
+    border-color: var(--ion-color-secondary, #7CC61D);
+    background: rgba(124, 198, 29, 0.04);
+    transform: translateY(-1px);
+  }
+
+  /* PREMIUM: molde RETRATO 9:16 com cor laranja distintiva */
+  &.aspect-premium {
+    aspect-ratio: 9 / 16;
+    max-width: 180px;
+    border-color: #f59e0b;
+    color: #d97706;
+    background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);
+
+    &:hover {
+      border-color: #d97706;
+      background: rgba(245, 158, 11, 0.10);
+    }
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   Form inline de novo anunciante
+   ════════════════════════════════════════════════════════ */
+.form-add {
+  background: #fff;
+  border: 1.5px solid var(--ion-color-secondary, #7CC61D);
+  border-radius: 12px;
+  padding: 14px;
+
+  h4 {
+    margin: 0 0 12px;
+    font-size: 14px; font-weight: 800;
+    color: #1f2937;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+.form-field {
+  display: flex; flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.field-lbl {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.form-field input[type="text"] {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  background: #fff;
+  color: #1f2937;
+  &:focus { border-color: var(--ion-color-secondary, #7CC61D); }
+}
+
+.upload-box {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 16 / 9;
+  margin: 0 auto;
+  border: 2px dashed #d1d5db;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  background: #fafafb;
+  overflow: hidden;
+  transition: border-color 120ms ease, background 120ms ease, aspect-ratio 250ms ease;
+
+  input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  &:hover {
+    border-color: var(--ion-color-secondary, #7CC61D);
+    background: rgba(124, 198, 29, 0.04);
+  }
+
+  &.tem-logo {
+    border-style: solid;
+    border-color: var(--ion-color-secondary, #7CC61D);
+  }
+
+  /* PREMIUM: molde RETRATO 9:16 (banner vertical da lateral direita) */
+  &.aspect-premium {
+    aspect-ratio: 9 / 16;
+    max-width: 180px;
+    border-color: #f59e0b;
+    background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);
+
+    &:hover {
+      border-color: #d97706;
+      background: rgba(245, 158, 11, 0.08);
+    }
+    &.tem-logo {
+      border-color: #f59e0b;
+    }
+  }
+}
+
+.upload-placeholder {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  color: #6b7280;
+  font-size: 13px;
+  text-align: center;
+  padding: 0 10px;
+  ion-icon { font-size: 32px; color: #9ca3af; margin-bottom: 4px; }
+  small {
+    font-size: 11px;
+    color: var(--ion-color-secondary, #7CC61D);
+    font-weight: 700;
+  }
+}
+
+.upload-loading {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  color: var(--ion-color-secondary, #7CC61D);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.upload-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 12px;
+}
+video.upload-preview {
+  /* Vídeo cover (preenche o quadro 9:16 sem espaço vazio) */
+  object-fit: cover;
+  padding: 0;
+  background: #000;
+}
+
+.form-actions {
+  display: flex; justify-content: flex-end; gap: 4px;
+  margin-top: 6px;
+}
+
+/* ════════════════════════════════════════════════════════
+   Preview da esteira na transmissão (mock visual)
+   ════════════════════════════════════════════════════════ */
+
+.preview-tag {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.preview-tv {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  background:
+    linear-gradient(135deg, #1f2937 0%, #0f172a 50%, #1e293b 100%);
+  margin-bottom: 6px;
+
+  /* Pseudo-pattern simulando textura sutil de fundo */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.015) 0,
+        rgba(255, 255, 255, 0.015) 22px,
+        transparent 22px,
+        transparent 44px
+      );
+    pointer-events: none;
+  }
+}
+
+.preview-live {
+  /* AO VIVO no canto SUPERIOR ESQUERDO (igual ao player real).
+     Banner do patrocínio fica AO LADO do AO VIVO (left maior). */
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  &::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: #fff;
+    border-radius: 50%;
+    animation: preview-live-blink 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes preview-live-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+
+/* Banner rotativo AO LADO do AO VIVO no topo — IGUAL ao da produção. */
+.preview-banner {
+  position: absolute;
+  top: 6px;
+  left: 57px;
+  z-index: 2;
+  width: 22%;
+  max-width: 90px;
+  aspect-ratio: 360 / 202;
+  display: block;
+  animation: preview-banner-fade 3s ease-in-out infinite;
+
+  img, video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  }
+}
+
+@keyframes preview-banner-fade {
+  0%, 100% { opacity: 1; }
+  82%      { opacity: 1; }
+  92%      { opacity: 0.2; }
+  100%     { opacity: 1; }
+}
+
+/* Indicador de quantos logos vão rotacionar */
+.preview-dots {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+  z-index: 2;
+}
+.preview-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  transition: background 250ms ease, transform 250ms ease;
+
+  &.active {
+    background: var(--ion-color-secondary, #7CC61D);
+    transform: scale(1.3);
+  }
+}
+
+/* ═══════ Variante PREMIUM ═══════
+   Mock da janela de 6s: vídeo recolhido à esquerda + banner vertical
+   9:16 ocupando a lateral direita. Reproduz exatamente o layout real
+   da intersticial premium na transmissão. */
+.preview-tv-premium {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+
+  /* Área do "vídeo" simulado à esquerda — ocupa o espaço sobrando */
+  .preview-video-recolhido {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 6px;
+    padding: 14px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    text-align: center;
+    /* Mantém pattern sutil de "vídeo escuro" */
+    background:
+      repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.015) 0,
+        rgba(255, 255, 255, 0.015) 22px,
+        transparent 22px,
+        transparent 44px
+      );
+
+    ion-icon { font-size: 36px; opacity: 0.4; }
+  }
+
+  /* AO VIVO no canto superior esquerdo do vídeo recolhido */
+  .preview-live {
+    top: 8px;
+    left: 10px;
+    right: auto; /* sobreescreve a posição padrão (right:10) */
+  }
+
+  /* Banner vertical 9:16 na lateral direita — ocupa altura completa */
+  .preview-banner-premium {
+    aspect-ratio: 9 / 16;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, transparent 8%);
+    display: flex; align-items: stretch; justify-content: center;
+    overflow: hidden;
+    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.4);
+    animation: preview-premium-pulse 6s ease-in-out infinite;
+
+    img, video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+}
+
+/* Pulse sugerindo que o banner aparece em janela limitada (6s on / pausa). */
+@keyframes preview-premium-pulse {
+  0%, 95%, 100% { opacity: 1; transform: translateX(0); }
+  97%           { opacity: 0; transform: translateX(20%); }
+  98%           { opacity: 0; transform: translateX(20%); }
+  99%           { opacity: 1; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview-banner { animation: none; }
+  .preview-live::before { animation: none; }
+  .preview-banner-premium { animation: none; }
+}
+
+/* ════════════════════════════════════════════════════════
+   Resumo final
+   ════════════════════════════════════════════════════════ */
+.resumo {
+  margin-top: 20px;
+  padding: 12px 14px;
+  background: #f9fafb;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+.resumo-line {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; padding: 4px 0;
+  color: #4b5563;
+  strong { color: #1f2937; }
+  &.custo {
+    border-top: 1px dashed #d1d5db;
+    margin-top: 6px; padding-top: 8px;
+    font-weight: 700;
+    color: var(--ion-color-secondary, #7CC61D);
+    strong { color: var(--ion-color-secondary, #7CC61D); font-size: 15px; }
+  }
+}
+
+.saldo-warning {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: #dc2626;
+  display: flex; align-items: center; gap: 6px;
+  text-align: center; justify-content: center;
+  ion-icon { font-size: 16px; }
+  a { color: var(--ion-color-secondary, #7CC61D); font-weight: 700; text-decoration: underline; }
+}

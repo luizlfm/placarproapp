@@ -164,6 +164,37 @@ export class JogosService {
     );
   }
 
+  /**
+   * DEV/TEST: dispara visualização do banner PREMIUM em todas as telas
+   * conectadas (admin + transmissão pública + público-jogo).
+   *
+   * Grava 3 campos `_testePremium*` no doc do jogo:
+   *  - `_testePremiumAt` (Timestamp do servidor) — usado como "trigger"
+   *    pra outros componentes detectarem que houve uma nova requisição
+   *  - `_testePremiumLogoUrl` / `_testePremiumNome` — conteúdo a renderizar
+   *
+   * Outros componentes que escutam o jogo veem o `_testePremiumAt` mudar
+   * e disparam a janela de 6s local. Funciona em tempo real via Firestore
+   * snapshot.
+   *
+   * REMOVER esta função e os 3 campos quando a feature estiver validada.
+   */
+  async disparTestePremium(
+    campeonatoId: string,
+    categoriaId: string,
+    jogoId: string,
+    logoUrl: string,
+    nome: string,
+  ): Promise<void> {
+    await runInInjectionContext(this.injector, () =>
+      updateDoc(this.docRef(campeonatoId, categoriaId, jogoId), {
+        _testePremiumAt: serverTimestamp(),
+        _testePremiumLogoUrl: logoUrl,
+        _testePremiumNome: nome,
+      } as Partial<Jogo>),
+    );
+  }
+
   async adicionarEvento(
     campeonatoId: string,
     categoriaId: string,

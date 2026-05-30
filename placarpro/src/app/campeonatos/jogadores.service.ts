@@ -8,6 +8,7 @@ import {
   collectionData,
   doc,
   docData,
+  getCountFromServer,
   getDoc,
   increment,
   orderBy,
@@ -18,11 +19,26 @@ import {
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { Jogador, NovoJogadorInput } from './models/jogador.model';
+import { PlanosService } from '../users/planos.service';
+
+/**
+ * Erro lançado quando o cadastro de jogadores excederia o limite
+ * `maxJogadoresPorCategoria` do plano do DONO do campeonato. Os componentes
+ * podem checar `instanceof LimiteExcedidoError` pra mostrar uma mensagem
+ * amigável de "faça upgrade".
+ */
+export class LimiteExcedidoError extends Error {
+  constructor(message: string, readonly max: number, readonly atual: number) {
+    super(message);
+    this.name = 'LimiteExcedidoError';
+  }
+}
 
 @Injectable({ providedIn: 'root' })
 export class JogadoresService {
   private readonly fs = inject(Firestore);
   private readonly injector = inject(Injector);
+  private readonly planosSrv = inject(PlanosService);
 
   private col(campeonatoId: string, categoriaId: string): CollectionReference<Jogador> {
     return collection(
@@ -77,11 +93,67 @@ export class JogadoresService {
     );
   }
 
+  /**
+   * Limite de jogadores POR CATEGORIA do plano do DONO do campeonato.
+   * Retorna -1 (ilimitado) quando não há dono identificável.
+   */
+  private async limiteJogadoresPorCategoria(campeonatoId: string): Promise<number> {
+    const campSnap = await getDoc(doc(this.fs, 'campeonatos', campeonatoId));
+    const ownerId = (campSnap.data() as { ownerId?: string } | undefined)?.ownerId;
+    if (!ownerId) return -1;
+    const userSnap = await getDoc(doc(this.fs, 'users', ownerId));
+    const plano = (userSnap.data() as { plano?: string } | undefined)?.plano;
+    return this.planosSrv.getPlanoDef(plano).limites.maxJogadoresPorCategoria;
+  }
+
+  /**
+   * Bloqueia o cadastro se ele estourar o limite de jogadores por categoria
+   * do plano do dono. Checagem feita ANTES de qualquer escrita (sem cadastro
+   * parcial). Lança `LimiteExcedidoError`.
+   */
+  private async assertLimiteJogadores(
+    campeonatoId: string,
+    categoriaId: string,
+    novos: number,
+  ): Promise<void> {
+    // Fail-open: se não der pra resolver plano/contagem (ex.: regras de
+    // segurança bloqueiam a leitura num fluxo público), NÃO bloqueia o
+    // cadastro — só uma falha de validação não deve impedir a operação.
+    let max: number;
+    try {
+      max = await this.limiteJogadoresPorCategoria(campeonatoId);
+    } catch {
+      return;
+    }
+    if (max === -1) return; // ilimitado
+
+    let atual: number;
+    try {
+      const snap = await getCountFromServer(this.col(campeonatoId, categoriaId));
+      atual = snap.data().count;
+    } catch {
+      return;
+    }
+
+    if (atual + novos > max) {
+      throw new LimiteExcedidoError(
+        `Limite de ${max} jogadores por categoria atingido no plano atual. ` +
+          `Faça upgrade do plano pra cadastrar mais.`,
+        max,
+        atual,
+      );
+    }
+  }
+
   async criar(campeonatoId: string, categoriaId: string, input: NovoJogadorInput): Promise<string> {
     return runInInjectionContext(this.injector, async () => {
+      await this.assertLimiteJogadores(campeonatoId, categoriaId, 1);
       const newRef = doc(this.col(campeonatoId, categoriaId));
       const payload: Jogador = stripUndefined({
         ...input,
+        // Convenção do sistema: nome de jogador SEMPRE em maiúsculas
+        // (consistência visual em listas, súmulas, escalações, públicas).
+        nome: (input.nome ?? '').trim().toUpperCase(),
         campeonatoId,
         categoriaId,
         cadastradoEm: serverTimestamp() as unknown as Timestamp,
@@ -109,6 +181,7 @@ export class JogadoresService {
   ): Promise<number> {
     return runInInjectionContext(this.injector, async () => {
       if (jogadores.length === 0) return 0;
+      await this.assertLimiteJogadores(campeonatoId, categoriaId, jogadores.length);
       const tamanho = 400;
       let total = 0;
       for (let i = 0; i < jogadores.length; i += tamanho) {

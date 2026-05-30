@@ -1,0 +1,348 @@
+.wrap {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  padding: 18px 18px;
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--placar-text, #1f2937);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    ion-icon { color: var(--ion-color-secondary, #7CC61D); font-size: 22px; }
+  }
+
+  p {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: var(--placar-text-muted, #4b5563);
+    line-height: 1.5;
+    &.muted { color: var(--placar-text-muted, #6b7280); font-size: 13px; }
+  }
+}
+
+/* ───── Row dos 3 saldos lado a lado ───── */
+.saldos-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+
+  @media (max-width: 820px) {
+    grid-template-columns: 1fr 1fr;
+  }
+  @media (max-width: 540px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ───── Saldo destaque ───── */
+.saldo-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, #000000 0%, #000000 100%);
+  color: #fff;
+
+  .saldo-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .saldo-lbl {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    opacity: 0.75;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .saldo-num {
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--placar-accent, #7CC61D);
+  }
+  .saldo-sub {
+    font-size: 12px;
+    opacity: 0.7;
+  }
+  .saldo-ic {
+    font-size: 54px;
+    color: rgba(255, 255, 255, 0.15);
+    flex-shrink: 0;
+  }
+}
+
+/* Variante PREMIUM — gradiente laranja em vez de preto */
+.saldo-card-premium {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+
+  .saldo-num { color: #fff; }
+  .saldo-lbl { color: #fff; opacity: 0.9; }
+  .saldo-sub { color: #fff; opacity: 0.85; }
+  .saldo-ic { color: rgba(255, 255, 255, 0.3); }
+}
+
+/* Variante TRANSMISSÃO — gradiente azul/petróleo (distinto dos outros 2) */
+.saldo-card-transmissao {
+  background: linear-gradient(135deg, #0f2027 0%, #2c5364 100%);
+
+  .saldo-num { color: var(--placar-accent, #7CC61D); }
+  .saldo-lbl { color: #fff; opacity: 0.9; }
+  .saldo-sub { color: #fff; opacity: 0.8; }
+  .saldo-ic { color: rgba(255, 255, 255, 0.18); }
+}
+
+/* ───── Cards explicativos dos tipos (Normal / Premium) ───── */
+.regra-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(124, 198, 29, 0.08) 0%, rgba(124, 198, 29, 0.02) 100%);
+  border: 1.5px solid var(--ion-color-secondary, #7CC61D);
+  border-radius: 12px;
+  margin: 8px 0 10px;
+
+  .regra-num {
+    flex-shrink: 0;
+    width: 44px; height: 44px;
+    background: var(--ion-color-secondary, #7CC61D);
+    color: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 800;
+  }
+  .regra-txt {
+    display: flex; flex-direction: column; gap: 2px;
+    font-size: 13.5px;
+    color: var(--placar-text-muted, #4b5563);
+    line-height: 1.4;
+    strong:first-child {
+      color: var(--placar-text, #1f2937);
+      font-size: 15px;
+      font-weight: 800;
+    }
+    strong { color: var(--ion-color-secondary, #7CC61D); font-weight: 800; }
+  }
+
+  /* Variante PREMIUM (laranja) */
+  &.premium {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.10) 0%, rgba(245, 158, 11, 0.03) 100%);
+    border-color: #f59e0b;
+
+    .regra-num {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
+    }
+    .regra-txt strong { color: #d97706; }
+    .regra-txt strong:first-child { color: var(--placar-text, #1f2937); }
+  }
+
+  /* Variante TRANSMISSÃO (azul/petróleo) */
+  &.transmissao {
+    background: linear-gradient(135deg, rgba(44, 83, 100, 0.10) 0%, rgba(44, 83, 100, 0.03) 100%);
+    border-color: #2c5364;
+
+    .regra-num {
+      background: linear-gradient(135deg, #0f2027 0%, #2c5364 100%);
+      box-shadow: 0 4px 10px rgba(44, 83, 100, 0.35);
+    }
+    .regra-txt strong { color: #2c5364; }
+    .regra-txt strong:first-child { color: var(--placar-text, #1f2937); }
+  }
+}
+
+.passos {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  color: var(--placar-text, #1f2937);
+  line-height: 1.7;
+  li { margin-bottom: 4px; }
+}
+
+// ─── Comprar créditos: 3 cards compactos na MESMA LINHA ───────────────────────
+.compra-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--placar-text, #1f2937);
+
+  ion-icon { color: var(--ion-color-secondary, #7CC61D); font-size: 22px; }
+}
+
+.compra-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+
+  @media (max-width: 680px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.compra-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 20px 16px;
+}
+
+.compra-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+
+  ion-icon {
+    font-size: 30px;
+    color: var(--ion-color-secondary, #7CC61D);
+  }
+  h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--placar-text, #1f2937);
+    line-height: 1.2;
+  }
+}
+
+.compra-unit {
+  font-size: 12px;
+  color: var(--placar-text-muted, #6b7280);
+}
+
+.compra-stepper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.compra-step-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid var(--placar-divider, #e5e7eb);
+  background: #fff;
+  color: var(--placar-text, #1f2937);
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover:not(:disabled) {
+    border-color: var(--ion-color-secondary, #7CC61D);
+    background: rgba(124, 198, 29, 0.08);
+  }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+}
+
+.compra-qty {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--placar-text, #1f2937);
+  min-width: 40px;
+  text-align: center;
+  line-height: 1;
+}
+
+.compra-total {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ion-color-secondary, #7CC61D);
+}
+
+.compra-btn {
+  margin-top: 2px;
+  width: 100%;
+  background: var(--placar-text, #1f2937);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  padding: 11px 14px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.12s;
+
+  &:hover { opacity: 0.92; transform: translateY(-1px); }
+}
+
+/* Acento PREMIUM (laranja) */
+.compra-card-premium {
+  border: 1.5px solid rgba(245, 158, 11, 0.45);
+
+  .compra-head ion-icon { color: #f59e0b; }
+  .compra-total { color: #d97706; }
+  .compra-btn {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  }
+}
+
+// ─── "Como usar seus créditos" — 2 guias lado a lado ──────────────────────────
+.guias {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 6px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.guia {
+  background: rgba(124, 198, 29, 0.05);
+  border: 1px solid var(--placar-divider, #e5e7eb);
+  border-radius: 12px;
+  padding: 14px 16px;
+
+  /* Variante TRANSMISSÃO (azul/petróleo) — combina com o restante da tela */
+  &.transmissao {
+    background: rgba(44, 83, 100, 0.06);
+
+    .guia-head ion-icon { color: #2c5364; }
+  }
+
+  .passos { font-size: 13.5px; }
+}
+
+.guia-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--placar-text, #1f2937);
+
+  ion-icon {
+    font-size: 20px;
+    color: var(--ion-color-secondary, #7CC61D);
+    flex: 0 0 auto;
+  }
+}

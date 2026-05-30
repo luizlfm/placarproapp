@@ -1,0 +1,309 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="fechar()">
+        <ion-icon slot="icon-only" name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Ativar patrocínio</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Saldo do tipo selecionado -->
+  <div class="saldo-line" [class.saldo-premium]="tipo === 'premium'">
+    <span>Saldo {{ tipo === 'premium' ? 'PREMIUM' : 'Normal' }}:</span>
+    <strong>{{ saldo$ | async }} crédito{{ (saldo$ | async) === 1 ? '' : 's' }}</strong>
+  </div>
+
+  <!-- ═════════ Toggle tipo (Normal / Premium) ═════════ -->
+  <div class="tipo-toggle">
+    <button
+      type="button"
+      class="tipo-tab"
+      [class.active]="tipo === 'normal'"
+      (click)="setTipo('normal')"
+    >
+      <span class="tipo-tab-nome">Normal</span>
+      <span class="tipo-tab-preco">R$ {{ precoNormal }} / crédito</span>
+    </button>
+    <button
+      type="button"
+      class="tipo-tab tipo-tab-premium"
+      [class.active]="tipo === 'premium'"
+      (click)="setTipo('premium')"
+    >
+      <span class="tipo-tab-badge">EXCLUSIVO</span>
+      <span class="tipo-tab-nome">Premium</span>
+      <span class="tipo-tab-preco">R$ {{ precoPremium }} / crédito</span>
+    </button>
+  </div>
+
+  <!-- Explicação do modelo selecionado (muda com o toggle) -->
+  <div class="info-line">
+    <ion-icon name="information-circle-outline"></ion-icon>
+    <span [innerHTML]="explicacao"></span>
+  </div>
+
+  <!-- ═════════ Stepper de créditos (só NORMAL) ═════════ -->
+  <ng-container *ngIf="tipo === 'normal'">
+    <div class="step-h">
+      <span>Créditos a usar</span>
+    </div>
+    <div class="creditos-stepper">
+      <button
+        type="button"
+        class="step-btn"
+        (click)="ajustarCreditos(-1)"
+        [disabled]="creditosSelecionados <= 1 || salvando"
+        aria-label="Diminuir créditos"
+      >
+        <ion-icon name="remove-outline"></ion-icon>
+      </button>
+      <div class="step-info">
+        <span class="step-num">{{ creditosSelecionados }}</span>
+        <span class="step-lbl">crédito{{ creditosSelecionados > 1 ? 's' : '' }}</span>
+        <span class="step-sub">= até {{ maxLogos }} patrocinadores</span>
+      </div>
+      <button
+        type="button"
+        class="step-btn"
+        (click)="ajustarCreditos(1)"
+        [disabled]="creditosSelecionados >= saldoAtual || salvando"
+        aria-label="Aumentar créditos"
+      >
+        <ion-icon name="add-outline"></ion-icon>
+      </button>
+    </div>
+  </ng-container>
+
+  <!-- Cabeçalho seção -->
+  <h3 class="step-h">
+    Anunciantes
+    <span class="contador">{{ anuncios.length }} / {{ maxLogos }}</span>
+  </h3>
+
+  <!-- ═════════ Lista de anunciantes adicionados ═════════ -->
+  <div class="anuncios-list" *ngIf="anuncios.length > 0">
+    <div class="anuncio-card" *ngFor="let a of anuncios; let i = index">
+      <div class="anuncio-logo">
+        <!-- Thumbnail: video se for vídeo, senão img -->
+        <video
+          *ngIf="a.tipoMidia === 'video'; else thumbImg"
+          [src]="a.logoUrl"
+          autoplay
+          muted
+          loop
+          playsinline
+        ></video>
+        <ng-template #thumbImg>
+          <img [src]="a.logoUrl" [alt]="a.nome" />
+        </ng-template>
+      </div>
+      <div class="anuncio-info">
+        <span class="anuncio-nome">{{ a.nome }}</span>
+        <span class="anuncio-tag">Anúncio {{ i + 1 }}</span>
+      </div>
+      <button
+        type="button"
+        class="anuncio-remover"
+        (click)="removerAnuncio(i)"
+        aria-label="Remover anunciante"
+        title="Remover"
+      >
+        <ion-icon name="trash-outline"></ion-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═════════ Botão "Adicionar" (some quando chega no máx) ═════════ -->
+  <button
+    type="button"
+    class="btn-add"
+    [class.aspect-premium]="tipo === 'premium'"
+    *ngIf="!formAberto && anuncios.length < maxLogos"
+    (click)="abrirForm()"
+  >
+    <ion-icon name="add-circle-outline"></ion-icon>
+    <span>Adicionar patrocinador</span>
+    <small *ngIf="anuncios.length === 0">
+      {{ tipo === 'premium' ? 'Cadastre o anunciante PREMIUM (banner vertical 9:16).' : 'Cadastre o anunciante com logo e nome.' }}
+    </small>
+  </button>
+
+  <!-- ═════════ Form inline (cadastro on-the-fly) ═════════ -->
+  <div class="form-add" *ngIf="formAberto">
+    <h4>Novo anunciante</h4>
+
+    <label class="form-field">
+      <span class="field-lbl">Nome</span>
+      <input
+        type="text"
+        [(ngModel)]="novoNome"
+        placeholder="Ex: Loja Acme"
+        maxlength="40"
+        autocapitalize="words"
+      />
+    </label>
+
+    <label class="form-field">
+      <span class="field-lbl">{{ tipo === 'premium' ? 'Imagem ou vídeo (≤6s)' : 'Logo' }}</span>
+      <div class="upload-box"
+           [class.tem-logo]="!!novoLogoUrl"
+           [class.aspect-premium]="tipo === 'premium'">
+        <!-- Preview da mídia (img OU video conforme o tipo) -->
+        <ng-container *ngIf="novoLogoUrl">
+          <video
+            *ngIf="novoTipoMidia === 'video'; else previewImg"
+            [src]="novoLogoUrl"
+            class="upload-preview"
+            autoplay
+            muted
+            loop
+            playsinline
+          ></video>
+          <ng-template #previewImg>
+            <img [src]="novoLogoUrl" alt="Preview" class="upload-preview" />
+          </ng-template>
+        </ng-container>
+
+        <div class="upload-placeholder" *ngIf="!novoLogoUrl && !enviandoLogo">
+          <ion-icon name="cloud-upload-outline"></ion-icon>
+          <span>Escolher {{ tipo === 'premium' ? 'imagem ou vídeo' : 'imagem' }}</span>
+          <small *ngIf="tipo === 'premium'; else hintNormal">9:16 · imagem 360×640 OU vídeo ≤6s MP4/WebM</small>
+          <ng-template #hintNormal>
+            <small>Proporção 16:9 · recomendado 360 × 202 px</small>
+          </ng-template>
+        </div>
+        <div class="upload-loading" *ngIf="enviandoLogo">
+          <ion-spinner name="dots"></ion-spinner>
+          <span>Enviando…</span>
+        </div>
+        <input
+          type="file"
+          [accept]="tipo === 'premium' ? 'image/png,image/jpeg,image/webp,video/mp4,video/webm,video/quicktime' : 'image/png,image/jpeg,image/webp'"
+          (change)="onLogoSelecionado($event)"
+          [disabled]="enviandoLogo"
+        />
+      </div>
+    </label>
+
+    <div class="form-actions">
+      <ion-button fill="clear" color="medium" (click)="cancelarForm()" [disabled]="enviandoLogo">
+        Cancelar
+      </ion-button>
+      <ion-button color="secondary" (click)="confirmarAdd()" [disabled]="enviandoLogo || !novoNome || !novoLogoUrl">
+        <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+        Adicionar
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- ═════════ Preview da transmissão (varia por tipo) ═════════
+       NORMAL: banner pequeno no topo esquerdo (rotativo).
+       PREMIUM: banner vertical 9:16 ocupando lateral direita inteira,
+                como aparece na produção durante a janela de 6s. -->
+  <ng-container *ngIf="anuncios.length > 0 && !formAberto">
+    <h3 class="step-h">
+      Pré-visualização
+      <span class="preview-tag">
+        {{ tipo === 'premium' ? 'janela de 6s a cada 7min' : 'como ficará na transmissão' }}
+      </span>
+    </h3>
+
+    <!-- ═══ Preview NORMAL ═══ -->
+    <div class="preview-tv" *ngIf="tipo === 'normal'">
+      <span class="preview-live">AO VIVO</span>
+
+      <div class="preview-banner" *ngIf="anuncios[previewIdx] as a">
+        <video
+          *ngIf="a.tipoMidia === 'video'; else normalImg"
+          [src]="a.logoUrl"
+          autoplay
+          muted
+          loop
+          playsinline
+        ></video>
+        <ng-template #normalImg>
+          <img [src]="a.logoUrl" [alt]="a.nome" />
+        </ng-template>
+      </div>
+
+      <div class="preview-dots" *ngIf="anuncios.length > 1">
+        <span
+          *ngFor="let _ of anuncios; let i = index"
+          class="preview-dot"
+          [class.active]="i === previewIdx"
+        ></span>
+      </div>
+    </div>
+
+    <!-- ═══ Preview PREMIUM (lateral direita 9:16) ═══ -->
+    <div class="preview-tv preview-tv-premium" *ngIf="tipo === 'premium'">
+      <span class="preview-live">AO VIVO</span>
+
+      <!-- Área do "vídeo" recolhida pra esquerda -->
+      <div class="preview-video-recolhido">
+        <ion-icon name="play-circle-outline"></ion-icon>
+        <span>vídeo da partida</span>
+      </div>
+
+      <!-- Banner vertical 9:16 ocupando a lateral direita inteira.
+           Se for vídeo, renderiza <video> (autoplay/muted/loop), senão img. -->
+      <div class="preview-banner-premium" *ngIf="anuncios[0] as a">
+        <video
+          *ngIf="a.tipoMidia === 'video'; else premiumImg"
+          [src]="a.logoUrl"
+          autoplay
+          muted
+          loop
+          playsinline
+        ></video>
+        <ng-template #premiumImg>
+          <img [src]="a.logoUrl" [alt]="a.nome" />
+        </ng-template>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ═════════ Resumo + confirmar ═════════ -->
+  <div class="resumo" *ngIf="anuncios.length > 0 && !formAberto">
+    <div class="resumo-line">
+      <span>Tipo:</span>
+      <strong>{{ tipo === 'premium' ? 'PREMIUM (vertical)' : 'Normal (esteira)' }}</strong>
+    </div>
+    <div class="resumo-line">
+      <span>Anunciantes:</span>
+      <strong>{{ anuncios.length }} adicionado{{ anuncios.length > 1 ? 's' : '' }}</strong>
+    </div>
+    <div class="resumo-line">
+      <span>Duração:</span>
+      <strong>{{ duracaoTexto }}</strong>
+    </div>
+    <div class="resumo-line custo">
+      <span>Custo:</span>
+      <strong>
+        {{ tipo === 'premium' ? 1 : creditosSelecionados }} crédito{{ (tipo === 'premium' ? 1 : creditosSelecionados) > 1 ? 's' : '' }}
+        <span class="resumo-preco">(R$ {{ precoUnit * (tipo === 'premium' ? 1 : creditosSelecionados) }})</span>
+      </strong>
+    </div>
+  </div>
+
+  <ion-button
+    *ngIf="!formAberto"
+    expand="block"
+    [color]="tipo === 'premium' ? 'warning' : 'secondary'"
+    class="ion-margin-top"
+    [disabled]="anuncios.length === 0 || salvando || saldoAtual < (tipo === 'premium' ? 1 : creditosSelecionados)"
+    (click)="confirmar()"
+  >
+    <ion-spinner *ngIf="salvando" name="dots" slot="start"></ion-spinner>
+    <ion-icon *ngIf="!salvando" slot="start" name="checkmark-outline"></ion-icon>
+    Confirmar e debitar {{ tipo === 'premium' ? 1 : creditosSelecionados }} crédito{{ (tipo === 'premium' ? 1 : creditosSelecionados) > 1 ? 's' : '' }}
+  </ion-button>
+
+  <p *ngIf="!formAberto && saldoAtual < (tipo === 'premium' ? 1 : creditosSelecionados)" class="saldo-warning">
+    <ion-icon name="warning-outline"></ion-icon>
+    Saldo insuficiente. <a routerLink="/app/meus-creditos" (click)="fechar()">Comprar créditos</a>
+  </p>
+</ion-content>

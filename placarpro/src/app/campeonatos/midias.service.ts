@@ -164,4 +164,27 @@ export class MidiasService {
     if (/^[A-Za-z0-9_-]{6,}$/.test(url)) return url;
     return null;
   }
+
+  /**
+   * Mede a duração (em segundos) de um arquivo de vídeo no client, lendo só
+   * os metadados. Retorna 0 se não conseguir ler — nesse caso o chamador NÃO
+   * deve bloquear o upload (evita travar por falha de leitura do navegador).
+   */
+  static medirDuracaoVideo(file: File): Promise<number> {
+    return new Promise<number>((resolve) => {
+      try {
+        const url = URL.createObjectURL(file);
+        const v = document.createElement('video');
+        v.preload = 'metadata';
+        v.onloadedmetadata = () => {
+          URL.revokeObjectURL(url);
+          resolve(Number.isFinite(v.duration) ? v.duration : 0);
+        };
+        v.onerror = () => { URL.revokeObjectURL(url); resolve(0); };
+        v.src = url;
+      } catch {
+        resolve(0);
+      }
+    });
+  }
 }

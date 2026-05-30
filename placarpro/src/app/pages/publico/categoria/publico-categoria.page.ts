@@ -757,20 +757,6 @@ export class PublicoCategoriaPage implements OnInit {
     }, 50);
   }
 
-  /** Abre a tela PÚBLICA de transmissão (player YouTube + overlay).
-   *  Acessível sem login — qualquer torcedor pode acompanhar.
-   *  Usado pelos badges/botões "AO VIVO" nos cards de jogo. */
-  abrirTransmissao(j: JogoView, ev?: Event): void {
-    if (ev) {
-      ev.stopPropagation();
-      ev.preventDefault();
-    }
-    if (!j.youtubeVideoId || !this.campeonato?.id || !this.categoria?.id || !j.id) return;
-    this.router.navigate([
-      '/transmissao', this.campeonato.id, this.categoria.id, j.id,
-    ]);
-  }
-
   irPara(secao: Secao): void {
     this.secao = secao;
     this.menuMobileAberto = false;

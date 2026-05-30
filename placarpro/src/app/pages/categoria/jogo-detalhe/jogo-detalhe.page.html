@@ -7,39 +7,19 @@
     </ion-buttons>
     <ion-title>{{ (campeonato$ | async)?.titulo || 'Partida' }}</ion-title>
     <ion-buttons slot="end">
-      <!-- Botão Transmissão — só aparece se:
-           1) o jogo tem link de YouTube configurado, E
-           2) o user logado tem plano que libera transmissão ao vivo.
-           Se não tem plano mas o link existe (configurado em plano
-           anterior ou pelo dono), o botão fica oculto — só quem PAGA
-           consegue acessar a tela de transmissão. -->
-      <ion-button
-        *ngIf="(jogo$ | async)?.youtubeVideoId && (podeTransmissao$ | async)"
-        (click)="abrirTransmissao()"
-        aria-label="Abrir transmissão"
-        title="Abrir transmissão ao vivo"
-      >
-        <ion-icon slot="icon-only" name="logo-youtube" color="danger"></ion-icon>
-      </ion-button>
       <!-- Botão TRANSMITIR AO VIVO (LiveKit, câmera do próprio dispositivo).
            Visível só pra quem tem `enviarMidias` OU `editarResultados`.
-           Diferente do botão "logo-youtube" acima (que abre player do YouTube
-           já configurado) — este aqui INICIA uma transmissão usando a câmera
-           do navegador/celular do organizador. -->
-      <ion-button
-        *ngIf="(permissoes$ | async)?.enviarMidias || (permissoes$ | async)?.editarResultados"
-        (click)="iniciarTransmissaoLive()"
-        aria-label="Transmitir ao vivo"
-        title="Transmitir ao vivo com sua câmera"
-      >
+           INICIA uma transmissão usando a câmera do navegador/celular.
+           Fica DESABILITADO quando já há uma transmissão ativa (em outro
+           dispositivo) pra evitar duplicar. -->
+      <ion-button *ngIf="(permissoes$ | async)?.enviarMidias || (permissoes$ | async)?.editarResultados"
+        [disabled]="transmissaoLiveAtiva$ | async"
+        (click)="iniciarTransmissaoLive()" aria-label="Transmitir ao vivo"
+        [title]="(transmissaoLiveAtiva$ | async) ? 'Transmissão já ativa em outro dispositivo' : 'Transmitir ao vivo com sua câmera'">
         <ion-icon slot="icon-only" name="radio-outline" color="danger"></ion-icon>
       </ion-button>
       <!-- Menu "⋮" (ações de edição/admin) — só pra quem pode editar resultados. -->
-      <ion-button
-        *ngIf="(permissoes$ | async)?.editarResultados"
-        (click)="abrirMenu($event)"
-        aria-label="Mais opções"
-      >
+      <ion-button *ngIf="(permissoes$ | async)?.editarResultados" (click)="abrirMenu($event)" aria-label="Mais opções">
         <ion-icon slot="icon-only" name="ellipsis-vertical-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -49,1218 +29,1083 @@
 <ion-content>
   <!-- Permissões compartilhadas pra todo o template. -->
   <ng-container *ngIf="permissoes$ | async as p">
-  <ng-container *ngIf="jogo$ | async as j; else carregando">
-    <h1 class="page-title">{{ (campeonato$ | async)?.titulo }}</h1>
-    <h2 class="page-sub">{{ (categoria$ | async)?.titulo }}</h2>
+    <ng-container *ngIf="jogo$ | async as j; else carregando">
+      <h1 class="page-title">{{ (campeonato$ | async)?.titulo }}</h1>
+      <h2 class="page-sub">{{ (categoria$ | async)?.titulo }}</h2>
 
-    <div class="layout">
-      <!-- Coluna principal -->
-      <div class="main">
-        <!-- ════════════ Ações de transmissão ════════════
-             Placar removido a pedido. Restam apenas os 2 CTAs:
-              • Abrir transmissão  (player YouTube/LiveKit existente)
-              • Transmitir agora   (modal broadcaster LiveKit / câmera)
-             O kebab "⋮" foi removido daqui — admin acessa pelo toolbar. -->
-        <section class="tx-quick">
-          <!-- ═══ Card "Abrir transmissão" (YouTube) — só se há vídeo
-               configurado E user pode ver transmissão ═══ -->
-          <button
-            type="button"
-            *ngIf="j.youtubeVideoId && (podeTransmissao$ | async)"
-            class="tx-card tx-card-youtube"
-            (click)="abrirTransmissao()"
-            title="Abrir transmissão ao vivo"
-          >
-            <div class="tx-card-icon">
-              <ion-icon name="logo-youtube"></ion-icon>
-            </div>
-            <div class="tx-card-info">
-              <div class="tx-card-title">Abrir transmissão</div>
-              <div class="tx-card-sub">YouTube ao vivo</div>
-            </div>
-            <ion-icon class="tx-card-chevron" name="chevron-forward-outline"></ion-icon>
-          </button>
-
-          <!-- ═══ Card "Transmitir agora" (LiveKit/câmera) — só pra
+      <div class="layout">
+        <!-- Coluna principal -->
+        <div class="main">
+          <!-- ════════════ Ações de transmissão ════════════
+             CTA único: "Transmitir agora" (modal broadcaster LiveKit/câmera).
+             Quando já há uma transmissão ativa (em outro dispositivo), o
+             card fica DESABILITADO e informa o estado — evita duplicar. -->
+          <section class="tx-quick" [class.transmitindo]="(transmissaoLiveAtiva$ | async)">
+            <!-- ═══ Card "Transmitir agora" (LiveKit/câmera) — só pra
                organizador/moderador com permissão ═══ -->
-          <button
-            type="button"
-            *ngIf="p.enviarMidias || p.editarResultados"
-            class="tx-card tx-card-camera"
-            [class.ativa]="(transmissaoLiveAtiva$ | async)"
-            (click)="iniciarTransmissaoLive()"
-            title="Transmitir com sua câmera"
-          >
-            <div class="tx-card-icon">
-              <!-- Quando NÃO está transmitindo: ícone de câmera comum.
-                   Quando transmitindo: SÓ a badge "AO VIVO" ocupa o espaço
-                   (sem ion-icon por baixo pra não sobrepor). -->
-              <ion-icon *ngIf="!(transmissaoLiveAtiva$ | async)" name="videocam-outline"></ion-icon>
-              <span class="tx-card-live-badge" *ngIf="(transmissaoLiveAtiva$ | async)">
-                <span class="tx-card-live-dot"></span>
-                AO<br/>VIVO
-              </span>
-            </div>
-            <div class="tx-card-info">
-              <div class="tx-card-title">
-                {{ (transmissaoLiveAtiva$ | async) ? 'Transmitindo' : 'Transmitir agora' }}
+            <!-- ── ESTADO 1: NÃO transmitindo → botão "Transmitir agora" ── -->
+            <button type="button"
+              *ngIf="(p.enviarMidias || p.editarResultados) && !(transmissaoLiveAtiva$ | async)"
+              class="tx-card tx-card-camera" (click)="iniciarTransmissaoLive()"
+              title="Transmitir com sua câmera">
+              <div class="tx-card-icon">
+                <ion-icon name="videocam-outline"></ion-icon>
               </div>
-              <div class="tx-card-sub">
-                {{ (transmissaoLiveAtiva$ | async) ? 'Toque pra abrir player' : 'Sua câmera ao vivo' }}
+              <div class="tx-card-info">
+                <div class="tx-card-title">Transmitir agora</div>
+                <div class="tx-card-sub">Sua câmera ao vivo</div>
               </div>
-            </div>
-            <ion-icon class="tx-card-chevron" name="chevron-forward-outline"></ion-icon>
-          </button>
+              <ion-icon class="tx-card-chevron" name="chevron-forward-outline"></ion-icon>
+            </button>
 
-          <!-- ═══ Ações de COMPARTILHAR transmissão — só durante live ═══
+            <!-- ── ESTADO 2: TRANSMITINDO → card com tempo + Ativar DENTRO ── -->
+            <div
+              *ngIf="(p.enviarMidias || p.editarResultados) && (transmissaoLiveAtiva$ | async)"
+              class="tx-card tx-card-camera ativa tx-card-camera-live"
+              [class.acabando]="(transmissaoTempo$ | async)?.cronometrado && ((transmissaoTempo$ | async)?.restanteSeg || 0) <= 60">
+              <div class="tx-card-camera-head">
+                <div class="tx-card-icon">
+                  <span class="tx-card-live-badge">
+                    <span class="tx-card-live-dot"></span>
+                    AO<br />VIVO
+                  </span>
+                </div>
+                <div class="tx-card-info" *ngIf="(transmissaoTempo$ | async) as tt">
+                  <div class="tx-card-title">Transmitindo</div>
+                  <div class="tx-card-sub">
+                    <ng-container *ngIf="tt.cronometrado; else semCron">
+                      <ion-icon name="time-outline" class="tx-sub-clock"></ion-icon>
+                      Restam <strong>{{ formatarTempoRestante(tt.restanteSeg) }}</strong>
+                    </ng-container>
+                    <ng-template #semCron>Sem limite de tempo (plano)</ng-template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botão de ativar crédito DENTRO do card -->
+              <button type="button" class="tx-card-camera-ativar"
+                *ngIf="(transmissaoTempo$ | async) as tt"
+                (click)="ativarCreditoTransmissao()">
+                <ion-icon name="add-circle-outline"></ion-icon>
+                {{ tt.cronometrado ? 'Ativar +' + tt.limiteMin + 'min' : 'Ativar crédito (cronometrar)' }}
+              </button>
+            </div>
+
+            <!-- ═══ Ações de COMPARTILHAR transmissão — só durante live ═══
                Botões compactos lado a lado, aparecem só quando a
                transmissão está ATIVA (transmissaoLiveAtiva$ === true).
                Usam o link PÚBLICO `/transmissao/:campId/:catId/:jogoId`
                pra qualquer visitante assistir sem login. -->
-          <div class="tx-share-actions" *ngIf="(transmissaoLiveAtiva$ | async)">
-            <button
-              type="button"
-              class="tx-share-btn"
-              (click)="compartilharLinkTransmissao()"
-              title="Compartilhar transmissão"
-            >
-              <ion-icon name="share-social-outline"></ion-icon>
-              <span>Compartilhar</span>
-            </button>
-            <button
-              type="button"
-              class="tx-share-btn"
-              (click)="copiarLinkTransmissao()"
-              title="Copiar link da transmissão"
-            >
-              <ion-icon name="link-outline"></ion-icon>
-              <span>Copiar link</span>
-            </button>
-          </div>
-        </section>
-
-        <!-- Antes havia aqui um `<app-transmissao-player modo="compacto">`
-             pequeno acima do painel ao vivo. Removido — agora o LiveKit
-             player aparece DENTRO do `.live-youtube` (painel ao vivo
-             abaixo), substituindo o iframe YouTube quando há transmissão
-             LiveKit ativa. UX unificada: 1 área de vídeo só, grande e
-             centralizada, com scoreboard sobreposto. -->
-
-        <!-- ════════════════════════════════════════════════════════
-             PATROCINADORES DA PARTIDA
-             Seção exclusiva pra admins/editores. Cards com preview real
-             (mesmo tamanho da esteira da transmissão). Logo + nome.
-             ════════════════════════════════════════════════════════ -->
-        <section class="patjogo-section" *ngIf="p.editarResultados">
-          <div class="section-head">
-            <h3 class="section-title">
-              <ion-icon name="megaphone-outline"></ion-icon>
-              Patrocinadores da partida
-            </h3>
-            <ion-button
-              size="small"
-              color="secondary"
-              (click)="adicionarPatrocinadorJogo()"
-            >
-              <ion-icon slot="start" name="add-outline"></ion-icon>
-              Adicionar
-            </ion-button>
-          </div>
-
-          <!-- Descrição / hint -->
-          <p class="patjogo-hint">
-            Aparecem na esteira de banners durante a transmissão ao vivo desta partida.
-          </p>
-
-          <!-- Grid de cards (vazio = placeholder) -->
-          <div class="patjogo-grid" *ngIf="(jogo$ | async)?.patrocinadores?.length; else patVazio">
-            <div
-              class="patjogo-card"
-              *ngFor="let pat of (jogo$ | async)?.patrocinadores; let i = index"
-              (click)="adicionarPatrocinadorJogo(i)"
-              title="Editar patrocinador"
-              role="button"
-            >
-              <!-- Preview: mesma proporção (16:9) e tamanho do .tr-pat-stage desktop -->
-              <div class="patjogo-preview">
-                <img skel
-                  *ngIf="pat.logoUrl; else iconPat"
-                  [src]="pat.logoUrl"
-                  [alt]="pat.nome"
-                />
-                <ng-template #iconPat>
-                  <ion-icon name="image-outline" class="patjogo-sem-logo"></ion-icon>
-                </ng-template>
-                <!-- Botão remover flutuante sobre o preview -->
-                <button
-                  type="button"
-                  class="patjogo-remove"
-                  (click)="$event.stopPropagation(); removerPatrocinadorJogo(i)"
-                  title="Remover patrocinador"
-                  aria-label="Remover patrocinador"
-                >
-                  <ion-icon name="close-circle"></ion-icon>
-                </button>
-              </div>
-              <div class="patjogo-info">
-                <span class="patjogo-nome">{{ pat.nome }}</span>
-                <ion-icon name="create-outline" class="patjogo-edit-icon"></ion-icon>
-              </div>
+            <div class="tx-share-actions" *ngIf="(transmissaoLiveAtiva$ | async)">
+              <button type="button" class="tx-share-btn" (click)="compartilharLinkTransmissao()"
+                title="Compartilhar transmissão">
+                <ion-icon name="share-social-outline"></ion-icon>
+                <span>Compartilhar</span>
+              </button>
+              <button type="button" class="tx-share-btn" (click)="copiarLinkTransmissao()"
+                title="Copiar link da transmissão">
+                <ion-icon name="link-outline"></ion-icon>
+                <span>Copiar link</span>
+              </button>
             </div>
+          </section>
 
-            <!-- Card "+" para adicionar mais -->
-            <button
-              type="button"
-              class="patjogo-add-card"
-              (click)="adicionarPatrocinadorJogo()"
-              aria-label="Adicionar patrocinador"
-              title="Adicionar patrocinador"
-            >
-              <ion-icon name="add-outline"></ion-icon>
-              <span>Adicionar</span>
-            </button>
-          </div>
+          <!-- Antes havia aqui um `<app-transmissao-player modo="compacto">`
+             pequeno acima do painel ao vivo. Removido — agora o LiveKit
+             player aparece DENTRO do `.live-video` (painel ao vivo
+             abaixo) quando há transmissão LiveKit ativa. UX unificada:
+             1 área de vídeo só, grande e centralizada, com scoreboard
+             sobreposto. -->
 
-          <!-- Estado vazio -->
-          <ng-template #patVazio>
-            <div class="patjogo-empty">
-              <ion-icon name="megaphone-outline"></ion-icon>
-              <p>Nenhum patrocinador adicionado ainda.</p>
-              <ion-button
-                fill="outline"
-                color="secondary"
-                size="small"
-                (click)="adicionarPatrocinadorJogo()"
-              >
+          <!-- A seção "Patrocinadores da partida" (manual/free) foi REMOVIDA —
+             a entrada de patrocínio agora é exclusivamente baseada em
+             créditos pagos (próxima seção). Os patrocinadores cadastrados
+             em `/app/patrocinadores` do organizador continuam funcionando
+             como fallback gratuito no player via `[ownerIdPatrocinadores]`
+             de `app-transmissao-player`, então quem já usava aquele recurso
+             não perde nada. -->
+
+          <!-- ════════════════════════════════════════════════════════
+             PATROCÍNIOS PAGOS (ADS) — seção monetizada principal.
+             Cada ativação debita créditos do organizador e tem validade
+             contada do início da transmissão.
+             ════════════════════════════════════════════════════════ -->
+          <section class="patjogo-section" *ngIf="p.editarResultados">
+            <div class="section-head">
+              <h3 class="section-title">
+                <ion-icon name="ribbon-outline"></ion-icon>
+                Patrocínios pagos
+              </h3>
+              <ion-button size="small" color="secondary" (click)="abrirAtivarPatrocinio()">
                 <ion-icon slot="start" name="add-outline"></ion-icon>
-                Adicionar patrocinador
+                Ativar
               </ion-button>
             </div>
-          </ng-template>
-        </section>
 
-        <!-- ════════════════════════════════════════════════════════
+            <p class="patjogo-hint">
+              Logos exibidos na transmissão por tempo determinado. Cada ativação
+              consome créditos do seu saldo.
+            </p>
+
+            <ng-container *ngIf="patrociniosPagos$ | async as ads">
+              <ng-container *ngIf="nowTick$ | async as tick">
+                <ng-container *ngIf="ads.length > 0; else adsVazios">
+
+                  <!-- Grid 2 colunas no desktop, 1 no mobile.
+                   Exibe só os primeiros 2 por default; botão "Ver mais (N)"
+                   expande pra mostrar todos. Ordem: ATIVO > AGENDADO >
+                   EXPIRADO > CANCELADO (mais relevante primeiro). -->
+                  <div class="ads-list">
+                    <ng-container *ngFor="let a of adsExibidos(ads, tick)">
+                      <div class="ad-card" [attr.data-status]="statusEfetivo(a, tick)"
+                        [attr.data-tipo]="a.tipo || 'normal'">
+                        <!-- Logos: slot SEMPRE renderizado com tamanho fixo +
+                     skeleton de fundo. Se houver >1 logo, rotaciona a
+                     cada 3s pela `rotacaoAdsTick$`. -->
+                        <div class="ad-logos" [class.premium-logos]="a.tipo === 'premium'"
+                          [class.rotativo]="(a.patrocinadores?.length || 0) > 1">
+                          <div class="ad-logo-slot">
+                            <!-- Loader (spinner) fica POR TRÁS da imagem.
+                         Quando a img carrega, ela cobre o spinner. -->
+                            <div class="ad-logo-loader" aria-hidden="true">
+                              <div class="ad-spinner"></div>
+                            </div>
+                            <ng-container
+                              *ngIf="a.patrocinadores?.[(a.patrocinadores?.length || 0) > 1 ? adLogoIdx(a, (rotacaoAdsTick$ | async) || 0) : 0] as pat">
+                              <!-- Vídeo curto (loop, mudo) quando a mídia é
+                                   tipoMidia === 'video'; senão a logo estática. -->
+                              <video
+                                *ngIf="pat.tipoMidia === 'video'; else adImgTpl"
+                                [src]="pat.logoUrl" class="ad-logo" [attr.aria-label]="pat.nome"
+                                [title]="pat.nome" autoplay muted loop playsinline></video>
+                              <ng-template #adImgTpl>
+                                <img [src]="pat.logoUrl" [alt]="pat.nome" class="ad-logo" [title]="pat.nome"
+                                  loading="lazy" />
+                              </ng-template>
+                            </ng-container>
+                          </div>
+                          <div class="ad-logos-dots" *ngIf="(a.patrocinadores?.length || 0) > 1">
+                            <span *ngFor="let _ of a.patrocinadores; let i = index" class="ad-dot"
+                              [class.active]="i === adLogoIdx(a, (rotacaoAdsTick$ | async) || 0)"></span>
+                          </div>
+                        </div>
+                        <div class="ad-info">
+                          <span class="ad-nome">
+                            <span class="ad-tipo-badge" *ngIf="a.tipo === 'premium'">PREMIUM</span>
+                            {{ a.patrocinadores?.length || 0 }} patrocinador{{ (a.patrocinadores?.length || 0) > 1 ?
+                            'es' : '' }}
+                          </span>
+                          <span class="ad-tier">
+                            <ng-container *ngIf="a.tipo === 'premium'; else tierNormal">
+                              6s a cada 7min · 1 crédito
+                            </ng-container>
+                            <ng-template #tierNormal>{{ a.duracaoMin }} min · {{ a.creditosUsados || 1 }} crédito{{
+                              (a.creditosUsados || 1) > 1 ? 's' : '' }}</ng-template>
+                          </span>
+                          <div class="ad-chips">
+                            <span class="ad-status" [class]="'st-' + statusEfetivo(a, tick)">{{
+                              statusLabel(statusEfetivo(a, tick)) }}</span>
+                            <!-- Countdown HH:MM:SS — só pra patrocínios ATIVOS.
+                         Atualiza a cada 1s via `secTick$`. -->
+                            <span class="ad-countdown"
+                              *ngIf="statusEfetivo(a, tick) === 'ativo' && (secTick$ | async) as secTick">
+                              <ion-icon name="time-outline"></ion-icon>
+                              {{ formatarCountdown(segundosRestantes(a, secTick)) }}
+                            </span>
+                            <!-- O chip "Aguardando início da transmissão" é
+                         ocultado quando a transmissão já está em andamento
+                         (j.status === 'em-andamento'). Nesse caso, o botão
+                         "Ativar" da seção ad-acoes substitui a informação. -->
+                            <span class="ad-tempo-chip" [class.em-andamento]="statusEfetivo(a, tick) === 'ativo'"
+                              [class.aguardando]="statusEfetivo(a, tick) === 'agendado'"
+                              [class.esgotado]="statusEfetivo(a, tick) === 'expirado'"
+                              *ngIf="tempoChip(a, tick) && !(statusEfetivo(a, tick) === 'agendado' && j.status === 'em-andamento')">
+                              <ion-icon [name]="statusEfetivo(a, tick) === 'ativo' ? 'time-outline'
+                              : statusEfetivo(a, tick) === 'agendado' ? 'hourglass-outline'
+                              : 'flag-outline'"></ion-icon>
+                              {{ tempoChip(a, tick) }}
+                            </span>
+                          </div>
+                        </div>
+                        <div class="ad-acoes" *ngIf="statusEfetivo(a, tick) === 'agendado'">
+                          <!-- Botão ATIVAR — só aparece se a transmissão já está
+                       rodando. Permite ativar o patrocínio agendado
+                       imediatamente (vira ATIVO + começa o cronômetro). -->
+                          <ion-button *ngIf="j.status === 'em-andamento'" fill="solid" color="secondary" size="small"
+                            (click)="ativarAdAgora(a)" aria-label="Ativar agora"
+                            title="Ativar imediatamente (transmissão já em andamento)">
+                            <ion-icon slot="start" name="flash-outline"></ion-icon>
+                            Ativar
+                          </ion-button>
+                          <ion-button fill="clear" color="medium" size="small" (click)="editarAd(a)" aria-label="Editar"
+                            title="Editar antes da partida">
+                            <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+                          </ion-button>
+                          <ion-button fill="clear" color="danger" size="small" (click)="cancelarAd(a.id!)"
+                            aria-label="Cancelar" title="Cancelar (estorna o crédito)">
+                            <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+                          </ion-button>
+                        </div>
+
+                        <!-- Botão REATIVAR pra patrocínios expirados/cancelados.
+                     Cria novo doc com os mesmos anunciantes + debita crédito. -->
+                        <div class="ad-acoes"
+                          *ngIf="statusEfetivo(a, tick) === 'expirado' || statusEfetivo(a, tick) === 'cancelado'">
+                          <ion-button fill="solid" color="secondary" size="small" (click)="reativarAd(a)"
+                            aria-label="Reativar" title="Reativar com os mesmos patrocinadores">
+                            <ion-icon slot="start" name="refresh-outline"></ion-icon>
+                            Reativar
+                          </ion-button>
+                        </div>
+                      </div>
+                    </ng-container><!-- ngFor a of adsExibidos -->
+                  </div><!-- .ads-list -->
+
+                  <!-- ═══════ Toggle "Ver mais (N)" ═══════
+                   Aparece se há ads escondidos (total > LIMITE_ADS_VISIVEIS).
+                   Clicar expande/recolhe. -->
+                  <button type="button" class="ads-historico-toggle" *ngIf="adsEscondidos(ads) > 0"
+                    (click)="mostrarHistoricoAds = !mostrarHistoricoAds">
+                    <ion-icon [name]="mostrarHistoricoAds ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+                    <span>
+                      {{ mostrarHistoricoAds ? 'Ver menos' : 'Ver mais' }}
+                      ({{ adsEscondidos(ads) }})
+                    </span>
+                  </button>
+
+                </ng-container>
+                <ng-template #adsVazios>
+                  <div class="patjogo-empty">
+                    <ion-icon name="ribbon-outline"></ion-icon>
+                    <p>Nenhum patrocínio pago ativado.</p>
+                  </div>
+                </ng-template>
+              </ng-container>
+            </ng-container>
+          </section>
+
+          <!-- ════════════════════════════════════════════════════════
              PAINEL AO VIVO — aparece se o user pode editar resultados.
              3 estados (controlados por j.status):
               • agendado   → card "Iniciar partida" + duração
               • em-andamento → cronômetro + tempos + quick-actions
-                              + timeline + YouTube embed (se configurado)
+                              + timeline + player ao vivo (se transmitindo)
               • encerrado  → some (não mostra painel)
              ════════════════════════════════════════════════════════ -->
-        <section
-          class="live-panel"
-          *ngIf="p.editarResultados && (j.status === 'agendado' || j.status === 'em-andamento')"
-        >
-          <!-- ═══════ PRE-JOGO ═══════ -->
-          <ng-container *ngIf="j.status === 'agendado'">
-            <header class="live-head">
-              <span class="live-badge pre">
-                <ion-icon name="time-outline"></ion-icon>
-                PARTIDA AGENDADA
-              </span>
-            </header>
-
-            <div class="live-prejogo">
-              <p class="prej-msg">
-                Tudo pronto pra apitar?<br>
-                <small>Cronômetro, lances e timeline ficam disponíveis assim que você iniciar.</small>
-              </p>
-
-              <div class="prej-info">
-                <button type="button" class="prej-link" (click)="definirDuracao()">
+          <section class="live-panel"
+            *ngIf="p.editarResultados && (j.status === 'agendado' || j.status === 'em-andamento')">
+            <!-- ═══════ PRE-JOGO ═══════ -->
+            <ng-container *ngIf="j.status === 'agendado'">
+              <header class="live-head">
+                <span class="live-badge pre">
                   <ion-icon name="time-outline"></ion-icon>
-                  Duração: <strong>{{ j.duracaoPeriodoMin || 45 }} min</strong> por tempo
+                  PARTIDA AGENDADA
+                </span>
+              </header>
+
+              <div class="live-prejogo">
+                <p class="prej-msg">
+                  Tudo pronto pra apitar?<br>
+                  <small>Cronômetro, lances e timeline ficam disponíveis assim que você iniciar.</small>
+                </p>
+
+                <div class="prej-info">
+                  <button type="button" class="prej-link" (click)="definirDuracao()">
+                    <ion-icon name="time-outline"></ion-icon>
+                    Duração: <strong>{{ j.duracaoPeriodoMin || 45 }} min</strong> por tempo
+                  </button>
+                </div>
+
+                <ion-button expand="block" color="secondary" class="prej-iniciar" (click)="iniciarPartida()">
+                  <ion-icon slot="start" name="play-circle-outline"></ion-icon>
+                  Iniciar partida
+                </ion-button>
+              </div>
+            </ng-container>
+            <button type="button" class="dev-test-banner" (click)="testarBannerPremium()"
+              title="DEV: força exibição do banner premium por 6s (ignora timer de 7min)">
+              <ion-icon name="flask-outline"></ion-icon>
+              Testar banner premium
+            </button>
+            <!-- ═══════ EM ANDAMENTO ═══════ -->
+            <ng-container *ngIf="j.status === 'em-andamento'">
+              <!-- ═══════ DEV/TEST: botão pra forçar exibição do banner premium ═══════
+               TODO: REMOVER quando feature estiver validada em produção.
+               Aparece SÓ pra quem pode editar resultados (não vaza pro espectador). -->
+
+              <header class="live-head">
+                <span class="live-badge">
+                  <span class="live-dot"></span>
+                  AO VIVO
+                </span>
+                <span class="live-tempo-atual">
+                  {{ labelTempo(j.tempoAtual) }}
+                </span>
+                <button type="button" class="live-time live-time-btn" aria-label="Editar tempo decorrido"
+                  title="Tocar pra editar o tempo" [class.pausado]="j.tempoPausado" (click)="editarTempoDecorrido()">
+                  <ion-icon [name]="j.tempoPausado ? 'pause-outline' : 'time-outline'"></ion-icon>
+                  {{ tempoDecorrido() }}
+                  <span class="live-acrescimo" *ngIf="(j.acrescimoAtualMin || 0) > 0">
+                    +{{ j.acrescimoAtualMin }}
+                  </span>
+                  <span class="live-pausa-chip" *ngIf="j.tempoPausado">PAUSADO</span>
+                  <ion-icon class="live-time-edit-icon" name="create-outline"></ion-icon>
+                </button>
+              </header>
+
+              <!-- ────────── Tempos / fases (segmented horizontal) ──────────
+               Clique troca o tempo atual + reseta o relógio pra 00:00. -->
+              <div class="live-tempos" role="tablist" aria-label="Tempo da partida">
+                <button *ngFor="let t of tempos" type="button" role="tab" class="lt-btn"
+                  [class.atual]="j.tempoAtual === t.id" [attr.aria-selected]="j.tempoAtual === t.id"
+                  (click)="trocarTempo(t.id)" [title]="t.label">
+                  {{ t.curto }}
+                </button>
+                <!-- Botão final: encerrar (vira "FIM" semanticamente). -->
+                <button type="button" class="lt-btn lt-fim" (click)="encerrarPartida()" title="Encerrar partida">
+                  FIM
                 </button>
               </div>
 
-              <ion-button
-                expand="block"
-                color="secondary"
-                class="prej-iniciar"
-                (click)="iniciarPartida()"
-              >
-                <ion-icon slot="start" name="play-circle-outline"></ion-icon>
-                Iniciar partida
-              </ion-button>
-            </div>
-          </ng-container>
-
-          <!-- ═══════ EM ANDAMENTO ═══════ -->
-          <ng-container *ngIf="j.status === 'em-andamento'">
-          <header class="live-head">
-            <span class="live-badge">
-              <span class="live-dot"></span>
-              AO VIVO
-            </span>
-            <span class="live-tempo-atual">
-              {{ labelTempo(j.tempoAtual) }}
-            </span>
-            <button
-              type="button"
-              class="live-time live-time-btn"
-              aria-label="Editar tempo decorrido"
-              title="Tocar pra editar o tempo"
-              [class.pausado]="j.tempoPausado"
-              (click)="editarTempoDecorrido()"
-            >
-              <ion-icon [name]="j.tempoPausado ? 'pause-outline' : 'time-outline'"></ion-icon>
-              {{ tempoDecorrido() }}
-              <span class="live-acrescimo" *ngIf="(j.acrescimoAtualMin || 0) > 0">
-                +{{ j.acrescimoAtualMin }}
-              </span>
-              <span class="live-pausa-chip" *ngIf="j.tempoPausado">PAUSADO</span>
-              <ion-icon class="live-time-edit-icon" name="create-outline"></ion-icon>
-            </button>
-          </header>
-
-          <!-- ────────── Tempos / fases (segmented horizontal) ──────────
-               Clique troca o tempo atual + reseta o relógio pra 00:00. -->
-          <div class="live-tempos" role="tablist" aria-label="Tempo da partida">
-            <button
-              *ngFor="let t of tempos"
-              type="button"
-              role="tab"
-              class="lt-btn"
-              [class.atual]="j.tempoAtual === t.id"
-              [attr.aria-selected]="j.tempoAtual === t.id"
-              (click)="trocarTempo(t.id)"
-              [title]="t.label"
-            >
-              {{ t.curto }}
-            </button>
-            <!-- Botão final: encerrar (vira "FIM" semanticamente). -->
-            <button
-              type="button"
-              class="lt-btn lt-fim"
-              (click)="encerrarPartida()"
-              title="Encerrar partida"
-            >
-              FIM
-            </button>
-          </div>
-
-          <!-- Linha de "mais opções" (duração / pausa / acréscimos) -->
-          <div class="live-opcoes">
-            <button type="button" class="lo-btn" (click)="definirDuracao()" title="Mudar duração">
-              <ion-icon name="hourglass-outline"></ion-icon>
-              {{ j.duracaoPeriodoMin || 45 }} min/tempo
-            </button>
-            <!-- Pausar/Retomar — só faz sentido com a partida em andamento.
+              <!-- Linha de "mais opções" (duração / pausa / acréscimos) -->
+              <div class="live-opcoes">
+                <button type="button" class="lo-btn" (click)="definirDuracao()" title="Mudar duração">
+                  <ion-icon name="hourglass-outline"></ion-icon>
+                  {{ j.duracaoPeriodoMin || 45 }} min/tempo
+                </button>
+                <!-- Pausar/Retomar — só faz sentido com a partida em andamento.
                  Quando pausado, o botão vira "Retomar" em destaque (lime).
                  Ao pausar, o cronômetro congela; ao retomar, continua de
                  onde parou (não zera o tempo). -->
-            <button
-              *ngIf="j.status === 'em-andamento'"
-              type="button"
-              class="lo-btn lo-pausa"
-              [class.ativo]="j.tempoPausado"
-              (click)="togglePausa()"
-              [title]="j.tempoPausado ? 'Retomar cronômetro' : 'Pausar cronômetro'"
-            >
-              <ion-icon [name]="j.tempoPausado ? 'play-outline' : 'pause-outline'"></ion-icon>
-              {{ j.tempoPausado ? 'Retomar' : 'Pausar' }}
-            </button>
-            <div class="lo-acrescimo">
-              <span class="lo-label">Acréscimo</span>
-              <button
-                type="button"
-                class="lo-step"
-                (click)="ajustarAcrescimo(-1)"
-                [disabled]="(j.acrescimoAtualMin || 0) === 0"
-                aria-label="Diminuir acréscimo"
-              >−</button>
-              <span class="lo-val">+{{ j.acrescimoAtualMin || 0 }}</span>
-              <button
-                type="button"
-                class="lo-step"
-                (click)="ajustarAcrescimo(1)"
-                aria-label="Aumentar acréscimo"
-              >+</button>
-            </div>
-          </div>
+                <button *ngIf="j.status === 'em-andamento'" type="button" class="lo-btn lo-pausa"
+                  [class.ativo]="j.tempoPausado" (click)="togglePausa()"
+                  [title]="j.tempoPausado ? 'Retomar cronômetro' : 'Pausar cronômetro'">
+                  <ion-icon [name]="j.tempoPausado ? 'play-outline' : 'pause-outline'"></ion-icon>
+                  {{ j.tempoPausado ? 'Retomar' : 'Pausar' }}
+                </button>
+                <div class="lo-acrescimo">
+                  <span class="lo-label">Acréscimo</span>
+                  <button type="button" class="lo-step" (click)="ajustarAcrescimo(-1)"
+                    [disabled]="(j.acrescimoAtualMin || 0) === 0" aria-label="Diminuir acréscimo">−</button>
+                  <span class="lo-val">+{{ j.acrescimoAtualMin || 0 }}</span>
+                  <button type="button" class="lo-step" (click)="ajustarAcrescimo(1)"
+                    aria-label="Aumentar acréscimo">+</button>
+                </div>
+              </div>
 
-          <!-- ════════ PAINEL DE PÊNALTIS ════════
+              <!-- ════════ PAINEL DE PÊNALTIS ════════
                Aparece SOMENTE quando o tempo atual é "penaltis". Mostra o
                placar de pênaltis (separado do placar normal do jogo),
                botões CONVERTIDO/PERDIDO/DEFENDIDO por lado, lista visual
                das cobranças já feitas (círculos) e indica de quem é a vez. -->
-          <div class="pen-painel" *ngIf="j.tempoAtual === 'penaltis'">
-            <ng-container *ngIf="eventos$ | async as evs">
-              <!-- Placar de pênaltis (grande, centralizado) -->
-              <div class="pen-placar">
-                <div class="pen-lado">
-                  <div class="pen-lado-nome">{{ j.nomeMandante }}</div>
-                  <div class="pen-lado-num">{{ placarPen(evs, j.mandanteId) }}</div>
-                </div>
-                <div class="pen-meio">PÊNALTIS</div>
-                <div class="pen-lado">
-                  <div class="pen-lado-nome">{{ j.nomeVisitante }}</div>
-                  <div class="pen-lado-num">{{ placarPen(evs, j.visitanteId) }}</div>
-                </div>
-              </div>
+              <div class="pen-painel" *ngIf="j.tempoAtual === 'penaltis'">
+                <ng-container *ngIf="eventos$ | async as evs">
+                  <!-- Placar de pênaltis (grande, centralizado) -->
+                  <div class="pen-placar">
+                    <div class="pen-lado">
+                      <div class="pen-lado-nome">{{ j.nomeMandante }}</div>
+                      <div class="pen-lado-num">{{ placarPen(evs, j.mandanteId) }}</div>
+                    </div>
+                    <div class="pen-meio">PÊNALTIS</div>
+                    <div class="pen-lado">
+                      <div class="pen-lado-nome">{{ j.nomeVisitante }}</div>
+                      <div class="pen-lado-num">{{ placarPen(evs, j.visitanteId) }}</div>
+                    </div>
+                  </div>
 
-              <!-- Histórico DETALHADO de cobranças: chips com nº da cobrança,
+                  <!-- Histórico DETALHADO de cobranças: chips com nº da cobrança,
                    ícone de resultado e nome do jogador (se houver).
                    Mandante em cima, visitante embaixo. Bolinhas simples
                    ficam só como fallback se o lado estiver vazio. -->
-              <div class="pen-historico">
-                <div class="pen-hist-linha">
-                  <span class="pen-hist-lbl">
-                    <img skel *ngIf="j.logoMandante" [src]="j.logoMandante" [alt]="j.nomeMandante" />
-                    {{ j.nomeMandante }}
-                  </span>
-                  <div class="pen-hist-chips">
-                    <span class="pen-hist-vazio" *ngIf="cobrancasPenDetalhe(evs, j.mandanteId).length === 0">
-                      sem cobranças
-                    </span>
-                    <span
-                      *ngFor="let ev of cobrancasPenDetalhe(evs, j.mandanteId); let i = index"
-                      class="pen-hist-chip"
-                      [class.c]="ev.tipo === 'pen-convertido'"
-                      [class.p]="ev.tipo === 'pen-perdido'"
-                      [class.d]="ev.tipo === 'pen-defendido'"
-                      [title]="(i+1) + 'ª — ' + (ev.tipo === 'pen-convertido' ? 'CONVERTIDO' : ev.tipo === 'pen-perdido' ? 'PERDEU' : 'DEFENDIDO')
-                              + (nomeJogadorPen(ev.jogadorId) ? ' (' + nomeJogadorPen(ev.jogadorId) + ')' : '')"
-                    >
-                      <span class="pen-hist-num">{{ i + 1 }}</span>
-                      <ion-icon
-                        *ngIf="ev.tipo === 'pen-convertido'"
-                        name="checkmark-circle"
-                      ></ion-icon>
-                      <ion-icon
-                        *ngIf="ev.tipo === 'pen-perdido'"
-                        name="close-circle"
-                      ></ion-icon>
-                      <ion-icon
-                        *ngIf="ev.tipo === 'pen-defendido'"
-                        name="hand-left"
-                      ></ion-icon>
-                      <span class="pen-hist-jogador" *ngIf="nomeJogadorPen(ev.jogadorId) as nm">
-                        {{ nm }}
+                  <div class="pen-historico">
+                    <div class="pen-hist-linha">
+                      <span class="pen-hist-lbl">
+                        <img skel *ngIf="j.logoMandante" [src]="j.logoMandante" [alt]="j.nomeMandante" />
+                        {{ j.nomeMandante }}
                       </span>
-                    </span>
-                  </div>
-                </div>
-                <div class="pen-hist-linha">
-                  <span class="pen-hist-lbl">
-                    <img skel *ngIf="j.logoVisitante" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
-                    {{ j.nomeVisitante }}
-                  </span>
-                  <div class="pen-hist-chips">
-                    <span class="pen-hist-vazio" *ngIf="cobrancasPenDetalhe(evs, j.visitanteId).length === 0">
-                      sem cobranças
-                    </span>
-                    <span
-                      *ngFor="let ev of cobrancasPenDetalhe(evs, j.visitanteId); let i = index"
-                      class="pen-hist-chip"
-                      [class.c]="ev.tipo === 'pen-convertido'"
-                      [class.p]="ev.tipo === 'pen-perdido'"
-                      [class.d]="ev.tipo === 'pen-defendido'"
-                      [title]="(i+1) + 'ª — ' + (ev.tipo === 'pen-convertido' ? 'CONVERTIDO' : ev.tipo === 'pen-perdido' ? 'PERDEU' : 'DEFENDIDO')
-                              + (nomeJogadorPen(ev.jogadorId) ? ' (' + nomeJogadorPen(ev.jogadorId) + ')' : '')"
-                    >
-                      <span class="pen-hist-num">{{ i + 1 }}</span>
-                      <ion-icon
-                        *ngIf="ev.tipo === 'pen-convertido'"
-                        name="checkmark-circle"
-                      ></ion-icon>
-                      <ion-icon
-                        *ngIf="ev.tipo === 'pen-perdido'"
-                        name="close-circle"
-                      ></ion-icon>
-                      <ion-icon
-                        *ngIf="ev.tipo === 'pen-defendido'"
-                        name="hand-left"
-                      ></ion-icon>
-                      <span class="pen-hist-jogador" *ngIf="nomeJogadorPen(ev.jogadorId) as nm">
-                        {{ nm }}
+                      <div class="pen-hist-chips">
+                        <span class="pen-hist-vazio" *ngIf="cobrancasPenDetalhe(evs, j.mandanteId).length === 0">
+                          sem cobranças
+                        </span>
+                        <span *ngFor="let ev of cobrancasPenDetalhe(evs, j.mandanteId); let i = index"
+                          class="pen-hist-chip" [class.c]="ev.tipo === 'pen-convertido'"
+                          [class.p]="ev.tipo === 'pen-perdido'" [class.d]="ev.tipo === 'pen-defendido'" [title]="(i+1) + 'ª — ' + (ev.tipo === 'pen-convertido' ? 'CONVERTIDO' : ev.tipo === 'pen-perdido' ? 'PERDEU' : 'DEFENDIDO')
+                              + (nomeJogadorPen(ev.jogadorId) ? ' (' + nomeJogadorPen(ev.jogadorId) + ')' : '')">
+                          <span class="pen-hist-num">{{ i + 1 }}</span>
+                          <ion-icon *ngIf="ev.tipo === 'pen-convertido'" name="checkmark-circle"></ion-icon>
+                          <ion-icon *ngIf="ev.tipo === 'pen-perdido'" name="close-circle"></ion-icon>
+                          <ion-icon *ngIf="ev.tipo === 'pen-defendido'" name="hand-left"></ion-icon>
+                          <span class="pen-hist-jogador" *ngIf="nomeJogadorPen(ev.jogadorId) as nm">
+                            {{ nm }}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="pen-hist-linha">
+                      <span class="pen-hist-lbl">
+                        <img skel *ngIf="j.logoVisitante" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
+                        {{ j.nomeVisitante }}
                       </span>
-                    </span>
+                      <div class="pen-hist-chips">
+                        <span class="pen-hist-vazio" *ngIf="cobrancasPenDetalhe(evs, j.visitanteId).length === 0">
+                          sem cobranças
+                        </span>
+                        <span *ngFor="let ev of cobrancasPenDetalhe(evs, j.visitanteId); let i = index"
+                          class="pen-hist-chip" [class.c]="ev.tipo === 'pen-convertido'"
+                          [class.p]="ev.tipo === 'pen-perdido'" [class.d]="ev.tipo === 'pen-defendido'" [title]="(i+1) + 'ª — ' + (ev.tipo === 'pen-convertido' ? 'CONVERTIDO' : ev.tipo === 'pen-perdido' ? 'PERDEU' : 'DEFENDIDO')
+                              + (nomeJogadorPen(ev.jogadorId) ? ' (' + nomeJogadorPen(ev.jogadorId) + ')' : '')">
+                          <span class="pen-hist-num">{{ i + 1 }}</span>
+                          <ion-icon *ngIf="ev.tipo === 'pen-convertido'" name="checkmark-circle"></ion-icon>
+                          <ion-icon *ngIf="ev.tipo === 'pen-perdido'" name="close-circle"></ion-icon>
+                          <ion-icon *ngIf="ev.tipo === 'pen-defendido'" name="hand-left"></ion-icon>
+                          <span class="pen-hist-jogador" *ngIf="nomeJogadorPen(ev.jogadorId) as nm">
+                            {{ nm }}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              <!-- Indicador "Vez de cobrar" -->
-              <div class="pen-vez">
-                <ion-icon name="arrow-forward-outline"></ion-icon>
-                Vez de cobrar:
-                <strong>
-                  {{ proximoCobradorPen(evs, j.mandanteId, j.visitanteId) === 'mandante'
-                     ? j.nomeMandante : j.nomeVisitante }}
-                </strong>
-              </div>
+                  <!-- Indicador "Vez de cobrar" -->
+                  <div class="pen-vez">
+                    <ion-icon name="arrow-forward-outline"></ion-icon>
+                    Vez de cobrar:
+                    <strong>
+                      {{ proximoCobradorPen(evs, j.mandanteId, j.visitanteId) === 'mandante'
+                      ? j.nomeMandante : j.nomeVisitante }}
+                    </strong>
+                  </div>
 
-              <!-- ════════ CONFIG da SÉRIE — chip clicável que abre prompt
+                  <!-- ════════ CONFIG da SÉRIE — chip clicável que abre prompt
                    pra mudar entre best-of-3/5/7/10. Sempre visível pra
                    admin poder ajustar mesmo durante a decisão. ════════ -->
-              <div class="pen-config">
-                <button type="button" class="pen-config-chip" (click)="configurarSeriePenaltis(j)">
-                  <ion-icon name="settings-outline"></ion-icon>
-                  Melhor de <strong>{{ j.serieMaximaPenaltis || 5 }}</strong> cobranças
-                </button>
-              </div>
+                  <div class="pen-config">
+                    <button type="button" class="pen-config-chip" (click)="configurarSeriePenaltis(j)">
+                      <ion-icon name="settings-outline"></ion-icon>
+                      Melhor de <strong>{{ j.serieMaximaPenaltis || 5 }}</strong> cobranças
+                    </button>
+                  </div>
 
-              <!-- ════════ BANNER DE VENCEDOR — aparece quando a decisão
+                  <!-- ════════ BANNER DE VENCEDOR — aparece quando a decisão
                    acabou matematicamente. Esconde os cards de cobrança
                    e mostra botão grande pra encerrar a partida. ════════ -->
-              <ng-container
-                *ngIf="vencedorPenaltis(evs, j.mandanteId, j.visitanteId, j.serieMaximaPenaltis || 5) as vencedor"
-              >
-                <div class="pen-fim-banner" [class.lado-m]="vencedor === 'mandante'" [class.lado-v]="vencedor === 'visitante'">
-                  <div class="pen-fim-trofeu">
-                    <ion-icon name="trophy"></ion-icon>
-                  </div>
-                  <div class="pen-fim-texto">
-                    <div class="pen-fim-titulo">DECISÃO ENCERRADA</div>
-                    <div class="pen-fim-vencedor">
-                      Vencedor:
-                      <strong>{{ vencedor === 'mandante' ? j.nomeMandante : j.nomeVisitante }}</strong>
+                  <ng-container
+                    *ngIf="vencedorPenaltis(evs, j.mandanteId, j.visitanteId, j.serieMaximaPenaltis || 5) as vencedor">
+                    <div class="pen-fim-banner" [class.lado-m]="vencedor === 'mandante'"
+                      [class.lado-v]="vencedor === 'visitante'">
+                      <div class="pen-fim-trofeu">
+                        <ion-icon name="trophy"></ion-icon>
+                      </div>
+                      <div class="pen-fim-texto">
+                        <div class="pen-fim-titulo">DECISÃO ENCERRADA</div>
+                        <div class="pen-fim-vencedor">
+                          Vencedor:
+                          <strong>{{ vencedor === 'mandante' ? j.nomeMandante : j.nomeVisitante }}</strong>
+                        </div>
+                        <div class="pen-fim-placar">
+                          {{ placarPen(evs, j.mandanteId) }} × {{ placarPen(evs, j.visitanteId) }}
+                          nos pênaltis
+                        </div>
+                      </div>
+                      <ion-button class="pen-fim-btn" color="success" expand="block" (click)="trocarTempo(null)">
+                        <ion-icon slot="start" name="checkmark-circle"></ion-icon>
+                        Encerrar partida
+                      </ion-button>
                     </div>
-                    <div class="pen-fim-placar">
-                      {{ placarPen(evs, j.mandanteId) }} × {{ placarPen(evs, j.visitanteId) }}
-                      nos pênaltis
-                    </div>
-                  </div>
-                  <ion-button
-                    class="pen-fim-btn"
-                    color="success"
-                    expand="block"
-                    (click)="trocarTempo(null)"
-                  >
-                    <ion-icon slot="start" name="checkmark-circle"></ion-icon>
-                    Encerrar partida
-                  </ion-button>
-                </div>
-              </ng-container>
+                  </ng-container>
 
-              <!-- Botões por lado: CONVERTIDO / PERDIDO / DEFENDIDO.
+                  <!-- Botões por lado: CONVERTIDO / PERDIDO / DEFENDIDO.
                    APENAS o lado da vez fica habilitado — alterna automático
                    após cada cobrança. Lado inativo fica esmaecido + bloqueado.
                    NÃO esconde quando a decisão acaba — admin pode escolher
                    encerrar OU continuar cobrando (caso queira rever, etc.). -->
-              <ng-container *ngIf="true">
-              <ng-container
-                *ngIf="{ vez: proximoCobradorPen(evs, j.mandanteId, j.visitanteId) } as pen"
-              >
-                <div class="pen-acoes">
-                  <!-- ───── MANDANTE ───── -->
-                  <div
-                    class="pen-acoes-lado"
-                    [class.inativo]="pen.vez !== 'mandante'"
-                    [class.ativo]="pen.vez === 'mandante'"
-                  >
-                    <div class="pen-acoes-titulo">
-                      {{ j.nomeMandante }}
-                      <span class="pen-vez-badge" *ngIf="pen.vez === 'mandante'">
-                        <ion-icon name="arrow-forward-outline"></ion-icon>
-                        SUA VEZ
-                      </span>
-                    </div>
-                    <select
-                      class="pen-jogador-select"
-                      [(ngModel)]="penJogadorMandanteId"
-                      [disabled]="pen.vez !== 'mandante'"
-                      aria-label="Jogador que vai cobrar (mandante)"
-                    >
-                      <option value="">— Selecionar jogador (opcional) —</option>
-                      <option
-                        *ngFor="let je of escalacaoMandante$ | async"
-                        [value]="je.jogador.id"
-                      >
-                        {{ je.jogador.numeroCamisa ? '#' + je.jogador.numeroCamisa + ' ' : '' }}{{ je.jogador.apelido || je.jogador.nome }}
-                      </option>
-                    </select>
-                    <div class="pen-acoes-btns">
-                      <button type="button" class="pen-btn pen-btn-c"
-                        [disabled]="pen.vez !== 'mandante'"
-                        (click)="cobrarPenalti(j, 'mandante', 'convertido')">
-                        <ion-icon name="football-outline"></ion-icon> Convertido
-                      </button>
-                      <button type="button" class="pen-btn pen-btn-p"
-                        [disabled]="pen.vez !== 'mandante'"
-                        (click)="cobrarPenalti(j, 'mandante', 'perdido')">
-                        <ion-icon name="close-circle-outline"></ion-icon> Perdido
-                      </button>
-                      <button type="button" class="pen-btn pen-btn-d"
-                        [disabled]="pen.vez !== 'mandante'"
-                        (click)="cobrarPenalti(j, 'mandante', 'defendido')">
-                        <ion-icon name="hand-left-outline"></ion-icon> Defendido
-                      </button>
-                    </div>
-                  </div>
+                  <ng-container *ngIf="true">
+                    <ng-container *ngIf="{ vez: proximoCobradorPen(evs, j.mandanteId, j.visitanteId) } as pen">
+                      <div class="pen-acoes">
+                        <!-- ───── MANDANTE ───── -->
+                        <div class="pen-acoes-lado" [class.inativo]="pen.vez !== 'mandante'"
+                          [class.ativo]="pen.vez === 'mandante'">
+                          <div class="pen-acoes-titulo">
+                            {{ j.nomeMandante }}
+                            <span class="pen-vez-badge" *ngIf="pen.vez === 'mandante'">
+                              <ion-icon name="arrow-forward-outline"></ion-icon>
+                              SUA VEZ
+                            </span>
+                          </div>
+                          <select class="pen-jogador-select" [(ngModel)]="penJogadorMandanteId"
+                            [disabled]="pen.vez !== 'mandante'" aria-label="Jogador que vai cobrar (mandante)">
+                            <option value="">— Selecionar jogador (opcional) —</option>
+                            <option *ngFor="let je of escalacaoMandante$ | async" [value]="je.jogador.id">
+                              {{ je.jogador.numeroCamisa ? '#' + je.jogador.numeroCamisa + ' ' : '' }}{{
+                              je.jogador.apelido || je.jogador.nome }}
+                            </option>
+                          </select>
+                          <div class="pen-acoes-btns">
+                            <button type="button" class="pen-btn pen-btn-c" [disabled]="pen.vez !== 'mandante'"
+                              (click)="cobrarPenalti(j, 'mandante', 'convertido')">
+                              <ion-icon name="football-outline"></ion-icon> Convertido
+                            </button>
+                            <button type="button" class="pen-btn pen-btn-p" [disabled]="pen.vez !== 'mandante'"
+                              (click)="cobrarPenalti(j, 'mandante', 'perdido')">
+                              <ion-icon name="close-circle-outline"></ion-icon> Perdido
+                            </button>
+                            <button type="button" class="pen-btn pen-btn-d" [disabled]="pen.vez !== 'mandante'"
+                              (click)="cobrarPenalti(j, 'mandante', 'defendido')">
+                              <ion-icon name="hand-left-outline"></ion-icon> Defendido
+                            </button>
+                          </div>
+                        </div>
 
-                  <!-- ───── VISITANTE ───── -->
-                  <div
-                    class="pen-acoes-lado"
-                    [class.inativo]="pen.vez !== 'visitante'"
-                    [class.ativo]="pen.vez === 'visitante'"
-                  >
-                    <div class="pen-acoes-titulo">
-                      {{ j.nomeVisitante }}
-                      <span class="pen-vez-badge" *ngIf="pen.vez === 'visitante'">
-                        <ion-icon name="arrow-forward-outline"></ion-icon>
-                        SUA VEZ
-                      </span>
-                    </div>
-                    <select
-                      class="pen-jogador-select"
-                      [(ngModel)]="penJogadorVisitanteId"
-                      [disabled]="pen.vez !== 'visitante'"
-                      aria-label="Jogador que vai cobrar (visitante)"
-                    >
-                      <option value="">— Selecionar jogador (opcional) —</option>
-                      <option
-                        *ngFor="let je of escalacaoVisitante$ | async"
-                        [value]="je.jogador.id"
-                      >
-                        {{ je.jogador.numeroCamisa ? '#' + je.jogador.numeroCamisa + ' ' : '' }}{{ je.jogador.apelido || je.jogador.nome }}
-                      </option>
-                    </select>
-                    <div class="pen-acoes-btns">
-                      <button type="button" class="pen-btn pen-btn-c"
-                        [disabled]="pen.vez !== 'visitante'"
-                        (click)="cobrarPenalti(j, 'visitante', 'convertido')">
-                        <ion-icon name="football-outline"></ion-icon> Convertido
-                      </button>
-                      <button type="button" class="pen-btn pen-btn-p"
-                        [disabled]="pen.vez !== 'visitante'"
-                        (click)="cobrarPenalti(j, 'visitante', 'perdido')">
-                        <ion-icon name="close-circle-outline"></ion-icon> Perdido
-                      </button>
-                      <button type="button" class="pen-btn pen-btn-d"
-                        [disabled]="pen.vez !== 'visitante'"
-                        (click)="cobrarPenalti(j, 'visitante', 'defendido')">
-                        <ion-icon name="hand-left-outline"></ion-icon> Defendido
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </ng-container>
-              </ng-container>
+                        <!-- ───── VISITANTE ───── -->
+                        <div class="pen-acoes-lado" [class.inativo]="pen.vez !== 'visitante'"
+                          [class.ativo]="pen.vez === 'visitante'">
+                          <div class="pen-acoes-titulo">
+                            {{ j.nomeVisitante }}
+                            <span class="pen-vez-badge" *ngIf="pen.vez === 'visitante'">
+                              <ion-icon name="arrow-forward-outline"></ion-icon>
+                              SUA VEZ
+                            </span>
+                          </div>
+                          <select class="pen-jogador-select" [(ngModel)]="penJogadorVisitanteId"
+                            [disabled]="pen.vez !== 'visitante'" aria-label="Jogador que vai cobrar (visitante)">
+                            <option value="">— Selecionar jogador (opcional) —</option>
+                            <option *ngFor="let je of escalacaoVisitante$ | async" [value]="je.jogador.id">
+                              {{ je.jogador.numeroCamisa ? '#' + je.jogador.numeroCamisa + ' ' : '' }}{{
+                              je.jogador.apelido || je.jogador.nome }}
+                            </option>
+                          </select>
+                          <div class="pen-acoes-btns">
+                            <button type="button" class="pen-btn pen-btn-c" [disabled]="pen.vez !== 'visitante'"
+                              (click)="cobrarPenalti(j, 'visitante', 'convertido')">
+                              <ion-icon name="football-outline"></ion-icon> Convertido
+                            </button>
+                            <button type="button" class="pen-btn pen-btn-p" [disabled]="pen.vez !== 'visitante'"
+                              (click)="cobrarPenalti(j, 'visitante', 'perdido')">
+                              <ion-icon name="close-circle-outline"></ion-icon> Perdido
+                            </button>
+                            <button type="button" class="pen-btn pen-btn-d" [disabled]="pen.vez !== 'visitante'"
+                              (click)="cobrarPenalti(j, 'visitante', 'defendido')">
+                              <ion-icon name="hand-left-outline"></ion-icon> Defendido
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </ng-container>
+                  </ng-container>
 
-              <!-- Desfazer última cobrança — sempre disponível, mesmo
+                  <!-- Desfazer última cobrança — sempre disponível, mesmo
                    se a decisão "acabou" (admin pode ter clicado errado). -->
-              <div class="pen-rodape">
-                <button type="button" class="pen-desfazer" (click)="desfazerUltimoPenalti(j, evs)">
-                  <ion-icon name="arrow-undo-outline"></ion-icon>
-                  Desfazer última cobrança
-                </button>
+                  <div class="pen-rodape">
+                    <button type="button" class="pen-desfazer" (click)="desfazerUltimoPenalti(j, evs)">
+                      <ion-icon name="arrow-undo-outline"></ion-icon>
+                      Desfazer última cobrança
+                    </button>
+                  </div>
+                </ng-container>
               </div>
-            </ng-container>
-          </div>
 
-          <!-- Embed do YouTube (só se configurado) + SCOREBOARD broadcast
-               overlay (igual o da tela /transmissao). Mostra placar com
-               escudos, cronômetro e nome do tempo SOBRE o vídeo, pra o
-               editor ter feedback visual enquanto registra lances.
-
-               PRIORIDADE: se há transmissão LiveKit ativa, o player LiveKit
-               substitui o iframe do YouTube (broadcaster vê sua própria
-               câmera ao vivo). Caso contrário, mostra YouTube (legacy). -->
-          <div class="live-youtube" *ngIf="j.youtubeVideoId || (transmissaoLiveAtiva$ | async)">
-            <ng-container *ngIf="(transmissaoLiveAtiva$ | async); else iframeYoutube">
-              <!-- LiveKit player no lugar do YouTube — ocupa o mesmo
-                   container .live-youtube, então herda o scoreboard
-                   sobreposto e o tamanho grande. -->
-              <!-- NÃO passamos `[placar]` aqui — esta página JÁ tem o
+              <!-- Player LiveKit ao vivo + SCOREBOARD broadcast overlay
+               (igual o da tela /transmissao). Mostra placar com escudos,
+               cronômetro e nome do tempo SOBRE o vídeo, pra o editor ter
+               feedback visual enquanto registra lances.
+               Só aparece quando há transmissão LiveKit ativa. -->
+              <div class="live-video" [class.premium-on]="premiumOverlayAtivo"
+                *ngIf="transmissaoLiveAtiva$ | async">
+                <ng-container *ngIf="transmissaoLiveAtiva$ | async">
+                  <!-- NÃO passamos `[placar]` aqui — esta página JÁ tem o
                    `.ld-scoreboard` (broadcast TV) sobreposto ao vídeo
                    logo abaixo. Sem este omit, apareciam DOIS placares
                    simultâneos no mesmo vídeo (a pílula do player +
                    o scoreboard grande). Patrocinador continua passando,
                    pra valorizar o banner do apoiador no canto. -->
-              <app-transmissao-player
-                [jogoId]="jogoId"
-                [campeonatoId]="campeonatoId"
-                [categoriaId]="categoriaId"
-                [campeonatoNome]="(campeonato$ | async)?.titulo || ''"
-                [fullscreenAncestor]="'.live-youtube'"
-                [patrocinadoresPartida]="j.patrocinadores || null"
-                [ownerIdPatrocinadores]="(campeonato$ | async)?.ownerId || ''"
-                modo="fullscreen"
-                class="ld-livekit-anchor"
-              ></app-transmissao-player>
-            </ng-container>
-            <ng-template #iframeYoutube>
-              <iframe
-                [src]="youtubeEmbedUrl(j.youtubeVideoId)"
-                title="Transmissão ao vivo"
-                frameborder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen
-                loading="lazy"
-              ></iframe>
-            </ng-template>
-
-            <!-- ════ Scoreboard broadcast (sobreposto ao vídeo) ════
-                 Replicado da tela /transmissao pra UX consistente. -->
-            <div class="ld-scoreboard">
-              <!-- Faixa fina topo: campeonato · categoria · AO VIVO -->
-              <div class="ld-sb-camp-bar">
-                <span class="ld-sb-camp-nome">{{ (campeonato$ | async)?.titulo || 'Campeonato' }}</span>
-                <span class="ld-sb-camp-sep" *ngIf="(categoria$ | async)?.titulo">·</span>
-                <span class="ld-sb-camp-cat" *ngIf="(categoria$ | async)?.titulo">{{ (categoria$ | async)?.titulo }}</span>
-                <span class="ld-sb-status">AO VIVO</span>
-              </div>
-
-              <!-- Linha do placar: ESCUDO NOME [PLACAR] NOME ESCUDO -->
-              <div class="ld-sb-main">
-                <div class="ld-sb-team mandante">
-                  <div class="ld-sb-escudo">
-                    <img skel *ngIf="j.logoMandante; else iconSBM" [src]="j.logoMandante" [alt]="j.nomeMandante" />
-                    <ng-template #iconSBM><ion-icon name="shield-outline"></ion-icon></ng-template>
-                  </div>
-                  <div class="ld-sb-nome">{{ j.nomeMandante }}</div>
-                </div>
-
-                <div class="ld-sb-placar">
-                  <span class="ld-sb-pen-bola" *ngIf="j.tempoAtual === 'penaltis'">
-                    {{ j.penaltisMandante ?? 0 }}
-                  </span>
-                  <span class="ld-sb-gols">{{ j.golsMandante ?? 0 }}</span>
-                  <span class="ld-sb-x">×</span>
-                  <span class="ld-sb-gols">{{ j.golsVisitante ?? 0 }}</span>
-                  <span class="ld-sb-pen-bola" *ngIf="j.tempoAtual === 'penaltis'">
-                    {{ j.penaltisVisitante ?? 0 }}
-                  </span>
-                </div>
-
-                <div class="ld-sb-team visitante">
-                  <div class="ld-sb-nome">{{ j.nomeVisitante }}</div>
-                  <div class="ld-sb-escudo">
-                    <img skel *ngIf="j.logoVisitante; else iconSBV" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
-                    <ng-template #iconSBV><ion-icon name="shield-outline"></ion-icon></ng-template>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Faixa tempo + cronômetro (oculta MM:SS em pênaltis) -->
-              <div class="ld-sb-tempo">
-                <span class="ld-sb-tempo-nome" *ngIf="labelTempo(j.tempoAtual)">
-                  {{ labelTempo(j.tempoAtual) }}
-                </span>
-                <ng-container *ngIf="j.tempoAtual !== 'penaltis'">
-                  <span class="ld-sb-tempo-sep" *ngIf="labelTempo(j.tempoAtual)">·</span>
-                  <span class="ld-sb-tempo-relogio" [class.pausado]="j.tempoPausado">
-                    <span class="ld-tempo-dot" *ngIf="!j.tempoPausado"></span>
-                    <ion-icon name="pause" *ngIf="j.tempoPausado"></ion-icon>
-                    {{ tempoDecorrido() }}
-                  </span>
-                  <span class="ld-sb-tempo-acrescimo" *ngIf="(j.acrescimoAtualMin || 0) > 0">
-                    +{{ j.acrescimoAtualMin }}
-                  </span>
+                  <app-transmissao-player [jogoId]="jogoId" [campeonatoId]="campeonatoId" [categoriaId]="categoriaId"
+                    [campeonatoNome]="(campeonato$ | async)?.titulo || ''" [fullscreenAncestor]="'.live-video'"
+                    [patrocinadoresPartida]="j.patrocinadores || null"
+                    [ownerIdPatrocinadores]="(campeonato$ | async)?.ownerId || ''" modo="fullscreen"
+                    class="ld-livekit-anchor"></app-transmissao-player>
                 </ng-container>
-              </div>
-            </div>
-          </div>
 
-          <!-- Quick actions — 2 colunas (mandante / visitante) × 5 ações.
+                <!-- ═══════ ESTEIRA DE PATROCÍNIOS PAGOS (ads) ═══════
+                 Renderizada sobreposta no rodapé do vídeo. Lê em tempo real
+                 da subcoleção `patrocinios` do jogo. Auto-some quando não
+                 há ativos. Durante a janela PREMIUM (6s) some via classe
+                 `.premium-on` no parent. -->
+                <app-esteira-ads class="ld-esteira-ads" [campeonatoId]="campeonatoId" [categoriaId]="categoriaId"
+                  [jogoId]="jogoId"></app-esteira-ads>
+
+                <!-- ═══════ PREMIUM OVERLAY (intersticial 9:16) ═══════
+                 Aparece em janelas de 6s a cada 7min de transmissão.
+                 Quando visível, esteira-ads e scoreboard sobreposto somem
+                 (via classe `.premium-on` no parent). -->
+                <app-premium-overlay [campeonatoId]="campeonatoId" [categoriaId]="categoriaId" [jogoId]="jogoId"
+                  [forcedTest]="forcedTestPayload"
+                  (visibilidadeMudou)="onPremiumOverlayMudou($event)"></app-premium-overlay>
+
+                <!-- ════ Scoreboard broadcast (sobreposto ao vídeo) ════
+                 Replicado da tela /transmissao pra UX consistente. -->
+                <div class="ld-scoreboard">
+                  <!-- Faixa fina topo: campeonato · categoria · AO VIVO -->
+                  <div class="ld-sb-camp-bar">
+                    <span class="ld-sb-camp-nome">{{ (campeonato$ | async)?.titulo || 'Campeonato' }}</span>
+                    <span class="ld-sb-camp-sep" *ngIf="(categoria$ | async)?.titulo">·</span>
+                    <span class="ld-sb-camp-cat" *ngIf="(categoria$ | async)?.titulo">{{ (categoria$ | async)?.titulo
+                      }}</span>
+                    <span class="ld-sb-status">AO VIVO</span>
+                  </div>
+
+                  <!-- Linha do placar: ESCUDO NOME [PLACAR] NOME ESCUDO -->
+                  <div class="ld-sb-main">
+                    <div class="ld-sb-team mandante">
+                      <div class="ld-sb-escudo">
+                        <img skel *ngIf="j.logoMandante; else iconSBM" [src]="j.logoMandante" [alt]="j.nomeMandante" />
+                        <ng-template #iconSBM><ion-icon name="shield-outline"></ion-icon></ng-template>
+                      </div>
+                      <div class="ld-sb-nome">{{ j.nomeMandante }}</div>
+                    </div>
+
+                    <div class="ld-sb-placar">
+                      <span class="ld-sb-pen-bola" *ngIf="j.tempoAtual === 'penaltis'">
+                        {{ j.penaltisMandante ?? 0 }}
+                      </span>
+                      <span class="ld-sb-gols">{{ j.golsMandante ?? 0 }}</span>
+                      <span class="ld-sb-x">×</span>
+                      <span class="ld-sb-gols">{{ j.golsVisitante ?? 0 }}</span>
+                      <span class="ld-sb-pen-bola" *ngIf="j.tempoAtual === 'penaltis'">
+                        {{ j.penaltisVisitante ?? 0 }}
+                      </span>
+                    </div>
+
+                    <div class="ld-sb-team visitante">
+                      <div class="ld-sb-nome">{{ j.nomeVisitante }}</div>
+                      <div class="ld-sb-escudo">
+                        <img skel *ngIf="j.logoVisitante; else iconSBV" [src]="j.logoVisitante"
+                          [alt]="j.nomeVisitante" />
+                        <ng-template #iconSBV><ion-icon name="shield-outline"></ion-icon></ng-template>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Faixa tempo + cronômetro (oculta MM:SS em pênaltis) -->
+                  <div class="ld-sb-tempo">
+                    <span class="ld-sb-tempo-nome" *ngIf="labelTempo(j.tempoAtual)">
+                      {{ labelTempo(j.tempoAtual) }}
+                    </span>
+                    <ng-container *ngIf="j.tempoAtual !== 'penaltis'">
+                      <span class="ld-sb-tempo-sep" *ngIf="labelTempo(j.tempoAtual)">·</span>
+                      <span class="ld-sb-tempo-relogio" [class.pausado]="j.tempoPausado">
+                        <span class="ld-tempo-dot" *ngIf="!j.tempoPausado"></span>
+                        <ion-icon name="pause" *ngIf="j.tempoPausado"></ion-icon>
+                        {{ tempoDecorrido() }}
+                      </span>
+                      <span class="ld-sb-tempo-acrescimo" *ngIf="(j.acrescimoAtualMin || 0) > 0">
+                        +{{ j.acrescimoAtualMin }}
+                      </span>
+                    </ng-container>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick actions — 2 colunas (mandante / visitante) × 5 ações.
                Em mobile, vira tabela compacta com ícone+label pequena. -->
-          <div class="quick-actions">
-            <div class="qa-col">
-              <div class="qa-col-head">
-                <span class="qa-logo">
-                  <img skel *ngIf="j.logoMandante; else iqM" [src]="j.logoMandante" alt="" />
-                  <ng-template #iqM><ion-icon name="shield-outline"></ion-icon></ng-template>
-                </span>
-                <span class="qa-time-nome">{{ j.nomeMandante }}</span>
-              </div>
-              <div class="qa-buttons">
-                <button
-                  *ngFor="let qa of quickActions"
-                  type="button"
-                  class="qa-btn"
-                  [ngClass]="'qa-' + qa.tipo"
-                  [style.--qa-cor]="qa.cor"
-                  (click)="adicionarLance('mandante', qa.tipo)"
-                  [attr.aria-label]="qa.label + ' do mandante'"
-                  [title]="qa.label + ' — ' + j.nomeMandante"
-                >
-                  <ion-icon [name]="qa.icon"></ion-icon>
-                  <span>{{ qa.label }}</span>
-                </button>
-              </div>
-            </div>
+              <div class="quick-actions">
+                <div class="qa-col">
+                  <div class="qa-col-head">
+                    <span class="qa-logo">
+                      <img skel *ngIf="j.logoMandante; else iqM" [src]="j.logoMandante" alt="" />
+                      <ng-template #iqM><ion-icon name="shield-outline"></ion-icon></ng-template>
+                    </span>
+                    <span class="qa-time-nome">{{ j.nomeMandante }}</span>
+                  </div>
+                  <div class="qa-buttons">
+                    <button *ngFor="let qa of quickActions" type="button" class="qa-btn" [ngClass]="'qa-' + qa.tipo"
+                      [style.--qa-cor]="qa.cor" (click)="adicionarLance('mandante', qa.tipo)"
+                      [attr.aria-label]="qa.label + ' do mandante'" [title]="qa.label + ' — ' + j.nomeMandante">
+                      <ion-icon [name]="qa.icon"></ion-icon>
+                      <span>{{ qa.label }}</span>
+                    </button>
+                  </div>
+                </div>
 
-            <div class="qa-col">
-              <div class="qa-col-head">
-                <span class="qa-logo">
-                  <img skel *ngIf="j.logoVisitante; else iqV" [src]="j.logoVisitante" alt="" />
-                  <ng-template #iqV><ion-icon name="shield-outline"></ion-icon></ng-template>
-                </span>
-                <span class="qa-time-nome">{{ j.nomeVisitante }}</span>
+                <div class="qa-col">
+                  <div class="qa-col-head">
+                    <span class="qa-logo">
+                      <img skel *ngIf="j.logoVisitante; else iqV" [src]="j.logoVisitante" alt="" />
+                      <ng-template #iqV><ion-icon name="shield-outline"></ion-icon></ng-template>
+                    </span>
+                    <span class="qa-time-nome">{{ j.nomeVisitante }}</span>
+                  </div>
+                  <div class="qa-buttons">
+                    <button *ngFor="let qa of quickActions" type="button" class="qa-btn" [ngClass]="'qa-' + qa.tipo"
+                      [style.--qa-cor]="qa.cor" (click)="adicionarLance('visitante', qa.tipo)"
+                      [attr.aria-label]="qa.label + ' do visitante'" [title]="qa.label + ' — ' + j.nomeVisitante">
+                      <ion-icon [name]="qa.icon"></ion-icon>
+                      <span>{{ qa.label }}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div class="qa-buttons">
-                <button
-                  *ngFor="let qa of quickActions"
-                  type="button"
-                  class="qa-btn"
-                  [ngClass]="'qa-' + qa.tipo"
-                  [style.--qa-cor]="qa.cor"
-                  (click)="adicionarLance('visitante', qa.tipo)"
-                  [attr.aria-label]="qa.label + ' do visitante'"
-                  [title]="qa.label + ' — ' + j.nomeVisitante"
-                >
-                  <ion-icon [name]="qa.icon"></ion-icon>
-                  <span>{{ qa.label }}</span>
-                </button>
-              </div>
-            </div>
-          </div>
 
-          <!-- Timeline horizontal — visualiza lances posicionados pelo
+              <!-- Timeline horizontal — visualiza lances posicionados pelo
                minuto (mandante em cima, visitante embaixo da linha
                central). Útil pro narrador entender a cronologia visual. -->
-          <ng-container *ngIf="eventos$ | async as evs">
-            <div class="timeline" *ngIf="evs.length > 0">
-              <div class="tl-rule">
-                <span class="tl-marker tl-zero">0'</span>
-                <span class="tl-marker tl-meio">{{ (minutosDecorridos() / 2) | number:'1.0-0' }}'</span>
-                <span class="tl-marker tl-now" [style.left.%]="posicaoTimeline(minutosDecorridos())">
-                  {{ minutosDecorridos() }}'
-                </span>
-              </div>
-              <div
-                *ngFor="let e of evs"
-                class="tl-dot"
-                [class.tl-mand]="e.lado === 'mandante'"
-                [class.tl-vis]="e.lado === 'visitante'"
-                [ngClass]="'tl-' + e.tipo"
-                [style.left.%]="posicaoTimeline(e.minuto)"
-                [title]="(e.minuto != null ? e.minuto + '\' — ' : '') + labelTipo(e.tipo) + ' · ' + (e.jogadorNome || e.equipeNome)"
-              ></div>
-            </div>
-          </ng-container>
-          </ng-container>
-        </section>
+              <ng-container *ngIf="eventos$ | async as evs">
+                <div class="timeline" *ngIf="evs.length > 0">
+                  <div class="tl-rule">
+                    <span class="tl-marker tl-zero">0'</span>
+                    <span class="tl-marker tl-meio">{{ (minutosDecorridos() / 2) | number:'1.0-0' }}'</span>
+                    <span class="tl-marker tl-now" [style.left.%]="posicaoTimeline(minutosDecorridos())">
+                      {{ minutosDecorridos() }}'
+                    </span>
+                  </div>
+                  <div *ngFor="let e of evs" class="tl-dot" [class.tl-mand]="e.lado === 'mandante'"
+                    [class.tl-vis]="e.lado === 'visitante'" [ngClass]="'tl-' + e.tipo"
+                    [style.left.%]="posicaoTimeline(e.minuto)"
+                    [title]="(e.minuto != null ? e.minuto + '\' — ' : '') + labelTipo(e.tipo) + ' · ' + (e.jogadorNome || e.equipeNome)">
+                  </div>
+                </div>
+              </ng-container>
+            </ng-container>
+          </section>
 
-        <!-- Segments Escalação | Lances -->
-        <ion-segment
-          [(ngModel)]="segmentAtivo"
-          mode="md"
-          class="seg-detalhe"
-        >
-          <ion-segment-button value="escalacao">
-            <ion-icon name="people-outline"></ion-icon>
-            <ion-label>Escalação</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="lances">
-            <ion-icon name="football-outline"></ion-icon>
-            <ion-label>Lances da Partida</ion-label>
-          </ion-segment-button>
-        </ion-segment>
+          <!-- Segments Escalação | Lances -->
+          <ion-segment [(ngModel)]="segmentAtivo" mode="md" class="seg-detalhe">
+            <ion-segment-button value="escalacao">
+              <ion-icon name="people-outline"></ion-icon>
+              <ion-label>Escalação</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="lances">
+              <ion-icon name="football-outline"></ion-icon>
+              <ion-label>Lances da Partida</ion-label>
+            </ion-segment-button>
+          </ion-segment>
 
-        <!-- ESCALAÇÃO -->
-        <section class="section" *ngIf="segmentAtivo === 'escalacao'">
-          <!-- Sub-segment Mandante | Visitante — substitui as 2 colunas
+          <!-- ESCALAÇÃO -->
+          <section class="section" *ngIf="segmentAtivo === 'escalacao'">
+            <!-- Sub-segment Mandante | Visitante — substitui as 2 colunas
                lado a lado por uma lista vertical confortável, igual ao
                que fizemos no publico-categoria. Em mobile principalmente
                ficava espremido com 2 colunas; agora é 1 time por vez. -->
-          <div class="esc-seg">
-            <button
-              type="button"
-              class="esc-seg-btn"
-              [class.active]="escalacaoLado === 'mandante'"
-              (click)="selecionarLadoEscalacao('mandante')"
-            >
-              <span class="esc-seg-logo">
-                <img skel *ngIf="j.logoMandante; else iSegEm" [src]="j.logoMandante" alt="" />
-                <ng-template #iSegEm><ion-icon name="shield-outline"></ion-icon></ng-template>
-              </span>
-              <span class="esc-seg-nome">{{ j.nomeMandante }}</span>
-            </button>
-            <button
-              type="button"
-              class="esc-seg-btn"
-              [class.active]="escalacaoLado === 'visitante'"
-              (click)="selecionarLadoEscalacao('visitante')"
-            >
-              <span class="esc-seg-logo">
-                <img skel *ngIf="j.logoVisitante; else iSegEv" [src]="j.logoVisitante" alt="" />
-                <ng-template #iSegEv><ion-icon name="shield-outline"></ion-icon></ng-template>
-              </span>
-              <span class="esc-seg-nome">{{ j.nomeVisitante }}</span>
-            </button>
-          </div>
+            <div class="esc-seg">
+              <button type="button" class="esc-seg-btn" [class.active]="escalacaoLado === 'mandante'"
+                (click)="selecionarLadoEscalacao('mandante')">
+                <span class="esc-seg-logo">
+                  <img skel *ngIf="j.logoMandante; else iSegEm" [src]="j.logoMandante" alt="" />
+                  <ng-template #iSegEm><ion-icon name="shield-outline"></ion-icon></ng-template>
+                </span>
+                <span class="esc-seg-nome">{{ j.nomeMandante }}</span>
+              </button>
+              <button type="button" class="esc-seg-btn" [class.active]="escalacaoLado === 'visitante'"
+                (click)="selecionarLadoEscalacao('visitante')">
+                <span class="esc-seg-logo">
+                  <img skel *ngIf="j.logoVisitante; else iSegEv" [src]="j.logoVisitante" alt="" />
+                  <ng-template #iSegEv><ion-icon name="shield-outline"></ion-icon></ng-template>
+                </span>
+                <span class="esc-seg-nome">{{ j.nomeVisitante }}</span>
+              </button>
+            </div>
 
-          <div class="escala-grid esc-mono">
-            <!-- Mandante (renderiza só quando segment selecionou) -->
-            <div class="escala-col" *ngIf="escalacaoLado === 'mandante'">
-              <div class="escala-head">
-                <span>{{ j.nomeMandante }}</span>
-                <!-- Editar escalação só pra quem pode editar resultados. -->
-                <ion-button
-                  *ngIf="p.editarResultados"
-                  size="small"
-                  color="secondary"
-                  (click)="editarEscalacao('mandante')"
-                >
-                  <ion-icon slot="start" name="create-outline"></ion-icon>
-                  Editar
-                </ion-button>
-              </div>
-              <ng-container *ngIf="escalacaoMandante$ | async as esc">
-                <div class="escala-lista" *ngIf="esc.length > 0; else escVazia1">
-                  <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado">
-                    <div class="foto">
-                      <img skel *ngIf="e.jogador.fotoUrl; else fic1" [src]="e.jogador.fotoUrl" alt="" />
-                      <ng-template #fic1><ion-icon name="person-circle-outline"></ion-icon></ng-template>
-                    </div>
-                    <span class="nome">
-                      <span *ngIf="e.jogador.numeroCamisa" class="num">#{{ e.jogador.numeroCamisa }}</span>
-                      {{ e.jogador.nome }}
-                    </span>
-                    <span class="badges">
-                      <span *ngFor="let _ of [].constructor(e.gols)" class="b-gol" title="Gol">⚽</span>
-                      <span *ngFor="let _ of [].constructor(e.amarelos)" class="b-am" title="Amarelo"></span>
-                      <span *ngFor="let _ of [].constructor(e.vermelhos)" class="b-vm" title="Vermelho"></span>
-                    </span>
-                  </div>
+            <div class="escala-grid esc-mono">
+              <!-- Mandante (renderiza só quando segment selecionou) -->
+              <div class="escala-col" *ngIf="escalacaoLado === 'mandante'">
+                <div class="escala-head">
+                  <span>{{ j.nomeMandante }}</span>
+                  <!-- Editar escalação só pra quem pode editar resultados. -->
+                  <ion-button *ngIf="p.editarResultados" size="small" color="secondary"
+                    (click)="editarEscalacao('mandante')">
+                    <ion-icon slot="start" name="create-outline"></ion-icon>
+                    Editar
+                  </ion-button>
                 </div>
-                <ng-template #escVazia1>
-                  <!-- Sem escalação. Leitor vê msg estática; quem pode
+                <ng-container *ngIf="escalacaoMandante$ | async as esc">
+                  <div class="escala-lista" *ngIf="esc.length > 0; else escVazia1">
+                    <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado">
+                      <div class="foto">
+                        <img skel *ngIf="e.jogador.fotoUrl; else fic1" [src]="e.jogador.fotoUrl" alt="" />
+                        <ng-template #fic1><ion-icon name="person-circle-outline"></ion-icon></ng-template>
+                      </div>
+                      <span class="nome">
+                        <span *ngIf="e.jogador.numeroCamisa" class="num">#{{ e.jogador.numeroCamisa }}</span>
+                        {{ e.jogador.nome }}
+                      </span>
+                      <span class="badges">
+                        <span *ngFor="let _ of [].constructor(e.gols)" class="b-gol" title="Gol">⚽</span>
+                        <span *ngFor="let _ of [].constructor(e.amarelos)" class="b-am" title="Amarelo"></span>
+                        <span *ngFor="let _ of [].constructor(e.vermelhos)" class="b-vm" title="Vermelho"></span>
+                      </span>
+                    </div>
+                  </div>
+                  <ng-template #escVazia1>
+                    <!-- Sem escalação. Leitor vê msg estática; quem pode
                        editar resultados vê botão pra selecionar. -->
-                  <button
-                    *ngIf="p.editarResultados; else escaVaziaLeitor1"
-                    type="button"
-                    class="escala-vazia"
-                    (click)="editarEscalacao('mandante')"
-                  >
-                    <ion-icon name="add-circle-outline"></ion-icon>
-                    Selecionar jogadores
-                  </button>
-                  <ng-template #escaVaziaLeitor1>
-                    <div class="escala-vazia leitor">
-                      <ion-icon name="people-outline"></ion-icon>
-                      Escalação não informada
-                    </div>
+                    <button *ngIf="p.editarResultados; else escaVaziaLeitor1" type="button" class="escala-vazia"
+                      (click)="editarEscalacao('mandante')">
+                      <ion-icon name="add-circle-outline"></ion-icon>
+                      Selecionar jogadores
+                    </button>
+                    <ng-template #escaVaziaLeitor1>
+                      <div class="escala-vazia leitor">
+                        <ion-icon name="people-outline"></ion-icon>
+                        Escalação não informada
+                      </div>
+                    </ng-template>
                   </ng-template>
-                </ng-template>
-              </ng-container>
-            </div>
-
-            <!-- Visitante (renderiza só quando segment selecionou) -->
-            <div class="escala-col" *ngIf="escalacaoLado === 'visitante'">
-              <div class="escala-head">
-                <span>{{ j.nomeVisitante }}</span>
-                <ion-button
-                  *ngIf="p.editarResultados"
-                  size="small"
-                  color="secondary"
-                  (click)="editarEscalacao('visitante')"
-                >
-                  <ion-icon slot="start" name="create-outline"></ion-icon>
-                  Editar
-                </ion-button>
+                </ng-container>
               </div>
-              <ng-container *ngIf="escalacaoVisitante$ | async as esc">
-                <div class="escala-lista" *ngIf="esc.length > 0; else escVazia2">
-                  <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado">
-                    <div class="foto">
-                      <img skel *ngIf="e.jogador.fotoUrl; else fic2" [src]="e.jogador.fotoUrl" alt="" />
-                      <ng-template #fic2><ion-icon name="person-circle-outline"></ion-icon></ng-template>
-                    </div>
-                    <span class="nome">
-                      <span *ngIf="e.jogador.numeroCamisa" class="num">#{{ e.jogador.numeroCamisa }}</span>
-                      {{ e.jogador.nome }}
-                    </span>
-                    <span class="badges">
-                      <span *ngFor="let _ of [].constructor(e.gols)" class="b-gol" title="Gol">⚽</span>
-                      <span *ngFor="let _ of [].constructor(e.amarelos)" class="b-am" title="Amarelo"></span>
-                      <span *ngFor="let _ of [].constructor(e.vermelhos)" class="b-vm" title="Vermelho"></span>
-                    </span>
-                  </div>
+
+              <!-- Visitante (renderiza só quando segment selecionou) -->
+              <div class="escala-col" *ngIf="escalacaoLado === 'visitante'">
+                <div class="escala-head">
+                  <span>{{ j.nomeVisitante }}</span>
+                  <ion-button *ngIf="p.editarResultados" size="small" color="secondary"
+                    (click)="editarEscalacao('visitante')">
+                    <ion-icon slot="start" name="create-outline"></ion-icon>
+                    Editar
+                  </ion-button>
                 </div>
-                <ng-template #escVazia2>
-                  <button
-                    *ngIf="p.editarResultados; else escaVaziaLeitor2"
-                    type="button"
-                    class="escala-vazia"
-                    (click)="editarEscalacao('visitante')"
-                  >
-                    <ion-icon name="add-circle-outline"></ion-icon>
-                    Selecionar jogadores
-                  </button>
-                  <ng-template #escaVaziaLeitor2>
-                    <div class="escala-vazia leitor">
-                      <ion-icon name="people-outline"></ion-icon>
-                      Escalação não informada
+                <ng-container *ngIf="escalacaoVisitante$ | async as esc">
+                  <div class="escala-lista" *ngIf="esc.length > 0; else escVazia2">
+                    <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado">
+                      <div class="foto">
+                        <img skel *ngIf="e.jogador.fotoUrl; else fic2" [src]="e.jogador.fotoUrl" alt="" />
+                        <ng-template #fic2><ion-icon name="person-circle-outline"></ion-icon></ng-template>
+                      </div>
+                      <span class="nome">
+                        <span *ngIf="e.jogador.numeroCamisa" class="num">#{{ e.jogador.numeroCamisa }}</span>
+                        {{ e.jogador.nome }}
+                      </span>
+                      <span class="badges">
+                        <span *ngFor="let _ of [].constructor(e.gols)" class="b-gol" title="Gol">⚽</span>
+                        <span *ngFor="let _ of [].constructor(e.amarelos)" class="b-am" title="Amarelo"></span>
+                        <span *ngFor="let _ of [].constructor(e.vermelhos)" class="b-vm" title="Vermelho"></span>
+                      </span>
                     </div>
+                  </div>
+                  <ng-template #escVazia2>
+                    <button *ngIf="p.editarResultados; else escaVaziaLeitor2" type="button" class="escala-vazia"
+                      (click)="editarEscalacao('visitante')">
+                      <ion-icon name="add-circle-outline"></ion-icon>
+                      Selecionar jogadores
+                    </button>
+                    <ng-template #escaVaziaLeitor2>
+                      <div class="escala-vazia leitor">
+                        <ion-icon name="people-outline"></ion-icon>
+                        Escalação não informada
+                      </div>
+                    </ng-template>
                   </ng-template>
-                </ng-template>
-              </ng-container>
+                </ng-container>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- LANCES -->
-        <section class="section" *ngIf="segmentAtivo === 'lances'">
-          <div class="section-head">
-            <h3 class="section-title">Lances da Partida</h3>
-            <!-- "Adicionar" lance só pra quem pode editar resultados + jogo em andamento. -->
-            <ion-button
-              *ngIf="p.editarResultados && j.status === 'em-andamento'"
-              size="small"
-              color="secondary"
-              (click)="adicionarLance()"
-            >
-              <ion-icon slot="start" name="add-outline"></ion-icon>
-              Adicionar
-            </ion-button>
-            <ng-container *ngIf="p.editarResultados && j.status !== 'em-andamento'">
-              <span
-                class="lance-trava"
-                [title]="j.status === 'encerrado' ? 'Partida encerrada' : 'Inicie a partida pra registrar lances'"
-              >
-                <ion-icon name="lock-closed-outline"></ion-icon>
-                {{ j.status === 'encerrado' ? 'Encerrado' : 'Não iniciado' }}
-              </span>
+          <!-- LANCES -->
+          <section class="section" *ngIf="segmentAtivo === 'lances'">
+            <div class="section-head">
+              <h3 class="section-title">Lances da Partida</h3>
+              <!-- Botão "Adicionar" REMOVIDO — a entrada de lances agora é
+                 exclusivamente via Quick Actions (botões GOL/AMARELO/etc
+                 na seção de cada time). Garante que cada lance já vem
+                 com o time correto pré-selecionado, sem ambiguidade. -->
+              <ng-container *ngIf="p.editarResultados && j.status !== 'em-andamento'">
+                <span class="lance-trava"
+                  [title]="j.status === 'encerrado' ? 'Partida encerrada' : 'Inicie a partida pra registrar lances'">
+                  <ion-icon name="lock-closed-outline"></ion-icon>
+                  {{ j.status === 'encerrado' ? 'Encerrado' : 'Não iniciado' }}
+                </span>
 
-              <!-- Botão "Iniciar partida" / "Reabrir" no header dos lances —
+                <!-- Botão "Iniciar partida" / "Reabrir" no header dos lances —
                    o usuário pediu pra ter o atalho aqui também, evitando
                    ter que rolar pra cima até o `.scoreboard` pra reabrir.
                    Funciona tanto pra status 'encerrado' (reabre) quanto
                    'agendado' (inicia do zero). -->
-              <ion-button
-                fill="solid"
-                size="small"
-                color="secondary"
-                (click)="iniciarPartida()"
-                [title]="j.status === 'encerrado' ? 'Reabrir partida' : 'Iniciar partida'"
-              >
-                <ion-icon slot="start" name="play-outline"></ion-icon>
-                {{ j.status === 'encerrado' ? 'Reabrir' : 'Iniciar jogo' }}
-              </ion-button>
-            </ng-container>
-          </div>
+                <ion-button fill="solid" size="small" color="secondary" (click)="iniciarPartida()"
+                  [title]="j.status === 'encerrado' ? 'Reabrir partida' : 'Iniciar partida'">
+                  <ion-icon slot="start" name="play-outline"></ion-icon>
+                  {{ j.status === 'encerrado' ? 'Reabrir' : 'Iniciar jogo' }}
+                </ion-button>
+              </ng-container>
+            </div>
 
-          <!-- Linha de escudos ABAIXO do título — mandante à esquerda,
+            <!-- Linha de escudos ABAIXO do título — mandante à esquerda,
                visitante à direita. Dá contexto visual de qual jogo é
                sem disputar espaço com o título e o botão "Adicionar". -->
-          <div class="lances-escudos-bar">
-            <span class="lances-escudo lances-escudo-mand">
-              <img skel *ngIf="j.logoMandante; else iLEMb" [src]="j.logoMandante" [alt]="j.nomeMandante" />
-              <ng-template #iLEMb><ion-icon name="shield-outline"></ion-icon></ng-template>
-            </span>
-            <span class="lances-escudos-vs">vs</span>
-            <span class="lances-escudo lances-escudo-vis">
-              <img skel *ngIf="j.logoVisitante; else iLEVb" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
-              <ng-template #iLEVb><ion-icon name="shield-outline"></ion-icon></ng-template>
-            </span>
-          </div>
+            <div class="lances-escudos-bar">
+              <span class="lances-escudo lances-escudo-mand">
+                <img skel *ngIf="j.logoMandante; else iLEMb" [src]="j.logoMandante" [alt]="j.nomeMandante" />
+                <ng-template #iLEMb><ion-icon name="shield-outline"></ion-icon></ng-template>
+              </span>
+              <span class="lances-escudos-vs">vs</span>
+              <span class="lances-escudo lances-escudo-vis">
+                <img skel *ngIf="j.logoVisitante; else iLEVb" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
+                <ng-template #iLEVb><ion-icon name="shield-outline"></ion-icon></ng-template>
+              </span>
+            </div>
 
-          <!-- Aviso se não está em-andamento e não há lances -->
-          <div
-            *ngIf="j.status !== 'em-andamento'"
-            class="aviso-status"
-          >
-            <ion-icon name="information-circle-outline"></ion-icon>
-            <span *ngIf="j.status === 'agendado'">
-              Inicie a partida (botão acima) para adicionar lances.
-            </span>
-            <span *ngIf="j.status === 'encerrado'">
-              Partida encerrada — reabra como "em andamento" para editar lances.
-            </span>
-            <span *ngIf="j.status === 'cancelado' || j.status === 'wo'">
-              Status atual não permite registrar lances.
-            </span>
-          </div>
+            <!-- Aviso se não está em-andamento e não há lances -->
+            <div *ngIf="j.status !== 'em-andamento'" class="aviso-status">
+              <ion-icon name="information-circle-outline"></ion-icon>
+              <span *ngIf="j.status === 'agendado'">
+                Inicie a partida (botão acima) para adicionar lances.
+              </span>
+              <span *ngIf="j.status === 'encerrado'">
+                Partida encerrada — reabra como "em andamento" para editar lances.
+              </span>
+              <span *ngIf="j.status === 'cancelado' || j.status === 'wo'">
+                Status atual não permite registrar lances.
+              </span>
+            </div>
 
-          <ng-container *ngIf="eventos$ | async as evs">
-            <div class="lances-coluna" *ngIf="evs.length > 0; else semLances">
-              <div
-                *ngFor="let e of evs; trackBy: trackByEvento"
-                class="lance-row"
-                [class.lado-mandante]="e.lado === 'mandante'"
-                [class.lado-visitante]="e.lado === 'visitante'"
-              >
-                <!-- Clique pra editar lance só pra quem pode editar
+            <ng-container *ngIf="eventos$ | async as evs">
+              <div class="lances-coluna" *ngIf="evs.length > 0; else semLances">
+                <div *ngFor="let e of evs; trackBy: trackByEvento" class="lance-row"
+                  [class.lado-mandante]="e.lado === 'mandante'" [class.lado-visitante]="e.lado === 'visitante'">
+                  <!-- Clique pra editar lance só pra quem pode editar
                      resultados. Pra leitor, fica como card visual sem
                      handler (cursor default). -->
-                <button
-                  type="button"
-                  class="lance-bubble"
-                  [ngClass]="classeTipo(e.tipo)"
-                  [class.read-only]="!p.editarResultados"
-                  (click)="p.editarResultados && editarLance(e)"
-                >
-                  <!-- Avatar -->
-                  <div class="lance-avatar">
-                    <ion-icon name="person-circle-outline"></ion-icon>
-                  </div>
-
-                  <!-- Corpo (tipo grande + nome embaixo) -->
-                  <div class="lance-corpo">
-                    <div class="lance-tipo">
-                      {{ labelTipo(e.tipo) }}
-                      <span *ngIf="e.quantidade && e.quantidade > 1" class="lance-qtd">{{ e.quantidade }}x</span>
+                  <button type="button" class="lance-bubble" [ngClass]="classeTipo(e.tipo)"
+                    [class.read-only]="!p.editarResultados" (click)="p.editarResultados && editarLance(e)">
+                    <!-- Avatar -->
+                    <div class="lance-avatar">
+                      <ion-icon name="person-circle-outline"></ion-icon>
                     </div>
-                    <div class="lance-nome">
-                      <span *ngIf="e.jogadorNome">{{ e.jogadorNome }}</span>
-                      <span *ngIf="!e.jogadorNome">{{ e.equipeNome }}</span>
-                      <!-- Tempo (1ºT/2ºT/PEN…) — exibido como tag colorida
+
+                    <!-- Corpo (tipo grande + nome embaixo) -->
+                    <div class="lance-corpo">
+                      <div class="lance-tipo">
+                        {{ labelTipo(e.tipo) }}
+                        <span *ngIf="e.quantidade && e.quantidade > 1" class="lance-qtd">{{ e.quantidade }}x</span>
+                      </div>
+                      <div class="lance-nome">
+                        <span *ngIf="e.jogadorNome">{{ e.jogadorNome }}</span>
+                        <span *ngIf="!e.jogadorNome">{{ e.equipeNome }}</span>
+                        <!-- Tempo (1ºT/2ºT/PEN…) — exibido como tag colorida
                            antes do minuto. Ajuda a identificar a qual
                            período da partida o lance pertence. -->
-                      <span class="lance-tempo-tag" *ngIf="labelTempoCurto(e.tempo)">
-                        {{ labelTempoCurto(e.tempo) }}
-                      </span>
-                      <span class="lance-min" *ngIf="e.minuto != null"> · {{ e.minuto }}'</span>
+                        <span class="lance-tempo-tag" *ngIf="labelTempoCurto(e.tempo)">
+                          {{ labelTempoCurto(e.tempo) }}
+                        </span>
+                        <span class="lance-min" *ngIf="e.minuto != null"> · {{ e.minuto }}'</span>
+                      </div>
                     </div>
-                  </div>
 
-                  <!-- Ícone à direita (mandante) ou esquerda (visitante) -->
-                  <div class="lance-icone">
-                    <ion-icon
-                      *ngIf="e.tipo === 'gol' || e.tipo === 'gol-contra'"
-                      name="football"
-                    ></ion-icon>
-                    <span
-                      *ngIf="e.tipo === 'amarelo' || e.tipo === 'vermelho' || e.tipo === 'azul'"
-                      class="cartao"
-                      [class.am]="e.tipo === 'amarelo'"
-                      [class.vm]="e.tipo === 'vermelho'"
-                      [class.az]="e.tipo === 'azul'"
-                    ></span>
-                    <ion-icon
-                      *ngIf="e.tipo === 'falta'"
-                      name="hand-left-outline"
-                    ></ion-icon>
-                    <ion-icon
-                      *ngIf="e.tipo === 'defesa'"
-                      name="hand-right-outline"
-                    ></ion-icon>
-                    <ion-icon
-                      *ngIf="e.tipo === 'sub-entrou' || e.tipo === 'sub-saiu'"
-                      name="swap-horizontal-outline"
-                    ></ion-icon>
-                  </div>
-                </button>
+                    <!-- Ícone à direita (mandante) ou esquerda (visitante) -->
+                    <div class="lance-icone">
+                      <ion-icon *ngIf="e.tipo === 'gol' || e.tipo === 'gol-contra'" name="football"></ion-icon>
+                      <span *ngIf="e.tipo === 'amarelo' || e.tipo === 'vermelho' || e.tipo === 'azul'" class="cartao"
+                        [class.am]="e.tipo === 'amarelo'" [class.vm]="e.tipo === 'vermelho'"
+                        [class.az]="e.tipo === 'azul'"></span>
+                      <ion-icon *ngIf="e.tipo === 'falta'" name="hand-left-outline"></ion-icon>
+                      <ion-icon *ngIf="e.tipo === 'defesa'" name="hand-right-outline"></ion-icon>
+                      <ion-icon *ngIf="e.tipo === 'sub-entrou' || e.tipo === 'sub-saiu'"
+                        name="swap-horizontal-outline"></ion-icon>
+                    </div>
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <ng-template #semLances>
-              <div class="placeholder">
-                <ion-icon name="flag-outline"></ion-icon>
-                <p *ngIf="j.status === 'em-andamento'">Nenhum lance registrado ainda.</p>
-                <p *ngIf="j.status !== 'em-andamento'">Sem lances. {{ j.status === 'encerrado' ? 'Partida já encerrada.' : 'Inicie a partida primeiro.' }}</p>
-                <!-- "Adicionar lance" só pra quem pode editar resultados. -->
-                <ion-button
-                  *ngIf="p.editarResultados && j.status === 'em-andamento'"
-                  color="primary"
-                  size="small"
-                  (click)="adicionarLance()"
-                >
-                  <ion-icon slot="start" color="light" name="add-outline"></ion-icon>
-                  Adicionar lance
-                </ion-button>
-              </div>
-            </ng-template>
-          </ng-container>
-        </section>
-      </div>
-
-      <!-- Sidebar de outros jogos -->
-      <aside class="jogos-aside">
-        <div class="aside-header">
-          <h3>Jogos</h3>
-          <div class="aside-filtros">
-            <select
-              class="filtro"
-              [value]="filtroFase$ | async"
-              (change)="onFiltroFase($any($event.target).value)"
-              aria-label="Filtrar por fase"
-            >
-              <option value="">Todas as fases</option>
-              <option *ngFor="let f of fasesDisponiveis$ | async" [value]="f">{{ f }}</option>
-            </select>
-            <select
-              class="filtro"
-              [value]="filtroRodada$ | async"
-              (change)="onFiltroRodada($any($event.target).value)"
-              aria-label="Filtrar por rodada"
-            >
-              <option value="">Todas</option>
-              <option *ngFor="let r of rodadasDisponiveis$ | async" [value]="r">
-                {{ r }}ª rodada
-              </option>
-            </select>
-          </div>
+              <ng-template #semLances>
+                <div class="placeholder">
+                  <ion-icon name="flag-outline"></ion-icon>
+                  <p *ngIf="j.status === 'em-andamento'">
+                    Nenhum lance registrado ainda. Use os botões da seção de
+                    cada time acima (GOL, AMARELO, FALTA, etc) pra registrar.
+                  </p>
+                  <p *ngIf="j.status !== 'em-andamento'">Sem lances. {{ j.status === 'encerrado' ? 'Partida já
+                    encerrada.' : 'Inicie a partida primeiro.' }}</p>
+                  <!-- Botão "Adicionar lance" REMOVIDO — entrada exclusiva
+                     via Quick Actions na seção de cada time. -->
+                </div>
+              </ng-template>
+            </ng-container>
+          </section>
         </div>
 
-        <!-- "+" pra ir pra tela de jogos (criar nova partida) — só pra
-             quem pode editar resultados. -->
-        <button
-          *ngIf="p.editarResultados"
-          type="button"
-          class="aside-add"
-          (click)="irParaJogos()"
-          aria-label="Nova partida"
-        >
-          <ion-icon name="add-outline"></ion-icon>
-        </button>
-
-        <ng-container *ngIf="outrosJogos$ | async as outros">
-          <div class="jogos-lista" *ngIf="outros.length > 0; else nenhum">
-            <div
-              *ngFor="let o of outros; trackBy: trackByJogo"
-              class="jogo-card"
-              [class.atual]="o.id === jogoId"
-              (click)="irPara(o.id!)"
-            >
-              <div class="jogo-row">
-                <div class="jt mand">
-                  <div class="t-logo">
-                    <img skel *ngIf="o.logoMandante; else om" [src]="o.logoMandante" alt="" />
-                    <ng-template #om><ion-icon name="shield-outline"></ion-icon></ng-template>
-                  </div>
-                  <span class="t-nome">{{ o.nomeMandante }}</span>
-                </div>
-
-                <div class="placar-mini" [class.encerrado]="o.status === 'encerrado'">
-                  <div class="num" *ngIf="o.golsMandante != null && o.golsVisitante != null; else vs2">
-                    <span>{{ o.golsMandante }}</span>
-                    <span class="dp">:</span>
-                    <span>{{ o.golsVisitante }}</span>
-                  </div>
-                  <ng-template #vs2><span class="vs">vs</span></ng-template>
-                  <div class="st">{{ rotuloStatus(o) }}</div>
-                </div>
-
-                <div class="jt vis">
-                  <div class="t-logo">
-                    <img skel *ngIf="o.logoVisitante; else ov" [src]="o.logoVisitante" alt="" />
-                    <ng-template #ov><ion-icon name="shield-outline"></ion-icon></ng-template>
-                  </div>
-                  <span class="t-nome">{{ o.nomeVisitante }}</span>
-                </div>
-              </div>
-
-              <div class="jogo-meta" *ngIf="o.fase || o.dataHora || o.local">
-                <span *ngIf="o.fase" class="meta-fase-mini">{{ o.fase }}</span>
-                <span *ngIf="o.dataHora" class="meta-data-mini">
-                  <ion-icon name="calendar-outline"></ion-icon>
-                  {{ formatarDataBr(o.dataHora) }}
-                </span>
-                <span *ngIf="o.local" class="meta-data-mini">
-                  <ion-icon name="location-outline"></ion-icon>
-                  {{ o.local }}
-                </span>
-              </div>
+        <!-- Sidebar de outros jogos -->
+        <aside class="jogos-aside">
+          <div class="aside-header">
+            <h3>Jogos</h3>
+            <div class="aside-filtros">
+              <select class="filtro" [value]="filtroFase$ | async" (change)="onFiltroFase($any($event.target).value)"
+                aria-label="Filtrar por fase">
+                <option value="">Todas as fases</option>
+                <option *ngFor="let f of fasesDisponiveis$ | async" [value]="f">{{ f }}</option>
+              </select>
+              <select class="filtro" [value]="filtroRodada$ | async"
+                (change)="onFiltroRodada($any($event.target).value)" aria-label="Filtrar por rodada">
+                <option value="">Todas</option>
+                <option *ngFor="let r of rodadasDisponiveis$ | async" [value]="r">
+                  {{ r }}ª rodada
+                </option>
+              </select>
             </div>
           </div>
 
-          <ng-template #nenhum>
-            <div class="empty-small">Nenhum outro jogo.</div>
-          </ng-template>
-        </ng-container>
-      </aside>
-    </div>
-  </ng-container>
+          <!-- "+" pra ir pra tela de jogos (criar nova partida) — só pra
+             quem pode editar resultados. -->
+          <button *ngIf="p.editarResultados" type="button" class="aside-add" (click)="irParaJogos()"
+            aria-label="Nova partida">
+            <ion-icon name="add-outline"></ion-icon>
+          </button>
 
-  <ng-template #carregando>
-    <div class="loading">
-      <ion-spinner name="dots"></ion-spinner>
-    </div>
-  </ng-template>
+          <ng-container *ngIf="outrosJogos$ | async as outros">
+            <div class="jogos-lista" *ngIf="outros.length > 0; else nenhum">
+              <div *ngFor="let o of outros; trackBy: trackByJogo" class="jogo-card" [class.atual]="o.id === jogoId"
+                (click)="irPara(o.id!)">
+                <div class="jogo-row">
+                  <div class="jt mand">
+                    <div class="t-logo">
+                      <img skel *ngIf="o.logoMandante; else om" [src]="o.logoMandante" alt="" />
+                      <ng-template #om><ion-icon name="shield-outline"></ion-icon></ng-template>
+                    </div>
+                    <span class="t-nome">{{ o.nomeMandante }}</span>
+                  </div>
+
+                  <div class="placar-mini" [class.encerrado]="o.status === 'encerrado'">
+                    <div class="num" *ngIf="o.golsMandante != null && o.golsVisitante != null; else vs2">
+                      <span>{{ o.golsMandante }}</span>
+                      <span class="dp">:</span>
+                      <span>{{ o.golsVisitante }}</span>
+                    </div>
+                    <ng-template #vs2><span class="vs">vs</span></ng-template>
+                    <div class="st">{{ rotuloStatus(o) }}</div>
+                  </div>
+
+                  <div class="jt vis">
+                    <div class="t-logo">
+                      <img skel *ngIf="o.logoVisitante; else ov" [src]="o.logoVisitante" alt="" />
+                      <ng-template #ov><ion-icon name="shield-outline"></ion-icon></ng-template>
+                    </div>
+                    <span class="t-nome">{{ o.nomeVisitante }}</span>
+                  </div>
+                </div>
+
+                <div class="jogo-meta" *ngIf="o.fase || o.dataHora || o.local">
+                  <span *ngIf="o.fase" class="meta-fase-mini">{{ o.fase }}</span>
+                  <span *ngIf="o.dataHora" class="meta-data-mini">
+                    <ion-icon name="calendar-outline"></ion-icon>
+                    {{ formatarDataBr(o.dataHora) }}
+                  </span>
+                  <span *ngIf="o.local" class="meta-data-mini">
+                    <ion-icon name="location-outline"></ion-icon>
+                    {{ o.local }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <ng-template #nenhum>
+              <div class="empty-small">Nenhum outro jogo.</div>
+            </ng-template>
+          </ng-container>
+        </aside>
+      </div>
+    </ng-container>
+
+    <ng-template #carregando>
+      <div class="loading">
+        <ion-spinner name="dots"></ion-spinner>
+      </div>
+    </ng-template>
   </ng-container>
 
   <!-- ════════════════════════════════════════════════════════════════
@@ -1274,14 +1119,9 @@
        Esconde quando há transmissão ATIVA (broadcaster já transmitindo;
        o player no painel grande mostra o "Encerrar" lá). -->
   <ng-container *ngIf="permissoes$ | async as p">
-    <button
-      *ngIf="(p.enviarMidias || p.editarResultados) && !(transmissaoLiveAtiva$ | async)"
-      type="button"
-      class="fab-transmitir-mobile"
-      (click)="iniciarTransmissaoLive()"
-      aria-label="Transmitir ao vivo"
-      title="Transmitir ao vivo com sua câmera"
-    >
+    <button *ngIf="(p.enviarMidias || p.editarResultados) && !(transmissaoLiveAtiva$ | async)" type="button"
+      class="fab-transmitir-mobile" (click)="iniciarTransmissaoLive()" aria-label="Transmitir ao vivo"
+      title="Transmitir ao vivo com sua câmera">
       <ion-icon name="radio-outline"></ion-icon>
       <span>TRANSMITIR</span>
     </button>

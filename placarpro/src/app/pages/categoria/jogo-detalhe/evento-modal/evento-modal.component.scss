@@ -194,6 +194,13 @@
   @media (max-width: 480px) {
     grid-template-columns: 1fr;
   }
+
+  /* Quando o seletor está TRAVADO (lance via Quick Action), só há um
+     card visível — fica em coluna única, ocupando 100%, com destaque
+     verde. Sem hover/click feedback (não é interativo). */
+  &.travada {
+    grid-template-columns: 1fr;
+  }
 }
 
 .eq-btn {
@@ -220,6 +227,18 @@
   &.ativa {
     background: rgba(124, 198, 29, 0.12);
     border-color: var(--ion-color-secondary);
+  }
+
+  /* Travada: sempre destacada (já que é a única), sem hover/active feedback,
+     cursor default. Não confunde com botão clicável. */
+  &.travada {
+    background: rgba(124, 198, 29, 0.12);
+    border-color: var(--ion-color-secondary);
+    cursor: default;
+    opacity: 1;
+
+    &:hover { background: rgba(124, 198, 29, 0.12); }
+    &:active { transform: none; }
   }
 }
 

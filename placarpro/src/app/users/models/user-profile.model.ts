@@ -113,6 +113,27 @@ export interface UserProfile {
    */
   transmissoesExtras?: number;
 
+  /**
+   * Saldo de CRÉDITOS DE PATROCÍNIO NORMAL disponíveis.
+   * - 1 crédito = R$ 50 (preço base; pode variar por pacote).
+   * - Cada crédito permite ativar até 2 logos de patrocinador em UMA
+   *   partida, com validade de 1h contada do início da transmissão.
+   * - Decrementa quando o organizador adiciona patrocinador NORMAL num jogo.
+   * - Admin (ou MercadoPago via webhook) credita ao confirmar pagamento.
+   */
+  creditosPatrocinio?: number;
+
+  /**
+   * Saldo de CRÉDITOS PREMIUM disponíveis (separado do normal).
+   * - 1 crédito = R$ 70.
+   * - Cada crédito ativa 1 patrocinador EXCLUSIVO num jogo, com banner
+   *   vertical 9:16 aparecendo por 6s a cada 7min de transmissão.
+   * - Decrementa quando o organizador ativa um patrocínio PREMIUM.
+   * - Máximo de 3 ativos por jogo (rotação round-robin nas janelas).
+   * - Admin/webhook credita ao confirmar pagamento.
+   */
+  creditosPatrocinioPremium?: number;
+
   redes?: {
     facebook?: string;
     instagram?: string;

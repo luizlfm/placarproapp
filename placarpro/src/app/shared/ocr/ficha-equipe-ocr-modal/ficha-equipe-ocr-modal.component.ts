@@ -205,7 +205,10 @@ export class FichaEquipeOcrModalComponent {
   // ──────────────────────────────────────────────────────────────────
 
   async importar(): Promise<void> {
-    const nome = this.nomeEquipe.trim();
+    // Padronização: nome de equipe e nome de pessoas (jogadores +
+    // comissão) SEMPRE em maiúsculas — convenção do sistema pra
+    // consistência visual em listas, súmulas, relatórios.
+    const nome = this.nomeEquipe.trim().toUpperCase();
     if (!nome) {
       await this.toast('Nome da equipe é obrigatório.', 'medium');
       return;
@@ -242,7 +245,8 @@ export class FichaEquipeOcrModalComponent {
             this.categoriaId,
             {
               equipeId,
-              nome: j.nome.trim(),
+              // Nome do jogador SEMPRE em maiúsculas (convenção do sistema)
+              nome: j.nome.trim().toUpperCase(),
               ...(documento ? { documento, rg: documento } : {}),
               ...(j.dataNascimento ? { dataNascimento: j.dataNascimento } : {}),
             },
@@ -265,12 +269,13 @@ export class FichaEquipeOcrModalComponent {
       ];
       let comissaoCriada = 0;
       for (const m of membrosComissao) {
-        const nomeM = m.dados.nome.trim();
+        const nomeM = m.dados.nome.trim().toUpperCase();
         if (!nomeM) continue;
         try {
           const docM = m.dados.documento.trim();
           await this.tecnicaSrv.criar(this.campeonatoId, this.categoriaId, {
             equipeId,
+            // Nome SEMPRE em maiúsculas (convenção do sistema)
             nome: nomeM,
             funcao: m.funcao,
             ...(m.funcao === 'outro' ? { funcaoOutro: 'Assistente' } : {}),

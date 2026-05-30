@@ -2,8 +2,10 @@ import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LoadingController, ModalController, ToastController } from '@ionic/angular';
+import { firstValueFrom } from 'rxjs';
 import { CampeonatosService } from '../../../campeonatos/campeonatos.service';
 import { CategoriasService } from '../../../campeonatos/categorias.service';
+import { PlanosService } from '../../../users/planos.service';
 import { TipoCampeonato } from '../../../campeonatos/campeonato.model';
 import { TipoFase } from '../../../campeonatos/categoria.model';
 import {
@@ -25,6 +27,7 @@ export class NovoCampeonatoModalComponent {
   private readonly fb = inject(FormBuilder);
   private readonly campeonatosSrv = inject(CampeonatosService);
   private readonly categoriasSrv = inject(CategoriasService);
+  private readonly planosSrv = inject(PlanosService);
   private readonly modalCtrl = inject(ModalController);
   private readonly loadingCtrl = inject(LoadingController);
   private readonly toastCtrl = inject(ToastController);
@@ -101,6 +104,25 @@ export class NovoCampeonatoModalComponent {
       this.form.markAllAsTouched();
       return;
     }
+
+    // ── Limite de campeonatos do plano ──────────────────────────────────
+    // O criador é o dono, então valida contra o plano do usuário logado.
+    const [limites, meus] = await Promise.all([
+      firstValueFrom(this.planosSrv.meusLimites$()),
+      firstValueFrom(this.campeonatosSrv.listMeus$()),
+    ]);
+    if (!this.planosSrv.podeAdicionar(meus.length, limites.maxCampeonatos)) {
+      const aviso = await this.toastCtrl.create({
+        message: `Seu plano permite até ${limites.maxCampeonatos} campeonato(s). Faça upgrade pra criar mais.`,
+        duration: 3500,
+        position: 'top',
+        color: 'warning',
+        buttons: [{ text: 'OK', role: 'cancel' }],
+      });
+      await aviso.present();
+      return;
+    }
+
     const loader = await this.loadingCtrl.create({ message: 'Criando...' });
     await loader.present();
     this.loading = true;

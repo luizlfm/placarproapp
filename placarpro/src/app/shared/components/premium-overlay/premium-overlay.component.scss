@@ -1,0 +1,74 @@
+/* ════════════════════════════════════════════════════════════════
+   Overlay PREMIUM — intersticial vertical 9:16 na lateral direita
+   do vídeo. Aparece em "janelas" de 6s a cada 7min de transmissão.
+   ════════════════════════════════════════════════════════════════ */
+
+:host {
+  /* `display: contents` faz o host LITERALMENTE SUMIR do fluxo de
+     layout — os filhos (`<div class="premium-overlay">`) ficam direto
+     no parent (`.tr-stage`/`.tr-video`/`.live-wrap`). Vantagens:
+     1. O host vazio (sem patrocinador atual) não cobre nada — outros
+        elementos sobrepostos (FAB do feed, controles do player) ficam
+        100% acessíveis visualmente e clicáveis.
+     2. Não vira item de grid/flex no parent.
+     3. O `.premium-overlay` filho, position:absolute, ancora no parent
+        com position relative (sem precisar do host como intermediário). */
+  display: contents;
+}
+
+.premium-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  /* HEIGHT 100% + aspect 9:16 → largura calculada automaticamente pela
+     altura. Em viewport de 900px de altura, banner = 900 × 9/16 = 506px
+     de largura. NÃO há limite de max-width — banner usa todo espaço
+     que a altura permite, mantendo a proporção 9:16 da imagem. */
+  width: auto;
+  height: 100%;
+  aspect-ratio: 9 / 16;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background: transparent;
+  pointer-events: auto;
+  animation: premium-fade-in 350ms ease-out;
+
+  &.saindo {
+    animation: premium-fade-out 350ms ease-in forwards;
+  }
+
+  img, video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.45);
+  }
+
+  /* Mobile portrait — banner um pouco menor mantendo 9:16 */
+  @media (max-width: 600px) {
+    /* Em mobile o stage é mais baixo, então 9:16 pode ficar muito largo.
+       Limita pra max 50% da largura. */
+    max-width: 50vw;
+  }
+}
+
+@keyframes premium-fade-in {
+  from { opacity: 0; transform: translateX(20%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Saída — mesma trajetória da entrada mas reversa:
+   parte de opacity 1 / x=0 e vai pra opacity 0 / x=20% (desliza pra direita). */
+@keyframes premium-fade-out {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(20%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .premium-overlay { animation: none; }
+  .premium-overlay.saindo { animation: none; opacity: 0; }
+}

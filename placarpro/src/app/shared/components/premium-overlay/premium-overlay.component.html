@@ -1,0 +1,22 @@
+<!-- Overlay PREMIUM — só renderiza enquanto há `patrocinadorAtual`.
+     Renderiza <video> quando tipoMidia === 'video' (autoplay/muted/loop)
+     ou <img> quando for imagem (default). -->
+<div
+  class="premium-overlay"
+  [class.saindo]="saindoJanela"
+  *ngIf="patrocinadorAtual as p"
+  aria-label="Patrocinador premium"
+>
+  <video
+    *ngIf="p.patrocinador.tipoMidia === 'video'; else imgTpl"
+    [src]="p.patrocinador.logoUrl"
+    autoplay
+    muted
+    loop
+    playsinline
+    [attr.aria-label]="p.patrocinador.nome"
+  ></video>
+  <ng-template #imgTpl>
+    <img [src]="p.patrocinador.logoUrl" [alt]="p.patrocinador.nome" />
+  </ng-template>
+</div>

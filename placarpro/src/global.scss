@@ -372,6 +372,31 @@ ion-modal {
   --max-width: 357px!important;
 }
 
+/* Modal "Ativar patrocínio" (ads pagos com créditos).
+   Conteúdo total: saldo + info + stepper + lista + form com upload quadrado
+   + resumo + botão = ~720px. Em telas baixas (notebook) precisa de bastante
+   altura pra não exigir scroll. Width segue o mesmo padrão do modal de
+   patrocinador da partida (480px max). */
+ion-modal.modal-reativar-patrocinio,
+ion-modal.modal-ativar-patrocinio,
+ion-modal.modal-editar-patrocinio {
+  --width: 96%;
+  --max-width: 520px;
+  --height: 92%;
+  --max-height: 860px;
+  --min-height: 600px;
+  --border-radius: 14px;
+
+  @media (max-width: 540px) {
+    --width: 100%;
+    --max-width: 100%;
+    --height: 100%;
+    --max-height: 100%;
+    --min-height: 100%;
+    --border-radius: 0;
+  }
+}
+
 /* Modal patrocinador da partida.
    Usa flex column no ::part(content) pra que o div.pat-modal-content
    (substituindo ion-content) cresça corretamente sem colapsar. */
@@ -1025,13 +1050,15 @@ html, body, ion-app, app-root {
   }
 }
 
-/* ---------- 2. Touch targets — mínimo 40px em mobile ---------- */
+/* ---------- 2. Touch targets em mobile ---------- */
 @media (max-width: 767px) {
-  /* Botões nativos (HTML <button>) — garantia de touch target.
-     `ion-button` já tem `min-height` via tokens, este alvo é pra
-     <button> puro que aparece em listas/cards customizados. */
+  /* `min-height: 0` — antes era 36px (touch target padrão), mas estava
+     forçando altura grande em botões pequenos do scoreboard/player
+     (1°T, INT, 2°T, etc) e em chips. Cada componente agora controla
+     sua própria altura via padding/font-size; quem precisar de touch
+     target maior define explicitamente. */
   button:not([class*="ion-"]):not(.btn-icon):not(.btn-icon-sm):not([data-compact]) {
-    min-height: 36px;
+    min-height: 0;
   }
 
   /* Botões em forma de chip/pílula — não forçam min-height (eles são
@@ -1056,7 +1083,7 @@ html, body, ion-app, app-root {
      full-screen no mobile. O conteúdo interno (header + body + footer)
      já tem scroll próprio via ion-content/ion-footer, então a tela
      toda fica disponível. */
-  ion-modal:not(.modal-large):not(.modal-login):not(.midia-viewer-modal):not(.modal-editar-rodada):not(.modal-pontos-extras-form):not(.colunas-equipes-modal):not(.fase-equipes-modal):not(.exportar-popover) {
+  ion-modal:not(.modal-large):not(.modal-login):not(.midia-viewer-modal):not(.modal-editar-rodada):not(.modal-pontos-extras-form):not(.colunas-equipes-modal):not(.fase-equipes-modal):not(.exportar-popover):not(.modal-ativar-patrocinio) {
     --width: 100%;
     --height: 100%;
     --max-width: 100%;
@@ -1151,6 +1178,25 @@ html, body, ion-app, app-root {
   }
 }
 
+
+/* ════════════════════════════════════════════════════════════════
+   FAB do feed durante banner PREMIUM
+   ════════════════════════════════════════════════════════════════
+   Quando a janela premium está aberta (6s), o `<body>` ganha a classe
+   `premium-on-stage` (setada por transmissao.page.ts). O FAB de
+   "Mostrar painel" some com fade-out — assim não compete visualmente
+   com o banner vertical 9:16 que aparece no lado direito da viewport.
+
+   Precisa ficar AQUI no global porque o `<body>` é fora do escopo
+   do componente Angular (CSS scoped não consegue selecioná-lo). */
+body.premium-on-stage .tr-feed-fab {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 300ms ease !important;
+}
+body:not(.premium-on-stage) .tr-feed-fab {
+  transition: opacity 250ms ease !important;
+}
 
 /* ---------- Polimentos finais ---------- */
 @media (max-width: 767px) {

@@ -23,10 +23,12 @@ import {
   createLocalVideoTrack,
 } from 'livekit-client';
 import { firstValueFrom } from 'rxjs';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../auth/auth.service';
 import { LiveKitService } from '../../livekit/livekit.service';
 import { TransmissoesService } from '../../../campeonatos/transmissoes.service';
 import { CampeonatosService } from '../../../campeonatos/campeonatos.service';
+import { PlanosService } from '../../../users/planos.service';
 import { INTERVALO_HEARTBEAT_MS } from '../../constants/transmissao.constants';
 
 /**
@@ -137,6 +139,8 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
   private readonly livekit = inject(LiveKitService);
   private readonly transmissoesSrv = inject(TransmissoesService);
   private readonly campeonatosSrv = inject(CampeonatosService);
+  private readonly planosSrv = inject(PlanosService);
+  private readonly router = inject(Router);
 
   async ngAfterViewInit(): Promise<void> {
     // Pequeno delay pra garantir que o ViewChild `videoPreviewRef` está renderizado.
@@ -728,6 +732,52 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
+   * Gate de crédito antes de iniciar: garante que há tempo/crédito de
+   * transmissão. Reserva (debita) no momento real do início. Retorna false
+   * (e avisa/oferece comprar) quando não há crédito — bloqueando o início.
+   */
+  private async garantirCreditoTransmissao(): Promise<boolean> {
+    let ownerId = '';
+    try {
+      const camp = await firstValueFrom(this.campeonatosSrv.get$(this.campeonatoId));
+      ownerId = camp?.ownerId ?? '';
+    } catch {
+      /* sem owner conhecido — não bloqueia (best-effort) */
+    }
+    if (!ownerId) return true;
+
+    const meuUid = this.authSrv.currentUser?.uid ?? null;
+    const limiteMin = this.planosSrv.transmissaoDuracaoMin;
+    const r = await this.transmissoesSrv.garantirTempoParaIniciar(
+      this.campeonatoId, this.categoriaId, this.jogoId, ownerId, meuUid, limiteMin,
+    );
+    if (r === 'ok') return true;
+
+    if (r === 'sem-creditos') {
+      const alert = await this.alertCtrl.create({
+        header: 'Sem créditos de transmissão',
+        message:
+          `Você precisa de um crédito de transmissão pra transmitir ` +
+          `(cada crédito libera ${limiteMin} min). Deseja comprar agora?`,
+        buttons: [
+          { text: 'Agora não', role: 'cancel' },
+          {
+            text: 'Comprar créditos',
+            handler: () => {
+              void this.modalCtrl.dismiss();
+              void this.router.navigate(['/app/meus-creditos']);
+            },
+          },
+        ],
+      });
+      await alert.present();
+    } else {
+      this.toast('Não foi possível validar o crédito de transmissão.', 'danger');
+    }
+    return false;
+  }
+
+  /**
    * Inicia a transmissão:
    *  - Obtém token JWT da Cloud Function (server valida permissão).
    *  - Conecta no Room do LiveKit.
@@ -745,6 +795,14 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
     // simulada automaticamente no `ngAfterViewInit` quando detecta iOS
     // Safari, então o user já tem a UX correta sem ser interrompido
     // antes de transmitir.
+
+    // ── GATE DE CRÉDITO ──
+    // Transmitir EXIGE crédito de transmissão. Aqui é o momento REAL do
+    // início (chokepoint de todos os caminhos): se não há tempo já pago,
+    // reserva +1 bloco (debita 1 crédito do dono). Sem crédito → bloqueia
+    // e oferece comprar. Feito ANTES de ligar a câmera/conectar.
+    const creditoOk = await this.garantirCreditoTransmissao();
+    if (!creditoOk) return;
 
     this.estado = 'connecting';
     this.cdr.detectChanges();

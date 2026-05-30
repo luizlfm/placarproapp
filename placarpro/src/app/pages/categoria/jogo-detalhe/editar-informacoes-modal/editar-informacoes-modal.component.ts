@@ -4,10 +4,8 @@ import { ModalController, ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { deleteField } from '@angular/fire/firestore';
-import { Jogo, parseYoutubeVideoId } from '../../../../campeonatos/models/jogo.model';
+import { Jogo } from '../../../../campeonatos/models/jogo.model';
 import { JogosService } from '../../../../campeonatos/jogos.service';
-import { PlanosService, PlanoDef } from '../../../../users/planos.service';
-import { Observable } from 'rxjs';
 import { ArbitragemJogoModalComponent } from '../../../../shared/components/arbitragem-jogo-modal/arbitragem-jogo-modal.component';
 import { AnexosJogoModalComponent } from '../../../../shared/components/anexos-jogo-modal/anexos-jogo-modal.component';
 import { PontosExtrasModalComponent } from '../../../../shared/components/pontos-extras-modal/pontos-extras-modal.component';
@@ -36,15 +34,8 @@ export class EditarInformacoesModalComponent implements OnInit {
   private readonly modalCtrl = inject(ModalController);
   private readonly toastCtrl = inject(ToastController);
   private readonly router = inject(Router);
-  private readonly planosSrv = inject(PlanosService);
 
   salvando = false;
-
-  /** Stream: o user logado tem plano com transmissão ao vivo? Quando
-   *  false, o campo YouTube é exibido como bloqueado com CTA pra upgrade. */
-  readonly podeTransmissao$: Observable<boolean> = this.planosSrv.podeTransmissaoAoVivo$();
-  /** Plano mínimo necessário pra desbloquear transmissão (pra CTA). */
-  readonly planoMinimo: PlanoDef = this.planosSrv.planoMinimoParaTransmissao();
 
   readonly form: FormGroup = this.fb.nonNullable.group({
     titulo: [''],
@@ -54,9 +45,6 @@ export class EditarInformacoesModalComponent implements OnInit {
     hora: [''],
     local: [''],
     aviso: [''],
-    /** Link do YouTube — pode ser URL completa ou só o video ID.
-     *  Convertido em `youtubeVideoId` no save via `parseYoutubeVideoId()`. */
-    youtubeUrl: [''],
   });
 
   ngOnInit(): void {
@@ -86,9 +74,6 @@ export class EditarInformacoesModalComponent implements OnInit {
         hora: horaIso,
         local: this.jogo.local ?? '',
         aviso: this.jogo.aviso ?? '',
-        youtubeUrl: this.jogo.youtubeVideoId
-          ? `https://youtu.be/${this.jogo.youtubeVideoId}`
-          : '',
       });
     }
   }
@@ -115,24 +100,12 @@ export class EditarInformacoesModalComponent implements OnInit {
     const titulo = (v.titulo as string).trim();
     const local = (v.local as string).trim();
     const aviso = (v.aviso as string).trim();
-    // YouTube: só processa se o user TEM plano com transmissão ao vivo.
-    // Sem o plano, ignora qualquer link digitado (defesa client-side).
-    const podeTransmissao = await firstValueFrom(this.podeTransmissao$);
-    const youtubeVideoId = podeTransmissao
-      ? parseYoutubeVideoId(v.youtubeUrl as string)
-      : null;
 
     const patch: { [k: string]: unknown } = {};
     if (titulo) patch['titulo'] = titulo; else if (this.jogo.titulo) patch['titulo'] = deleteField();
     if (dataHora) patch['dataHora'] = dataHora; else if (this.jogo.dataHora) patch['dataHora'] = deleteField();
     if (local) patch['local'] = local; else if (this.jogo.local) patch['local'] = deleteField();
     if (aviso) patch['aviso'] = aviso; else if (this.jogo.aviso) patch['aviso'] = deleteField();
-    if (youtubeVideoId) {
-      patch['youtubeVideoId'] = youtubeVideoId;
-    } else if (this.jogo.youtubeVideoId) {
-      // Usuário limpou o campo — remove a transmissão do doc.
-      patch['youtubeVideoId'] = deleteField();
-    }
     this.salvando = true;
     try {
       // Cast pra Partial<Jogo> — deleteField() devolve FieldValue que o

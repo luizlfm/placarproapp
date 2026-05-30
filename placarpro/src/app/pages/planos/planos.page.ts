@@ -11,7 +11,6 @@ import {
   EscolherPeriodicidadeModalComponent,
   EscolherPeriodicidadeResult,
 } from './escolher-periodicidade-modal/escolher-periodicidade-modal.component';
-import { UserProfile } from '../../users/models/user-profile.model';
 
 interface Feature {
   icon: string;
@@ -51,18 +50,15 @@ export class PlanosPage {
     map(p => (p?.plano as Plano['id']) ?? 'pequeno'),
   );
 
-  /** Perfil completo (usado pra mostrar transmissoesExtras). */
-  readonly profile$: Observable<UserProfile | undefined> = this.users.profile$();
-
-  /** Quantidade de transmissões avulsas a solicitar (stepper). */
-  qtdAvulso = 1;
-
-  readonly VALOR_AVULSO = this.planosSrv.VALOR_TRANSMISSAO_AVULSA;
-
-  get totalAvulso(): number { return this.qtdAvulso * this.VALOR_AVULSO; }
-
-  ajustarQtdAvulso(delta: number): void {
-    this.qtdAvulso = Math.max(1, Math.min(20, this.qtdAvulso + delta));
+  /**
+   * Preço mensal exibido no card — lê do `PlanosService` (que já aplica os
+   * overrides editados pelo admin em `config/comercial`). Profissional fica
+   * "Sob consulta".
+   */
+  precoMensalExibicao(id: Plano['id']): string {
+    if (id === 'profissional') return 'Sob consulta';
+    const def = this.planosSrv.getPlanoDef(id);
+    return `R$ ${def.precos.mensal}`;
   }
 
   readonly planos: Plano[] = [
@@ -74,9 +70,9 @@ export class PlanosPage {
       cor: 'linear-gradient(135deg, #000000 0%, #324350 100%)',
       features: [
         { icon: 'trophy-outline', titulo: '3 campeonatos', desc: 'Crie e gerencie até 3 campeonatos simultaneamente.' },
-        { icon: 'close-circle-outline', titulo: 'Remover propagandas no campeonato', desc: 'Remove todas as propagandas nos seus campeonatos (site e aplicativo).' },
         { icon: 'people-outline', titulo: 'Maior limite de jogadores', desc: 'Adicione até 300 jogadores por campeonato.' },
-        { icon: 'megaphone-outline', titulo: 'Adicionar Patrocinadores', desc: 'Adicione até 3 patrocinadores por campeonato.' },
+        { icon: 'megaphone-outline', titulo: 'Adicionar Patrocinadores', desc: 'Adicione patrocinadores por campeonato.' },
+        { icon: 'radio-outline', titulo: 'transmissões ao vivo', desc: 'Transmita seus jogos ao vivo pelo site, layout personalizado.' },
         { icon: 'globe-outline', titulo: 'Definir link do site', desc: 'placarpro.app/seu-campeonato' },
         { icon: 'image-outline', titulo: 'Melhor resolução de imagens', desc: 'Imagens em qualidade superior.' },
         { icon: 'videocam-outline', titulo: 'Enviar vídeos', desc: 'Vídeos de até 2 minutos.' },
@@ -93,11 +89,10 @@ export class PlanosPage {
       cor: 'linear-gradient(135deg, #E89132 0%, #F4A93E 100%)',
       features: [
         { icon: 'trophy-outline', titulo: '10 campeonatos', desc: 'Crie e gerencie até 10 campeonatos simultaneamente.' },
-        { icon: 'close-circle-outline', titulo: 'Remover propagandas no campeonato', desc: 'Site e aplicativo.' },
         { icon: 'people-outline', titulo: 'Maior limite de jogadores', desc: 'Adicione até 600 jogadores por campeonato.' },
-        { icon: 'megaphone-outline', titulo: 'Adicionar Patrocinadores', desc: 'Adicione até 6 patrocinadores por campeonato.' },
-        { icon: 'radio-outline', titulo: '1 transmissão ao vivo simultânea', desc: 'Transmita seus jogos pelo YouTube com placar overlay e chat.' },
-        { icon: 'code-slash-outline', titulo: 'Embed HTML em sites', desc: 'Incorpore jogos, mídias e tabelas em sites externos.' },
+        { icon: 'megaphone-outline', titulo: 'Adicionar Patrocinadores', desc: 'Adicione patrocinadores por campeonato.' },
+        { icon: 'radio-outline', titulo: 'transmissões ao vivo', desc: 'Transmita seus jogos ao vivo pelo site, layout personalizado.' },
+        { icon: 'color-palette-outline', titulo: 'White-label (sua marca)', desc: 'Personalize o app com sua identidade visual.' },
         { icon: 'globe-outline', titulo: 'Definir link do site', desc: 'Link personalizado.' },
         { icon: 'image-outline', titulo: 'Melhor resolução de imagens', desc: 'Qualidade superior.' },
         { icon: 'videocam-outline', titulo: 'Enviar vídeos', desc: 'Até 5 minutos.' },
@@ -113,11 +108,10 @@ export class PlanosPage {
       cor: 'linear-gradient(135deg, #6B47C9 0%, #8B6FE0 100%)',
       features: [
         { icon: 'trophy-outline', titulo: '30 campeonatos', desc: 'Crie e gerencie até 30 campeonatos simultaneamente.' },
-        { icon: 'close-circle-outline', titulo: 'Remover propagandas no campeonato', desc: 'Site e aplicativo.' },
         { icon: 'people-outline', titulo: 'Maior limite de jogadores', desc: 'Adicione até 900 jogadores por campeonato.' },
-        { icon: 'megaphone-outline', titulo: 'Adicionar Patrocinadores', desc: 'Adicione até 12 patrocinadores por campeonato.' },
-        { icon: 'radio-outline', titulo: '1 transmissão ao vivo simultânea', desc: 'Transmita seus jogos pelo YouTube com placar overlay e chat.' },
-        { icon: 'code-slash-outline', titulo: 'Embed HTML em sites', desc: 'Incorpore jogos, mídias e tabelas em sites externos.' },
+        { icon: 'megaphone-outline', titulo: 'Adicionar Patrocinadores', desc: 'Adicione patrocinadores por campeonato.' },
+        { icon: 'radio-outline', titulo: 'transmissões ao vivo', desc: 'Transmita seus jogos ao vivo pelo site, layout personalizado.' },
+        { icon: 'color-palette-outline', titulo: 'White-label (sua marca)', desc: 'Personalize o app com sua identidade visual.' },
         { icon: 'globe-outline', titulo: 'Definir link do site', desc: 'Link personalizado.' },
         { icon: 'image-outline', titulo: 'Melhor resolução de imagens', desc: 'Qualidade superior.' },
         { icon: 'videocam-outline', titulo: 'Enviar vídeos', desc: 'Até 10 minutos.' },
@@ -133,13 +127,10 @@ export class PlanosPage {
       cor: 'linear-gradient(135deg, #1A1A1A 0%, #2D2D2D 100%)',
       features: [
         { icon: 'infinite-outline', titulo: 'Campeonatos ilimitados', desc: 'Sem limite de campeonatos simultâneos.' },
-        { icon: 'close-circle-outline', titulo: 'Remover propagandas no campeonato', desc: 'Site e aplicativo.' },
         { icon: 'people-outline', titulo: 'Maior limite de jogadores', desc: 'Sem limite de jogadores.' },
-        { icon: 'megaphone-outline', titulo: 'Adicionar Patrocinadores', desc: 'Sem limite de patrocinadores.' },
-        { icon: 'radio-outline', titulo: '3 transmissões ao vivo simultâneas', desc: 'Transmita até 3 jogos ao mesmo tempo pelo YouTube.' },
+        { icon: 'megaphone-outline', titulo: 'Adicionar Patrocinadores', desc: 'Adicione patrocinadores por campeonato.' },
+        { icon: 'radio-outline', titulo: 'transmissões ao vivo', desc: 'Transmita seus jogos ao vivo pelo site, layout personalizado.' },
         { icon: 'color-palette-outline', titulo: 'White-label (sua marca)', desc: 'Personalize o app com sua identidade visual.' },
-        { icon: 'code-slash-outline', titulo: 'Opção de incorporação HTML', desc: 'Incorpore jogos, mídias e tabelas em site particular.' },
-        { icon: 'rocket-outline', titulo: 'Acesso à API JSON', desc: 'Integração com seus sistemas.' },
         { icon: 'globe-outline', titulo: 'Definir link do site', desc: 'Link personalizado.' },
         { icon: 'image-outline', titulo: 'Melhor resolução de imagens', desc: 'Qualidade superior.' },
         { icon: 'videocam-outline', titulo: 'Enviar vídeos', desc: 'Sem limite de duração.' },
@@ -148,45 +139,6 @@ export class PlanosPage {
       ],
     },
   ];
-
-  /**
-   * Cria cobrança de transmissão avulsa (R$30 cada).
-   * Segue o mesmo padrão das assinaturas: status 'aguardando' →
-   * admin confirma pagamento → adiciona créditos ao usuário.
-   */
-  async solicitarAvulso(): Promise<void> {
-    const uid = this.auth.currentUser?.uid;
-    if (!uid) { await this.toast('Faça login pra continuar.', 'danger'); return; }
-
-    const qtd = this.qtdAvulso;
-    const valorCentavos = qtd * this.VALOR_AVULSO * 100;
-
-    try {
-      const profile = await this.firstProfile();
-      const vencimento = this.calcularVencimento(7);
-      const payload = this.limparUndefined({
-        tipo: 'transmissao-avulsa' as const,
-        usuarioId: uid,
-        usuarioEmail: profile?.email,
-        usuarioNome: profile?.nome,
-        planoId: 'gratis' as PlanoId,          // planoId obrigatório — irrelevante neste tipo
-        periodicidade: 'mensal' as const,      // periodicidade obrigatória — irrelevante aqui
-        quantidadeTransmissoes: qtd,
-        valorCentavos,
-        vencimento,
-        status: 'aguardando' as const,
-        observacao: `Solicitação de ${qtd} transmissão(ões) avulsa(s) — R$ ${(valorCentavos / 100).toFixed(2)}.`,
-        criadoPor: uid,
-      });
-      const cobrancaId = await this.cobrancasSrv.criar(
-        payload as Parameters<typeof this.cobrancasSrv.criar>[0],
-      );
-      await this.router.navigate(['/pagamento', cobrancaId]);
-    } catch (err) {
-      console.error('[Planos] avulso falhou', err);
-      await this.toast('Falha ao gerar cobrança. Tente novamente.', 'danger');
-    }
-  }
 
   /**
    * Fluxo de assinatura — NÃO altera o plano direto. Cria uma cobrança

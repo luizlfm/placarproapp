@@ -1,0 +1,23 @@
+/* ════════════════════════════════════════════════════════════════
+   Banner rotativo de patrocínios PAGOS (ads) na transmissão pública.
+   Wrapper full do `.live-wrap` com pointer-events:none; o filho
+   `.ads-banner` se ancora no canto inferior esquerdo internamente.
+   ════════════════════════════════════════════════════════════════ */
+.live-wrap {
+  position: relative;
+}
+
+.pub-esteira-ads {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* ═══════ PREMIUM OVERLAY ═══════
+   Quando .live-wrap.premium-on, só a esteira normal some — o vídeo
+   continua sendo exibido normalmente (banner premium fica sobreposto
+   sem recolher o vídeo, decisão do user). */
+.live-wrap.premium-on {
+  .pub-esteira-ads { opacity: 0; transition: opacity 350ms ease; pointer-events: none; }
+}

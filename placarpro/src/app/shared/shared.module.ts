@@ -17,6 +17,7 @@ import { ArteDoJogoModalComponent } from './components/arte-do-jogo-modal/arte-d
 import { JogoAcoesPopoverComponent } from './components/jogo-acoes-popover/jogo-acoes-popover.component';
 import { JogosAcoesPopoverComponent } from './components/jogos-acoes-popover/jogos-acoes-popover.component';
 import { MaskDirective } from './directives/mask.directive';
+import { CurrencyBrlDirective } from './directives/currency-brl.directive';
 import { SelecionarEquipesModalComponent } from './components/selecionar-equipes-modal/selecionar-equipes-modal.component';
 import { SelecionarLadoModalComponent } from './components/selecionar-lado-modal/selecionar-lado-modal.component';
 import { ModeradoresModalComponent } from './components/moderadores-modal/moderadores-modal.component';
@@ -47,6 +48,11 @@ import { ImgSkeletonDirective } from './directives/img-skeleton.directive';
 import { IosPwaTutorialModalComponent } from './components/ios-pwa-tutorial-modal/ios-pwa-tutorial-modal.component';
 import { PdfViewerModalComponent } from './components/pdf-viewer-modal/pdf-viewer-modal.component';
 import { OcrImportModalComponent } from './ocr/ocr-import-modal/ocr-import-modal.component';
+import { AtivarPatrocinioModalComponent } from './components/ativar-patrocinio-modal/ativar-patrocinio-modal.component';
+import { EditarPatrocinioModalComponent } from './components/editar-patrocinio-modal/editar-patrocinio-modal.component';
+import { ReativarPatrocinioModalComponent } from './components/reativar-patrocinio-modal/reativar-patrocinio-modal.component';
+import { EsteiraAdsComponent } from './components/esteira-ads/esteira-ads.component';
+import { PremiumOverlayComponent } from './components/premium-overlay/premium-overlay.component';
 import { FichaEquipeOcrModalComponent } from './ocr/ficha-equipe-ocr-modal/ficha-equipe-ocr-modal.component';
 
 /**
@@ -68,6 +74,7 @@ import { FichaEquipeOcrModalComponent } from './ocr/ficha-equipe-ocr-modal/ficha
     JogoAcoesPopoverComponent,
     JogosAcoesPopoverComponent,
     MaskDirective,
+    CurrencyBrlDirective,
     SelecionarEquipesModalComponent,
     SelecionarLadoModalComponent,
     ModeradoresModalComponent,
@@ -95,6 +102,11 @@ import { FichaEquipeOcrModalComponent } from './ocr/ficha-equipe-ocr-modal/ficha
     PdfViewerModalComponent,
     OcrImportModalComponent,
     FichaEquipeOcrModalComponent,
+    AtivarPatrocinioModalComponent,
+    EditarPatrocinioModalComponent,
+    ReativarPatrocinioModalComponent,
+    EsteiraAdsComponent,
+    PremiumOverlayComponent,
   ],
   exports: [
     CampeonatoMobileHeaderComponent,
@@ -109,6 +121,7 @@ import { FichaEquipeOcrModalComponent } from './ocr/ficha-equipe-ocr-modal/ficha
     JogoAcoesPopoverComponent,
     JogosAcoesPopoverComponent,
     MaskDirective,
+    CurrencyBrlDirective,
     SelecionarEquipesModalComponent,
     SelecionarLadoModalComponent,
     ModeradoresModalComponent,
@@ -136,6 +149,11 @@ import { FichaEquipeOcrModalComponent } from './ocr/ficha-equipe-ocr-modal/ficha
     PdfViewerModalComponent,
     OcrImportModalComponent,
     FichaEquipeOcrModalComponent,
+    AtivarPatrocinioModalComponent,
+    EditarPatrocinioModalComponent,
+    ReativarPatrocinioModalComponent,
+    EsteiraAdsComponent,
+    PremiumOverlayComponent,
   ],
 })
 export class SharedModule {}

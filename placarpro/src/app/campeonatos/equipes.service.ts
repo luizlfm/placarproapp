@@ -70,6 +70,9 @@ export class EquipesService {
     return runInInjectionContext(this.injector, async () => {
       const payload: Equipe = {
         ...input,
+        // Convenção do sistema: nome de equipe SEMPRE em maiúsculas
+        // (consistência visual em listas, súmulas, relatórios, públicas).
+        nome: (input.nome ?? '').trim().toUpperCase(),
         campeonatoId,
         categoriaId,
         totalJogadores: 0,
@@ -90,6 +93,8 @@ export class EquipesService {
     await runInInjectionContext(this.injector, () =>
       updateDoc(this.docRef(campeonatoId, categoriaId, equipeId), {
         ...patch,
+        // Garante uppercase em atualizações também (se vier `nome` no patch)
+        ...(patch.nome != null ? { nome: patch.nome.trim().toUpperCase() } : {}),
         atualizadoEm: serverTimestamp() as unknown as Timestamp,
       }),
     );
