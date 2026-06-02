@@ -47,6 +47,44 @@ service cloud.firestore {
     }
 
     /**
+     * Conta NÃO bloqueada/banida. Usada pra impedir que uma conta
+     * suspensa (pelo admin master) continue escrevendo.
+     *
+     * Fail-open de propósito:
+     *  - Doc de perfil ausente → considerada ATIVA (não trava conta nova
+     *    cujo doc ainda não foi criado).
+     *  - Usa `.get(campo, false)` pra não quebrar em docs sem os campos.
+     * Admin master NÃO passa por aqui (bypass nos `pode*`), então nunca
+     * se autoboqueia.
+     */
+    function contaAtiva() {
+      return !exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        || (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('banido', false) != true
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('bloqueado', false) != true
+        );
+    }
+
+    /**
+     * Campos do doc `users/{uid}` que SÓ o admin master (ou Cloud Functions
+     * via Admin SDK, que ignoram rules) podem alterar. O próprio usuário
+     * NÃO pode tocar:
+     *  - `isMaster`           → auto-promoção a super-admin
+     *  - `transmissoesExtras` → auto-crédito de transmissões (fonte: CF/admin)
+     *  - `bloqueado*`/`banido*` → evadir suspensão aplicada pelo admin
+     * (Obs.: `moderadorValidado` fica de fora — o signup com código de
+     *  convite seta esse campo no próprio doc; e validar-se sozinho não
+     *  concede acesso a nenhum campeonato sem o dono adicionar o UID.)
+     */
+    function camposProtegidosUser() {
+      return [
+        'isMaster', 'transmissoesExtras',
+        'bloqueado', 'bloqueadoEm', 'bloqueadoPor',
+        'banido', 'banidoEm', 'banidoPor', 'banidoMotivo',
+      ];
+    }
+
+    /**
      * Moderador VALIDADO deste campeonato.
      *
      * Checa 2 condições (ambas obrigatórias):
@@ -73,7 +111,8 @@ service cloud.firestore {
      *  isto em vez de `isOwnerOrMaster` em writes que moderadores devem
      *  conseguir fazer (jogos, eventos, equipes, etc.). */
     function podeEditar(campeonatoId) {
-      return isOwnerOrMaster(campeonatoId) || isModerador(campeonatoId);
+      return isMaster()
+             || (contaAtiva() && (isOwner(campeonatoId) || isModerador(campeonatoId)));
     }
 
     /** Checa se o UID logado tem a permissão específica `permKey` no
@@ -87,24 +126,29 @@ service cloud.firestore {
              && request.auth.uid in get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data[permKey];
     }
     function podeEditarCampeonato(campeonatoId) {
-      return isOwnerOrMaster(campeonatoId)
-             || (isModerador(campeonatoId) && temPermModerador(campeonatoId, 'editarCampeonatoUids'));
+      return isMaster()
+             || (contaAtiva() && (isOwner(campeonatoId)
+                 || (isModerador(campeonatoId) && temPermModerador(campeonatoId, 'editarCampeonatoUids'))));
     }
     function podeGerenciarEquipes(campeonatoId) {
-      return isOwnerOrMaster(campeonatoId)
-             || (isModerador(campeonatoId) && temPermModerador(campeonatoId, 'gerenciarEquipesUids'));
+      return isMaster()
+             || (contaAtiva() && (isOwner(campeonatoId)
+                 || (isModerador(campeonatoId) && temPermModerador(campeonatoId, 'gerenciarEquipesUids'))));
     }
     function podeEditarResultados(campeonatoId) {
-      return isOwnerOrMaster(campeonatoId)
-             || (isModerador(campeonatoId) && temPermModerador(campeonatoId, 'editarResultadosUids'));
+      return isMaster()
+             || (contaAtiva() && (isOwner(campeonatoId)
+                 || (isModerador(campeonatoId) && temPermModerador(campeonatoId, 'editarResultadosUids'))));
     }
     function podeEnviarMidias(campeonatoId) {
-      return isOwnerOrMaster(campeonatoId)
-             || (isModerador(campeonatoId) && temPermModerador(campeonatoId, 'enviarMidiasUids'));
+      return isMaster()
+             || (contaAtiva() && (isOwner(campeonatoId)
+                 || (isModerador(campeonatoId) && temPermModerador(campeonatoId, 'enviarMidiasUids'))));
     }
     function podeGerenciarEnquetes(campeonatoId) {
-      return isOwnerOrMaster(campeonatoId)
-             || (isModerador(campeonatoId) && temPermModerador(campeonatoId, 'gerenciarEnquetesUids'));
+      return isMaster()
+             || (contaAtiva() && (isOwner(campeonatoId)
+                 || (isModerador(campeonatoId) && temPermModerador(campeonatoId, 'gerenciarEnquetesUids'))));
     }
     function isCreatingAsSelf() {
       return isSignedIn() && request.resource.data.ownerId == request.auth.uid;
@@ -152,8 +196,17 @@ service cloud.firestore {
       // permissions decidem o que volta).
       allow list: if true;
 
-      // Escrita: só o dono ou admin master.
-      allow write: if isSelf(uid) || isMaster();
+      // Escrita: admin master pode tudo. O próprio usuário pode criar/editar
+      // o próprio doc, MAS sem tocar campos protegidos (billing/privilégio/
+      // suspensão) — esses só via admin ou Cloud Function (Admin SDK).
+      allow create: if isMaster()
+                    || (isSelf(uid)
+                        && !request.resource.data.keys().hasAny(camposProtegidosUser()));
+      allow update: if isMaster()
+                    || (isSelf(uid)
+                        && !request.resource.data.diff(resource.data).affectedKeys()
+                              .hasAny(camposProtegidosUser()));
+      allow delete: if isMaster();
 
       // Patrocinadores: leitura pública (qualquer um pode listar os
       // patrocinadores de um organizador para exibir nas páginas públicas
@@ -191,9 +244,10 @@ service cloud.firestore {
                  || (isSignedIn() && ('moderadorUids' in resource.data)
                      && request.auth.uid in resource.data.moderadorUids);
 
-      allow create: if isCreatingAsSelf();
-      allow update, delete: if (isSignedIn() && resource.data.ownerId == request.auth.uid)
-                            || isMaster();
+      allow create: if isMaster() || (isCreatingAsSelf() && contaAtiva());
+      allow update, delete: if isMaster()
+                            || (isSignedIn() && contaAtiva()
+                                && resource.data.ownerId == request.auth.uid);
 
       // Subcoleções herdam a visibilidade do pai.
       // Writes liberados pra `podeEditar(...)` = owner | master | moderador
@@ -302,8 +356,15 @@ service cloud.firestore {
         match /jogos/{jogoId}/transmissoes/{transmissaoId} {
           allow read: if campeonatoEhPublico(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data)
                       || isOwnerOrMaster(campeonatoId);
-          allow write: if podeEnviarMidias(campeonatoId)
-                       || podeEditarResultados(campeonatoId);
+          // `descontou` é SERVER-ONLY: só a Cloud Function de créditos
+          // (Admin SDK) marca como true ao cruzar o limite de tempo. O
+          // cliente cria sempre com `descontou: false` e nunca pode alterá-lo
+          // — senão um broadcaster transmitiria de graça auto-marcando o flag.
+          allow create: if (podeEnviarMidias(campeonatoId) || podeEditarResultados(campeonatoId))
+                        && request.resource.data.get('descontou', false) == false;
+          allow update: if (podeEnviarMidias(campeonatoId) || podeEditarResultados(campeonatoId))
+                        && request.resource.data.get('descontou', false) == resource.data.get('descontou', false);
+          allow delete: if podeEnviarMidias(campeonatoId) || podeEditarResultados(campeonatoId);
         }
 
         // Catch-all pra subcoleções não-listadas (jogos, eventos, fases,
@@ -385,21 +446,21 @@ service cloud.firestore {
       allow list: if true;
       allow get: if true;
 
-      // CREATE: usuário logado setando ownerId == próprio uid
-      allow create: if isCreatingAsSelf();
+      // CREATE: usuário logado (conta ativa) setando ownerId == próprio uid
+      allow create: if isMaster() || (isCreatingAsSelf() && contaAtiva());
 
-      // UPDATE/DELETE: só owner ou admin master
-      allow update, delete: if isSignedIn() && (
-        resource.data.ownerId == request.auth.uid || isMaster()
+      // UPDATE/DELETE: só owner (ativo) ou admin master
+      allow update, delete: if isMaster() || (
+        isSignedIn() && contaAtiva() && resource.data.ownerId == request.auth.uid
       );
 
       // Subcoleções (jogadores, sessoes, presencas) — herdam permissão do owner.
-      // Leitura aberta pra qualquer um (ranking público), escrita só owner.
+      // Leitura aberta pra qualquer um (ranking público), escrita só owner ativo.
       match /{sub=**} {
         allow read: if true;
-        allow write: if isSignedIn() && (
-          get(/databases/$(database)/documents/rachas/$(rachaId)).data.ownerId == request.auth.uid
-          || isMaster()
+        allow write: if isMaster() || (
+          isSignedIn() && contaAtiva()
+          && get(/databases/$(database)/documents/rachas/$(rachaId)).data.ownerId == request.auth.uid
         );
       }
     }

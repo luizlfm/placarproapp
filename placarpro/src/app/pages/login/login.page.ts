@@ -64,6 +64,18 @@ export class LoginPage implements OnInit {
       this.tipoLogin = saved && tiposValidos.includes(saved) ? saved : 'organizador';
       this.returnUrl = this.destinoPadrao(this.tipoLogin);
     }
+
+    // Vindo do authGuard por conta suspensa (bloqueado/banido) — avisa o motivo.
+    if (this.route.snapshot.queryParamMap.get('suspenso') === '1') {
+      void this.toastCtrl
+        .create({
+          message: 'Sua conta está suspensa. Entre em contato com o suporte do PlacarPro.',
+          duration: 6000,
+          color: 'danger',
+          position: 'top',
+        })
+        .then(t => t.present());
+    }
   }
 
   /** Destino padrão por tipo de login.

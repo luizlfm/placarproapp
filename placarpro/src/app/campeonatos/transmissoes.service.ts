@@ -429,14 +429,16 @@ export class TransmissoesService {
         }
         await updateDoc(jogoRef, update);
 
-        // Debita o crédito do dono — só quando EU sou o dono (regra isSelf).
-        if (meuUid && meuUid === ownerId) {
-          await updateDoc(userRef, { transmissoesExtras: increment(-1) }).catch(err => {
-            console.warn('[Transmissao] débito de crédito falhou (best-effort)', err);
-          });
-        } else {
-          console.info('[Transmissao] broadcaster não é o dono — débito de crédito pendente de reconciliação.');
-        }
+        // NÃO debita aqui. A FONTE ÚNICA de cobrança é a Cloud Function
+        // `onTransmissaoHeartbeat` (functions/src/transmissoesCreditos.ts),
+        // que abate 1 `transmissoesExtras` do dono — em transação atômica e
+        // idempotente (flag `descontou`) — quando o tempo total do jogo cruza
+        // o limite. O débito client-side anterior causava cobrança DUPLA
+        // (cliente adiantado + CF no limite) e divergência de threshold, além
+        // de ser best-effort/sem transação e pular moderadores. As Firestore
+        // Rules agora também bloqueiam auto-escrita de `transmissoesExtras`.
+        // Aqui mantemos apenas o GATE de UX (saldo > 0, checado acima).
+        void meuUid;
         return 'ok';
       } catch (err) {
         console.error('[Transmissao] reservarHoraTransmissao falhou', err);

@@ -1,6 +1,8 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router, UrlTree } from '@angular/router';
+import { catchError, firstValueFrom, of, timeout } from 'rxjs';
 import { AuthService } from './auth.service';
+import { UsersService } from '../users/users.service';
 
 /** Tipos de conta possíveis (mirror de `TipoConta` do user-profile.model). */
 type TipoLogin = 'organizador' | 'cliente' | 'moderador' | 'racha';
@@ -50,6 +52,30 @@ function destinoPorTipo(): string {
 export const authGuard: CanActivateFn = async (_route, state): Promise<boolean | UrlTree> => {
   const auth = inject(AuthService);
   const router = inject(Router);
+  const usersSrv = inject(UsersService);
+
+  // Conta suspensa pelo admin master (bloqueado/banido) NÃO acessa a área
+  // logada. Fail-open: se a leitura do perfil falhar ou demorar, libera
+  // (não trava acesso por erro de rede). Desloga antes de redirecionar pra
+  // evitar o loop login → /app → login (o redirectIfAuthGuard mandaria de
+  // volta pra /app se a sessão continuasse ativa).
+  const checarSuspensao = async (): Promise<UrlTree | null> => {
+    try {
+      const profile = await firstValueFrom(
+        usersSrv.profile$().pipe(timeout(3000), catchError(() => of(undefined))),
+      );
+      if (profile?.bloqueado === true || profile?.banido === true) {
+        console.warn('[authGuard] conta suspensa (bloqueado/banido) — encerrando sessão', {
+          url: state.url,
+        });
+        try { await auth.signOut(); } catch { /* ignore */ }
+        return router.createUrlTree(['/login'], { queryParams: { suspenso: '1' } });
+      }
+    } catch {
+      /* fail-open — erro de leitura não bloqueia o acesso */
+    }
+    return null;
+  };
 
   // Helper: se está logado, decide entre liberar ou bloquear conta não-admin.
   // Espectador → /espectador, Racha → /racha. Organizador e moderador podem
@@ -67,21 +93,28 @@ export const authGuard: CanActivateFn = async (_route, state): Promise<boolean |
     return true;
   };
 
+  // Logado: primeiro verifica suspensão, depois o destino por tipo.
+  const finalizarLogado = async (): Promise<boolean | UrlTree> => {
+    const suspenso = await checarSuspensao();
+    if (suspenso) return suspenso;
+    return decidirAposLogin();
+  };
+
   // 1) Atalho síncrono — usuário já está autenticado em memória.
   if (auth.currentUser) {
-    return decidirAposLogin();
+    return finalizarLogado();
   }
 
   // 2) Espera o Firebase Auth terminar de hidratar (caso F5).
   const user = await auth.waitForAuthInit();
   if (user) {
-    return decidirAposLogin();
+    return finalizarLogado();
   }
 
   // 3) Re-checa síncrono — popup pode ter resolvido depois do waitForAuthInit
   //    mas antes do authState emitir.
   if (auth.currentUser) {
-    return decidirAposLogin();
+    return finalizarLogado();
   }
 
   // ─── Caso especial: rota de TRANSMISSÃO ─────────────────────────────
