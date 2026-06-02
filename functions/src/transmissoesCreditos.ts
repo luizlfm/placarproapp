@@ -31,14 +31,17 @@ import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions';
 
 /**
- * Limite (em segundos) que dispara o desconto de 1 crédito.
- * 9000s = 2h30. MANTER IGUAL ao client (placarpro/.../transmissao.constants.ts).
- */
-const SEGUNDOS_PARA_CONSUMIR_CREDITO = 9000;
-
-/**
- * Listener que dispara em CADA update do doc transmissoes/{tId} — incluindo
- * heartbeats a cada 30s. Faz a lógica de abate quando aplicável.
+ * Listener que dispara em CADA update do doc transmissoes/{tId} (heartbeats
+ * a cada 30s). Abate 1 crédito do dono LOGO NO INÍCIO da transmissão do jogo.
+ *
+ * Modelo de cobrança: 1 crédito = 1 jogo (nada é grátis). A cobrança acontece
+ * na primeira atualização da transmissão (≈primeiro heartbeat) e SÓ UMA VEZ
+ * por jogo — independente da duração. Reconexões/sessões extras do mesmo jogo
+ * NÃO recobram (idempotência via flag `descontou`).
+ *
+ * O débito é server-side (Admin SDK ignora rules) porque o cliente não pode
+ * escrever `transmissoesExtras` (bloqueado nas Firestore Rules). O cliente só
+ * faz o GATE de UX (não deixa iniciar sem saldo).
  *
  * Path do trigger:
  *   campeonatos/{cId}/categorias/{catId}/jogos/{jId}/transmissoes/{tId}
@@ -89,47 +92,29 @@ export const onTransmissaoHeartbeat = onDocumentUpdated(
       return;
     }
 
-    // ── 2. Soma o tempo total acumulado deste jogo ──
-    const totalSegundos = todasSnap.docs.reduce(
-      (acc, d) => acc + (Number(d.data().duracaoSegundos) || 0),
-      0,
-    );
-
-    logger.info('[creditos] heartbeat processado', {
-      jogoId, transmissaoId, totalSegundos, threshold: SEGUNDOS_PARA_CONSUMIR_CREDITO,
-    });
-
-    // Ainda não bateu 2h30 — nada a fazer agora.
-    if (totalSegundos < SEGUNDOS_PARA_CONSUMIR_CREDITO) return;
-
-    // ── 3. Cruzou o threshold — abate 1 crédito em transação ──
-    //     Transação garante atomicidade: ou ambos os writes funcionam
-    //     (decrementa user + marca transmissão), ou nenhum acontece.
-    //     Idempotência via re-leitura dentro da transação: se outro
-    //     trigger já marcou `descontou: true` antes da gente, aborta.
+    // ── 2. Abate 1 crédito JÁ NO INÍCIO (uma vez por jogo) ──
+    //     Sem limiar de tempo: a duração não importa. A transação re-lê
+    //     TODAS as transmissões do jogo e só abate se NENHUMA tiver
+    //     `descontou: true` — isso fecha a corrida de 2 sessões do mesmo
+    //     jogo iniciando juntas (Firestore aborta+retenta a transação
+    //     conflitante, que na 2ª passada já vê descontou e desiste).
     const userRef = db.collection('users').doc(ownerId);
     const txRef = transmissoesRef.doc(transmissaoId);
 
     try {
       await db.runTransaction(async (tx) => {
-        const txSnap = await tx.get(txRef);
-        if (txSnap.data()?.descontou === true) {
-          // Outro processo concurrentement abateu — sai sem fazer nada.
+        const allSnap = await tx.get(transmissoesRef);
+        const algumDescontou = allSnap.docs.some(d => d.data().descontou === true);
+        if (algumDescontou) {
+          // Jogo já cobrado — só marca esta sessão por consistência.
+          tx.update(txRef, {
+            descontou: true,
+            atualizadoEm: admin.firestore.FieldValue.serverTimestamp(),
+          });
           return;
         }
 
-        // Re-checa o total dentro da transação (snapshots fora podem ter
-        // ficado estagnados se o broadcaster mandou múltiplos heartbeats
-        // rápidos). Se ficou abaixo de 9000 por algum motivo, aborta.
-        // (Em prática nunca vai acontecer porque heartbeat só cresce.)
-        const txAllSnap = await transmissoesRef.get();
-        const totalAtomic = txAllSnap.docs.reduce(
-          (acc, d) => acc + (Number(d.data().duracaoSegundos) || 0),
-          0,
-        );
-        if (totalAtomic < SEGUNDOS_PARA_CONSUMIR_CREDITO) return;
-
-        // OK — desconta 1 crédito do owner E marca a transmissão atual.
+        // Primeira sessão deste jogo — desconta 1 crédito do owner E marca.
         tx.update(userRef, {
           transmissoesExtras: admin.firestore.FieldValue.increment(-1),
           atualizadoEm: admin.firestore.FieldValue.serverTimestamp(),
@@ -140,8 +125,8 @@ export const onTransmissaoHeartbeat = onDocumentUpdated(
         });
       });
 
-      logger.info('[creditos] 1 crédito abatido', {
-        ownerId, jogoId, transmissaoId, totalSegundos,
+      logger.info('[creditos] 1 crédito abatido (início do jogo)', {
+        ownerId, jogoId, transmissaoId,
       });
     } catch (err) {
       // Se a transação falhar (rede, conflito de versão), loga mas não

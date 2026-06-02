@@ -12,7 +12,6 @@ import {
   docData,
   getDoc,
   getDocs,
-  increment,
   limit,
   orderBy,
   query,
@@ -380,19 +379,9 @@ export class TransmissoesService {
   }
 
   /**
-   * Reserva +1 "hora-crédito" de transmissão para o jogo:
-   *  - incrementa `jogo.horasTransmissaoPagas` (libera mais 1 bloco de tempo)
-   *  - debita 1 `transmissoesExtras` do DONO do campeonato
-   *
-   * Débito do crédito: a regra do Firestore só deixa o PRÓPRIO dono (ou
-   * admin) escrever em `users/{ownerId}`. Por isso, quando o broadcaster é
-   * o dono (`meuUid === ownerId`), debitamos de fato; quando é um moderador,
-   * o tempo é liberado (incrementa horas pagas) mas o débito do crédito fica
-   * pendente de reconciliação pelo admin (best-effort).
-   *
-   * NOTA: pra cobrança robusta (moderadores, anti-fraude) o ideal é uma
-   * Cloud Function callable. Esta versão client-side cobre o caso comum
-   * (organizador transmitindo).
+   * @deprecated Mantido só por compat — use `garantirTempoParaIniciar`.
+   * Hoje é apenas um GATE (não reserva/debita nada): a cobrança é
+   * server-side na Cloud Function, no início do jogo.
    *
    * @returns 'ok' | 'sem-creditos' | 'erro'
    */
@@ -403,66 +392,23 @@ export class TransmissoesService {
     ownerId: string,
     meuUid: string | null,
   ): Promise<'ok' | 'sem-creditos' | 'erro'> {
-    return runInInjectionContext(this.injector, async () => {
-      try {
-        // Gate: o dono tem saldo? (leitura permitida pra signed-in).
-        const userRef = doc(this.fs, 'users', ownerId);
-        const snap = await getDoc(userRef);
-        const saldo = (snap.data()?.['transmissoesExtras'] as number | undefined) ?? 0;
-        if (saldo <= 0) return 'sem-creditos';
-
-        // Libera mais um bloco de tempo no jogo (owner/moderador podem escrever).
-        const jogoRef = doc(
-          this.fs, 'campeonatos', campeonatoId, 'categorias', categoriaId, 'jogos', jogoId,
-        );
-        // Na 1ª reserva (baseline ainda não definido), grava o tempo já
-        // acumulado como baseline — assim o tempo legado/anterior NÃO
-        // consome o crédito recém-reservado.
-        const jogoSnap = await getDoc(jogoRef);
-        const baseAtual = jogoSnap.data()?.['transmissaoSegundosBase'] as number | undefined | null;
-        const update: Record<string, unknown> = {
-          horasTransmissaoPagas: increment(1),
-          atualizadoEm: serverTimestamp(),
-        };
-        if (baseAtual === undefined || baseAtual === null) {
-          update['transmissaoSegundosBase'] = await this.tempoTotalAtual(campeonatoId, categoriaId, jogoId);
-        }
-        await updateDoc(jogoRef, update);
-
-        // NÃO debita aqui. A FONTE ÚNICA de cobrança é a Cloud Function
-        // `onTransmissaoHeartbeat` (functions/src/transmissoesCreditos.ts),
-        // que abate 1 `transmissoesExtras` do dono — em transação atômica e
-        // idempotente (flag `descontou`) — quando o tempo total do jogo cruza
-        // o limite. O débito client-side anterior causava cobrança DUPLA
-        // (cliente adiantado + CF no limite) e divergência de threshold, além
-        // de ser best-effort/sem transação e pular moderadores. As Firestore
-        // Rules agora também bloqueiam auto-escrita de `transmissoesExtras`.
-        // Aqui mantemos apenas o GATE de UX (saldo > 0, checado acima).
-        void meuUid;
-        return 'ok';
-      } catch (err) {
-        console.error('[Transmissao] reservarHoraTransmissao falhou', err);
-        return 'erro';
-      }
-    });
-  }
-
-  /** Soma (one-shot) do `duracaoSegundos` de todas as sessões do jogo. */
-  private async tempoTotalAtual(campeonatoId: string, categoriaId: string, jogoId: string): Promise<number> {
-    const snap = await getDocs(this.col(campeonatoId, categoriaId, jogoId));
-    let total = 0;
-    snap.forEach(d => { total += (d.data() as Transmissao).duracaoSegundos ?? 0; });
-    return total;
+    // Compat: delega pro gate único. A cobrança real é server-side (CF), no
+    // início do jogo — aqui só verificamos se PODE iniciar.
+    return this.garantirTempoParaIniciar(campeonatoId, categoriaId, jogoId, ownerId, meuUid, 0);
   }
 
   /**
-   * Gate de crédito ANTES de iniciar uma transmissão.
-   *  - Se ainda há tempo dentro do orçamento já pago → 'ok' (não debita).
-   *  - Senão, tenta reservar +1 bloco (debita 1 crédito do dono).
-   *  - Sem crédito → 'sem-creditos'.
+   * Gate de crédito ANTES de iniciar uma transmissão. NÃO debita nada — a
+   * cobrança é server-side, na Cloud Function `onTransmissaoHeartbeat`, que
+   * abate 1 crédito do dono LOGO NO INÍCIO e SÓ UMA VEZ por jogo.
    *
-   * Chamado no momento REAL do início (dentro do modal de broadcast), pra
-   * o crédito só ser debitado quando a transmissão realmente começa.
+   * Modelo "1 crédito = 1 jogo (nada é grátis)":
+   *  - Jogo já cobrado (alguma transmissão com `descontou`) → 'ok' (pode
+   *    reconectar mesmo sem saldo, pois não haverá nova cobrança).
+   *  - Caso contrário, exige saldo > 0 do dono (a CF debita ao iniciar).
+   *  - Sem saldo → 'sem-creditos'.
+   *
+   * `meuUid` e `limiteMin` são mantidos só por compat de assinatura.
    */
   async garantirTempoParaIniciar(
     campeonatoId: string,
@@ -474,17 +420,16 @@ export class TransmissoesService {
   ): Promise<'ok' | 'sem-creditos' | 'erro'> {
     return runInInjectionContext(this.injector, async () => {
       try {
-        const total = await this.tempoTotalAtual(campeonatoId, categoriaId, jogoId);
-        const jogoRef = doc(
-          this.fs, 'campeonatos', campeonatoId, 'categorias', categoriaId, 'jogos', jogoId,
-        );
-        const jogoSnap = await getDoc(jogoRef);
-        const horasPagas = (jogoSnap.data()?.['horasTransmissaoPagas'] as number | undefined) ?? 0;
-        const base = (jogoSnap.data()?.['transmissaoSegundosBase'] as number | undefined) ?? 0;
-        const consumido = Math.max(0, total - base);
-        const orcamentoSeg = horasPagas * limiteMin * 60;
-        if (orcamentoSeg > consumido) return 'ok'; // ainda tem tempo pago
-        return await this.reservarHoraTransmissao(campeonatoId, categoriaId, jogoId, ownerId, meuUid);
+        void meuUid;
+        void limiteMin;
+        // Jogo já cobrado? → permite retomar (a CF não recobra).
+        const snap = await getDocs(this.col(campeonatoId, categoriaId, jogoId));
+        const jaCobrado = snap.docs.some(d => (d.data() as Transmissao).descontou === true);
+        if (jaCobrado) return 'ok';
+        // Ainda não cobrado: exige saldo do dono (a CF abate 1 ao iniciar).
+        const userSnap = await getDoc(doc(this.fs, 'users', ownerId));
+        const saldo = (userSnap.data()?.['transmissoesExtras'] as number | undefined) ?? 0;
+        return saldo > 0 ? 'ok' : 'sem-creditos';
       } catch (err) {
         console.error('[Transmissao] garantirTempoParaIniciar falhou', err);
         return 'erro';
