@@ -130,6 +130,11 @@
         [jogoId]="jogoId"
         (visibilidadeMudou)="onPremiumOverlayMudou($event)"
       ></app-premium-overlay>
+
+      <!-- ═══════ RECADO NA TELA (lower-third) ═══════
+           Faixa do recado ao vivo do organizador — sincroniza via
+           `jogo.avisoTela`. -->
+      <app-aviso-tela [aviso]="j.avisoTela"></app-aviso-tela>
     </div>
     </div>
     <!-- ════════ FIM WRAPPER FULLSCREEN ════════ -->

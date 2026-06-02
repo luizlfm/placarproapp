@@ -149,6 +149,23 @@ export class StorageService {
     return { url, path };
   }
 
+  /** Helper: imagem lateral do "aviso na tela" (lower-third) de um jogo.
+   *  Path: `users/{uid}/campeonatos/{campId}/categorias/{catId}/jogos/{jogoId}/aviso-tela/{ts}.{ext}` */
+  async uploadAvisoTelaImagem(
+    campeonatoId: string,
+    categoriaId: string,
+    jogoId: string,
+    blob: Blob,
+  ): Promise<{ url: string; path: string }> {
+    const uid = this.auth.currentUser?.uid;
+    if (!uid) throw new Error('Não autenticado');
+    const ext = this.guessExt(blob.type);
+    const ts = Date.now();
+    const path = `users/${uid}/campeonatos/${campeonatoId}/categorias/${categoriaId}/jogos/${jogoId}/aviso-tela/${ts}.${ext}`;
+    const url = await this.upload(path, blob);
+    return { url, path };
+  }
+
   async remove(path: string): Promise<void> {
     await runInInjectionContext(this.injector, async () => {
       const r = ref(this.storage, path);

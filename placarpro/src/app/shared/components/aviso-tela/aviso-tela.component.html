@@ -1,0 +1,17 @@
+<!-- Faixa "lower-third" do recado ao vivo. Só renderiza quando há aviso
+     ativo com texto. A animação de entrada desliza de baixo pra cima. -->
+<div class="av-banner" *ngIf="visivel" role="status" aria-live="polite">
+  <!-- Imagem lateral (logo/foto) — opcional. -->
+  <div class="av-img" *ngIf="aviso?.imagemUrl">
+    <img [src]="aviso!.imagemUrl" alt="" loading="lazy" />
+  </div>
+
+  <!-- Acento vertical (faixa colorida) quando NÃO há imagem, pra dar
+       identidade visual mesmo sem logo. -->
+  <span class="av-accent" *ngIf="!aviso?.imagemUrl"></span>
+
+  <div class="av-texto">
+    <div class="av-titulo">{{ aviso?.texto }}</div>
+    <div class="av-subtitulo" *ngIf="aviso?.subtexto">{{ aviso?.subtexto }}</div>
+  </div>
+</div>

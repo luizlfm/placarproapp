@@ -529,16 +529,21 @@
    - Banner premium ocupa a altura COMPLETA da viewport, encostado na
      borda direita */
 .tr-stage.premium-on {
-  .tr-esteira-ads,
-  .tr-scoreboard {
+  /* Só a esteira (banner pequeno rotativo) some. O PLACAR (.tr-scoreboard)
+     CONTINUA visível e acompanha o vídeo recolhido (~68% à esquerda). */
+  .tr-esteira-ads {
     opacity: 0;
     transition: opacity 350ms ease;
     pointer-events: none;
   }
+  /* O placar acompanha o vídeo recolhido: limita a borda direita à faixa
+     do vídeo (~67%) pra NÃO ficar atrás do banner premium (cortado). */
+  .tr-scoreboard {
+    right: 33%;
+  }
 }
 .tr-stage:not(.premium-on) {
-  .tr-esteira-ads,
-  .tr-scoreboard {
+  .tr-esteira-ads {
     transition: opacity 200ms ease;
   }
 }
@@ -1213,6 +1218,8 @@
   margin: 0 auto;
   padding: 0;
   color: #fff;
+  /* Acompanha o recolher do vídeo na janela premium (right: 33%). */
+  transition: right 350ms ease, left 350ms ease, max-width 350ms ease;
   /* `pointer-events: none` removido pra permitir inspeção via DevTools.
      O scoreboard não tem botões interativos, então é seguro deixar
      pointer-events: auto. Os controles do player (mute/fullscreen) ficam
@@ -1931,15 +1938,14 @@
    Entra deslizando de baixo pra cima com bounce, sai com fade após ~5s. */
 .tr-evento-toast {
   position: absolute;
-  /* CENTRO da área de vídeo — ANTES estava em `bottom: 72px` mas em
-     mobile portrait o toast extrapolava o final do container e ficava
-     cortado/atrás do rodapé do player. Centralizar vertical garante
-     que o GOOL! sempre aparece inteiro, independente do tamanho da
-     área de vídeo. Acima do scoreboard interno (z-index > placar). */
-  top: 50%;
+  /* RODAPÉ do `.tr-stage` (área visível, a pedido) — fica acima dos
+     controles do player e do FAB de chat, sem cobrir o centro da jogada.
+     Ancorado no stage (não no `.tr-video` 16:9, que em tela cheia
+     transborda a viewport e jogava o toast pra fora da tela). */
+  bottom: clamp(70px, 9vh, 100px);
+  top: auto;
   left: 12px;
   right: 12px;
-  transform: translateY(-50%);
   margin: 0 auto;
   z-index: 20;
   width: fit-content;
@@ -2255,36 +2261,34 @@
 /* Entrada: sobe de baixo (translateY 80px) com bounce.
    Centralização horizontal é feita por `margin: 0 auto` no SCSS,
    não pelo translateX — então as keyframes só animam Y. */
-/* IMPORTANTE: o `transform: translateY(-50%)` do .tr-evento-toast vem
-   do centering vertical (`top: 50%`). Os keyframes precisam manter esse
-   offset base e sobrepor a animação por cima — caso contrário a
-   animação pinga o toast lá embaixo da viewport. */
+/* O toast agora é ancorado no RODAPÉ (bottom), então a animação só desliza
+   de baixo pra cima (sem offset de centering). */
 @keyframes toastEntrada {
   0% {
     opacity: 0;
-    transform: translateY(calc(-50% + 80px)) scale(0.9);
+    transform: translateY(40px) scale(0.9);
   }
 
   60% {
     opacity: 1;
-    transform: translateY(calc(-50% - 6px)) scale(1.02);
+    transform: translateY(-4px) scale(1.02);
   }
 
   100% {
     opacity: 1;
-    transform: translateY(-50%) scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 
 @keyframes toastSaida {
   0% {
     opacity: 1;
-    transform: translateY(-50%) scale(1);
+    transform: translateY(0) scale(1);
   }
 
   100% {
     opacity: 0;
-    transform: translateY(calc(-50% + 20px)) scale(0.95);
+    transform: translateY(20px) scale(0.95);
   }
 }
 
@@ -2300,8 +2304,8 @@
 
 @media (max-width: 600px) {
   .tr-evento-toast {
-    /* Mobile: usa o mesmo centro vertical da regra base — não force
-       bottom/top extra. Padding/grid menores pra caber bem. */
+    /* Mobile: herda o `bottom` da regra base (rodapé do stage visível).
+       Só ajusta padding/grid menores pra caber bem. */
     left: 8px;
     right: 8px;
     min-width: auto;
@@ -2402,11 +2406,23 @@
 .tr-video ::ng-deep .tp-card.modo-fullscreen .tp-video-wrap {
   height: auto !important;
   min-height: 0 !important;
+  /* Recolhe/expande suavemente quando entra/sai a janela premium. */
+  transition: width 350ms ease;
 }
 
 :host ::ng-deep .tr-video .tp-card.modo-fullscreen .tp-footer,
 .tr-video ::ng-deep .tp-card.modo-fullscreen .tp-footer {
   flex-shrink: 0 !important;
+}
+
+/* ── Durante a janela PREMIUM: o VÍDEO (não o card) recolhe pra ~68% à
+   esquerda. O card continua em tamanho cheio; a faixa preta da direita
+   fica livre pro banner 9:16 — assim o banner NÃO cobre/corta a imagem
+   da transmissão. O `object-fit: contain` do vídeo só letterboxa. */
+:host ::ng-deep .tr-stage.premium-on .tr-video .tp-card.modo-fullscreen .tp-video-wrap,
+.tr-stage.premium-on .tr-video ::ng-deep .tp-card.modo-fullscreen .tp-video-wrap {
+  width: 68% !important;
+  align-self: flex-start;
 }
 
 .tr-pat-stage {

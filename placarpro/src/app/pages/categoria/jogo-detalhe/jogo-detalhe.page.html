@@ -36,79 +36,8 @@
       <div class="layout">
         <!-- Coluna principal -->
         <div class="main">
-          <!-- ════════════ Ações de transmissão ════════════
-             CTA único: "Transmitir agora" (modal broadcaster LiveKit/câmera).
-             Quando já há uma transmissão ativa (em outro dispositivo), o
-             card fica DESABILITADO e informa o estado — evita duplicar. -->
-          <section class="tx-quick" [class.transmitindo]="(transmissaoLiveAtiva$ | async)">
-            <!-- ═══ Card "Transmitir agora" (LiveKit/câmera) — só pra
-               organizador/moderador com permissão ═══ -->
-            <!-- ── ESTADO 1: NÃO transmitindo → botão "Transmitir agora" ── -->
-            <button type="button"
-              *ngIf="(p.enviarMidias || p.editarResultados) && !(transmissaoLiveAtiva$ | async)"
-              class="tx-card tx-card-camera" (click)="iniciarTransmissaoLive()"
-              title="Transmitir com sua câmera">
-              <div class="tx-card-icon">
-                <ion-icon name="videocam-outline"></ion-icon>
-              </div>
-              <div class="tx-card-info">
-                <div class="tx-card-title">Transmitir agora</div>
-                <div class="tx-card-sub">Sua câmera ao vivo</div>
-              </div>
-              <ion-icon class="tx-card-chevron" name="chevron-forward-outline"></ion-icon>
-            </button>
-
-            <!-- ── ESTADO 2: TRANSMITINDO → card com tempo + Ativar DENTRO ── -->
-            <div
-              *ngIf="(p.enviarMidias || p.editarResultados) && (transmissaoLiveAtiva$ | async)"
-              class="tx-card tx-card-camera ativa tx-card-camera-live"
-              [class.acabando]="(transmissaoTempo$ | async)?.cronometrado && ((transmissaoTempo$ | async)?.restanteSeg || 0) <= 60">
-              <div class="tx-card-camera-head">
-                <div class="tx-card-icon">
-                  <span class="tx-card-live-badge">
-                    <span class="tx-card-live-dot"></span>
-                    AO<br />VIVO
-                  </span>
-                </div>
-                <div class="tx-card-info" *ngIf="(transmissaoTempo$ | async) as tt">
-                  <div class="tx-card-title">Transmitindo</div>
-                  <div class="tx-card-sub">
-                    <ng-container *ngIf="tt.cronometrado; else semCron">
-                      <ion-icon name="time-outline" class="tx-sub-clock"></ion-icon>
-                      Restam <strong>{{ formatarTempoRestante(tt.restanteSeg) }}</strong>
-                    </ng-container>
-                    <ng-template #semCron>Sem limite de tempo (plano)</ng-template>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Botão de ativar crédito DENTRO do card -->
-              <button type="button" class="tx-card-camera-ativar"
-                *ngIf="(transmissaoTempo$ | async) as tt"
-                (click)="ativarCreditoTransmissao()">
-                <ion-icon name="add-circle-outline"></ion-icon>
-                {{ tt.cronometrado ? 'Ativar +' + tt.limiteMin + 'min' : 'Ativar crédito (cronometrar)' }}
-              </button>
-            </div>
-
-            <!-- ═══ Ações de COMPARTILHAR transmissão — só durante live ═══
-               Botões compactos lado a lado, aparecem só quando a
-               transmissão está ATIVA (transmissaoLiveAtiva$ === true).
-               Usam o link PÚBLICO `/transmissao/:campId/:catId/:jogoId`
-               pra qualquer visitante assistir sem login. -->
-            <div class="tx-share-actions" *ngIf="(transmissaoLiveAtiva$ | async)">
-              <button type="button" class="tx-share-btn" (click)="compartilharLinkTransmissao()"
-                title="Compartilhar transmissão">
-                <ion-icon name="share-social-outline"></ion-icon>
-                <span>Compartilhar</span>
-              </button>
-              <button type="button" class="tx-share-btn" (click)="copiarLinkTransmissao()"
-                title="Copiar link da transmissão">
-                <ion-icon name="link-outline"></ion-icon>
-                <span>Copiar link</span>
-              </button>
-            </div>
-          </section>
+          <!-- Ações de transmissão (card "Transmitir agora" / TRANSMITINDO)
+               MOVIDAS pra dentro do `.live-panel` (topo), perto do vídeo. -->
 
           <!-- Antes havia aqui um `<app-transmissao-player modo="compacto">`
              pequeno acima do painel ao vivo. Removido — agora o LiveKit
@@ -294,6 +223,82 @@
              ════════════════════════════════════════════════════════ -->
           <section class="live-panel"
             *ngIf="p.editarResultados && (j.status === 'agendado' || j.status === 'em-andamento')">
+
+            <!-- ════════════ Ações de transmissão (MOVIDO pra cá) ════════════
+               Card "Transmitir agora" (não transmitindo) ou TRANSMITINDO
+               (ao vivo: tempo restante + Ativar +Xmin + Encerrar) + ações de
+               compartilhar. Fica no TOPO do painel, logo acima dos tempos e
+               do vídeo. -->
+            <section class="tx-quick" [class.transmitindo]="(transmissaoLiveAtiva$ | async)">
+              <!-- ── ESTADO 1: NÃO transmitindo → botão "Transmitir agora" ── -->
+              <button type="button"
+                *ngIf="(p.enviarMidias || p.editarResultados) && !(transmissaoLiveAtiva$ | async)"
+                class="tx-card tx-card-camera" (click)="iniciarTransmissaoLive()"
+                title="Transmitir com sua câmera">
+                <div class="tx-card-icon">
+                  <ion-icon name="videocam-outline"></ion-icon>
+                </div>
+                <div class="tx-card-info">
+                  <div class="tx-card-title">Transmitir agora</div>
+                  <div class="tx-card-sub">Sua câmera ao vivo</div>
+                </div>
+                <ion-icon class="tx-card-chevron" name="chevron-forward-outline"></ion-icon>
+              </button>
+
+              <!-- ── ESTADO 2: TRANSMITINDO → card com tempo + Ativar DENTRO ── -->
+              <div
+                *ngIf="(p.enviarMidias || p.editarResultados) && (transmissaoLiveAtiva$ | async)"
+                class="tx-card tx-card-camera ativa tx-card-camera-live"
+                [class.acabando]="(transmissaoTempoLive$ | async)?.cronometrado && ((transmissaoTempoLive$ | async)?.restanteSeg || 0) <= 60">
+                <div class="tx-card-camera-head">
+                  <div class="tx-card-icon">
+                    <span class="tx-card-live-badge">
+                      <span class="tx-card-live-dot"></span>
+                      AO<br />VIVO
+                    </span>
+                  </div>
+                  <div class="tx-card-info" *ngIf="(transmissaoTempoLive$ | async) as tt">
+                    <div class="tx-card-title">Transmitindo</div>
+                    <div class="tx-card-sub">
+                      <ng-container *ngIf="tt.cronometrado; else semCron">
+                        <ion-icon name="time-outline" class="tx-sub-clock"></ion-icon>
+                        Restam <strong>{{ formatarTempoRestante(tt.restanteSeg) }}</strong>
+                      </ng-container>
+                      <ng-template #semCron>Sem limite de tempo (plano)</ng-template>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Ações DENTRO do card: Ativar crédito + Encerrar -->
+                <div class="tx-card-camera-acoes" *ngIf="(transmissaoTempo$ | async) as tt">
+                  <button type="button" class="tx-card-camera-ativar"
+                    (click)="ativarCreditoTransmissao()">
+                    <ion-icon name="add-circle-outline"></ion-icon>
+                    {{ tt.cronometrado ? 'Ativar +' + tt.limiteMin + 'min' : 'Ativar crédito' }}
+                  </button>
+                  <button type="button" class="tx-card-camera-encerrar"
+                    (click)="encerrarTransmissaoLive()">
+                    <ion-icon name="stop-circle-outline"></ion-icon>
+                    Encerrar
+                  </button>
+                </div>
+              </div>
+
+              <!-- Ações de COMPARTILHAR transmissão — só durante live. -->
+              <div class="tx-share-actions" *ngIf="(transmissaoLiveAtiva$ | async)">
+                <button type="button" class="tx-share-btn" (click)="compartilharLinkTransmissao()"
+                  title="Compartilhar transmissão">
+                  <ion-icon name="share-social-outline"></ion-icon>
+                  <span>Compartilhar</span>
+                </button>
+                <button type="button" class="tx-share-btn" (click)="copiarLinkTransmissao()"
+                  title="Copiar link da transmissão">
+                  <ion-icon name="link-outline"></ion-icon>
+                  <span>Copiar link</span>
+                </button>
+              </div>
+            </section>
+
             <!-- ═══════ PRE-JOGO ═══════ -->
             <ng-container *ngIf="j.status === 'agendado'">
               <header class="live-head">
@@ -323,6 +328,7 @@
               </div>
             </ng-container>
             <button type="button" class="dev-test-banner" (click)="testarBannerPremium()"
+              *ngIf="isMaster$ | async"
               title="DEV: força exibição do banner premium por 6s (ignora timer de 7min)">
               <ion-icon name="flask-outline"></ion-icon>
               Testar banner premium
@@ -604,6 +610,13 @@
                 </ng-container>
               </div>
 
+              <!-- ════════ GRID VÍDEO + AÇÕES (gols/cartões) ════════
+               Quando há transmissão, vídeo (esquerda) e os botões de
+               registrar lance (direita) ficam LADO A LADO no desktop, pra
+               o editor ver o vídeo E registrar gols/cartões sem rolar.
+               Sem transmissão, vira 1 coluna (ações em largura total). -->
+              <div class="lp-live-grid" [class.com-video]="(transmissaoLiveAtiva$ | async)">
+
               <!-- Player LiveKit ao vivo + SCOREBOARD broadcast overlay
                (igual o da tela /transmissao). Mostra placar com escudos,
                cronômetro e nome do tempo SOBRE o vídeo, pra o editor ter
@@ -640,6 +653,11 @@
                 <app-premium-overlay [campeonatoId]="campeonatoId" [categoriaId]="categoriaId" [jogoId]="jogoId"
                   [forcedTest]="forcedTestPayload"
                   (visibilidadeMudou)="onPremiumOverlayMudou($event)"></app-premium-overlay>
+
+                <!-- ═══════ RECADO NA TELA (lower-third) ═══════
+                 Faixa do recado ao vivo (preview pro organizador). Mesma
+                 que o público vê — sincroniza via `jogo.avisoTela`. -->
+                <app-aviso-tela [aviso]="j.avisoTela"></app-aviso-tela>
 
                 <!-- ════ Scoreboard broadcast (sobreposto ao vídeo) ════
                  Replicado da tela /transmissao pra UX consistente. -->
@@ -705,6 +723,9 @@
                 </div>
               </div>
 
+              <!-- Coluna DIREITA do grid: ações (gols/cartões) + recado. -->
+              <div class="lp-right-col">
+
               <!-- Quick actions — 2 colunas (mandante / visitante) × 5 ações.
                Em mobile, vira tabela compacta com ícone+label pequena. -->
               <div class="quick-actions">
@@ -744,6 +765,91 @@
                   </div>
                 </div>
               </div>
+
+              <!-- ═══════ RECADO NA TELA (movido pra coluna direita) ═══════
+                   Editor do recado logo abaixo dos botões de gol/cartão —
+                   aproveita o espaço e agrupa os controles da transmissão.
+                   Sincroniza via `jogo.avisoTela`. -->
+              <section class="aviso-editor aviso-editor-compacto"
+                *ngIf="(p.enviarMidias || p.editarResultados) && (transmissaoLiveAtiva$ | async)">
+                <div class="section-head">
+                  <h3 class="section-title">
+                    <ion-icon name="megaphone-outline"></ion-icon>
+                    Recado na tela
+                  </h3>
+                  <span class="aviso-no-ar" *ngIf="j.avisoTela?.ativo">
+                    <span class="aviso-no-ar-dot"></span> No ar
+                  </span>
+                </div>
+
+                <!-- Pré-visualização EDITÁVEL: mesma cara do lower-third
+                     (imagem à esquerda + título/subtítulo à direita). O
+                     organizador digita direto "na faixa". -->
+                <div class="aviso-form aviso-preview">
+                  <!-- Imagem lateral (logo/foto) — igual ao lower-third -->
+                  <div class="aviso-img-box">
+                    <div class="aviso-img-preview" *ngIf="avisoImagemUrl; else semImgAviso">
+                      <img [src]="avisoImagemUrl" alt="" />
+                      <button type="button" class="aviso-img-remove"
+                        (click)="removerImagemAviso()" aria-label="Remover imagem">
+                        <ion-icon name="close"></ion-icon>
+                      </button>
+                    </div>
+                    <ng-template #semImgAviso>
+                      <label class="aviso-img-add" [class.carregando]="avisoEnviandoImagem">
+                        <ion-icon [name]="avisoEnviandoImagem ? 'hourglass-outline' : 'image-outline'"></ion-icon>
+                        <span>{{ avisoEnviandoImagem ? '…' : 'Imagem' }}</span>
+                        <input type="file" accept="image/*" hidden
+                          (change)="escolherImagemAviso($event)" />
+                      </label>
+                    </ng-template>
+                  </div>
+
+                  <!-- Textos editáveis (estilo título/subtítulo da faixa) -->
+                  <div class="aviso-campos">
+                    <input class="aviso-input aviso-input-titulo" type="text" maxlength="80"
+                      placeholder="TÍTULO DO RECADO"
+                      [(ngModel)]="avisoTexto" />
+                    <input class="aviso-input aviso-input-sub" type="text" maxlength="100"
+                      placeholder="Subtítulo (opcional)"
+                      [(ngModel)]="avisoSubtexto" />
+                  </div>
+                </div>
+
+                <!-- Presets rápidos (1 clique) — preenchem o título/subtítulo. -->
+                <div class="aviso-presets">
+                  <button type="button" class="aviso-preset"
+                    *ngFor="let pr of presetsRecado"
+                    (click)="aplicarPresetRecado(pr)">{{ pr.titulo }}</button>
+                </div>
+
+                <!-- Sumir sozinho (~10s) -->
+                <label class="aviso-autosumir">
+                  <input type="checkbox" [(ngModel)]="avisoAutoSumir" />
+                  <span>Sumir sozinho em ~10s</span>
+                </label>
+
+                <div class="aviso-acoes">
+                  <button type="button" class="aviso-btn aviso-btn-exibir"
+                    [disabled]="avisoSalvando || !avisoTexto.trim()"
+                    (click)="exibirAvisoTela()">
+                    <ion-icon name="tv-outline"></ion-icon>
+                    {{ j.avisoTela?.ativo ? 'Atualizar na tela' : 'Exibir na transmissão' }}
+                  </button>
+                  <button type="button" class="aviso-btn aviso-btn-tirar"
+                    *ngIf="j.avisoTela?.ativo"
+                    [disabled]="avisoSalvando"
+                    (click)="tirarAvisoTela()">
+                    <ion-icon name="eye-off-outline"></ion-icon>
+                    Tirar da tela
+                  </button>
+                </div>
+              </section>
+
+              </div>
+              <!-- fim .lp-right-col -->
+              </div>
+              <!-- ════════ FIM GRID VÍDEO + AÇÕES ════════ -->
 
               <!-- Timeline horizontal — visualiza lances posicionados pelo
                minuto (mandante em cima, visitante embaixo da linha

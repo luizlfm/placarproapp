@@ -22,7 +22,7 @@ import {
 } from '@angular/fire/firestore';
 import { Observable, map } from 'rxjs';
 import { Equipe } from './models/equipe.model';
-import { EventoJogo, Jogo, NovoJogoInput } from './models/jogo.model';
+import { AvisoTela, EventoJogo, Jogo, NovoJogoInput } from './models/jogo.model';
 
 @Injectable({ providedIn: 'root' })
 export class JogosService {
@@ -193,6 +193,45 @@ export class JogosService {
         _testePremiumNome: nome,
       } as Partial<Jogo>),
     );
+  }
+
+  /**
+   * Exibe (ou atualiza) o "aviso na tela" (lower-third) do jogo. Grava no
+   * doc do jogo com `ativo: true` — todas as telas que escutam o jogo
+   * (detalhe, transmissão, público) renderizam em tempo real.
+   *
+   * Campos opcionais ausentes são OMITIDOS do objeto (Firestore rejeita
+   * `undefined`). Use `removerAvisoTela` pra tirar da tela.
+   */
+  async salvarAvisoTela(
+    campeonatoId: string,
+    categoriaId: string,
+    jogoId: string,
+    aviso: { texto: string; subtexto?: string; imagemUrl?: string; imagemPath?: string },
+  ): Promise<void> {
+    const payload: AvisoTela = {
+      ativo: true,
+      texto: aviso.texto,
+      atualizadoEm: serverTimestamp() as unknown as Timestamp,
+    };
+    if (aviso.subtexto) payload.subtexto = aviso.subtexto;
+    if (aviso.imagemUrl) payload.imagemUrl = aviso.imagemUrl;
+    if (aviso.imagemPath) payload.imagemPath = aviso.imagemPath;
+    await this.atualizar(campeonatoId, categoriaId, jogoId, { avisoTela: payload });
+  }
+
+  /** Tira o aviso da tela (seta `ativo: false`, preservando texto/imagem
+   *  pra reexibir depois sem redigitar). */
+  async removerAvisoTela(
+    campeonatoId: string,
+    categoriaId: string,
+    jogoId: string,
+    avisoAtual?: AvisoTela | null,
+  ): Promise<void> {
+    const payload: AvisoTela = avisoAtual
+      ? { ...avisoAtual, ativo: false, atualizadoEm: serverTimestamp() as unknown as Timestamp }
+      : { ativo: false, texto: '', atualizadoEm: serverTimestamp() as unknown as Timestamp };
+    await this.atualizar(campeonatoId, categoriaId, jogoId, { avisoTela: payload });
   }
 
   async adicionarEvento(

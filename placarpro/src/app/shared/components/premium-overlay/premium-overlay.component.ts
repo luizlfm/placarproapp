@@ -136,6 +136,12 @@ export class PremiumOverlayComponent implements OnChanges, OnDestroy {
   /** Último `_testePremiumAt` visto — pra detectar mudança e disparar. */
   private ultimoTesteAtMs: number | null = null;
 
+  /** Cache de imagens pré-carregadas (chave = logoUrl). Mantém a referência
+   *  viva pra que a troca de banner na rajada (round-robin) seja instantânea
+   *  — sem isso, ao trocar o `[src]` havia um gap de carregamento que mostrava
+   *  o fundo (flash transparente). */
+  private imagensPrecarregadas = new Map<string, HTMLImageElement>();
+
   private readonly patrSrv = inject(PatrociniosService);
   private readonly txSrv = inject(TransmissoesService);
   private readonly jogosSrv = inject(JogosService);
@@ -230,6 +236,9 @@ export class PremiumOverlayComponent implements OnChanges, OnDestroy {
           const expira = (a.expiraEm as Timestamp | null | undefined)?.toMillis?.();
           return expira == null ? true : expira > agora;
         });
+        // Pré-carrega as imagens dos banners pra que a troca na rajada
+        // (round-robin) seja instantânea, sem flash de fundo transparente.
+        this.precarregarBanners();
         // Se a lista esvaziou e havia janela aberta, força fechar.
         if (this.premiums.length === 0 && this.janelaAberta) {
           this.fecharJanela();
@@ -391,5 +400,27 @@ export class PremiumOverlayComponent implements OnChanges, OnDestroy {
   private cancelarTimers(): void {
     if (this.timerJanela) { clearTimeout(this.timerJanela); this.timerJanela = undefined; }
     if (this.timerFecha) { clearTimeout(this.timerFecha); this.timerFecha = undefined; }
+  }
+
+  /**
+   * Pré-carrega (via `new Image()`) as logos dos patrocínios premium da fila.
+   * Garante que, ao trocar o `[src]` no round-robin, o navegador já tenha o
+   * bitmap em cache e renderize na hora — eliminando o gap de carregamento
+   * que mostrava fundo transparente entre um banner e outro.
+   * Só imagens; vídeos não dá pra pré-decodificar assim (o fundo sólido
+   * preto do `.premium-overlay` cobre o gap nesse caso).
+   */
+  private precarregarBanners(): void {
+    for (const p of this.premiums) {
+      const principal = p.patrocinadores?.[0];
+      const url = principal?.logoUrl;
+      if (!url || this.imagensPrecarregadas.has(url)) continue;
+      const tipo = principal?.tipoMidia ?? detectarTipoMidiaPorUrl(url);
+      if (tipo === 'video') continue;
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = url;
+      this.imagensPrecarregadas.set(url, img);
+    }
   }
 }

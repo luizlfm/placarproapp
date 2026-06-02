@@ -390,92 +390,13 @@
           </div>
         </div>
 
-        <!-- ===== TOAST de Evento ao Vivo (centro do vídeo, ~5s) =====
-             Aparece quando um novo lance é registrado (gol, cartão, etc).
-             Desliza de cima pra baixo, fica visível e some com escala. -->
-        <div
-          class="tr-evento-toast"
-          *ngIf="eventoToast"
-          [ngClass]="classeTipo(eventoToast.tipo)"
-          (click)="fecharEventoToast()"
-          role="status"
-          aria-live="polite"
-        >
-          <div class="tr-toast-icone">
-            <!-- Gol normal OU pênalti convertido — mesma bola comemorativa -->
-            <ion-icon
-              *ngIf="eventoToast.tipo === 'gol' || eventoToast.tipo === 'gol-contra' || eventoToast.tipo === 'pen-convertido'"
-              name="football"
-            ></ion-icon>
-            <span
-              *ngIf="eventoToast.tipo === 'amarelo' || eventoToast.tipo === 'vermelho' || eventoToast.tipo === 'azul'"
-              class="cartao-grande"
-              [class.am]="eventoToast.tipo === 'amarelo'"
-              [class.vm]="eventoToast.tipo === 'vermelho'"
-              [class.az]="eventoToast.tipo === 'azul'"
-            ></span>
-            <ion-icon *ngIf="eventoToast.tipo === 'falta'" name="hand-left-outline"></ion-icon>
-            <!-- Defesa de campo OU pênalti defendido — mesma luva -->
-            <ion-icon
-              *ngIf="eventoToast.tipo === 'defesa' || eventoToast.tipo === 'pen-defendido'"
-              name="hand-right-outline"
-            ></ion-icon>
-            <!-- Pênalti perdido — bola batendo na trave / fora -->
-            <ion-icon
-              *ngIf="eventoToast.tipo === 'pen-perdido'"
-              name="close-circle-outline"
-            ></ion-icon>
-            <ion-icon
-              *ngIf="eventoToast.tipo === 'sub-entrou' || eventoToast.tipo === 'sub-saiu'"
-              name="swap-horizontal-outline"
-            ></ion-icon>
-          </div>
-
-          <div class="tr-toast-corpo">
-            <div class="tr-toast-titulo">
-              {{ labelEvento(eventoToast.tipo) }}
-              <span *ngIf="(eventoToast.quantidade ?? 1) > 1" class="tr-toast-qtd">
-                {{ eventoToast.quantidade }}x
-              </span>
-            </div>
-            <div class="tr-toast-jogador" *ngIf="eventoToast.jogadorNome">
-              <span class="tr-toast-num" *ngIf="eventoToast.jogadorNumero">
-                #{{ eventoToast.jogadorNumero }}
-              </span>
-              {{ eventoToast.jogadorNome }}
-            </div>
-            <!-- Pênalti defendido: destaque do GOLEIRO ADVERSÁRIO -->
-            <div
-              class="tr-toast-goleiro"
-              *ngIf="eventoToast.tipo === 'pen-defendido' && eventoToast.goleiroAdversarioNome"
-            >
-              <ion-icon name="shield-checkmark"></ion-icon>
-              Defesa de <strong>{{ eventoToast.goleiroAdversarioNome }}</strong>
-            </div>
-            <div class="tr-toast-time" *ngIf="eventoToast.equipeNome">
-              <img *ngIf="eventoToast.equipeLogoUrl"
-                   [src]="eventoToast.equipeLogoUrl"
-                   [alt]="eventoToast.equipeNome" />
-              <span>{{ eventoToast.equipeNome }}</span>
-              <span class="tr-toast-min" *ngIf="eventoToast.minuto != null">
-                · {{ eventoToast.minuto }}'
-              </span>
-            </div>
-            <div class="tr-toast-assist" *ngIf="eventoToast.assistenteNome">
-              <ion-icon name="hand-right-outline"></ion-icon>
-              Assistência: {{ eventoToast.assistenteNome }}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            class="tr-toast-close"
-            (click)="$event.stopPropagation(); fecharEventoToast()"
-            aria-label="Fechar"
-          >
-            <ion-icon name="close"></ion-icon>
-          </button>
-        </div>
+        <!-- ===== TOAST de Evento MOVIDO =====
+             Agora é filho direto do `.tr-stage` (vide bottom do template),
+             pelo mesmo motivo do premium-overlay: o `.tr-video` tem aspect
+             16:9 e em tela cheia fica MAIOR que a viewport visível, então
+             ancorar o toast no rodapé DELE jogava o alerta pra fora da tela.
+             No `.tr-stage` (altura = viewport visível) o `bottom` fica
+             sempre dentro da área visível. -->
 
         <!-- ===== Patrocinador (banner esteira) REMOVIDO =====
              O banner agora é controlado pelo próprio `app-transmissao-player`
@@ -747,6 +668,100 @@
       [jogoId]="jogoId"
       (visibilidadeMudou)="onPremiumOverlayMudou($event)"
     ></app-premium-overlay>
+
+    <!-- ═══════ RECADO NA TELA (lower-third) ═══════
+         Faixa do recado ao vivo disparado pelo organizador na tela de
+         detalhe do jogo. Filho direto do `.tr-stage` pra ancorar no rodapé
+         da área visível. -->
+    <app-aviso-tela [aviso]="jogo?.avisoTela"></app-aviso-tela>
+
+    <!-- ═══════ TOAST de Evento ao Vivo (rodapé, ~5s) ═══════
+         Filho direto do `.tr-stage` pra ancorar no rodapé da ÁREA VISÍVEL
+         (não no `.tr-video`, que em tela cheia é maior que a viewport e
+         empurrava o toast pra fora da tela). Desliza de baixo pra cima. -->
+    <div
+      class="tr-evento-toast"
+      *ngIf="eventoToast"
+      [ngClass]="classeTipo(eventoToast.tipo)"
+      (click)="fecharEventoToast()"
+      role="status"
+      aria-live="polite"
+    >
+      <div class="tr-toast-icone">
+        <!-- Gol normal OU pênalti convertido — mesma bola comemorativa -->
+        <ion-icon
+          *ngIf="eventoToast.tipo === 'gol' || eventoToast.tipo === 'gol-contra' || eventoToast.tipo === 'pen-convertido'"
+          name="football"
+        ></ion-icon>
+        <span
+          *ngIf="eventoToast.tipo === 'amarelo' || eventoToast.tipo === 'vermelho' || eventoToast.tipo === 'azul'"
+          class="cartao-grande"
+          [class.am]="eventoToast.tipo === 'amarelo'"
+          [class.vm]="eventoToast.tipo === 'vermelho'"
+          [class.az]="eventoToast.tipo === 'azul'"
+        ></span>
+        <ion-icon *ngIf="eventoToast.tipo === 'falta'" name="hand-left-outline"></ion-icon>
+        <!-- Defesa de campo OU pênalti defendido — mesma luva -->
+        <ion-icon
+          *ngIf="eventoToast.tipo === 'defesa' || eventoToast.tipo === 'pen-defendido'"
+          name="hand-right-outline"
+        ></ion-icon>
+        <!-- Pênalti perdido — bola batendo na trave / fora -->
+        <ion-icon
+          *ngIf="eventoToast.tipo === 'pen-perdido'"
+          name="close-circle-outline"
+        ></ion-icon>
+        <ion-icon
+          *ngIf="eventoToast.tipo === 'sub-entrou' || eventoToast.tipo === 'sub-saiu'"
+          name="swap-horizontal-outline"
+        ></ion-icon>
+      </div>
+
+      <div class="tr-toast-corpo">
+        <div class="tr-toast-titulo">
+          {{ labelEvento(eventoToast.tipo) }}
+          <span *ngIf="(eventoToast.quantidade ?? 1) > 1" class="tr-toast-qtd">
+            {{ eventoToast.quantidade }}x
+          </span>
+        </div>
+        <div class="tr-toast-jogador" *ngIf="eventoToast.jogadorNome">
+          <span class="tr-toast-num" *ngIf="eventoToast.jogadorNumero">
+            #{{ eventoToast.jogadorNumero }}
+          </span>
+          {{ eventoToast.jogadorNome }}
+        </div>
+        <!-- Pênalti defendido: destaque do GOLEIRO ADVERSÁRIO -->
+        <div
+          class="tr-toast-goleiro"
+          *ngIf="eventoToast.tipo === 'pen-defendido' && eventoToast.goleiroAdversarioNome"
+        >
+          <ion-icon name="shield-checkmark"></ion-icon>
+          Defesa de <strong>{{ eventoToast.goleiroAdversarioNome }}</strong>
+        </div>
+        <div class="tr-toast-time" *ngIf="eventoToast.equipeNome">
+          <img *ngIf="eventoToast.equipeLogoUrl"
+               [src]="eventoToast.equipeLogoUrl"
+               [alt]="eventoToast.equipeNome" />
+          <span>{{ eventoToast.equipeNome }}</span>
+          <span class="tr-toast-min" *ngIf="eventoToast.minuto != null">
+            · {{ eventoToast.minuto }}'
+          </span>
+        </div>
+        <div class="tr-toast-assist" *ngIf="eventoToast.assistenteNome">
+          <ion-icon name="hand-right-outline"></ion-icon>
+          Assistência: {{ eventoToast.assistenteNome }}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="tr-toast-close"
+        (click)="$event.stopPropagation(); fecharEventoToast()"
+        aria-label="Fechar"
+      >
+        <ion-icon name="close"></ion-icon>
+      </button>
+    </div>
 
     <!-- FAB "Mostrar painel" foi MOVIDO pra dentro do `.tr-video` (mais
          acima neste template) pra também ficar visível em fullscreen. -->

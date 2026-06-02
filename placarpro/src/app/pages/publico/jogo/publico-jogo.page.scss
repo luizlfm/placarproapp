@@ -15,9 +15,40 @@
 }
 
 /* ═══════ PREMIUM OVERLAY ═══════
-   Quando .live-wrap.premium-on, só a esteira normal some — o vídeo
-   continua sendo exibido normalmente (banner premium fica sobreposto
-   sem recolher o vídeo, decisão do user). */
+   Quando .live-wrap.premium-on:
+   - a esteira normal some (fade-out)
+   - o VÍDEO RECOLHE pra ~68% à esquerda, liberando a faixa direita pro
+     banner 9:16 — assim o banner NÃO cobre/corta a imagem da transmissão.
+   Como o player usa `object-fit: contain`, ele só letterboxa (centraliza)
+   na largura menor, sem cortar. A transição deixa o reajuste suave. */
+.live-wrap {
+  /* O player vira bloco e ocupa a largura toda fora da janela premium.
+     O recolhimento é feito no VÍDEO interno (.tp-video-wrap) via ::ng-deep,
+     que contém o vídeo E o placar (.tp-placar) — então os dois encolhem
+     juntos. Card continua 100% (fundo preto à direita pro banner). */
+  app-transmissao-player {
+    display: block;
+    width: 100%;
+  }
+  ::ng-deep app-transmissao-player .tp-card .tp-video-wrap {
+    transition: width 350ms ease;
+  }
+}
+
 .live-wrap.premium-on {
   .pub-esteira-ads { opacity: 0; transition: opacity 350ms ease; pointer-events: none; }
+
+  /* Vídeo + placar recolhem pra ~68% à esquerda; banner 9:16 fica à direita
+     sobre a faixa preta do card, sem cobrir/cortar a imagem nem o placar. */
+  ::ng-deep app-transmissao-player .tp-card .tp-video-wrap {
+    width: 68% !important;
+    align-self: flex-start;
+  }
+
+  /* Mobile portrait: banner limitado a 50vw — vídeo recolhe um pouco mais. */
+  @media (max-width: 600px) {
+    ::ng-deep app-transmissao-player .tp-card .tp-video-wrap {
+      width: 50% !important;
+    }
+  }
 }

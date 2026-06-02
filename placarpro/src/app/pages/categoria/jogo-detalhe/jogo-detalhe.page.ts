@@ -1,9 +1,9 @@
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { ActionModalService } from '../../../shared/components/action-modal/action-modal.service';
 import { BehaviorSubject, Observable, Subscription, combineLatest, firstValueFrom, interval, of } from 'rxjs';
-import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators';
+import { catchError, map, shareReplay, startWith, switchMap, tap } from 'rxjs/operators';
 import { Timestamp } from '@angular/fire/firestore';
 import { PatrocinadorJogoModalComponent } from './patrocinador-jogo-modal/patrocinador-jogo-modal.component';
 import { CampeonatosService } from '../../../campeonatos/campeonatos.service';
@@ -12,6 +12,7 @@ import { JogosService } from '../../../campeonatos/jogos.service';
 import { EquipesService } from '../../../campeonatos/equipes.service';
 import { Equipe } from '../../../campeonatos/models/equipe.model';
 import {
+  AvisoTela,
   EventoJogo,
   EventoTipo,
   Jogo,
@@ -35,6 +36,7 @@ import { EditarPatrocinioModalComponent } from '../../../shared/components/edita
 import { ReativarPatrocinioModalComponent } from '../../../shared/components/reativar-patrocinio-modal/reativar-patrocinio-modal.component';
 import { dataHoraIsoParaBr } from '../../../shared/directives/mask.directive';
 import { NavBackService } from '../../../shared/nav-back.service';
+import { StorageService } from '../../../shared/storage.service';
 import {
   ModeradorPermissoesService,
   PermissoesEfetivas,
@@ -94,6 +96,7 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
   private readonly patrSrv = inject(PatrociniosService);
   private readonly usersSrv = inject(UsersService);
   private readonly auth = inject(AuthService);
+  private readonly storageSrv = inject(StorageService);
 
   // IDs de rota declarados ANTES de qualquer field reativa que dependa
   // deles (ex: `podeTransmissao$` abaixo). Em class field initializers
@@ -182,10 +185,16 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
    *  esse Observable emite e a UI mostra o player automaticamente. */
   readonly transmissaoLiveAtiva$ = this.transmissoesSrv.ativa$(
     this.campeonatoId, this.categoriaId, this.jogoId,
-  );
+  ).pipe(shareReplay({ bufferSize: 1, refCount: true }));
+
+  /** Admin master — usado pra esconder controles de DEV (ex.: "Testar
+   *  banner premium") do público/organizadores comuns em produção. */
+  readonly isMaster$ = this.usersSrv.isMaster$();
 
   /** Flag pra evitar disparar o fluxo de "tempo esgotado" várias vezes. */
   private tratandoLimiteTransmissao = false;
+  /** Evita repetir o aviso de "tempo acabando" (~5min) na mesma sessão. */
+  private avisou5minTransmissao = false;
   private limiteTransmissaoSub?: Subscription;
 
   /** Cronômetro reativo da partida (string formatada "MM:SS").
@@ -433,6 +442,7 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
           };
         }),
         catchError(() => of(undefined)),
+        shareReplay({ bufferSize: 1, refCount: true }),
       )
     : of(undefined);
 
@@ -467,8 +477,37 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
             cronometrado: horasPagas > 0,
           };
         }),
+        shareReplay({ bufferSize: 1, refCount: true }),
       )
     : of({ totalSeg: 0, horasPagas: 0, limiteMin: 60, orcamentoSeg: 0, restanteSeg: 0, cronometrado: false });
+
+  /**
+   * Versão do orçamento com COUNTDOWN ao vivo (1s). O `transmissaoTempo$`
+   * só recalcula quando o Firestore atualiza `duracaoSegundos` (heartbeat
+   * a cada ~30s), então o "Restam" ficava parado/pulando. Aqui, enquanto a
+   * transmissão está ativa e cronometrada, descontamos os segundos
+   * decorridos localmente desde a última emissão do Firestore — e a cada
+   * nova emissão o baseline é reajustado (re-sincroniza com o servidor).
+   * É só pra EXIBIÇÃO; a lógica de gate continua usando `transmissaoTempo$`.
+   */
+  readonly transmissaoTempoLive$ = combineLatest([
+    this.transmissaoTempo$,
+    this.transmissaoLiveAtiva$,
+  ]).pipe(
+    switchMap(([t, ativa]) => {
+      // Sem crédito cronometrado ou sem transmissão ativa → valor estático.
+      if (!t.cronometrado || !ativa) return of(t);
+      const baseRestante = t.restanteSeg;
+      const t0 = Date.now();
+      return interval(1000).pipe(
+        startWith(0),
+        map(() => {
+          const decorrido = Math.floor((Date.now() - t0) / 1000);
+          return { ...t, restanteSeg: Math.max(0, baseRestante - decorrido) };
+        }),
+      );
+    }),
+  );
 
   private readonly jogadores$ = this.campeonatoId && this.categoriaId
     ? this.jogadoresSrv.list$(this.campeonatoId, this.categoriaId).pipe(
@@ -649,7 +688,11 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
     // Sobe um setInterval enquanto o jogo está em-andamento. Lê
     // `iniciadoEm` (Timestamp Firestore) pra calcular o offset.
     // Quando o status muda pra encerrado, segura o último valor.
-    this.jogo$.subscribe(j => this.sincronizarCronometro(j));
+    this.jogo$.subscribe(j => {
+      this.sincronizarCronometro(j);
+      this.statusJogoAtual = j?.status;
+      if (j) this.prefilAvisoTela(j);
+    });
 
     // Vigia o limite de tempo de transmissão (auto-encerra / renova).
     this.vigiarLimiteTransmissao();
@@ -673,6 +716,29 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.pararCronometro();
     this.limiteTransmissaoSub?.unsubscribe();
+    if (this.avisoAutoSumirTimer) window.clearTimeout(this.avisoAutoSumirTimer);
+  }
+
+  /** Status do jogo cacheado (pra atalhos de teclado, que rodam síncronos). */
+  private statusJogoAtual?: JogoStatus;
+
+  /**
+   * Atalhos de teclado pro narrador durante o jogo ao vivo:
+   *   1 → Gol do mandante   |   2 → Gol do visitante
+   * Abre o modal de lance pré-preenchido (não grava direto). Ignorado
+   * quando o foco está num campo de texto (ex.: editor de recado) ou com
+   * modificadores, e só vale em-andamento pra quem edita resultados.
+   */
+  @HostListener('document:keydown', ['$event'])
+  onAtalhoTeclado(ev: KeyboardEvent): void {
+    if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    if (this.statusJogoAtual !== 'em-andamento') return;
+    const alvo = ev.target as HTMLElement | null;
+    const tag = alvo?.tagName?.toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'ion-input' ||
+        tag === 'ion-textarea' || alvo?.isContentEditable) return;
+    if (ev.key === '1') { ev.preventDefault(); void this.adicionarLance('mandante', 'gol'); }
+    else if (ev.key === '2') { ev.preventDefault(); void this.adicionarLance('visitante', 'gol'); }
   }
 
   /** Sincroniza o estado do cronômetro com o jogo atual.
@@ -1024,6 +1090,13 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
       this.transmissaoLiveAtiva$,
       this.transmissaoTempo$,
     ]).subscribe(([ativa, t]) => {
+      // Aviso de "tempo acabando" (~5min) — uma vez por sessão; reseta se
+      // o tempo voltar a subir (renovou crédito).
+      if (t.restanteSeg > 300) this.avisou5minTransmissao = false;
+      if (ativa && t.cronometrado && t.restanteSeg > 0 && t.restanteSeg <= 300 && !this.avisou5minTransmissao) {
+        this.avisou5minTransmissao = true;
+        void this.toastTx(`Faltam ~5 min — ative +${t.limiteMin}min pra não cair.`, 'warning');
+      }
       if (!ativa || !t.cronometrado || t.restanteSeg > 0) return;
       if (this.tratandoLimiteTransmissao) return;
       this.tratandoLimiteTransmissao = true;
@@ -1143,6 +1216,37 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
   }
 
   /**
+   * Encerra a transmissão ao vivo pelo botão do card "TRANSMITINDO".
+   * Pede confirmação e seta a transmissão como inativa (a UI volta ao
+   * estado normal; o player/modal detecta e desconecta).
+   */
+  async encerrarTransmissaoLive(): Promise<void> {
+    const ativa = await firstValueFrom(this.transmissaoLiveAtiva$);
+    if (!ativa?.id) {
+      await this.toastTx('Nenhuma transmissão ativa pra encerrar.', 'medium');
+      return;
+    }
+    const alert = await this.alertCtrl.create({
+      header: 'Encerrar transmissão?',
+      message: 'A transmissão ao vivo será finalizada para todos os espectadores.',
+      buttons: [
+        { text: 'Continuar transmitindo', role: 'cancel' },
+        {
+          text: 'Encerrar',
+          role: 'destructive',
+          handler: () => {
+            void this.transmissoesSrv
+              .encerrar(this.campeonatoId, this.categoriaId, this.jogoId, ativa.id!)
+              .then(() => this.toastTx('Transmissão encerrada.', 'success'))
+              .catch(() => this.toastTx('Falha ao encerrar. Tente novamente.', 'danger'));
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  /**
    * Alerta "sem créditos" com atalho pra comprar — redireciona pra
    * /app/meus-creditos. Reutilizado em todos os pontos de débito.
    */
@@ -1177,6 +1281,147 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
   private async toastTx(message: string, color: 'success' | 'danger' | 'warning' | 'medium'): Promise<void> {
     const t = await this.toastCtrl.create({ message, duration: 3000, position: 'top', color });
     await t.present();
+  }
+
+  // ═══════════════════ AVISO NA TELA (lower-third) ═══════════════════
+  // Recado ao vivo que o organizador escreve aqui e exibe na transmissão
+  // (e pros espectadores do modo público). Sincroniza via `jogo.avisoTela`.
+
+  /** Campos do editor — prefilados 1x do `jogo.avisoTela` ao carregar. */
+  avisoTexto = '';
+  avisoSubtexto = '';
+  avisoImagemUrl = '';
+  avisoImagemPath = '';
+  /** Estado de loading pra desabilitar os botões enquanto grava/sobe. */
+  avisoSalvando = false;
+  avisoEnviandoImagem = false;
+  /** Quando true, o recado some sozinho ~10s depois de exibido. */
+  avisoAutoSumir = false;
+  /** Timer do auto-sumir (limpo ao tirar/re-exibir/destruir). */
+  private avisoAutoSumirTimer?: number;
+  /** Segundos até o auto-sumir. */
+  private readonly AVISO_AUTO_SUMIR_SEG = 10;
+  /** Garante que o prefil do editor rode só uma vez (não atropela a
+   *  digitação do organizador a cada snapshot do Firestore). */
+  private avisoPrefilFeito = false;
+
+  /** Presets de recado (1 clique) pra agilizar ao vivo. */
+  readonly presetsRecado: ReadonlyArray<{ titulo: string; subtexto: string }> = [
+    { titulo: 'GOOOL!', subtexto: '' },
+    { titulo: 'SIGA A GENTE!', subtexto: 'Acompanhe nas redes sociais' },
+    { titulo: 'INTERVALO', subtexto: 'Já voltamos — não saia daí!' },
+    { titulo: 'CHAME OS AMIGOS', subtexto: 'Compartilhe a transmissão!' },
+  ];
+
+  /** Aplica um preset nos campos do editor (não exibe sozinho). */
+  aplicarPresetRecado(p: { titulo: string; subtexto: string }): void {
+    this.avisoTexto = p.titulo;
+    this.avisoSubtexto = p.subtexto;
+  }
+
+  /** Prefila os campos do editor com o aviso salvo no jogo (uma vez). */
+  private prefilAvisoTela(j: Jogo): void {
+    if (this.avisoPrefilFeito) return;
+    this.avisoPrefilFeito = true;
+    const a = j.avisoTela;
+    if (!a) return;
+    this.avisoTexto = a.texto || '';
+    this.avisoSubtexto = a.subtexto || '';
+    this.avisoImagemUrl = a.imagemUrl || '';
+    this.avisoImagemPath = a.imagemPath || '';
+  }
+
+  /** True quando o aviso está atualmente NO AR (ativo no doc do jogo). */
+  async avisoNoAr(): Promise<boolean> {
+    const j = await firstValueFrom(this.jogo$);
+    return !!j?.avisoTela?.ativo;
+  }
+
+  /** Upload da imagem lateral do aviso (input file → Storage). */
+  async escolherImagemAviso(ev: Event): Promise<void> {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      await this.toastTx('Selecione um arquivo de imagem.', 'danger');
+      input.value = '';
+      return;
+    }
+    this.avisoEnviandoImagem = true;
+    try {
+      const { url, path } = await this.storageSrv.uploadAvisoTelaImagem(
+        this.campeonatoId, this.categoriaId, this.jogoId, file,
+      );
+      this.avisoImagemUrl = url;
+      this.avisoImagemPath = path;
+      // Se já está no ar, atualiza a imagem em tempo real.
+      if (await this.avisoNoAr()) await this.exibirAvisoTela(true);
+    } catch (err) {
+      console.error('[AvisoTela] upload falhou', err);
+      await this.toastTx('Falha ao enviar a imagem.', 'danger');
+    } finally {
+      this.avisoEnviandoImagem = false;
+      input.value = '';
+    }
+  }
+
+  /** Remove a imagem lateral do editor (não deleta do Storage — barato). */
+  removerImagemAviso(): void {
+    this.avisoImagemUrl = '';
+    this.avisoImagemPath = '';
+  }
+
+  /**
+   * Exibe o recado na tela (grava `avisoTela.ativo = true`). Aparece em
+   * tempo real na transmissão e no público. `silencioso` evita o toast
+   * quando é só uma re-gravação automática (ex.: trocou a imagem no ar).
+   */
+  async exibirAvisoTela(silencioso = false): Promise<void> {
+    const texto = this.avisoTexto.trim();
+    if (!texto) {
+      await this.toastTx('Escreva o texto do recado primeiro.', 'medium');
+      return;
+    }
+    this.avisoSalvando = true;
+    try {
+      await this.jogosSrv.salvarAvisoTela(this.campeonatoId, this.categoriaId, this.jogoId, {
+        texto,
+        subtexto: this.avisoSubtexto.trim() || undefined,
+        imagemUrl: this.avisoImagemUrl || undefined,
+        imagemPath: this.avisoImagemPath || undefined,
+      });
+      if (!silencioso) await this.toastTx('Recado no ar!', 'success');
+      // Auto-sumir: agenda a remoção (o broadcaster grava ativo:false, então
+      // some pra TODOS — transmissão e público). Só (re)agenda no exibir
+      // explícito, não na re-gravação silenciosa (ex.: troca de imagem).
+      if (this.avisoAutoSumirTimer) { window.clearTimeout(this.avisoAutoSumirTimer); this.avisoAutoSumirTimer = undefined; }
+      if (!silencioso && this.avisoAutoSumir) {
+        this.avisoAutoSumirTimer = window.setTimeout(() => {
+          void this.tirarAvisoTela(true);
+        }, this.AVISO_AUTO_SUMIR_SEG * 1000);
+      }
+    } catch (err) {
+      console.error('[AvisoTela] exibir falhou', err);
+      await this.toastTx('Não foi possível exibir o recado.', 'danger');
+    } finally {
+      this.avisoSalvando = false;
+    }
+  }
+
+  /** Tira o recado da tela (preserva texto/imagem pra reexibir). */
+  async tirarAvisoTela(silencioso = false): Promise<void> {
+    if (this.avisoAutoSumirTimer) { window.clearTimeout(this.avisoAutoSumirTimer); this.avisoAutoSumirTimer = undefined; }
+    this.avisoSalvando = true;
+    try {
+      const j = await firstValueFrom(this.jogo$);
+      await this.jogosSrv.removerAvisoTela(this.campeonatoId, this.categoriaId, this.jogoId, j?.avisoTela);
+      if (!silencioso) await this.toastTx('Recado removido da tela.', 'medium');
+    } catch (err) {
+      console.error('[AvisoTela] tirar falhou', err);
+      await this.toastTx('Não foi possível remover o recado.', 'danger');
+    } finally {
+      this.avisoSalvando = false;
+    }
   }
 
   async abrirMenu(ev: Event): Promise<void> {

@@ -32,7 +32,12 @@
   display: flex;
   align-items: stretch;
   justify-content: center;
-  background: transparent;
+  /* Fundo sólido escuro (não transparente): na rajada com vários banners,
+     ao trocar o `[src]` da img, há um intervalo até a nova carregar. Sem
+     fundo, esse gap mostrava o vídeo atrás (flash "transparente"). O preto
+     casa com a faixa letterbox do vídeo recolhido, então o gap fica
+     imperceptível. */
+  background: #000;
   pointer-events: auto;
   animation: premium-fade-in 350ms ease-out;
 

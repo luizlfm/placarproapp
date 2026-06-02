@@ -87,6 +87,26 @@ export interface PatrocinadorJogo {
   logoPath?: string;
 }
 
+/**
+ * Recado/aviso ao vivo ("lower-third" estilo TV) que o organizador dispara
+ * na tela de transmissão. Sincroniza via doc do jogo, então aparece em
+ * tempo real tanto na transmissão do organizador quanto pros espectadores
+ * do modo público. Fica fixo até o organizador tirar (`ativo: false`).
+ */
+export interface AvisoTela {
+  /** Quando true, a faixa é exibida na transmissão e no público. */
+  ativo: boolean;
+  /** Linha principal (título), em destaque/maiúsculas. */
+  texto: string;
+  /** Linha secundária (subtítulo), opcional. */
+  subtexto?: string;
+  /** Imagem lateral (logo/foto) à esquerda da faixa, opcional. */
+  imagemUrl?: string;
+  /** Path no Storage da imagem — pra deletar/substituir depois. */
+  imagemPath?: string;
+  atualizadoEm?: Timestamp;
+}
+
 /** Ajuste manual de pontos (bônus ou penalidade) aplicado por partida. */
 export interface PontosExtras {
   /** Pontos extras pra equipe mandante (positivo = bônus, negativo = penalidade). */
@@ -129,6 +149,10 @@ export interface Jogo {
   titulo?: string;
   /** Aviso/recado livre exibido na partida. */
   aviso?: string;
+
+  /** Recado ao vivo (lower-third) exibido na transmissão + público.
+   *  Disparado pelo organizador na tela de detalhe do jogo. */
+  avisoTela?: AvisoTela | null;
 
   /** Árbitros da partida. */
   arbitros?: ArbitroJogo[];

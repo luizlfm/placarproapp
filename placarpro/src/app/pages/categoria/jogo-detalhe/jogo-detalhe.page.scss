@@ -878,23 +878,21 @@ ion-content {
      + Copiar link ficam todos em UMA LINHA SÓ (no desktop), mais
      compactos. Em mobile vira coluna como antes. */
   &.transmitindo {
-    grid-template-columns: minmax(0, 1.4fr) auto auto;
-    gap: 8px;
+    /* Barra de transmissão PROFISSIONAL: o card de status (AO VIVO + tempo
+       restante + Ativar/Encerrar) é uma BARRA HORIZONTAL à esquerda que
+       preenche o espaço; Compartilhar/Copiar ficam agrupados à DIREITA
+       (margin-left:auto). Sem cards flutuando nem espaços soltos. */
+    display: flex;
+    flex-wrap: wrap;
     align-items: stretch;
+    gap: 10px;
 
-    @media (max-width: 900px) {
-      grid-template-columns: minmax(0, 1fr) auto auto;
-    }
-    @media (max-width: 600px) {
-      grid-template-columns: 1fr;
-    }
-
-    /* O card "Transmitindo" fica mais baixo e compacto */
     .tx-card-camera {
-      padding: 8px 12px;
-      gap: 10px;
+      flex: 1 1 420px;
+      padding: 8px 14px;
+      gap: 12px;
       border-radius: 10px;
-      min-height: 48px;
+      min-height: 52px;
 
       .tx-card-icon {
         width: 34px;
@@ -908,34 +906,37 @@ ion-content {
       .tx-card-live-badge { font-size: 7.5px; }
     }
 
-    /* Botões share lado a lado, NÃO mais grid-column 1/-1 */
+    /* Compartilhar + Copiar: grupo compacto colado à direita. */
     .tx-share-actions {
-      display: contents; /* libera os filhos pra entrarem direto no grid */
+      display: flex;
+      gap: 8px;
+      margin-left: auto;
+      align-items: center;
     }
     .tx-share-btn {
-      padding: 8px 14px;
-      font-size: 12.5px;
+      padding: 9px 14px;
+      font-size: 12px;
       gap: 6px;
       border-radius: 10px;
-      border-width: 1.5px;
-      align-self: stretch;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #fff;
       ion-icon { font-size: 15px; }
-
       span { display: inline; }
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        transform: none;
+      }
+      &:active { transform: scale(0.96); }
     }
 
-    /* Em mobile, share-actions volta a ser linha de 2 colunas embaixo */
+    /* Mobile: card e ações ocupam a largura toda (empilham). */
     @media (max-width: 600px) {
-      .tx-share-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        grid-column: 1 / -1;
-      }
-      .tx-card-camera {
-        padding: 10px 14px;
-        min-height: 56px;
-      }
+      .tx-card-camera { flex: 1 1 100%; padding: 10px 14px; min-height: 56px; }
+      .tx-share-actions { flex: 1 1 100%; margin-left: 0; }
+      .tx-share-btn { flex: 1 1 0; justify-content: center; }
     }
   }
 }
@@ -1084,6 +1085,26 @@ ion-content {
     background: linear-gradient(135deg, var(--ion-color-secondary, #7CC61D) 0%, #5a9912 100%);
     color: #fff;
     box-shadow: 0 2px 8px rgba(124, 198, 29, 0.30);
+  }
+
+  /* Estado "TRANSMITIR AGORA" (não transmitindo): CTA VERDE sólido — combina
+     com o painel escuro (em vez de card branco) e convida a ir ao vivo. */
+  &:not(.ativa) {
+    background: linear-gradient(135deg, var(--ion-color-secondary, #7CC61D) 0%, #5a9912 100%);
+    border-color: transparent;
+    box-shadow: 0 6px 18px rgba(124, 198, 29, 0.28);
+
+    &::before { content: none; }
+    &:hover { border-color: transparent; filter: brightness(1.05); }
+
+    .tx-card-icon {
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      box-shadow: none;
+    }
+    .tx-card-title { color: #fff; }
+    .tx-card-sub { color: rgba(255, 255, 255, 0.9); }
+    .tx-card-chevron { color: rgba(255, 255, 255, 0.9); }
   }
 
   /* Estado "ATIVA" — quando está transmitindo agora. Vermelho pulsante. */
@@ -2248,6 +2269,37 @@ ion-content {
 }
 
 /* Área do vídeo ao vivo — 16:9 responsivo. */
+/* ════════════════════════════════════════════════════════════════
+   GRID VÍDEO + AÇÕES (gols/cartões) — no painel ao vivo.
+   Quando há transmissão (.com-video), o vídeo fica à esquerda e os
+   botões de registrar lance à direita, lado a lado no desktop, pra o
+   editor não precisar rolar pra ver/registrar gols e cartões. Sem
+   transmissão (ou em telas estreitas) vira 1 coluna empilhada.
+   ════════════════════════════════════════════════════════════════ */
+.lp-live-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  align-items: start;
+
+  &.com-video {
+    @media (min-width: 900px) {
+      grid-template-columns: minmax(0, 2fr) minmax(300px, 0.92fr);
+
+      /* O gap do grid já espaça — remove a margem inferior do vídeo. */
+      .live-video {
+        margin-bottom: 0;
+      }
+
+      /* Coluna da direita estreita: empilha mandante/visitante (cada um
+         com os 5 botões em largura total) em vez de 2 sub-colunas. */
+      .quick-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+  }
+}
+
 .live-video {
   position: relative;
   width: 100%;
@@ -2257,6 +2309,11 @@ ion-content {
   overflow: hidden;
   background: #000;
   z-index: 1;
+  /* Referência pra container queries: o placar (.ld-scoreboard) e o recado
+     (app-aviso-tela) escalam com a LARGURA DO VÍDEO (cqw), não com a
+     viewport — assim não ficam gigantes quando o vídeo é o preview menor
+     da coluna ao lado dos botões de gol/cartão. */
+  container-type: inline-size;
 
   iframe {
     position: absolute;
@@ -2287,18 +2344,38 @@ ion-content {
    - z-index do overlay garante que ele fica POR CIMA do vídeo, mas
      o vídeo continua rodando atrás. */
 .live-video.premium-on {
-  .ld-esteira-ads,
-  .ld-scoreboard {
+  /* Só a esteira (banner pequeno) some na janela premium. O PLACAR
+     (.ld-scoreboard) CONTINUA visível sobre o vídeo recolhido. */
+  .ld-esteira-ads {
     opacity: 0;
     transition: opacity 350ms ease;
     pointer-events: none;
   }
+  /* O placar acompanha o vídeo recolhido (~68% à esquerda): limita a borda
+     direita à faixa do vídeo pra NÃO ficar atrás do banner (cortado). */
+  .ld-scoreboard {
+    right: 33%;
+  }
 }
 /* Suavidade ao SAIR do estado premium (cobre transition reverso) */
 .live-video:not(.premium-on) {
-  .ld-esteira-ads,
-  .ld-scoreboard {
+  .ld-esteira-ads {
     transition: opacity 200ms ease;
+  }
+}
+
+/* MOBILE: durante o banner premium, o placar recolhe pra caber na faixa
+   do vídeo (esquerda) e NÃO ficar atrás do banner 9:16 à direita. O
+   override mobile base usa `right: 89px !important`, então precisamos de
+   `!important` + seletor mais específico (.premium-on) pra vencer. */
+@media (max-width: 600px) {
+  .live-video.premium-on .ld-scoreboard {
+    /* Faixa = vídeo visível à esquerda do banner (banner 9:16 ≈ 32%).
+       `margin: 0 auto` centraliza o placar nessa faixa. */
+    left: 0 !important;
+    right: 34% !important;
+    margin: 0 auto !important;
+    max-width: 188px !important;
   }
 }
 
@@ -2321,10 +2398,37 @@ ion-content {
   height: auto !important;
   min-height: 0 !important;
   flex: 1 !important;
+  /* Recolhe/expande suavemente quando entra/sai a janela premium. */
+  transition: width 350ms ease;
 }
 :host ::ng-deep .live-video .tp-card.modo-fullscreen .tp-footer,
 .live-video ::ng-deep .tp-card.modo-fullscreen .tp-footer {
   flex-shrink: 0 !important;
+}
+
+/* ── Durante a janela PREMIUM: o VÍDEO (não o card) recolhe pra ~68% à
+   esquerda. O card continua em tamanho cheio (altura preservada); a faixa
+   preta da direita fica livre pro banner 9:16 — assim o banner NÃO cobre
+   a imagem da transmissão. O `object-fit: contain` do vídeo só letterboxa. */
+:host ::ng-deep .live-video.premium-on .tp-card.modo-fullscreen .tp-video-wrap,
+.live-video.premium-on ::ng-deep .tp-card.modo-fullscreen .tp-video-wrap {
+  width: 68% !important;
+  align-self: flex-start;
+}
+
+/* ── MOBILE: deixar IGUAL ao web ──
+   O banner premium tem um teto `max-width: 50vw` no mobile (pensado pro
+   modo tela cheia portrait, onde o 9:16 fica largo). Aqui dentro do
+   `.live-video` (16:9) isso deixava o banner largo demais, sobrepondo o
+   vídeo. Removendo o teto SÓ neste container, o banner volta a ser 9:16
+   natural (~31% da largura do vídeo) e fica ao lado do vídeo (68%),
+   exatamente como no desktop/web. NÃO afeta a transmissão/público em
+   tela cheia (que usam `.tr-stage`/`.live-wrap`). */
+@media (max-width: 600px) {
+  :host ::ng-deep .live-video .premium-overlay,
+  .live-video ::ng-deep .premium-overlay {
+    max-width: none !important;
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -2348,16 +2452,26 @@ ion-content {
      patrocinador que está no canto superior esquerdo. Em mobile,
      o left começa após o banner (~100px); em desktop, o margin: auto
      centraliza. Top e largura também escalam suave. */
-  top: clamp(4px, 1.2vw, 14px);
-  left: clamp(4px, 1.2vw, 14px);
-  right: clamp(4px, 1.2vw, 14px);
+  top: clamp(4px, 1.2cqw, 14px);
+  left: clamp(4px, 1.2cqw, 14px);
+  right: clamp(4px, 1.2cqw, 14px);
   z-index: 3;
-  max-width: 520px;
+  max-width: 460px;
   margin: 0 auto;
+  /* Acompanha o recolher do vídeo na janela premium (ver regra premium-on). */
+  transition: right 350ms ease, left 350ms ease, max-width 350ms ease;
   background: transparent;
   border: none;
   box-shadow: none;
   color: #fff;
+
+  /* Desktop (coluna do vídeo larga): encolhe ~20% e centraliza pra cima
+     pra o placar não ficar grande nem cobrir o banner do patrocinador no
+     canto superior esquerdo. Mobile mantém os valores fixos validados. */
+  @media (min-width: 900px) {
+    transform: scale(0.8);
+    transform-origin: top center;
+  }
   /* `pointer-events: none` removido — antes bloqueava cliques no vídeo,
      mas também impedia o DevTools de capturar o elemento via "Select".
      Como o scoreboard é só visualização (não tem botões clicáveis), liberá-lo
@@ -2370,15 +2484,15 @@ ion-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(3px, 0.6vw, 6px);
+  gap: clamp(3px, 0.6cqw, 6px);
   /* Padding lateral responsivo — em mobile deixa mais apertado */
-  padding: clamp(2px, 0.4vw, 4px) clamp(20px, 5vw, 56px);
+  padding: clamp(2px, 0.4cqw, 4px) clamp(20px, 5cqw, 56px);
   margin: 0 auto;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.94) 0%, rgba(20, 33, 44, 0.96) 100%);
   border-radius: 6px 6px 0 0;
   border: 1px solid rgba(255, 255, 255, 0.10);
   border-bottom: none;
-  font-size: clamp(6.5px, 1vw, 9.5px);
+  font-size: clamp(6.5px, 1cqw, 9.5px);
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.30);
 
   .ld-sb-camp-nome {
@@ -2389,11 +2503,11 @@ ion-content {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: clamp(90px, 22vw, 200px);
+    max-width: clamp(90px, 22cqw, 200px);
   }
   .ld-sb-camp-sep {
     color: rgba(255, 255, 255, 0.40);
-    font-size: clamp(7px, 1.3vw, 12px);
+    font-size: clamp(7px, 1.3cqw, 12px);
     line-height: 1;
   }
   .ld-sb-camp-cat {
@@ -2404,7 +2518,7 @@ ion-content {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: clamp(60px, 15vw, 140px);
+    max-width: clamp(60px, 15cqw, 140px);
   }
   .ld-sb-status { display: none; }
 }
@@ -2416,9 +2530,9 @@ ion-content {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: stretch;
-  gap: clamp(2px, 0.5vw, 4px);
-  height: clamp(26px, 4.5vw, 38px);
-  padding: clamp(2px, 0.4vw, 3px);
+  gap: clamp(2px, 0.5cqw, 4px);
+  height: clamp(26px, 4.5cqw, 38px);
+  padding: clamp(2px, 0.4cqw, 3px);
   background: linear-gradient(180deg,
     var(--ion-color-primary-shade, #000000) 0%,
     var(--ion-color-primary, #000000) 50%,
@@ -2453,18 +2567,18 @@ ion-content {
 
   &.mandante {
     /* Padding-left responsivo pra acompanhar o tamanho do escudo */
-    padding: 0 clamp(4px, 1vw, 8px) 0 clamp(20px, 4vw, 36px);
+    padding: 0 clamp(4px, 1cqw, 8px) 0 clamp(20px, 4cqw, 36px);
     justify-content: flex-start;
     flex-direction: row;
     .ld-sb-nome { text-align: left; }
-    .ld-sb-escudo { left: clamp(-14px, -2.4vw, -24px); }
+    .ld-sb-escudo { left: clamp(-14px, -2.4cqw, -24px); }
   }
   &.visitante {
-    padding: 0 clamp(20px, 4vw, 36px) 0 clamp(4px, 1vw, 8px);
+    padding: 0 clamp(20px, 4cqw, 36px) 0 clamp(4px, 1cqw, 8px);
     justify-content: flex-end;
     flex-direction: row-reverse;
     .ld-sb-nome { text-align: right; }
-    .ld-sb-escudo { right: clamp(-14px, -2.4vw, -24px); }
+    .ld-sb-escudo { right: clamp(-14px, -2.4cqw, -24px); }
   }
 
   /* Logo CIRCULAR responsivo */
@@ -2472,15 +2586,15 @@ ion-content {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: clamp(24px, 5vw, 48px);
-    height: clamp(24px, 5vw, 48px);
+    width: clamp(24px, 5cqw, 48px);
+    height: clamp(24px, 5cqw, 48px);
     border-radius: 50%;
     background: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    padding: clamp(1px, 0.25vw, 2px);
+    padding: clamp(1px, 0.25cqw, 2px);
     z-index: 3;
     box-shadow:
       0 0 0 2px #fff,
@@ -2488,16 +2602,16 @@ ion-content {
       0 4px 12px rgba(0, 0, 0, 0.55);
 
     img { width: 100%; height: 100%; object-fit: contain; }
-    ion-icon { font-size: clamp(12px, 2.4vw, 22px); color: var(--ion-color-medium, #92949c); }
+    ion-icon { font-size: clamp(12px, 2.4cqw, 22px); color: var(--ion-color-medium, #92949c); }
   }
 
   .ld-sb-nome {
     flex: 1;
     min-width: 0;
-    font-size: clamp(7.5px, 1.3vw, 11.5px);
+    font-size: clamp(7.5px, 1.3cqw, 11.5px);
     font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: clamp(0px, 0.08vw, 0.7px);
+    letter-spacing: clamp(0px, 0.08cqw, 0.7px);
     color: #fff;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.50);
     white-space: nowrap;
@@ -2647,9 +2761,9 @@ ion-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(2px, 0.6vw, 5px);
-  padding: 0 clamp(4px, 1.2vw, 10px);
-  min-width: clamp(28px, 6.5vw, 56px);
+  gap: clamp(2px, 0.6cqw, 5px);
+  padding: 0 clamp(4px, 1.2cqw, 10px);
+  min-width: clamp(28px, 6.5cqw, 56px);
   background: linear-gradient(180deg,
     var(--placar-surface, #fff) 0%,
     var(--ion-color-light, #F6F7F9) 100%);
@@ -2665,18 +2779,18 @@ ion-content {
   font-weight: 900;
 
   .ld-sb-gols {
-    font-size: clamp(10px, 2.3vw, 18px);
+    font-size: clamp(10px, 2.3cqw, 18px);
     font-weight: 900;
     line-height: 1;
     color: var(--ion-color-primary, #000000);
     font-family: 'SF Mono', 'Roboto Mono', 'Menlo', 'Consolas', monospace;
-    min-width: clamp(9px, 2vw, 16px);
+    min-width: clamp(9px, 2cqw, 16px);
     text-align: center;
     letter-spacing: -0.5px;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
   }
   .ld-sb-x {
-    font-size: clamp(7px, 1.4vw, 11px);
+    font-size: clamp(7px, 1.4cqw, 11px);
     font-weight: 700;
     color: var(--placar-text-muted, #6B7280);
     font-family: 'SF Mono', 'Roboto Mono', monospace;
@@ -4209,10 +4323,12 @@ ion-content {
 
 /* Card "TRANSMITINDO" em coluna (cabeçalho + botão Ativar dentro) */
 .tx-card-camera-live {
+  /* Barra HORIZONTAL: status (esquerda) + ações Ativar/Encerrar (direita). */
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
   cursor: default;
 
   &:hover { transform: none; box-shadow: none; }
@@ -4225,7 +4341,9 @@ ion-content {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
 
   .tx-card-sub {
     white-space: normal;        /* deixa "Restam MM:SS" respirar */
@@ -4237,16 +4355,22 @@ ion-content {
   .tx-sub-clock { font-size: 14px; color: #be123c; }
 }
 
-.tx-card-camera-ativar {
+/* Ações do card "TRANSMITINDO" (Ativar + Encerrar) — compactas à direita. */
+.tx-card-camera-acoes {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.tx-card-camera-ativar,
+.tx-card-camera-encerrar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  width: 100%;
   border: none;
   border-radius: 10px;
   padding: 11px 14px;
-  background: var(--ion-color-secondary, #7CC61D);
   color: #fff;
   font-size: 13px;
   font-weight: 800;
@@ -4256,4 +4380,386 @@ ion-content {
 
   &:hover { opacity: 0.92; transform: translateY(-1px); }
   ion-icon { font-size: 18px; }
+}
+
+.tx-card-camera-ativar {
+  /* Botão normal (não estica como uma barra gigante). */
+  flex: 0 0 auto;
+  background: var(--ion-color-secondary, #7CC61D);
+}
+
+.tx-card-camera-encerrar {
+  flex: 0 0 auto;
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   EDITOR "Recado na tela" (lower-third ao vivo).
+   ════════════════════════════════════════════════════════════════ */
+.aviso-editor {
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 14px;
+  /* sem fundo (transparente) — a pedido; só borda + sombra sutil. */
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+
+    ion-icon { font-size: 19px; color: var(--ion-color-secondary, #7CC61D); }
+  }
+}
+
+.aviso-no-ar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(var(--ion-color-danger-rgb, 235, 68, 90), 0.12);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ion-color-danger, #eb445a);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.aviso-no-ar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ion-color-danger, #eb445a);
+  box-shadow: 0 0 0 0 rgba(var(--ion-color-danger-rgb, 235, 68, 90), 0.6);
+  animation: avNoArPulse 1.4s ease-out infinite;
+}
+
+@keyframes avNoArPulse {
+  0% { box-shadow: 0 0 0 0 rgba(var(--ion-color-danger-rgb, 235, 68, 90), 0.55); }
+  100% { box-shadow: 0 0 0 7px rgba(var(--ion-color-danger-rgb, 235, 68, 90), 0); }
+}
+
+.aviso-hint {
+  margin: 8px 0 12px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ion-color-medium, #8a93a2);
+}
+
+.aviso-form {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+
+  @media (max-width: 560px) {
+    flex-direction: column;
+  }
+}
+
+.aviso-campos {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.aviso-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: var(--ion-color-light, #f4f5f8);
+  font-size: 14px;
+  color: var(--ion-text-color, #1a1a1a);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+
+  &::placeholder { color: var(--ion-color-medium, #9aa3b0); }
+
+  &:focus {
+    border-color: var(--ion-color-secondary, #7CC61D);
+    box-shadow: 0 0 0 3px rgba(124, 198, 29, 0.16);
+  }
+}
+
+.aviso-input-sub {
+  font-size: 13px;
+}
+
+/* Caixa da imagem lateral — quadrada, mesma proporção do lower-third. */
+.aviso-img-box {
+  flex: 0 0 auto;
+  width: 96px;
+
+  @media (max-width: 560px) {
+    width: 100%;
+    height: 84px;
+  }
+}
+
+.aviso-img-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 56px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #0a0e13;
+
+  img {
+    width: 100%;
+    height: 100%;
+    /* `contain` mostra o logo inteiro (sem cortar) — fiel ao lower-third. */
+    object-fit: contain;
+    padding: 4px;
+    box-sizing: border-box;
+  }
+}
+
+.aviso-img-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.62);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  ion-icon { font-size: 15px; }
+}
+
+.aviso-img-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  height: 100%;
+  min-height: 56px;
+  border-radius: 10px;
+  border: 1.5px dashed rgba(0, 0, 0, 0.2);
+  background: var(--ion-color-light, #f4f5f8);
+  color: var(--ion-color-medium, #8a93a2);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+
+  ion-icon { font-size: 22px; }
+
+  &:hover {
+    border-color: var(--ion-color-secondary, #7CC61D);
+    color: var(--ion-color-secondary, #7CC61D);
+  }
+
+  &.carregando { opacity: 0.65; pointer-events: none; }
+}
+
+/* Presets rápidos do recado (chips) */
+.aviso-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.aviso-preset {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+
+  &:hover {
+    background: rgba(124, 198, 29, 0.16);
+    border-color: var(--ion-color-secondary, #7CC61D);
+  }
+  &:active { transform: scale(0.96); }
+}
+
+/* Toggle "sumir sozinho" */
+.aviso-autosumir {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  user-select: none;
+
+  input { width: 15px; height: 15px; accent-color: var(--ion-color-secondary, #7CC61D); cursor: pointer; }
+}
+
+.aviso-acoes {
+  display: flex;
+  gap: 10px;
+  margin-top: 13px;
+}
+
+.aviso-btn {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: filter 150ms ease, opacity 150ms ease;
+
+  ion-icon { font-size: 18px; }
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:not(:disabled):active { filter: brightness(0.94); }
+}
+
+/* Ação principal na cor de marca do app (verde), igual aos CTAs do app
+   (GOL / Ativar). Texto usa o contrast token pra legibilidade. */
+.aviso-btn-exibir {
+  background: var(--ion-color-secondary, #7CC61D);
+  color: var(--ion-color-secondary-contrast, #ffffff);
+}
+
+/* Destrutivo no token de danger do tema. */
+.aviso-btn-tirar {
+  flex: 0 0 auto;
+  background: var(--ion-color-danger, #eb445a);
+  color: var(--ion-color-danger-contrast, #ffffff);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   COLUNA DIREITA do grid do vídeo — empilha as ações (gols/cartões) e o
+   editor "Recado na tela" logo abaixo, aproveitando o espaço ao lado do
+   vídeo e agrupando os controles da transmissão.
+   ════════════════════════════════════════════════════════════════ */
+.lp-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* Recado dentro da coluna direita: sem margem própria (o gap cuida) e
+   um pouco mais compacto pra caber junto com os botões de gol/cartão. */
+.aviso-editor-compacto {
+  margin-top: 0;
+  padding: 12px;
+
+  .section-head {
+    margin-bottom: 10px;
+  }
+
+  .aviso-acoes {
+    margin-top: 12px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Form EDITÁVEL com a cara do lower-third (WYSIWYG): faixa escura,
+   imagem à esquerda + título/subtítulo à direita — igual ao que é
+   exibido na transmissão. Os inputs ficam "invisíveis" (sem caixa),
+   parecendo que o organizador digita direto na faixa.
+   ════════════════════════════════════════════════════════════════ */
+.aviso-preview {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(18, 24, 33, 0.97) 0%, rgba(8, 11, 16, 0.98) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+
+  /* Imagem: bloco quadrado escuro à esquerda (igual .av-img da faixa). */
+  .aviso-img-box {
+    flex: 0 0 auto;
+    width: 66px;
+    height: auto;
+    align-self: stretch;
+  }
+  .aviso-img-preview,
+  .aviso-img-add {
+    height: 100%;
+    min-height: 62px;
+    border-radius: 0;
+    border: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    background: #0a0e13;
+  }
+  .aviso-img-add {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 10.5px;
+    gap: 3px;
+    ion-icon { font-size: 19px; }
+    &:hover { color: var(--ion-color-secondary, #7CC61D); }
+  }
+  .aviso-img-preview img { padding: 5px; }
+
+  /* Textos: estilo título/subtítulo da faixa; inputs sem caixa. */
+  .aviso-campos {
+    flex: 1 1 auto;
+    justify-content: center;
+    gap: 3px;
+    padding: 9px 13px;
+    min-width: 0;
+  }
+  .aviso-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.16);
+    border-radius: 0;
+    padding: 3px 0;
+    color: #fff;
+
+    &::placeholder { color: rgba(255, 255, 255, 0.4); }
+    &:focus {
+      border-bottom: 1px solid var(--ion-color-secondary, #7CC61D);
+      box-shadow: none;
+    }
+  }
+  .aviso-input-titulo {
+    font-weight: 800;
+    font-size: 15px;
+    line-height: 1.15;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .aviso-input-sub {
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.82);
+    &::placeholder { color: rgba(255, 255, 255, 0.32); }
+  }
 }
