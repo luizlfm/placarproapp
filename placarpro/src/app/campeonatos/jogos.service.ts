@@ -252,7 +252,12 @@ export class JogosService {
         ...evento,
         criadoEm: serverTimestamp() as unknown as Timestamp,
       });
-      await this.recalcularPlacar(campeonatoId, categoriaId, jogoId);
+      // SÓ gols recalculam o placar. Cartões/faltas/etc. NÃO mexem no placar
+      // — antes, adicionar um cartão disparava o recálculo e zerava um placar
+      // que tinha sido digitado na mão (golsMandante/Visitante manuais).
+      if (this.afetaPlacar(evento.tipo)) {
+        await this.recalcularPlacar(campeonatoId, categoriaId, jogoId);
+      }
       return ref.id;
     });
   }
@@ -266,8 +271,15 @@ export class JogosService {
   ): Promise<void> {
     await runInInjectionContext(this.injector, async () => {
       const ref = doc(this.eventosCol(campeonatoId, categoriaId, jogoId), eventoId);
+      // Lê o tipo ANTES pra decidir o recálculo: recalcula se o evento era OU
+      // passou a ser um gol (cobre editar quantidade de gol e converter
+      // gol↔cartão). Edições que não envolvem gol não tocam no placar.
+      const antes = (await getDoc(ref)).data() as EventoJogo | undefined;
       await updateDoc(ref, patch as { [key: string]: unknown });
-      await this.recalcularPlacar(campeonatoId, categoriaId, jogoId);
+      const tipoDepois = (patch.tipo ?? antes?.tipo) as EventoJogo['tipo'] | undefined;
+      if (this.afetaPlacar(antes?.tipo) || this.afetaPlacar(tipoDepois)) {
+        await this.recalcularPlacar(campeonatoId, categoriaId, jogoId);
+      }
     });
   }
 
@@ -278,15 +290,20 @@ export class JogosService {
     eventoId: string,
   ): Promise<void> {
     await runInInjectionContext(this.injector, async () => {
+      const ref = doc(this.eventosCol(campeonatoId, categoriaId, jogoId), eventoId);
+      // Lê o tipo ANTES de apagar — só recalcula se era um gol.
+      const antes = (await getDoc(ref)).data() as EventoJogo | undefined;
       // Delete primeiro — se falhar aqui, propaga (caller mostra erro).
-      await deleteDoc(doc(this.eventosCol(campeonatoId, categoriaId, jogoId), eventoId));
+      await deleteDoc(ref);
       // Recalc é melhoria, não crítico. Se Firestore Rules bloquearem
       // o update do jogo (ex.: moderador com permissão só pros eventos),
       // o lance já foi removido — não deve travar o fluxo. Loga e segue.
-      try {
-        await this.recalcularPlacar(campeonatoId, categoriaId, jogoId);
-      } catch (err) {
-        console.warn('[JogosService] recalcularPlacar falhou após remover evento:', err);
+      if (this.afetaPlacar(antes?.tipo)) {
+        try {
+          await this.recalcularPlacar(campeonatoId, categoriaId, jogoId);
+        } catch (err) {
+          console.warn('[JogosService] recalcularPlacar falhou após remover evento:', err);
+        }
       }
     });
   }
@@ -309,6 +326,12 @@ export class JogosService {
       await batch.commit();
       return snap.size;
     });
+  }
+
+  /** True se o tipo de evento afeta o placar (apenas gols). Cartões, faltas
+   *  e demais lances não alteram golsMandante/Visitante. */
+  private afetaPlacar(tipo: EventoJogo['tipo'] | undefined): boolean {
+    return tipo === 'gol' || tipo === 'gol-contra';
   }
 
   /**
