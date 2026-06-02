@@ -153,6 +153,53 @@ service cloud.firestore {
     function isCreatingAsSelf() {
       return isSignedIn() && request.resource.data.ownerId == request.auth.uid;
     }
+
+    /**
+     * ===== LIMITES DE PLANO (enforce server-side) =====
+     *
+     * Espelha `planos.service.ts`. -1 = ilimitado. Plano ausente/desconhecido
+     * cai no GRÁTIS (mais restritivo). As funções comparam o CONTADOR
+     * denormalizado (mantido pelas Cloud Functions em `./contadores.ts`)
+     * contra o teto do plano.
+     *
+     * IMPORTANTE: se mudar os números no service, espelhe aqui.
+     */
+    function planoDoUser(uid) {
+      return (exists(/databases/$(database)/documents/users/$(uid))
+              && ('plano' in get(/databases/$(database)/documents/users/$(uid)).data))
+             ? get(/databases/$(database)/documents/users/$(uid)).data.plano
+             : 'gratis';
+    }
+    function limiteCampeonatos(plano) {
+      return plano == 'profissional' ? -1
+           : plano == 'grande' ? 30
+           : plano == 'medio' ? 10
+           : plano == 'pequeno' ? 3
+           : 1; // gratis
+    }
+    function limiteCategorias(plano) {
+      return plano == 'profissional' ? -1
+           : plano == 'grande' ? 25
+           : plano == 'medio' ? 12
+           : plano == 'pequeno' ? 5
+           : 2; // gratis
+    }
+    function limiteJogadores(plano) {
+      return plano == 'profissional' ? -1
+           : plano == 'grande' ? 900
+           : plano == 'medio' ? 600
+           : plano == 'pequeno' ? 300
+           : 50; // gratis
+    }
+    /** Lê um contador denormalizado de um doc, com default 0 se ausente. */
+    function contador(docPath, campo) {
+      return exists(docPath) && (campo in get(docPath).data)
+             ? get(docPath).data[campo] : 0;
+    }
+    /** true se ainda cabe +1 sob o limite (ilimitado = sempre true). */
+    function dentroDoLimite(atual, max) {
+      return max == -1 || atual < max;
+    }
     /**
      * Campeonato é considerado público se:
      *  - publico == true, OU
@@ -216,6 +263,23 @@ service cloud.firestore {
         allow write: if isSelf(uid) || isMaster();
       }
 
+      // ─── CONTATO PRIVADO (PII): email/telefone/whatsapp ───
+      // Fonte de verdade. Legível/gravável SÓ pelo próprio organizador ou
+      // admin. NUNCA público — fecha o vazamento de PII via scraping do
+      // doc users/{uid}.
+      match /privado/{docId} {
+        allow read, write: if isSelf(uid) || isMaster();
+      }
+
+      // ─── CONTATO PÚBLICO (opt-in): só existe se o organizador divulgou ───
+      // Espelho legível por qualquer um (alimenta a aba "Contatos" da página
+      // pública). Escrita só pelo próprio dono/admin (o app só grava aqui
+      // quando `contatoPublico === true`).
+      match /publico/{docId} {
+        allow read: if true;
+        allow write: if isSelf(uid) || isMaster();
+      }
+
       match /{sub=**} {
         allow read, write: if isSelf(uid) || isMaster();
       }
@@ -244,7 +308,14 @@ service cloud.firestore {
                  || (isSignedIn() && ('moderadorUids' in resource.data)
                      && request.auth.uid in resource.data.moderadorUids);
 
-      allow create: if isMaster() || (isCreatingAsSelf() && contaAtiva());
+      // Create: respeita o limite de campeonatos do plano (admin master livre).
+      // Compara o contador `users/{uid}.totalCampeonatos` (mantido por CF)
+      // contra `limiteCampeonatos(plano)`.
+      allow create: if isMaster()
+                    || (isCreatingAsSelf() && contaAtiva()
+                        && dentroDoLimite(
+                             contador(/databases/$(database)/documents/users/$(request.auth.uid), 'totalCampeonatos'),
+                             limiteCampeonatos(planoDoUser(request.auth.uid))));
       allow update, delete: if isMaster()
                             || (isSignedIn() && contaAtiva()
                                 && resource.data.ownerId == request.auth.uid);
@@ -257,20 +328,34 @@ service cloud.firestore {
         allow read: if campeonatoEhPublico(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data)
                     || isOwnerOrMaster(campeonatoId);
         // Edição da categoria em si (nome, regras, banner) → editarCampeonato.
-        allow write: if podeEditarCampeonato(campeonatoId);
+        allow update, delete: if podeEditarCampeonato(campeonatoId);
+        // Create respeita o limite de categorias do plano do DONO do
+        // campeonato (admin master livre). Contador: campeonatos/{id}.totalCategorias.
+        allow create: if podeEditarCampeonato(campeonatoId)
+                      && (isMaster()
+                          || dentroDoLimite(
+                               contador(/databases/$(database)/documents/campeonatos/$(campeonatoId), 'totalCategorias'),
+                               limiteCategorias(planoDoUser(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data.ownerId))));
 
         // ─── Jogadores: gerenciarEquipes OU usuário autenticado com token
         //     válido (fluxo público de inscrição via /inscricao/:token) ───
         match /jogadores/{jogadorId} {
           allow read: if campeonatoEhPublico(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data)
                       || isOwnerOrMaster(campeonatoId);
-          allow create: if podeGerenciarEquipes(campeonatoId)
-                        || (isSignedIn()
-                            && 'inscricaoToken' in request.resource.data
-                            && tokenValidoPara(
-                                 campeonatoId, categoriaId,
-                                 request.resource.data.equipeId,
-                                 request.resource.data.inscricaoToken));
+          // Create exige permissão (gerenciarEquipes OU token de inscrição) E
+          // que a categoria ainda esteja sob o limite de jogadores do plano do
+          // DONO. Contador: campeonatos/{id}/categorias/{cid}.totalJogadores.
+          allow create: if (podeGerenciarEquipes(campeonatoId)
+                            || (isSignedIn()
+                                && 'inscricaoToken' in request.resource.data
+                                && tokenValidoPara(
+                                     campeonatoId, categoriaId,
+                                     request.resource.data.equipeId,
+                                     request.resource.data.inscricaoToken)))
+                        && (isMaster()
+                            || dentroDoLimite(
+                                 contador(/databases/$(database)/documents/campeonatos/$(campeonatoId)/categorias/$(categoriaId), 'totalJogadores'),
+                                 limiteJogadores(planoDoUser(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data.ownerId))));
           // Update via convite: usuário autenticado pode atualizar dados
           // do jogador SE estiver editando uma equipe cuja inscrição
           // ainda está válida (token bate). Não permite trocar de equipe.
@@ -283,6 +368,47 @@ service cloud.firestore {
                                  request.resource.data.inscricaoToken)
                             && request.resource.data.equipeId == resource.data.equipeId);
           allow delete: if podeGerenciarEquipes(campeonatoId);
+
+          // ─── PII PRIVADA do jogador (cpf/rg/nascimento/telefone) ───
+          // Subdoc `jogadores/{id}/privado/dados`. NUNCA é público — mesmo
+          // que o campeonato seja público. Só dono/moderador (gerenciarEquipes)
+          // OU o representante da equipe com token de inscrição válido.
+          match /privado/{docId} {
+            // Escrita: dono/moderador sempre; representante valida o token de
+            // inscrição contra o equipeId. Dois caminhos (OR) porque na
+            // CRIAÇÃO pública o doc pai é gravado no MESMO writeBatch e get()
+            // não enxerga escrita pendente:
+            //  (a) equipeId vem NO PRÓPRIO payload (caso create) — o cliente
+            //      envia equipeId+inscricaoToken no subdoc;
+            //  (b) senão, lê do doc pai já existente (caso update), com
+            //      exists() pra não dar erro de avaliação quando o pai não
+            //      existe ainda.
+            allow write: if podeGerenciarEquipes(campeonatoId)
+                         || (isSignedIn()
+                             && 'inscricaoToken' in request.resource.data
+                             && (
+                                  ('equipeId' in request.resource.data
+                                   && tokenValidoPara(
+                                        campeonatoId, categoriaId,
+                                        request.resource.data.equipeId,
+                                        request.resource.data.inscricaoToken))
+                                  || (exists(/databases/$(database)/documents/campeonatos/$(campeonatoId)/categorias/$(categoriaId)/jogadores/$(jogadorId))
+                                      && tokenValidoPara(
+                                           campeonatoId, categoriaId,
+                                           get(/databases/$(database)/documents/campeonatos/$(campeonatoId)/categorias/$(categoriaId)/jogadores/$(jogadorId)).data.equipeId,
+                                           request.resource.data.inscricaoToken))
+                                ));
+            // Leitura: `request.resource` é null em reads, então validamos
+            // pelo token+equipeId já PERSISTIDOS no subdoc (resource.data).
+            allow read: if podeGerenciarEquipes(campeonatoId)
+                        || (isSignedIn()
+                            && 'inscricaoToken' in resource.data
+                            && 'equipeId' in resource.data
+                            && tokenValidoPara(
+                                 campeonatoId, categoriaId,
+                                 resource.data.equipeId,
+                                 resource.data.inscricaoToken));
+          }
         }
 
         // ─── Equipe técnica: mesma regra (criação + update via convite) ───
@@ -537,6 +663,14 @@ service cloud.firestore {
     match /config/{docId} {
       allow read:  if true;
       allow write: if isMaster();
+    }
+
+    // ============ rateLimits ============
+    // Contadores internos do rate limiter (Cloud Functions, via Admin SDK,
+    // que IGNORA estas rules). Clientes NÃO têm nenhum acesso — evita que
+    // alguém leia/zere o próprio contador pra burlar o limite.
+    match /rateLimits/{docId} {
+      allow read, write: if false;
     }
   }
 }

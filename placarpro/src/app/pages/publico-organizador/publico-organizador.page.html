@@ -278,7 +278,7 @@
             <a *ngIf="org.redes?.youtube as yt" [href]="yt" target="_blank" rel="noopener" aria-label="YouTube">
               <ion-icon name="logo-youtube"></ion-icon>
             </a>
-            <a *ngIf="waLink(org.redes?.whatsapp) as wa" [href]="wa" target="_blank" rel="noopener" aria-label="WhatsApp">
+            <a *ngIf="waLink(contato?.whatsapp) as wa" [href]="wa" target="_blank" rel="noopener" aria-label="WhatsApp">
               <ion-icon name="logo-whatsapp"></ion-icon>
             </a>
             <a *ngIf="org.redes?.site as s" [href]="s" target="_blank" rel="noopener" aria-label="Site">
@@ -286,27 +286,28 @@
             </a>
           </div>
 
-          <!-- Contato direto (e-mail/telefone) — abaixo dos squares -->
-          <div class="po-contato-direto" *ngIf="org.email || org.telefone">
-            <a *ngIf="org.email" class="po-contato-row" [href]="'mailto:' + org.email">
+          <!-- Contato direto (e-mail/telefone) — só quando o organizador OPTOU
+               por divulgar (contato público). Senão fica só redes + formulário. -->
+          <div class="po-contato-direto" *ngIf="contato?.email || contato?.telefone">
+            <a *ngIf="contato?.email as em" class="po-contato-row" [href]="'mailto:' + em">
               <ion-icon name="mail-outline"></ion-icon>
               <div>
                 <strong>E-mail</strong>
-                <span>{{ org.email }}</span>
+                <span>{{ em }}</span>
               </div>
             </a>
-            <a *ngIf="org.telefone" class="po-contato-row" [href]="'tel:' + org.telefone">
+            <a *ngIf="contato?.telefone as tel" class="po-contato-row" [href]="'tel:' + tel">
               <ion-icon name="call-outline"></ion-icon>
               <div>
                 <strong>Telefone</strong>
-                <span>{{ org.telefone }}</span>
+                <span>{{ tel }}</span>
               </div>
             </a>
           </div>
         </div>
 
         <!-- Coluna direita: card "Fale Conosco" -->
-        <form class="po-fale-card" (ngSubmit)="enviarFaleConosco()" *ngIf="org.email">
+        <form class="po-fale-card" (ngSubmit)="enviarFaleConosco()" *ngIf="contato?.email">
           <h2>Fale Conosco</h2>
 
           <input

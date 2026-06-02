@@ -278,6 +278,18 @@
         ></ion-input>
 
         <ion-item lines="none" class="toggle-item">
+          <ion-checkbox slot="start" formControlName="contatoPublico"></ion-checkbox>
+          <ion-label>
+            <div class="toggle-title">Exibir contato na página pública</div>
+            <div class="toggle-sub">
+              Quando ligado, seu e-mail, telefone e WhatsApp aparecem na aba
+              "Contatos" da sua página pública. Desligado (padrão), ficam
+              visíveis só pra você.
+            </div>
+          </ion-label>
+        </ion-item>
+
+        <ion-item lines="none" class="toggle-item">
           <ion-checkbox slot="start" formControlName="chatAtivo"></ion-checkbox>
           <ion-label>
             <div class="toggle-title">Chat do Aplicativo</div>

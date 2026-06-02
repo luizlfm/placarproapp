@@ -133,6 +133,8 @@ export class OrganizadorPage implements OnInit {
     localizacao: [''],
     email: [''],
     telefone: [''],
+    /** Opt-in: divulgar email/telefone/whatsapp na página pública. */
+    contatoPublico: [false],
     chatAtivo: [true],
     facebook: [''],
     instagram: [''],
@@ -173,6 +175,7 @@ export class OrganizadorPage implements OnInit {
           localizacao: p.localizacao ?? '',
           email: p.email ?? u?.email ?? '',
           telefone: p.telefone ?? '',
+          contatoPublico: p.contatoPublico ?? false,
           chatAtivo: p.chatAtivo ?? true,
           facebook: p.redes?.facebook ?? '',
           instagram: p.redes?.instagram ?? '',
@@ -190,6 +193,19 @@ export class OrganizadorPage implements OnInit {
         });
       }
       this.carregado = true;
+
+      // Carrega email/telefone/whatsapp do subdoc PRIVADO (fonte de verdade
+      // pós-migração). Sobrescreve os campos legados acima quando existir.
+      if (u?.uid) {
+        void this.usersSrv.getContatoPrivadoOnce(u.uid).then(c => {
+          if (!c) return;
+          const patch: Record<string, unknown> = {};
+          if (c.email !== undefined) patch['email'] = c.email;
+          if (c.telefone !== undefined) patch['telefone'] = c.telefone;
+          if (c.whatsapp !== undefined) patch['whatsapp'] = c.whatsapp;
+          this.form.patchValue(patch);
+        }).catch(() => { /* mantém legado já preenchido */ });
+      }
     });
   }
 
@@ -303,6 +319,7 @@ export class OrganizadorPage implements OnInit {
       localizacao: v.localizacao,
       email: v.email,
       telefone: v.telefone,
+      contatoPublico: v.contatoPublico,
       chatAtivo: v.chatAtivo,
       redes: {
         facebook: v.facebook,

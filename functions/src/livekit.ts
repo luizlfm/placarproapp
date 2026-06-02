@@ -25,6 +25,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import { logger } from 'firebase-functions';
 import { AccessToken } from 'livekit-server-sdk';
+import { assertRateLimit, chaveDoChamador } from './rateLimit';
 
 const LIVEKIT_API_KEY = defineSecret('LIVEKIT_API_KEY');
 const LIVEKIT_API_SECRET = defineSecret('LIVEKIT_API_SECRET');
@@ -74,6 +75,16 @@ export const gerarTokenLiveKit = onCall(
     if (papel !== 'broadcaster' && papel !== 'viewer') {
       throw new HttpsError('invalid-argument', `Papel inválido: ${papel}`);
     }
+
+    // Anti-abuso: limita geração de tokens por chamador (uid ou IP). Viewers
+    // anônimos compartilham por IP; 60 tokens/min cobre uso legítimo (reconnects,
+    // troca de aba) e barra scripts que tentariam farmar tokens.
+    await assertRateLimit({
+      escopo: 'livekit-token',
+      chave: chaveDoChamador(request),
+      max: 60,
+      janelaSeg: 60,
+    });
 
     // Nome da sala = "jogo-<jogoId>". Determinístico → broadcaster e viewer
     // entram na mesma sala sem precisar coordenar nada via Firestore.

@@ -236,7 +236,8 @@ export class JogadorModalComponent implements OnInit {
 
     // Migração suave do campo `documento` legado (formato "CPF / RG")
     // pros campos novos `cpf` e `rg`. Se o jogador já tem `cpf`/`rg`
-    // separados, usa direto. Senão, tenta splitar o `documento` antigo.
+    // separados (doc legado não migrado), usa direto. Senão, tenta splitar
+    // o `documento` antigo. A PII migrada vem do subdoc privado logo abaixo.
     const cpf = j.cpf ?? this.extrairCpfDoLegado(j.documento);
     const rg  = j.rg  ?? this.extrairRgDoLegado(j.documento);
 
@@ -251,6 +252,27 @@ export class JogadorModalComponent implements OnInit {
       telefone: j.telefone ?? '',
       fotoUrl: j.fotoUrl ?? '',
     });
+
+    // Carrega a PII da subcoleção privada (cpf/rg/nascimento/telefone) —
+    // fonte de verdade pós-migração. Async pra não travar a abertura do
+    // form; quando chega, sobrescreve os campos sensíveis. Se não houver
+    // subdoc (jogador ainda não migrado), mantém os valores legados acima.
+    if (j.id) {
+      void this.jogadoresSrv
+        .getPrivadoOnce(this.campeonatoId, this.categoriaId, j.id)
+        .then(pii => {
+          if (!pii || this.jogadorEditando?.id !== j.id) return;
+          const cpfP = pii.cpf ?? this.extrairCpfDoLegado(pii.documento);
+          const rgP  = pii.rg  ?? this.extrairRgDoLegado(pii.documento);
+          this.form.patchValue({
+            cpf: cpfP ?? this.form.value.cpf ?? '',
+            rg: rgP ?? this.form.value.rg ?? '',
+            dataNascimento: pii.dataNascimento ?? this.form.value.dataNascimento ?? '',
+            telefone: pii.telefone ?? this.form.value.telefone ?? '',
+          });
+        })
+        .catch(() => { /* fallback: mantém legado já preenchido */ });
+    }
     // Pré-carrega forms das sub-telas com o que o jogador já tem.
     const stats = j.estatisticas ?? {};
     this.statsForm.reset({

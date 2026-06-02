@@ -177,7 +177,13 @@ export class InscricaoEquipePage implements OnInit {
 
     // ─── Jogadores ───
     if (resJogadores.status === 'fulfilled') {
-      const jogadores = resJogadores.value;
+      // Enriquece com a PII (documento/nascimento) da subcoleção privada pra
+      // o representante reabrir e editar a própria ficha. As rules liberam a
+      // leitura do subdoc privado pra quem tem token válido da equipe; sem
+      // permissão, cai no fallback (campos vazios) sem quebrar.
+      const jogadores = await this.jogadoresSrv.enriquecerComPii(
+        campeonatoId, categoriaId, resJogadores.value,
+      ).catch(() => resJogadores.value);
       console.log('[InscricaoEquipe] jogadores carregados:', jogadores.length);
       // Pré-preenche linhas de atletas (ordena por numeroCamisa quando for número, senão por nome)
       const ordenados = [...jogadores].sort((a, b) => {

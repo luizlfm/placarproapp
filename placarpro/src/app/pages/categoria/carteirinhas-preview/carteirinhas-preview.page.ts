@@ -109,7 +109,11 @@ export class CarteirinhasPreviewPage implements OnInit, AfterViewInit {
       this.equipes    = [...equipes].sort((a, b) =>
         (a.nome ?? '').localeCompare(b.nome ?? '', 'pt-BR'),
       );
-      this.jogadores = jogadores;
+      // Enriquece com PII (cpf/rg/nascimento) da subcoleção privada — as
+      // carteirinhas exibem documento/nascimento. Telas admin têm permissão.
+      this.jogadores = await this.jogadoresSrv.enriquecerComPii(
+        this.campeonatoId, this.categoriaId, jogadores,
+      );
 
       // Defaults vindos do campeonato/categoria
       this.nomeCampeonato = camp?.titulo ?? '';

@@ -65,3 +65,27 @@ export type NovoJogadorInput = Pick<Jogador, 'nome' | 'equipeId'> &
       'dataNascimento' | 'telefone' | 'fotoUrl'
     >
   >;
+
+/**
+ * Campos PII (dados pessoais sensíveis) do jogador, armazenados numa
+ * subcoleção PRIVADA `jogadores/{id}/privado/dados` — legível só por
+ * dono/moderador autenticado, NUNCA público. Isso evita vazar CPF/RG de
+ * terceiros em campeonatos públicos (LGPD).
+ *
+ * O documento PÚBLICO `jogadores/{id}` mantém só dados não-sensíveis
+ * (nome, apelido, posição, número, foto, estatísticas).
+ */
+export interface JogadorPrivado {
+  cpf?: string;
+  rg?: string;
+  dataNascimento?: string;
+  telefone?: string;
+  /** Campo legado combinado "CPF / RG". */
+  documento?: string;
+  atualizadoEm?: Timestamp;
+}
+
+/** Lista das chaves PII — fonte única de verdade pra separar público/privado. */
+export const CAMPOS_PII_JOGADOR = [
+  'cpf', 'rg', 'dataNascimento', 'telefone', 'documento',
+] as const;

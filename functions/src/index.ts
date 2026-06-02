@@ -32,6 +32,7 @@ const MP_ACCESS_TOKEN = defineSecret('MP_ACCESS_TOKEN');
 const MP_WEBHOOK_SECRET = defineSecret('MP_WEBHOOK_SECRET');
 
 import { criarPagamentoMercadoPago } from './mercadopago';
+import { assertRateLimit, chaveDoChamador } from './rateLimit';
 
 /**
  * Valida a assinatura HMAC do webhook do Mercado Pago.
@@ -95,9 +96,17 @@ function validarAssinaturaWebhookMP(
 // Mantida em arquivo separado pra isolar a lógica de tokens de pagamento.
 export { gerarTokenLiveKit } from './livekit';
 
-// Re-export do trigger Firestore que abate crédito quando a transmissão
-// de um jogo atinge 2h30 acumulado (ver `./transmissoesCreditos.ts`).
-export { onTransmissaoHeartbeat } from './transmissoesCreditos';
+// Re-export do trigger Firestore que abate 1 crédito do dono no INÍCIO da
+// transmissão de um jogo (1 crédito = 1 jogo). Ver `./transmissoesCreditos.ts`.
+export { onTransmissaoCriada } from './transmissoesCreditos';
+
+// Re-export dos triggers de contadores denormalizados (enforce de limites
+// de plano nas Rules — ver `./contadores.ts`).
+export {
+  onCampeonatoCriado, onCampeonatoRemovido,
+  onCategoriaCriada, onCategoriaRemovida,
+  onJogadorCriado, onJogadorRemovido,
+} from './contadores';
 
 // ============ EXPORT 1: criarPagamentoMP ============
 /**
@@ -129,6 +138,15 @@ export const criarPagamentoMP = onCall(
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Login necessário.');
     }
+
+    // Anti-abuso: limita tentativas de pagamento por usuário (brute force de
+    // cartão / spam de cobrança). 15/min é folgado pra uso real.
+    await assertRateLimit({
+      escopo: 'criar-pagamento',
+      chave: chaveDoChamador(request),
+      max: 15,
+      janelaSeg: 60,
+    });
 
     const {
       cobrancaId, metodo,
@@ -416,6 +434,16 @@ export const resolverConviteModerador = onCall(
     if (!tokenLimpo || tokenLimpo.length < 8) {
       throw new HttpsError('invalid-argument', 'Token inválido.');
     }
+
+    // Anti-brute-force: limita tentativas de resolução de token de convite
+    // por chamador (uid/IP). Convites legítimos são abertos poucas vezes;
+    // 20/min barra varredura de tokens sem atrapalhar o uso normal.
+    await assertRateLimit({
+      escopo: 'resolver-convite',
+      chave: chaveDoChamador(request),
+      max: 20,
+      janelaSeg: 60,
+    });
 
     const db = admin.firestore();
 

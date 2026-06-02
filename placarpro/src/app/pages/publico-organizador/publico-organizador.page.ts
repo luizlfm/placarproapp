@@ -3,7 +3,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { UsersService } from '../../users/users.service';
-import { UserProfile } from '../../users/models/user-profile.model';
+import { UserProfile, UserContato } from '../../users/models/user-profile.model';
+import { firstValueFrom } from 'rxjs';
 import { CampeonatosService } from '../../campeonatos/campeonatos.service';
 import { Campeonato } from '../../campeonatos/campeonato.model';
 
@@ -41,6 +42,11 @@ export class PublicoOrganizadorPage implements OnInit {
   erro = false;
   org?: UserProfile & { id: string };
   campeonatos$: Observable<Campeonato[]> = of([]);
+
+  /** Contato PÚBLICO do organizador (email/telefone/whatsapp) — só preenchido
+   *  se ele optou por divulgar (`contatoPublico`). undefined = não divulgou,
+   *  então a aba "Contatos" mostra só redes sociais / formulário. */
+  contato?: UserContato;
 
   /** Banner padrão usado quando o organizador ainda não enviou banner. */
   readonly bannerPadrao = 'assets/branding/banner-default.svg';
@@ -89,6 +95,23 @@ export class PublicoOrganizadorPage implements OnInit {
         return;
       }
       this.org = org;
+
+      // Carrega contato PÚBLICO (só existe se o organizador optou por divulgar).
+      // Fallback retrocompat: docs antigos ainda com email/telefone no doc raiz.
+      try {
+        const pub = await firstValueFrom(this.usersSrv.contatoPublico$(org.id));
+        if (pub) {
+          this.contato = pub;
+        } else if (org.email || org.telefone) {
+          // Legado não migrado: o doc raiz ainda traz a PII (já era pública).
+          this.contato = {
+            email: org.email,
+            telefone: org.telefone,
+            whatsapp: org.redes?.whatsapp,
+          };
+        }
+      } catch { /* sem contato público — aba mostra só redes/formulário */ }
+
       this.campeonatos$ = this.campsSrv.listPublicosDoOwner$(org.id).pipe(
         catchError(err => {
           console.warn('[PublicoOrganizador] erro lista', err);
@@ -134,7 +157,9 @@ export class PublicoOrganizadorPage implements OnInit {
    * com `mailto:` pré-preenchido. Sem backend, MVP funciona via mail nativo.
    */
   enviarFaleConosco(): void {
-    if (!this.org?.email) return;
+    // Usa o email do contato PÚBLICO (só existe se o organizador divulgou).
+    const destino = this.contato?.email;
+    if (!destino) return;
     const corpo = [
       `Nome: ${this.fcNome}`,
       `Email: ${this.fcEmail}`,
@@ -145,7 +170,7 @@ export class PublicoOrganizadorPage implements OnInit {
       '— Enviado via página pública do PlacarPro',
     ].filter(l => l !== '').join('\n');
     const url =
-      `mailto:${this.org.email}` +
+      `mailto:${destino}` +
       `?subject=${encodeURIComponent(this.fcAssunto || 'Contato pela página pública')}` +
       `&body=${encodeURIComponent(corpo)}`;
     window.location.href = url;

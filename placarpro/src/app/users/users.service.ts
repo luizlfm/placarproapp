@@ -8,6 +8,7 @@ import {
   collection,
   collectionData,
   deleteDoc,
+  deleteField,
   doc,
   docData,
   getDoc,
@@ -24,7 +25,7 @@ import {
 } from '@angular/fire/firestore';
 import { Observable, of, switchMap, map } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
-import { TipoConta, UserProfile } from './models/user-profile.model';
+import { TipoConta, UserProfile, UserContato } from './models/user-profile.model';
 import { Local } from './models/local.model';
 import { Arbitro } from './models/arbitro.model';
 import { Patrocinador } from './models/patrocinador.model';
@@ -77,19 +78,111 @@ export class UsersService {
     });
   }
 
+  /**
+   * Salva o perfil. PII de CONTATO (email/telefone/whatsapp) NÃO vai mais pro
+   * doc público `users/{uid}` — é separada em subcoleções:
+   *  - `privado/contato`  → sempre (fonte de verdade, só self/admin lê)
+   *  - `publico/contato`  → só se `contatoPublico === true` (opt-in; público lê)
+   *
+   * Privacy-by-default: sem opt-in, email/telefone não ficam acessíveis a
+   * terceiros. Também remove resíduos legados de email/telefone do doc raiz.
+   */
   async saveProfile(patch: Partial<UserProfile>): Promise<void> {
     const uid = this.uid;
     if (!uid) throw new Error('Não autenticado');
-    await runInInjectionContext(this.injector, () =>
-      setDoc(
-        doc(this.fs, 'users', uid),
-        {
-          uid,
-          ...patch,
+
+    // Detecta se o patch mexe em contato (pra saber se reescreve os subdocs).
+    const mexeEmContato =
+      'email' in patch || 'telefone' in patch || 'contatoPublico' in patch ||
+      (patch.redes !== undefined && 'whatsapp' in (patch.redes ?? {}));
+
+    // Separa os campos PII de contato do restante (que vai pro doc público).
+    // WhatsApp também é PII de contato: NÃO pode ir pro doc público (legível
+    // por qualquer um). Ele é tratado só nos subdocs privado/publico de
+    // contato (mais abaixo). As demais redes (instagram, facebook, etc) são
+    // links públicos por natureza e continuam no doc raiz.
+    const { email, telefone, ...resto } = patch;
+    // Se o patch traz `redes`, reescreve removendo o whatsapp e marcando-o
+    // pra DELEÇÃO (deleteField aninhado funciona com setDoc merge, limpando
+    // qualquer whatsapp legado já gravado em `redes.whatsapp`).
+    if (resto.redes) {
+      const { whatsapp: _omit, ...redesSemWhats } = resto.redes;
+      resto.redes = { ...redesSemWhats, whatsapp: deleteField() as unknown as string };
+    }
+    const publicoPatch: Record<string, unknown> = {
+      uid,
+      ...resto,
+      atualizadoEm: serverTimestamp(),
+    };
+    // Garante que email/telefone legados saiam do doc público.
+    publicoPatch['email'] = deleteField();
+    publicoPatch['telefone'] = deleteField();
+
+    await runInInjectionContext(this.injector, async () => {
+      const batch = writeBatch(this.fs);
+      batch.set(doc(this.fs, 'users', uid), publicoPatch, { merge: true });
+
+      if (mexeEmContato) {
+        // Monta o contato a partir do que veio no patch; se algum campo não
+        // veio no patch, preserva o que já existe no subdoc privado.
+        const atual = await this.getContatoPrivadoOnce(uid);
+        const whatsapp = patch.redes && 'whatsapp' in patch.redes
+          ? patch.redes.whatsapp
+          : atual?.whatsapp;
+        const contato: UserContato = stripUndefined({
+          email: 'email' in patch ? email : atual?.email,
+          telefone: 'telefone' in patch ? telefone : atual?.telefone,
+          whatsapp,
           atualizadoEm: serverTimestamp() as unknown as Timestamp,
-        },
-        { merge: true },
-      ),
+        });
+
+        const privadoRef = doc(this.fs, 'users', uid, 'privado', 'contato');
+        batch.set(privadoRef, contato, { merge: true });
+
+        const publicoContatoRef = doc(this.fs, 'users', uid, 'publico', 'contato');
+        const optIn = patch.contatoPublico === true
+          || (!('contatoPublico' in patch) && (await this.lerContatoPublicoFlag(uid)));
+        if (optIn) {
+          batch.set(publicoContatoRef, contato, { merge: true });
+        } else {
+          // Opt-out (ou nunca optou): garante que o contato público suma.
+          batch.delete(publicoContatoRef);
+        }
+      }
+
+      await batch.commit();
+    });
+  }
+
+  /** Lê o flag `contatoPublico` do doc raiz (pra decidir espelhamento). */
+  private async lerContatoPublicoFlag(uid: string): Promise<boolean> {
+    const snap = await getDoc(doc(this.fs, 'users', uid));
+    return snap.exists() && (snap.data() as UserProfile).contatoPublico === true;
+  }
+
+  /** Contato PRIVADO do próprio usuário (one-shot) — pra preencher o form. */
+  async getContatoPrivadoOnce(uid: string): Promise<UserContato | undefined> {
+    return runInInjectionContext(this.injector, async () => {
+      const snap = await getDoc(doc(this.fs, 'users', uid, 'privado', 'contato'));
+      return snap.exists() ? (snap.data() as UserContato) : undefined;
+    });
+  }
+
+  /** Stream do contato PRIVADO do próprio usuário (telas de edição). */
+  contatoPrivado$(uid: string): Observable<UserContato | undefined> {
+    return runInInjectionContext(this.injector, () =>
+      docData(doc(this.fs, 'users', uid, 'privado', 'contato')) as Observable<UserContato | undefined>,
+    );
+  }
+
+  /**
+   * Contato PÚBLICO de um organizador (só existe se ele optou por divulgar).
+   * Usado na aba "Contatos" da página pública `/org/:slug`. Retorna undefined
+   * quando o organizador não publicou contato.
+   */
+  contatoPublico$(uid: string): Observable<UserContato | undefined> {
+    return runInInjectionContext(this.injector, () =>
+      docData(doc(this.fs, 'users', uid, 'publico', 'contato')) as Observable<UserContato | undefined>,
     );
   }
 
@@ -692,4 +785,16 @@ export class UsersService {
       }
     });
   }
+}
+
+/**
+ * Remove chaves `undefined` de um objeto (Firestore rejeita undefined em
+ * set/update). Mantém `null` e demais valores.
+ */
+function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) out[k] = v;
+  }
+  return out as T;
 }

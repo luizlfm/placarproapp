@@ -60,9 +60,26 @@ export interface UserProfile {
   regiao?: string;
   localizacao?: string;
 
+  /**
+   * @deprecated PII — NÃO gravar mais no doc público `users/{uid}`.
+   * Email/telefone migraram pra subcoleção `users/{uid}/privado/contato`
+   * (privada) e, quando o organizador opta por divulgar
+   * (`contatoPublico === true`), são espelhados em `users/{uid}/publico/contato`.
+   * Mantidos aqui só pra leitura retrocompatível de docs ainda não migrados.
+   */
   telefone?: string;
+  /** @deprecated idem `telefone` — ver `JogadorContato`/subcoleções. */
   email?: string;
   cidade?: string;
+
+  /**
+   * OPT-IN de divulgação de contato. Quando `true`, email/telefone/whatsapp
+   * são publicados em `users/{uid}/publico/contato` (legível por qualquer um,
+   * pra aba "Contatos" da página pública). Quando ausente/false, o contato
+   * fica só no subdoc PRIVADO (visível apenas pro próprio organizador/admin).
+   * Privacy-by-default: sem opt-in, nada de PII vaza.
+   */
+  contatoPublico?: boolean;
 
   /** Aceita receber chat pelo app. */
   chatAtivo?: boolean;
@@ -145,5 +162,20 @@ export interface UserProfile {
     site?: string;
   };
 
+  atualizadoEm?: Timestamp;
+}
+
+/**
+ * Dados de CONTATO do organizador (PII). Vivem em subcoleções separadas do
+ * doc `users/{uid}`:
+ *  - `users/{uid}/privado/contato` → sempre gravado; legível só pelo próprio
+ *    organizador e admin. Fonte de verdade pra edição.
+ *  - `users/{uid}/publico/contato` → só existe quando `contatoPublico === true`;
+ *    legível por qualquer um (alimenta a aba "Contatos" da página pública).
+ */
+export interface UserContato {
+  email?: string;
+  telefone?: string;
+  whatsapp?: string;
   atualizadoEm?: Timestamp;
 }

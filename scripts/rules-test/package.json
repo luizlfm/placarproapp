@@ -1,0 +1,14 @@
+{
+  "name": "placarpro-rules-test",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Testes das Firestore Security Rules contra o emulador (fluxos sensíveis das 5 fases de segurança).",
+  "type": "module",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project placarpro-rules-test \"node run-tests.mjs\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase": "^11.0.0"
+  }
+}

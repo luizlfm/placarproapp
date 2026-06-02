@@ -27,17 +27,16 @@
  */
 
 import * as admin from 'firebase-admin';
-import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions';
 
 /**
- * Listener que dispara em CADA update do doc transmissoes/{tId} (heartbeats
- * a cada 30s). Abate 1 crédito do dono LOGO NO INÍCIO da transmissão do jogo.
+ * Listener que dispara na CRIAÇÃO do doc transmissoes/{tId} — ou seja, no
+ * instante em que a transmissão começa. Abate 1 crédito do dono ali mesmo.
  *
  * Modelo de cobrança: 1 crédito = 1 jogo (nada é grátis). A cobrança acontece
- * na primeira atualização da transmissão (≈primeiro heartbeat) e SÓ UMA VEZ
- * por jogo — independente da duração. Reconexões/sessões extras do mesmo jogo
- * NÃO recobram (idempotência via flag `descontou`).
+ * no INÍCIO e SÓ UMA VEZ por jogo — independente da duração. Reconexões /
+ * sessões extras do mesmo jogo NÃO recobram (idempotência via `descontou`).
  *
  * O débito é server-side (Admin SDK ignora rules) porque o cliente não pode
  * escrever `transmissoesExtras` (bloqueado nas Firestore Rules). O cliente só
@@ -46,13 +45,13 @@ import { logger } from 'firebase-functions';
  * Path do trigger:
  *   campeonatos/{cId}/categorias/{catId}/jogos/{jId}/transmissoes/{tId}
  */
-export const onTransmissaoHeartbeat = onDocumentUpdated(
+export const onTransmissaoCriada = onDocumentCreated(
   {
     document: 'campeonatos/{campeonatoId}/categorias/{categoriaId}/jogos/{jogoId}/transmissoes/{transmissaoId}',
     region: 'southamerica-east1',
   },
   async (event) => {
-    const after = event.data?.after.data();
+    const after = event.data?.data();
     if (!after) return;
 
     const { campeonatoId, categoriaId, jogoId, transmissaoId } = event.params;

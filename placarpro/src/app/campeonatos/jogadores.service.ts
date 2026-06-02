@@ -6,6 +6,7 @@ import {
   Timestamp,
   collection,
   collectionData,
+  deleteField,
   doc,
   docData,
   getCountFromServer,
@@ -18,7 +19,12 @@ import {
   writeBatch,
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
-import { Jogador, NovoJogadorInput } from './models/jogador.model';
+import {
+  Jogador,
+  JogadorPrivado,
+  NovoJogadorInput,
+  CAMPOS_PII_JOGADOR,
+} from './models/jogador.model';
 import { PlanosService } from '../users/planos.service';
 
 /**
@@ -67,6 +73,54 @@ export class JogadoresService {
     );
   }
 
+  /** Doc PRIVADO de PII do jogador: `jogadores/{id}/privado/dados`.
+   *  Legível só por dono/moderador (ver Firestore Rules) — nunca público. */
+  private piiRef(
+    campeonatoId: string,
+    categoriaId: string,
+    jogadorId: string,
+  ): DocumentReference<JogadorPrivado> {
+    return doc(
+      this.fs,
+      'campeonatos', campeonatoId,
+      'categorias', categoriaId,
+      'jogadores', jogadorId,
+      'privado', 'dados',
+    ) as DocumentReference<JogadorPrivado>;
+  }
+
+  /**
+   * Separa um input de jogador em { publico, privado }.
+   * Os campos PII (cpf/rg/dataNascimento/telefone/documento) vão pro objeto
+   * `privado`; o resto fica no `publico`. Usado na escrita pra garantir que
+   * dado sensível NUNCA entre no doc público (legível em campeonatos públicos).
+   */
+  private separarPii<T extends Record<string, unknown>>(
+    input: T,
+  ): { publico: Record<string, unknown>; privado: JogadorPrivado; temPii: boolean } {
+    const publico: Record<string, unknown> = {};
+    const privado: Record<string, unknown> = {};
+    let temPii = false;
+    const piiKeys = CAMPOS_PII_JOGADOR as readonly string[];
+    for (const [k, v] of Object.entries(input)) {
+      // `inscricaoToken` e `equipeId` são campos de AUTORIZAÇÃO: as Firestore
+      // Rules validam o token de inscrição contra o equipeId DENTRO do próprio
+      // subdoc privado (não dá pra ler o doc pai via get() porque, na criação
+      // pública, pai e subdoc são gravados no MESMO batch). Por isso ambos vão
+      // pros DOIS lados (público + privado). NÃO são PII nem dado de negócio.
+      if (k === 'inscricaoToken' || k === 'equipeId') {
+        if (v !== undefined) { publico[k] = v; privado[k] = v; }
+        continue;
+      }
+      if (piiKeys.includes(k)) {
+        if (v !== undefined) { privado[k] = v; temPii = true; }
+      } else {
+        publico[k] = v;
+      }
+    }
+    return { publico, privado: privado as JogadorPrivado, temPii };
+  }
+
   /** Todos os jogadores da categoria. */
   list$(campeonatoId: string, categoriaId: string): Observable<Jogador[]> {
     return runInInjectionContext(this.injector, () => {
@@ -91,6 +145,90 @@ export class JogadoresService {
     return runInInjectionContext(this.injector, () =>
       docData(this.docRef(campeonatoId, categoriaId, jogadorId), { idField: 'id' }) as Observable<Jogador | undefined>,
     );
+  }
+
+  /**
+   * Lê os dados PII (cpf/rg/dataNascimento/telefone) do jogador — APENAS pra
+   * telas ADMIN (dono/moderador). Vem da subcoleção privada
+   * `jogadores/{id}/privado/dados`. Stream reativo.
+   *
+   * Retrocompat: se o subdoc privado ainda não existir (jogador antigo, antes
+   * da migração), o chamador deve cair pros campos legados do doc público.
+   */
+  getPrivado$(
+    campeonatoId: string,
+    categoriaId: string,
+    jogadorId: string,
+  ): Observable<JogadorPrivado | undefined> {
+    return runInInjectionContext(this.injector, () =>
+      docData(this.piiRef(campeonatoId, categoriaId, jogadorId)) as Observable<JogadorPrivado | undefined>,
+    );
+  }
+
+  /**
+   * Enriquece uma lista de jogadores (docs públicos) com a PII do subdoc
+   * privado — pra telas ADMIN que precisam de CPF/RG/nascimento/telefone
+   * (carteirinhas, impressão, relatórios). Faz 1 leitura por jogador, em
+   * paralelo. Fallback retrocompat: jogador sem subdoc privado mantém o que
+   * já tiver no doc público (não migrado). Só dono/moderador consegue ler o
+   * subdoc — pra espectador/público as leituras falham e caem no fallback.
+   */
+  async enriquecerComPii(
+    campeonatoId: string,
+    categoriaId: string,
+    jogadores: Jogador[],
+  ): Promise<Jogador[]> {
+    return runInInjectionContext(this.injector, async () => {
+      const out = await Promise.all(
+        jogadores.map(async (j) => {
+          if (!j.id) return j;
+          try {
+            const pii = await this.getPrivadoOnce(campeonatoId, categoriaId, j.id);
+            if (!pii) return j;
+            return { ...j, ...stripUndefined(pii as Record<string, unknown>) } as Jogador;
+          } catch {
+            return j;
+          }
+        }),
+      );
+      return out;
+    });
+  }
+
+  /** Versão one-shot (Promise) do getPrivado$ — pra forms que carregam 1x. */
+  async getPrivadoOnce(
+    campeonatoId: string,
+    categoriaId: string,
+    jogadorId: string,
+  ): Promise<JogadorPrivado | undefined> {
+    return runInInjectionContext(this.injector, async () => {
+      const snap = await getDoc(this.piiRef(campeonatoId, categoriaId, jogadorId));
+      return snap.exists() ? (snap.data() as JogadorPrivado) : undefined;
+    });
+  }
+
+  /**
+   * Carrega o jogador COMPLETO (público + PII) pra edição em telas admin.
+   * Faz merge: pega o doc público e sobrepõe os campos PII do subdoc privado.
+   * Fallback retrocompat: se não houver subdoc privado, usa os campos PII que
+   * ainda estiverem no doc público (jogadores não migrados).
+   */
+  async getCompletoParaEdicao(
+    campeonatoId: string,
+    categoriaId: string,
+    jogadorId: string,
+  ): Promise<Jogador | undefined> {
+    return runInInjectionContext(this.injector, async () => {
+      const snap = await getDoc(this.docRef(campeonatoId, categoriaId, jogadorId));
+      if (!snap.exists()) return undefined;
+      const base = { id: snap.id, ...(snap.data() as Jogador) };
+      const pii = await this.getPrivadoOnce(campeonatoId, categoriaId, jogadorId);
+      if (pii) {
+        // Subdoc privado é a fonte de verdade dos campos sensíveis.
+        return { ...base, ...stripUndefined(pii as Record<string, unknown>) } as Jogador;
+      }
+      return base;
+    });
   }
 
   /**
@@ -149,18 +287,29 @@ export class JogadoresService {
     return runInInjectionContext(this.injector, async () => {
       await this.assertLimiteJogadores(campeonatoId, categoriaId, 1);
       const newRef = doc(this.col(campeonatoId, categoriaId));
-      const payload: Jogador = stripUndefined({
+
+      // Separa PII (cpf/rg/etc) → vai pro subdoc privado, NUNCA no doc público.
+      const { publico, privado, temPii } = this.separarPii({
         ...input,
-        // Convenção do sistema: nome de jogador SEMPRE em maiúsculas
-        // (consistência visual em listas, súmulas, escalações, públicas).
+        // Convenção do sistema: nome SEMPRE em maiúsculas.
         nome: (input.nome ?? '').trim().toUpperCase(),
+      });
+
+      const payload = stripUndefined({
+        ...publico,
         campeonatoId,
         categoriaId,
         cadastradoEm: serverTimestamp() as unknown as Timestamp,
         atualizadoEm: serverTimestamp() as unknown as Timestamp,
-      }) as Jogador;
+      });
       const batch = writeBatch(this.fs);
-      batch.set(newRef, payload);
+      batch.set(newRef as DocumentReference, payload);
+      if (temPii) {
+        batch.set(this.piiRef(campeonatoId, categoriaId, newRef.id), stripUndefined({
+          ...(privado as Record<string, unknown>),
+          atualizadoEm: serverTimestamp(),
+        }) as JogadorPrivado);
+      }
       batch.update(this.equipeRef(campeonatoId, categoriaId, input.equipeId), {
         totalJogadores: increment(1),
         atualizadoEm: serverTimestamp(),
@@ -190,14 +339,22 @@ export class JogadoresService {
         const contadorPorEquipe = new Map<string, number>();
         for (const j of lote) {
           const newRef = doc(this.col(campeonatoId, categoriaId));
-          const payload: Jogador = stripUndefined({
-            ...j,
+          // Separa PII → subdoc privado (não vaza em campeonato público).
+          const { publico, privado, temPii } = this.separarPii({ ...j });
+          const payload = stripUndefined({
+            ...publico,
             campeonatoId,
             categoriaId,
             cadastradoEm: serverTimestamp() as unknown as Timestamp,
             atualizadoEm: serverTimestamp() as unknown as Timestamp,
-          }) as Jogador;
-          batch.set(newRef, payload);
+          });
+          batch.set(newRef as DocumentReference, payload);
+          if (temPii) {
+            batch.set(this.piiRef(campeonatoId, categoriaId, newRef.id), stripUndefined({
+              ...(privado as Record<string, unknown>),
+              atualizadoEm: serverTimestamp(),
+            }) as JogadorPrivado);
+          }
           contadorPorEquipe.set(j.equipeId, (contadorPorEquipe.get(j.equipeId) ?? 0) + 1);
         }
         contadorPorEquipe.forEach((qtd, equipeId) => {
@@ -221,16 +378,38 @@ export class JogadoresService {
   ): Promise<void> {
     return runInInjectionContext(this.injector, async () => {
       const ref = this.docRef(campeonatoId, categoriaId, jogadorId);
+
+      // Separa PII do patch: público vai pro doc, sensível pro subdoc privado.
+      const { publico, privado, temPii } = this.separarPii({ ...patch });
+      // Se o patch mexe em PII, também garante a REMOÇÃO de qualquer resíduo
+      // legado desses campos no doc público (jogadores não migrados).
+      const limpezaLegado: Record<string, unknown> = {};
+      if (temPii) {
+        for (const k of CAMPOS_PII_JOGADOR) {
+          if (k in privado) limpezaLegado[k] = deleteField();
+        }
+      }
+
       const novaEquipeId = patch.equipeId;
+      const batch = writeBatch(this.fs);
+
+      batch.update(ref, stripUndefined({
+        ...publico,
+        ...limpezaLegado,
+        atualizadoEm: serverTimestamp(),
+      }));
+
+      if (temPii) {
+        batch.set(this.piiRef(campeonatoId, categoriaId, jogadorId), stripUndefined({
+          ...(privado as Record<string, unknown>),
+          atualizadoEm: serverTimestamp(),
+        }), { merge: true });
+      }
+
       if (novaEquipeId) {
         // Possível transferência entre equipes — ajusta contadores.
         const snap = await getDoc(ref);
         const antigaEquipeId = (snap.data() as Jogador | undefined)?.equipeId;
-        const batch = writeBatch(this.fs);
-        batch.update(ref, stripUndefined({
-          ...patch,
-          atualizadoEm: serverTimestamp(),
-        }));
         if (antigaEquipeId && antigaEquipeId !== novaEquipeId) {
           batch.update(this.equipeRef(campeonatoId, categoriaId, antigaEquipeId), {
             totalJogadores: increment(-1),
@@ -241,14 +420,8 @@ export class JogadoresService {
             atualizadoEm: serverTimestamp(),
           });
         }
-        await batch.commit();
-        return;
       }
-      const batch = writeBatch(this.fs);
-      batch.update(ref, stripUndefined({
-        ...patch,
-        atualizadoEm: serverTimestamp(),
-      }));
+
       await batch.commit();
     });
   }
@@ -276,6 +449,8 @@ export class JogadoresService {
       const equipeId = (snap.data() as Jogador | undefined)?.equipeId;
       const batch = writeBatch(this.fs);
       batch.delete(ref);
+      // Remove também o subdoc privado de PII (se existir).
+      batch.delete(this.piiRef(campeonatoId, categoriaId, jogadorId));
       if (equipeId) {
         batch.update(this.equipeRef(campeonatoId, categoriaId, equipeId), {
           totalJogadores: increment(-1),

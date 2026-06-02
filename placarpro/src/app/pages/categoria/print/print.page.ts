@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { LoadingController, ModalController, PopoverController, ToastController } from '@ionic/angular';
-import { BehaviorSubject, Observable, combineLatest, firstValueFrom, of } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, firstValueFrom, from, of } from 'rxjs';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { catchError, map, startWith, switchMap } from 'rxjs/operators';
@@ -939,7 +939,17 @@ export class PrintPage implements OnInit {
     const campeonato$ = safe(this.campsSrv.get$(this.campeonatoId), undefined as Campeonato | undefined);
     const categoria$  = safe(this.catsSrv.get$(this.campeonatoId, this.categoriaId), undefined as Categoria | undefined);
     const equipes$    = safe(this.equipesSrv.list$(this.campeonatoId, this.categoriaId), [] as Equipe[]);
-    const jogadores$  = safe(this.jogadoresSrv.list$(this.campeonatoId, this.categoriaId), [] as Jogador[]);
+    // Lista pública + enriquecimento com PII (cpf/rg/nascimento/telefone) da
+    // subcoleção privada — a impressão admin exibe esses campos. Enriquecer é
+    // assíncrono (1 leitura/jogador); fallback retrocompat pra não-migrados.
+    const jogadores$  = safe(
+      this.jogadoresSrv.list$(this.campeonatoId, this.categoriaId).pipe(
+        switchMap(js => from(
+          this.jogadoresSrv.enriquecerComPii(this.campeonatoId, this.categoriaId, js),
+        )),
+      ),
+      [] as Jogador[],
+    );
     const jogos$      = safe(this.jogosSrv.list$(this.campeonatoId, this.categoriaId), [] as Jogo[]);
     // Classificação reage à fase selecionada (faseSubject) — refaz quando muda.
     const classif$ = this.faseSubject.pipe(
