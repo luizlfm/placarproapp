@@ -239,30 +239,31 @@ export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
-    // ─── GATE DE PLANO: transmissão ao vivo é feature paga ─────────────
-    // SÓ APLICA na rota AUTENTICADA (/app/campeonato/.../transmissao) —
-    // a rota PÚBLICA (/transmissao/:id/:catId/:jogoId) é compartilhável
-    // e aberta a qualquer torcedor SEM login. Quem paga é o ORGANIZADOR
-    // que INICIA a transmissão pela câmera; quem ASSISTE não precisa de plano.
+    // ─── GATE DE CRÉDITO: transmissão ao vivo exige crédito comprado ───
+    // A transmissão NÃO é mais inclusa em nenhum plano — depende só de
+    // créditos de transmissão AVULSOS (`transmissoesExtras` do DONO do
+    // campeonato). Quem comprou crédito pode transmitir em qualquer plano.
     //
-    // Detecta o contexto pela URL: prefixo `/app/` = área autenticada;
-    // prefixo `/transmissao/` = público.
+    // SÓ APLICA na rota AUTENTICADA (/app/campeonato/.../transmissao) — a
+    // rota PÚBLICA (/transmissao/:id/:catId/:jogoId) é compartilhável e
+    // aberta a qualquer torcedor SEM login (quem assiste não paga nada).
     const ehRotaPublica = this.router.url.startsWith('/transmissao/');
     if (!ehRotaPublica) {
-      const podeTransmissao = await firstValueFrom(
-        this.planosSrv.podeTransmissaoAoVivo$(),
-      );
-      if (!podeTransmissao) {
-        const minimo = this.planosSrv.planoMinimoParaTransmissao();
+      const camp = await firstValueFrom(this.campsSrv.get$(this.campeonatoId));
+      const ownerId = camp?.ownerId;
+      const temCredito = ownerId
+        ? await firstValueFrom(this.planosSrv.podeTransmitirComoOwner$(ownerId))
+        : false;
+      if (!temCredito) {
         const t = await this.toastCtrl.create({
-          message: `Transmissão ao vivo disponível no plano ${minimo.label}+.`,
+          message: 'Você não tem créditos de transmissão. Compre pra transmitir ao vivo.',
           duration: 3500,
           position: 'top',
           color: 'warning',
-          buttons: [{ text: 'Ver planos', role: 'cancel' }],
+          buttons: [{ text: 'Comprar créditos', role: 'cancel' }],
         });
         await t.present();
-        this.router.navigateByUrl('/app/planos');
+        this.router.navigateByUrl('/app/meus-creditos');
         return;
       }
     }

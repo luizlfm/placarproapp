@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, combineLatest, map } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { UsersService } from './users.service';
 import { UserProfile } from './models/user-profile.model';
 import { ConfigComercialService, ConfigComercial, CreditoConfig } from './config-comercial.service';
@@ -27,15 +27,6 @@ export interface PlanoLimites {
   permiteApiPublica: boolean;
   permiteEmbedHtml: boolean;
   permiteWhiteLabel: boolean;
-  /**
-   * Permite transmitir a partida ao vivo (câmera/LiveKit). Desbloqueia:
-   *  - Botão "Transmitir ao vivo" no header/ações do jogo-detalhe
-   *  - Tela /jogo/:id/transmissao (placar overlay + chat)
-   *
-   * Quando false, esses controles aparecem como bloqueados com CTA
-   * pra upgrade. Habilitado a partir do plano MÉDIO.
-   */
-  permiteTransmissaoAoVivo: boolean;
   /**
    * Número de transmissões ao vivo simultâneas incluídas no plano.
    * 0 = não permite. -1 = ilimitado.
@@ -96,7 +87,6 @@ const PLANO_GRATIS: PlanoDef = {
     permiteApiPublica: false,
     permiteEmbedHtml: false,
     permiteWhiteLabel: false,
-    permiteTransmissaoAoVivo: false,
     maxTransmisoesSimultaneas: 0,
     valorTransmissaoAvulsa: 30,
   },
@@ -124,7 +114,6 @@ const PLANO_PEQUENO: PlanoDef = {
     permiteApiPublica: false,
     permiteEmbedHtml: false,
     permiteWhiteLabel: false,
-    permiteTransmissaoAoVivo: false,
     maxTransmisoesSimultaneas: 0,
     valorTransmissaoAvulsa: 30,
   },
@@ -155,7 +144,6 @@ const PLANO_MEDIO: PlanoDef = {
     permiteApiPublica: false,
     permiteEmbedHtml: true,
     permiteWhiteLabel: false,
-    permiteTransmissaoAoVivo: true,
     maxTransmisoesSimultaneas: 1,
     valorTransmissaoAvulsa: 30,
   },
@@ -185,7 +173,6 @@ const PLANO_GRANDE: PlanoDef = {
     permiteApiPublica: true,
     permiteEmbedHtml: true,
     permiteWhiteLabel: false,
-    permiteTransmissaoAoVivo: true,
     maxTransmisoesSimultaneas: 1,
     valorTransmissaoAvulsa: 30,
   },
@@ -216,7 +203,6 @@ const PLANO_PROFISSIONAL: PlanoDef = {
     permiteApiPublica: true,
     permiteEmbedHtml: true,
     permiteWhiteLabel: true,
-    permiteTransmissaoAoVivo: true,
     maxTransmisoesSimultaneas: 3,
     valorTransmissaoAvulsa: 30,
   },
@@ -367,39 +353,16 @@ export class PlanosService {
     return this.meuPlano$().pipe(map(p => p.limites));
   }
 
-  /** Helper boolean: o user logado pode usar transmissão ao vivo?
-   *  Usado pra travar inputs/botões via async pipe no template. */
-  podeTransmissaoAoVivo$(): Observable<boolean> {
-    return this.meusLimites$().pipe(map(l => l.permiteTransmissaoAoVivo));
-  }
-
-  /** Nome do PRIMEIRO plano (mais barato) que libera transmissão ao
-   *  vivo. Útil pra UI mostrar CTA tipo "Upgrade pra MÉDIO". */
-  planoMinimoParaTransmissao(): PlanoDef {
-    const min = this.planos.find(p => p.limites.permiteTransmissaoAoVivo);
-    return min ?? PLANO_GRATIS;
-  }
-
   /**
    * Total de transmissões disponíveis do usuário LOGADO.
    *
-   * Quando `transmissoesExtras` já foi setado (compra avulsa), esse campo
-   * é a fonte de verdade. Quando ainda não foi setado, faz fallback para
-   * `maxTransmisoesSimultaneas` do plano atual — ou seja, o plano concede
-   * os créditos de transmissão automaticamente.
+   * Fonte ÚNICA: `transmissoesExtras` (créditos avulsos comprados). O plano
+   * NÃO inclui mais transmissões — quem quer transmitir precisa comprar
+   * crédito de transmissão. Default 0 quando o usuário nunca comprou.
    */
   totalTransmisoesDisponiveis$(): Observable<number> {
-    return combineLatest([
-      this.meuPlano$(),
-      this.usersSrv.profile$(),
-    ]).pipe(
-      map(([plano, profile]) => {
-        const planCredits =
-          plano.limites.maxTransmisoesSimultaneas === -1
-            ? 999
-            : plano.limites.maxTransmisoesSimultaneas;
-        return (profile as UserProfile)?.transmissoesExtras ?? planCredits;
-      }),
+    return this.usersSrv.profile$().pipe(
+      map(profile => (profile as UserProfile)?.transmissoesExtras ?? 0),
     );
   }
 
@@ -408,26 +371,18 @@ export class PlanosService {
    * Usado em jogo-detalhe e transmissao pra que moderadores verifiquem
    * o pool do organizador em vez do próprio — créditos são compartilhados.
    *
-   * `transmissoesExtras` é a fonte de verdade (compra avulsa). Fallback para
-   * os créditos do plano quando o campo ainda não foi gravado — o plano
-   * concede os créditos automaticamente.
+   * Fonte ÚNICA: `transmissoesExtras` (compra avulsa). O plano não concede
+   * transmissões.
    */
   totalTransmisoesParaOwner$(ownerId: string): Observable<number> {
     return this.usersSrv.profilePorUid$(ownerId).pipe(
-      map(profile => {
-        const plano = this.getPlanoDef(profile?.plano);
-        const planCredits =
-          plano.limites.maxTransmisoesSimultaneas === -1
-            ? 999
-            : plano.limites.maxTransmisoesSimultaneas;
-        return profile?.transmissoesExtras ?? planCredits;
-      }),
+      map(profile => profile?.transmissoesExtras ?? 0),
     );
   }
 
   /**
    * Retorna `true` se o dono do campeonato tem pelo menos 1 transmissão
-   * disponível (plano + avulsos). Usado pra liberar o botão de transmissão
+   * (crédito avulso comprado). Usado pra liberar o botão de transmissão
    * tanto pro organizador quanto pra moderadores (pool compartilhado).
    */
   podeTransmitirComoOwner$(ownerId: string): Observable<boolean> {
