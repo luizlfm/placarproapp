@@ -190,7 +190,22 @@
       "Bash(cat firebase.json)",
       "Bash(cat .firebaserc)",
       "Bash(node -e \"console.log\\(JSON.stringify\\(require\\('./package.json'\\).scripts,null,2\\)\\)\")",
-      "Bash(node -e \"const a=require\\('./angular.json'\\);const p=a.projects[Object.keys\\(a.projects\\)[0]].architect.build;console.log\\('defaultConfiguration:', p.defaultConfiguration\\)\")"
+      "Bash(node -e \"const a=require\\('./angular.json'\\);const p=a.projects[Object.keys\\(a.projects\\)[0]].architect.build;console.log\\('defaultConfiguration:', p.defaultConfiguration\\)\")",
+      "Bash(node node_modules/@angular/cli/bin/ng.js build --configuration=production)",
+      "Bash(node \"node_modules/@angular/cli/bin/ng.js\" build --configuration=production)",
+      "Bash(awk 'NR>=1 && /^\\\\.ld-scoreboard \\\\{/{f=1} f{print NR\": \"$0} f && /^\\\\}/ && NR>1 {c++; if\\(c>40\\) exit}' src/app/pages/categoria/jogo-detalhe/jogo-detalhe.page.scss)",
+      "Bash(awk -F: '$1>=2393 && $1<=2900 {print}')",
+      "Bash(grep -nE \"transmissaoLiveAtiva\\\\$ =|transmissaoLiveAtiva\\\\$:|readonly transmissaoLiveAtiva|jogo\\\\$ =|readonly jogo\\\\$|transmissaoTempo\\\\$ =|transmissaoTempoLive\\\\$ =\" src/app/pages/categoria/jogo-detalhe/jogo-detalhe.page.ts)",
+      "Bash(grep -nE \"transmissaoTempo\\\\$\" src/app/pages/categoria/jogo-detalhe/jogo-detalhe.page.html)",
+      "Bash(awk 'NR>=4040 && /\\\\.tx-card-camera \\\\{/{f=NR} END{}' src/app/pages/categoria/jogo-detalhe/jogo-detalhe.page.scss)",
+      "Bash(sed -n '204,226p' src/app/pages/categoria/jogo-detalhe/jogo-detalhe.page.ts)",
+      "Bash(sed -n '5,6p' src/app/pages/categoria/jogo-detalhe/jogo-detalhe.page.ts)",
+      "Bash(sed -n '18,40p' src/app/pages/seguindo/seguindo.page.ts)",
+      "Bash(sed -n '184,196p' src/app/pages/espectador/espectador.page.ts)",
+      "Bash(sed -n '125,140p' src/app/app-routing.module.ts)",
+      "Bash(sed -n '/interface ModeradorCampeonato/,/^}/p' src/app/campeonatos/campeonato.model.ts)",
+      "Bash(sed -n '1,120p' src/app/campeonatos/campeonato-permissoes.service.ts)",
+      "Bash(grep -nE \"profile\\\\$|moderadorValidado|bloqueado|banido|isMaster\\\\$|moderadorValidado\\\\$\" src/app/users/users.service.ts)"
     ]
   }
 }
