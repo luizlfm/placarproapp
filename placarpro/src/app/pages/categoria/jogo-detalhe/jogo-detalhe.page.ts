@@ -1644,10 +1644,17 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
    * (mas mantém o `iniciadoEm` original como histórico).
    */
   async iniciarPartida(): Promise<void> {
-    const jogo = await firstValueFrom(
-      this.jogosSrv.get$(this.campeonatoId, this.categoriaId, this.jogoId),
-    );
+    const jogo = await firstValueFrom(this.jogo$);
     if (!jogo?.id) return;
+    // Escalação dos DOIS times é OBRIGATÓRIA pra iniciar. Se faltar, o
+    // fluxo guia o usuário a preencher antes de começar.
+    if (!(await this.garantirEscalacoes(jogo))) return;
+    await this.executarInicioPartida(jogo);
+  }
+
+  /** Inicia de fato a partida (escalações já validadas). */
+  private async executarInicioPartida(jogo: JogoView): Promise<void> {
+    if (!jogo.id) return;
     try {
       const agora = Timestamp.now();
       await this.jogosSrv.atualizar(this.campeonatoId, this.categoriaId, jogo.id, {
@@ -1663,6 +1670,70 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
       console.error('[JogoDetalhe] iniciar erro', err);
       await this.toast('Erro ao iniciar partida.', 'danger');
     }
+  }
+
+  /**
+   * Escalação dos 2 times é obrigatória. Se faltar, mostra um alerta dizendo
+   * qual(is) time(s) e, ao confirmar, abre o(s) modal(is) de escalação em
+   * sequência; depois revalida. Retorna true só quando AMBOS têm ao menos 1
+   * jogador escalado.
+   */
+  private async garantirEscalacoes(jogo: JogoView): Promise<boolean> {
+    const ler = (eq: string) => firstValueFrom(
+      this.jogosSrv.escalacao$(this.campeonatoId, this.categoriaId, jogo.id!, eq),
+    );
+    let [escM, escV] = await Promise.all([ler(jogo.mandanteId), ler(jogo.visitanteId)]);
+    if (escM?.length && escV?.length) return true;
+
+    const quais = [
+      !escM?.length ? jogo.nomeMandante : null,
+      !escV?.length ? jogo.nomeVisitante : null,
+    ].filter(Boolean).join(' e ');
+
+    const alert = await this.alertCtrl.create({
+      header: 'Escalação obrigatória',
+      message: `Selecione a escalação de <strong>${quais}</strong> antes de iniciar a partida.`,
+      buttons: [
+        { text: 'Agora não', role: 'cancel' },
+        { text: 'Selecionar escalação', role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    if (role !== 'confirm') return false;
+
+    // Abre o(s) time(s) faltante(s) em sequência (mandante depois visitante).
+    if (!escM?.length) await this.abrirEscalacaoAguardar('mandante', jogo);
+    if (!escV?.length) await this.abrirEscalacaoAguardar('visitante', jogo);
+
+    [escM, escV] = await Promise.all([ler(jogo.mandanteId), ler(jogo.visitanteId)]);
+    if (escM?.length && escV?.length) return true;
+    await this.toast('Escalação ainda incompleta — selecione os dois times.', 'medium');
+    return false;
+  }
+
+  /** Abre o modal de escalação de um time e resolve quando ele fecha. */
+  private abrirEscalacaoAguardar(lado: 'mandante' | 'visitante', jogo: JogoView): Promise<void> {
+    const equipeId = lado === 'mandante' ? jogo.mandanteId : jogo.visitanteId;
+    const equipeNome = lado === 'mandante' ? jogo.nomeMandante : jogo.nomeVisitante;
+    const equipeLogoUrl = lado === 'mandante' ? jogo.logoMandante : jogo.logoVisitante;
+    return this.modalCtrl.create({
+      component: EscalacaoModalComponent,
+      componentProps: {
+        campeonatoId: this.campeonatoId,
+        categoriaId: this.categoriaId,
+        jogoId: jogo.id,
+        equipeId,
+        equipeNome,
+        equipeLogoUrl: equipeLogoUrl ?? '',
+      },
+      cssClass: 'modal-escalacao',
+      backdropDismiss: true,
+    }).then(async (modal) => {
+      const fechou = modal.onDidDismiss();
+      await modal.present();
+      await fechou;
+    });
   }
 
   /**
