@@ -1032,19 +1032,43 @@
               </ng-container>
             </div>
 
-            <!-- Linha de escudos ABAIXO do título — mandante à esquerda,
-               visitante à direita. Dá contexto visual de qual jogo é
-               sem disputar espaço com o título e o botão "Adicionar". -->
-            <div class="lances-escudos-bar">
-              <span class="lances-escudo lances-escudo-mand">
-                <img skel *ngIf="j.logoMandante; else iLEMb" [src]="j.logoMandante" [alt]="j.nomeMandante" />
-                <ng-template #iLEMb><ion-icon name="shield-outline"></ion-icon></ng-template>
-              </span>
-              <span class="lances-escudos-vs">vs</span>
-              <span class="lances-escudo lances-escudo-vis">
-                <img skel *ngIf="j.logoVisitante; else iLEVb" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
-                <ng-template #iLEVb><ion-icon name="shield-outline"></ion-icon></ng-template>
-              </span>
+            <!-- PLACAR (escudo + nome + gols × gols + nome + escudo) abaixo
+               do título. Mostra resultado ao vivo / final; em jogo agendado
+               mostra "vs". Encerrado: fundo escuro + vencedor destacado. -->
+            <div class="lances-placar" [class.is-encerrado]="j.status === 'encerrado'">
+              <div class="lp-team lp-mand"
+                [class.lp-vencedor]="j.status === 'encerrado' && (j.golsMandante ?? 0) > (j.golsVisitante ?? 0)">
+                <span class="lp-escudo">
+                  <img skel *ngIf="j.logoMandante; else iLEMb" [src]="j.logoMandante" [alt]="j.nomeMandante" />
+                  <ng-template #iLEMb><ion-icon name="shield-outline"></ion-icon></ng-template>
+                </span>
+                <span class="lp-nome">{{ j.nomeMandante }}</span>
+              </div>
+
+              <div class="lp-meio">
+                <ng-container *ngIf="j.golsMandante != null && j.golsVisitante != null; else lpVs">
+                  <span class="lp-score">
+                    <span class="lp-gols">{{ j.golsMandante }}</span>
+                    <span class="lp-x">×</span>
+                    <span class="lp-gols">{{ j.golsVisitante }}</span>
+                  </span>
+                  <span class="lp-penaltis"
+                    *ngIf="j.penaltisMandante != null && j.penaltisVisitante != null">
+                    pên {{ j.penaltisMandante }}–{{ j.penaltisVisitante }}
+                  </span>
+                  <span class="lp-status" *ngIf="j.status === 'encerrado'">Placar final</span>
+                </ng-container>
+                <ng-template #lpVs><span class="lp-vs">vs</span></ng-template>
+              </div>
+
+              <div class="lp-team lp-vis"
+                [class.lp-vencedor]="j.status === 'encerrado' && (j.golsVisitante ?? 0) > (j.golsMandante ?? 0)">
+                <span class="lp-nome">{{ j.nomeVisitante }}</span>
+                <span class="lp-escudo">
+                  <img skel *ngIf="j.logoVisitante; else iLEVb" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
+                  <ng-template #iLEVb><ion-icon name="shield-outline"></ion-icon></ng-template>
+                </span>
+              </div>
             </div>
 
             <!-- Aviso se não está em-andamento e não há lances -->

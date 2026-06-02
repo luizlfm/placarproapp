@@ -555,56 +555,123 @@ ion-content {
 /* ── Linha de escudos ABAIXO do título "Lances da Partida" ──
    Mandante 🛡 vs 🛡 Visitante. User pediu pra ficar embaixo (e não
    ladeando o título) pra não disputar espaço com o botão Adicionar. */
-.lances-escudos-bar {
+/* ════════ PLACAR da seção "Lances da Partida" ════════
+   Escudo + nome + gols × gols + nome + escudo. Ao vivo mostra o placar
+   corrente; encerrado fica num card escuro estilo TV com o vencedor
+   destacado; agendado mostra "vs". */
+.lances-placar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 14px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--surface-2, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--placar-border, rgba(0, 0, 0, 0.06));
+
+  &.is-encerrado {
+    background: linear-gradient(135deg, #0e1722 0%, #16212e 100%);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    .lp-nome { color: #fff; }
+    .lp-gols { color: #fff; }
+    .lp-x { color: rgba(255, 255, 255, 0.55); }
+    .lp-vs { color: rgba(255, 255, 255, 0.6); }
+  }
+}
+
+.lp-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+
+  &.lp-mand { justify-content: flex-start; }
+  &.lp-vis { justify-content: flex-end; }
+}
+
+.lp-escudo {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin: 6px 0 14px;
-  padding: 8px 10px;
-  background: var(--surface-2, rgba(0, 0, 0, 0.03));
-  border-radius: 10px;
-}
-
-.lances-escudo {
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--placar-card-bg, #fff);
-  border: 1px solid var(--placar-border, rgba(0, 0, 0, 0.08));
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
   overflow: hidden;
-  padding: 3px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.18);
 
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-  ion-icon {
-    font-size: 20px;
-    color: var(--ion-color-medium, #92949c);
-  }
+  img { width: 100%; height: 100%; object-fit: contain; padding: 4px; box-sizing: border-box; }
+  ion-icon { font-size: 22px; color: #94a3b8; }
 
-  @media (max-width: 480px) {
-    width: 30px;
-    height: 30px;
-    padding: 2px;
-    ion-icon { font-size: 16px; }
-  }
+  @media (max-width: 480px) { width: 34px; height: 34px; ion-icon { font-size: 18px; } }
 }
 
-.lances-escudos-vs {
-  font-size: 11px;
+.lp-nome {
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ion-text-color, #1a1a1a);
+
+  @media (max-width: 480px) { font-size: 12px; }
+}
+
+.lp-meio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  padding: 0 6px;
+}
+
+.lp-score { display: flex; align-items: center; gap: 8px; }
+
+.lp-gols {
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--ion-color-secondary, #7CC61D);
+  font-variant-numeric: tabular-nums;
+  min-width: 20px;
+  text-align: center;
+
+  @media (max-width: 480px) { font-size: 22px; }
+}
+
+.lp-x { font-size: 15px; font-weight: 700; color: var(--ion-color-medium, #9aa3b0); }
+
+.lp-vs {
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--placar-text-muted, rgba(0, 0, 0, 0.5));
+  color: var(--ion-color-medium, #9aa3b0);
 }
+
+.lp-penaltis {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ion-color-medium, #9aa3b0);
+}
+
+.lp-status {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--ion-color-secondary, #7CC61D);
+}
+
+/* Vencedor (encerrado): nome em verde + leve glow. */
+.lp-vencedor .lp-nome { color: var(--ion-color-secondary, #7CC61D); }
 
 /* ── Escalação ─────────────────────────────────────── */
 .escala-grid {
