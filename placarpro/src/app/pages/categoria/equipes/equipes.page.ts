@@ -170,7 +170,7 @@ export class EquipesPage {
     if (!eq.id) return;
     const alert = await this.alertCtrl.create({
       header: 'Remover equipe?',
-      message: `"${eq.nome}" e seus jogadores serão removidos. Esta ação não pode ser desfeita.`,
+      message: `"${eq.nome}", seus jogadores e as partidas dela serão removidos. Esta ação não pode ser desfeita.`,
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {

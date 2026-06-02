@@ -164,7 +164,7 @@ export class EquipeModalComponent implements OnInit {
     if (!this.equipeExistente?.id) return;
     const alert = await this.alertCtrl.create({
       header: 'Remover equipe?',
-      message: `"${this.equipeExistente.nome}" e todos os jogadores vinculados serão apagados.`,
+      message: `"${this.equipeExistente.nome}", todos os jogadores vinculados e as partidas dela serão apagados.`,
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {

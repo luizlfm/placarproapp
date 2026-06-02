@@ -100,9 +100,17 @@ export class EquipesService {
     );
   }
 
-  /** Remove a equipe e em cascata todos os jogadores vinculados. */
+  /**
+   * Remove a equipe e em cascata: jogadores vinculados, jogos em que ela
+   * aparece (mandante OU visitante) e os eventos desses jogos.
+   *
+   * Sem a cascata de jogos, partidas ficavam ÓRFÃS apontando pra uma equipe
+   * inexistente — nomes em branco na UI e uma "equipe fantasma" contando na
+   * classificação (via collectionGroup de eventos).
+   */
   async remover(campeonatoId: string, categoriaId: string, equipeId: string): Promise<void> {
     return runInInjectionContext(this.injector, async () => {
+      // 1) Jogadores + a própria equipe (batch atômico).
       const jogadoresSnap = await getDocs(
         query(this.jogadoresCol(campeonatoId, categoriaId), where('equipeId', '==', equipeId)),
       );
@@ -110,6 +118,28 @@ export class EquipesService {
       jogadoresSnap.docs.forEach(d => batch.delete(d.ref));
       batch.delete(this.docRef(campeonatoId, categoriaId, equipeId));
       await batch.commit();
+
+      // 2) Jogos que referenciam a equipe (Firestore não faz OR — 2 queries).
+      const jogosCol = collection(
+        this.fs, 'campeonatos', campeonatoId, 'categorias', categoriaId, 'jogos',
+      );
+      const [comoMandante, comoVisitante] = await Promise.all([
+        getDocs(query(jogosCol, where('mandanteId', '==', equipeId))),
+        getDocs(query(jogosCol, where('visitanteId', '==', equipeId))),
+      ]);
+      const jogoRefs = new Map<string, DocumentReference>();
+      comoMandante.docs.forEach(d => jogoRefs.set(d.id, d.ref));
+      comoVisitante.docs.forEach(d => jogoRefs.set(d.id, d.ref));
+
+      // 3) Pra cada jogo afetado: apaga eventos (subcoleção) + o doc do jogo.
+      //    Um batch por jogo evita estourar o limite de 500 ops do Firestore.
+      for (const jogoRef of jogoRefs.values()) {
+        const evSnap = await getDocs(collection(jogoRef, 'eventos'));
+        const b = writeBatch(this.fs);
+        evSnap.docs.forEach(d => b.delete(d.ref));
+        b.delete(jogoRef);
+        await b.commit();
+      }
     });
   }
 

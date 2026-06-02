@@ -1480,18 +1480,38 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
   async restaurar(): Promise<void> {
     const jogo = await firstValueFrom(this.jogo$);
     if (!jogo?.id) return;
-    const status: JogoStatus = 'agendado';
-    try {
-      await this.jogosSrv.atualizar(this.campeonatoId, this.categoriaId, jogo.id, {
-        status,
-        golsMandante: null,
-        golsVisitante: null,
-      });
-      await this.toast('Partida restaurada para agendada.', 'success');
-    } catch (err) {
-      console.error('[JogoDetalhe] restaurar erro', err);
-      await this.toast('Erro ao restaurar.', 'danger');
-    }
+    const alert = await this.alertCtrl.create({
+      header: 'Restaurar para agendado?',
+      message:
+        'O placar volta a zero e TODOS os eventos (gols, cartões) desta ' +
+        'partida serão apagados. Esta ação não pode ser desfeita.',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Restaurar',
+          role: 'destructive',
+          handler: async () => {
+            const status: JogoStatus = 'agendado';
+            try {
+              await this.jogosSrv.atualizar(this.campeonatoId, this.categoriaId, jogo.id!, {
+                status,
+                golsMandante: null,
+                golsVisitante: null,
+              });
+              // Limpa os eventos — senão ficavam inconsistentes com o placar
+              // zerado e o recalcularPlacar (disparado por qualquer edição de
+              // evento seguinte) faria o placar antigo reaparecer.
+              await this.jogosSrv.limparEventos(this.campeonatoId, this.categoriaId, jogo.id!);
+              await this.toast('Partida restaurada para agendada.', 'success');
+            } catch (err) {
+              console.error('[JogoDetalhe] restaurar erro', err);
+              await this.toast('Erro ao restaurar.', 'danger');
+            }
+          },
+        },
+      ],
+    });
+    await alert.present();
   }
 
   async remover(): Promise<void> {

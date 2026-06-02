@@ -159,9 +159,16 @@ export class JogosService {
   }
 
   async remover(campeonatoId: string, categoriaId: string, jogoId: string): Promise<void> {
-    await runInInjectionContext(this.injector, () =>
-      deleteDoc(this.docRef(campeonatoId, categoriaId, jogoId)),
-    );
+    await runInInjectionContext(this.injector, async () => {
+      // Deletar o doc do jogo NÃO apaga a subcoleção `eventos` no Firestore
+      // — sem isto, gols/cartões ficavam órfãos (e contavam em rankings via
+      // collectionGroup). Apaga eventos + jogo num batch atômico.
+      const evSnap = await getDocs(this.eventosCol(campeonatoId, categoriaId, jogoId));
+      const batch = writeBatch(this.fs);
+      evSnap.docs.forEach(d => batch.delete(d.ref));
+      batch.delete(this.docRef(campeonatoId, categoriaId, jogoId));
+      await batch.commit();
+    });
   }
 
   /**
