@@ -132,8 +132,10 @@ const routes: Routes = [
       import('./pages/publico/publico.module').then(m => m.PublicoPageModule),
   },
 
-  // Fallback (segurança)
-  { path: '**', redirectTo: 'app/meus-campeonatos' },
+  // Fallback (segurança): manda pra HOME PÚBLICA (não pra área logada, que
+  // jogaria um anônimo num loop de login). Usuário logado é redirecionado
+  // de '' pra /app pelo guard de auth, então cobre os dois casos.
+  { path: '**', redirectTo: '' },
 ];
 
 @NgModule({

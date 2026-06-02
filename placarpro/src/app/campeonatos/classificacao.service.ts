@@ -1,12 +1,15 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, combineLatest, map } from 'rxjs';
+import { Observable, combineLatest, map, of, switchMap } from 'rxjs';
 import { EquipesService } from './equipes.service';
 import { GruposService } from './grupos.service';
 import { JogosService } from './jogos.service';
 import { Equipe } from './models/equipe.model';
 import { Grupo } from './models/grupo.model';
-import { Jogo } from './models/jogo.model';
+import { EventoJogo, Jogo } from './models/jogo.model';
 import { CRITERIOS_PADRAO, CriterioId, Fase } from './models/fase.model';
+
+/** Contagem de cartões por equipe (pra critérios de desempate). */
+type CartoesPorEquipe = Map<string, { amarelos: number; vermelhos: number }>;
 
 /** Resultado de um jogo do ponto de vista de uma equipe. */
 export type ResultadoJogo = 'V' | 'E' | 'D';
@@ -68,19 +71,62 @@ export class ClassificacaoService {
     fase?: Fase | null,
     ordemManual = false,
   ): Observable<ClassificacaoGrupo[]> {
+    const criterios = fase?.criterios?.length ? fase.criterios : CRITERIOS_PADRAO;
+    const precisaCartoes = criterios.some(c => c.startsWith('cartoes'));
+
     return combineLatest([
       this.equipesSrv.list$(campeonatoId, categoriaId),
       this.gruposSrv.list$(campeonatoId, categoriaId),
       this.jogosSrv.list$(campeonatoId, categoriaId),
     ]).pipe(
-      map(([equipes, grupos, jogos]) => this.computar(equipes, grupos, jogos, fase, ordemManual)),
+      switchMap(([equipes, grupos, jogos]) => {
+        // Cartões só são carregados quando algum critério de desempate por
+        // cartão está configurado (custo zero no caso comum). Para isso,
+        // lê os eventos dos jogos computáveis (encerrado/W.O.) e agrega por
+        // equipe.
+        if (!precisaCartoes) {
+          return of(this.computar(equipes, grupos, jogos, new Map(), fase, ordemManual));
+        }
+        const computaveis = jogos.filter(
+          j => j.id && (j.status === 'encerrado' || j.status === 'wo'),
+        );
+        if (!computaveis.length) {
+          return of(this.computar(equipes, grupos, jogos, new Map(), fase, ordemManual));
+        }
+        return combineLatest(
+          computaveis.map(j =>
+            this.jogosSrv.listEventos$(campeonatoId, categoriaId, j.id!),
+          ),
+        ).pipe(
+          map(listas => this.agregarCartoes(listas.flat())),
+          map(cartoes => this.computar(equipes, grupos, jogos, cartoes, fase, ordemManual)),
+        );
+      }),
     );
+  }
+
+  /** Soma cartões amarelos/vermelhos por equipe a partir dos eventos. */
+  private agregarCartoes(eventos: EventoJogo[]): CartoesPorEquipe {
+    const mapa: CartoesPorEquipe = new Map();
+    const add = (eq: string, campo: 'amarelos' | 'vermelhos', qtd: number) => {
+      const atual = mapa.get(eq) ?? { amarelos: 0, vermelhos: 0 };
+      atual[campo] += qtd;
+      mapa.set(eq, atual);
+    };
+    for (const e of eventos) {
+      if (!e.equipeId) continue;
+      const qtd = e.quantidade && e.quantidade > 0 ? e.quantidade : 1;
+      if (e.tipo === 'amarelo') add(e.equipeId, 'amarelos', qtd);
+      else if (e.tipo === 'vermelho') add(e.equipeId, 'vermelhos', qtd);
+    }
+    return mapa;
   }
 
   private computar(
     equipes: Equipe[],
     grupos: Grupo[],
     jogos: Jogo[],
+    cartoesPorEquipe: CartoesPorEquipe,
     fase?: Fase | null,
     ordemManual = false,
   ): ClassificacaoGrupo[] {
@@ -121,8 +167,8 @@ export class ClassificacaoService {
           saldoGols: 0,
           aproveitamento: 0,
           penalizacao: e.penalizacao ?? 0,
-          cartoesAmarelos: 0,
-          cartoesVermelhos: 0,
+          cartoesAmarelos: cartoesPorEquipe.get(e.id!)?.amarelos ?? 0,
+          cartoesVermelhos: cartoesPorEquipe.get(e.id!)?.vermelhos ?? 0,
           vitoriasFora: 0,
           golsFora: 0,
           ultimosResultados: [],
@@ -152,7 +198,7 @@ export class ClassificacaoService {
       // ultimosResultados fique em ordem cronológica. Sem dataHora vai pro
       // fim usando criadoEm como tiebreaker.
       const encerrados = jogosUsar
-        .filter(j => j.status === 'encerrado' && j.golsMandante != null && j.golsVisitante != null)
+        .filter(j => (j.status === 'encerrado' || j.status === 'wo') && j.golsMandante != null && j.golsVisitante != null)
         .sort((a, b) => {
           const da = a.dataHora ?? '';
           const db = b.dataHora ?? '';
@@ -248,7 +294,7 @@ export class ClassificacaoService {
       // Encontra a maior rodada com pelo menos 1 jogo encerrado deste grupo.
       const idsGrupo = new Set(equipesDoGrupo.map(e => e.id));
       const jogosDoGrupo = jogosFiltrados.filter(
-        j => j.status === 'encerrado'
+        j => (j.status === 'encerrado' || j.status === 'wo')
           && (idsGrupo.has(j.mandanteId) || idsGrupo.has(j.visitanteId)),
       );
       const ultimaRodada = jogosDoGrupo.reduce(

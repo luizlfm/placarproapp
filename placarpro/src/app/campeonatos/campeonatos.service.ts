@@ -893,11 +893,16 @@ export class CampeonatosService {
   listByIds$(ids: string[]): Observable<Campeonato[]> {
     if (ids.length === 0) return of<Campeonato[]>([]);
     return runInInjectionContext(this.injector, () => {
-      // Firestore aceita até 10 IDs num `in`. Para listas maiores precisaria
-      // particionar; para o uso atual (seguidos por um usuário), 10 já cobre 99%.
-      const chunks = ids.length <= 10 ? [ids] : [ids.slice(0, 10)];
-      const q = query(this.col, where('__name__', 'in', chunks[0]));
-      return collectionData(q, { idField: 'id' }) as Observable<Campeonato[]>;
+      // Firestore aceita até 10 IDs num `in` — particiona em lotes de 10 e
+      // junta os resultados (cobre quem segue mais de 10 campeonatos).
+      const chunks: string[][] = [];
+      for (let i = 0; i < ids.length; i += 10) chunks.push(ids.slice(i, i + 10));
+      const streams = chunks.map(chunk =>
+        collectionData(query(this.col, where('__name__', 'in', chunk)), {
+          idField: 'id',
+        }) as Observable<Campeonato[]>,
+      );
+      return combineLatest(streams).pipe(map(listas => listas.flat()));
     });
   }
 

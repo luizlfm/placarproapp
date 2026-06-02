@@ -23,7 +23,9 @@ export class SeguindoPage {
 
   abrir(c: Campeonato): void {
     if (!c.id) return;
-    this.router.navigate(['/app/campeonato', c.id]);
+    // Rota PÚBLICA (`/:slug`) — quem segue normalmente é espectador e não
+    // tem acesso à área autenticada `/app/campeonato/:id` (cairia em guard).
+    this.router.navigate(['/', c.slug || c.shortCode || c.id]);
   }
 
   async deixarDeSeguir(ev: Event, c: Campeonato): Promise<void> {
