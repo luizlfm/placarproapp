@@ -599,6 +599,48 @@ ion-alert.alert-tall {
   }
 }
 
+/* Alert "Escalação obrigatória" — visual mais profissional: cabeçalho em
+   destaque, mensagem confortável e botão de ação principal em verde. */
+ion-alert.alert-escalacao {
+  --min-width: 300px;
+  --max-width: 380px;
+
+  .alert-head { padding-top: 20px; }
+  .alert-title {
+    font-size: 17px;
+    font-weight: 800;
+  }
+  .alert-message {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--ion-color-medium-shade, #6b7280);
+    padding-top: 6px;
+    strong { color: var(--ion-text-color, #1a1a1a); font-weight: 700; }
+  }
+
+  .alert-button-group {
+    padding: 8px 14px 14px !important;
+    gap: 8px;
+  }
+  .alert-button {
+    flex: 1;
+    border-radius: 10px;
+    text-transform: none;
+    font-weight: 700;
+    margin: 0;
+    --ripple-color: transparent;
+    .alert-button-inner { justify-content: center; }
+  }
+  .alert-button.ae-btn-confirm {
+    background: var(--ion-color-secondary, #7CC61D);
+    color: var(--ion-color-secondary-contrast, #fff);
+  }
+  .alert-button.ae-btn-cancel {
+    background: var(--ion-color-light, #f1f2f4);
+    color: var(--ion-color-medium-shade, #6b7280);
+  }
+}
+
 /* ============ Toast ============ */
 ion-toast {
   --border-radius: 10px;

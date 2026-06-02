@@ -1693,9 +1693,10 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
     const alert = await this.alertCtrl.create({
       header: 'Escalação obrigatória',
       message: `Selecione a escalação de <strong>${quais}</strong> antes de iniciar a partida.`,
+      cssClass: 'alert-escalacao',
       buttons: [
-        { text: 'Agora não', role: 'cancel' },
-        { text: 'Selecionar escalação', role: 'confirm' },
+        { text: 'Agora não', role: 'cancel', cssClass: 'ae-btn-cancel' },
+        { text: 'Selecionar escalação', role: 'confirm', cssClass: 'ae-btn-confirm' },
       ],
     });
     await alert.present();
