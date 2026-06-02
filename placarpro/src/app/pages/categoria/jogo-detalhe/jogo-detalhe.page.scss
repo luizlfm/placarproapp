@@ -673,6 +673,22 @@ ion-content {
 /* Vencedor (encerrado): nome em verde + leve glow. */
 .lp-vencedor .lp-nome { color: var(--ion-color-secondary, #7CC61D); }
 
+/* Wrapper do placar + ação acima dos segments (sempre visível). */
+.placar-topo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 16px;
+
+  .lances-placar { margin: 0; }
+}
+.placar-topo-acoes {
+  display: flex;
+  justify-content: center;
+
+  ion-button { --border-radius: 10px; font-weight: 700; }
+}
+
 /* ── Escalação ─────────────────────────────────────── */
 .escala-grid {
   display: grid;

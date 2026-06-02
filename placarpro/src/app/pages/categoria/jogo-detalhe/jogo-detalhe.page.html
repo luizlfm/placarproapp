@@ -873,6 +873,56 @@
             </ng-container>
           </section>
 
+          <!-- ════ Placar + ação (Reabrir/Iniciar) — ACIMA dos segments,
+               sempre visível (em qualquer aba). ════ -->
+          <div class="placar-topo">
+            <div class="lances-placar" [class.is-encerrado]="j.status === 'encerrado'">
+              <div class="lp-team lp-mand"
+                [class.lp-vencedor]="j.status === 'encerrado' && (j.golsMandante ?? 0) > (j.golsVisitante ?? 0)">
+                <span class="lp-escudo">
+                  <img skel *ngIf="j.logoMandante; else iLEMtopo" [src]="j.logoMandante" [alt]="j.nomeMandante" />
+                  <ng-template #iLEMtopo><ion-icon name="shield-outline"></ion-icon></ng-template>
+                </span>
+                <span class="lp-nome">{{ j.nomeMandante }}</span>
+              </div>
+
+              <div class="lp-meio">
+                <ng-container *ngIf="j.golsMandante != null && j.golsVisitante != null; else lpVsTopo">
+                  <span class="lp-score">
+                    <span class="lp-gols">{{ j.golsMandante }}</span>
+                    <span class="lp-x">×</span>
+                    <span class="lp-gols">{{ j.golsVisitante }}</span>
+                  </span>
+                  <span class="lp-penaltis"
+                    *ngIf="j.penaltisMandante != null && j.penaltisVisitante != null">
+                    pên {{ j.penaltisMandante }}–{{ j.penaltisVisitante }}
+                  </span>
+                  <span class="lp-status" *ngIf="j.status === 'encerrado'">Placar final</span>
+                </ng-container>
+                <ng-template #lpVsTopo><span class="lp-vs">vs</span></ng-template>
+              </div>
+
+              <div class="lp-team lp-vis"
+                [class.lp-vencedor]="j.status === 'encerrado' && (j.golsVisitante ?? 0) > (j.golsMandante ?? 0)">
+                <span class="lp-nome">{{ j.nomeVisitante }}</span>
+                <span class="lp-escudo">
+                  <img skel *ngIf="j.logoVisitante; else iLEVtopo" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
+                  <ng-template #iLEVtopo><ion-icon name="shield-outline"></ion-icon></ng-template>
+                </span>
+              </div>
+            </div>
+
+            <!-- Reabrir (encerrado) / Iniciar (agendado) — sempre acessível. -->
+            <div class="placar-topo-acoes"
+              *ngIf="p.editarResultados && j.status !== 'em-andamento'">
+              <ion-button fill="solid" size="small" color="secondary" (click)="iniciarPartida()"
+                [title]="j.status === 'encerrado' ? 'Reabrir partida' : 'Iniciar partida'">
+                <ion-icon slot="start" name="play-outline"></ion-icon>
+                {{ j.status === 'encerrado' ? 'Reabrir partida' : 'Iniciar jogo' }}
+              </ion-button>
+            </div>
+          </div>
+
           <!-- Segments Escalação | Lances -->
           <ion-segment [(ngModel)]="segmentAtivo" mode="md" class="seg-detalhe">
             <ion-segment-button value="escalacao">
@@ -1018,58 +1068,13 @@
                   <ion-icon name="lock-closed-outline"></ion-icon>
                   {{ j.status === 'encerrado' ? 'Encerrado' : 'Não iniciado' }}
                 </span>
-
-                <!-- Botão "Iniciar partida" / "Reabrir" no header dos lances —
-                   o usuário pediu pra ter o atalho aqui também, evitando
-                   ter que rolar pra cima até o `.scoreboard` pra reabrir.
-                   Funciona tanto pra status 'encerrado' (reabre) quanto
-                   'agendado' (inicia do zero). -->
-                <ion-button fill="solid" size="small" color="secondary" (click)="iniciarPartida()"
-                  [title]="j.status === 'encerrado' ? 'Reabrir partida' : 'Iniciar partida'">
-                  <ion-icon slot="start" name="play-outline"></ion-icon>
-                  {{ j.status === 'encerrado' ? 'Reabrir' : 'Iniciar jogo' }}
-                </ion-button>
+                <!-- Botão Reabrir/Iniciar MOVIDO pra cima dos segments
+                     (junto do placar), pra ficar sempre visível. -->
               </ng-container>
             </div>
 
-            <!-- PLACAR (escudo + nome + gols × gols + nome + escudo) abaixo
-               do título. Mostra resultado ao vivo / final; em jogo agendado
-               mostra "vs". Encerrado: fundo escuro + vencedor destacado. -->
-            <div class="lances-placar" [class.is-encerrado]="j.status === 'encerrado'">
-              <div class="lp-team lp-mand"
-                [class.lp-vencedor]="j.status === 'encerrado' && (j.golsMandante ?? 0) > (j.golsVisitante ?? 0)">
-                <span class="lp-escudo">
-                  <img skel *ngIf="j.logoMandante; else iLEMb" [src]="j.logoMandante" [alt]="j.nomeMandante" />
-                  <ng-template #iLEMb><ion-icon name="shield-outline"></ion-icon></ng-template>
-                </span>
-                <span class="lp-nome">{{ j.nomeMandante }}</span>
-              </div>
-
-              <div class="lp-meio">
-                <ng-container *ngIf="j.golsMandante != null && j.golsVisitante != null; else lpVs">
-                  <span class="lp-score">
-                    <span class="lp-gols">{{ j.golsMandante }}</span>
-                    <span class="lp-x">×</span>
-                    <span class="lp-gols">{{ j.golsVisitante }}</span>
-                  </span>
-                  <span class="lp-penaltis"
-                    *ngIf="j.penaltisMandante != null && j.penaltisVisitante != null">
-                    pên {{ j.penaltisMandante }}–{{ j.penaltisVisitante }}
-                  </span>
-                  <span class="lp-status" *ngIf="j.status === 'encerrado'">Placar final</span>
-                </ng-container>
-                <ng-template #lpVs><span class="lp-vs">vs</span></ng-template>
-              </div>
-
-              <div class="lp-team lp-vis"
-                [class.lp-vencedor]="j.status === 'encerrado' && (j.golsVisitante ?? 0) > (j.golsMandante ?? 0)">
-                <span class="lp-nome">{{ j.nomeVisitante }}</span>
-                <span class="lp-escudo">
-                  <img skel *ngIf="j.logoVisitante; else iLEVb" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
-                  <ng-template #iLEVb><ion-icon name="shield-outline"></ion-icon></ng-template>
-                </span>
-              </div>
-            </div>
+            <!-- PLACAR (escudo + nome + gols × gols) MOVIDO pra cima dos
+                 segments — ver `.placar-topo`. -->
 
             <!-- Aviso se não está em-andamento e não há lances -->
             <div *ngIf="j.status !== 'em-andamento'" class="aviso-status">
