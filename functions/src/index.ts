@@ -14,6 +14,7 @@
  */
 
 import * as admin from 'firebase-admin';
+import * as crypto from 'crypto';
 import { setGlobalOptions } from 'firebase-functions/v2';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { onRequest } from 'firebase-functions/v2/https';
@@ -31,6 +32,64 @@ const MP_ACCESS_TOKEN = defineSecret('MP_ACCESS_TOKEN');
 const MP_WEBHOOK_SECRET = defineSecret('MP_WEBHOOK_SECRET');
 
 import { criarPagamentoMercadoPago } from './mercadopago';
+
+/**
+ * Valida a assinatura HMAC do webhook do Mercado Pago.
+ *
+ * O MP envia o header `x-signature` no formato `ts=<timestamp>,v1=<hmac>` e
+ * um `x-request-id`. O manifest assinado é `id:<data.id>;request-id:<reqId>;ts:<ts>;`
+ * e o HMAC-SHA256 usa o `MP_WEBHOOK_SECRET` como chave.
+ * Ver: https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks
+ *
+ * Defesa em profundidade: mesmo que isto passe, o webhook SEMPRE re-busca o
+ * pagamento na API do MP (com o access token) antes de marcar como pago — ou
+ * seja, um payload forjado não consegue confirmar um pagamento. A assinatura
+ * apenas rejeita ruído/replay antes de gastar uma chamada à API.
+ *
+ * Retorna `true` se válido OU se o secret não estiver configurado (fail-open
+ * controlado — sem secret, mantém o comportamento antigo de só logar).
+ * Usa `crypto.timingSafeEqual` pra evitar timing attacks.
+ */
+function validarAssinaturaWebhookMP(
+  xSignature: string | undefined,
+  xRequestId: string | undefined,
+  dataId: string | undefined,
+  secret: string | undefined,
+): boolean {
+  // Sem secret configurado → não dá pra validar; mantém fail-open (o
+  // re-fetch na API do MP continua sendo a barreira real).
+  if (!secret) {
+    logger.warn('[webhook] MP_WEBHOOK_SECRET ausente — pulando validação de assinatura');
+    return true;
+  }
+  if (!xSignature || !dataId) return false;
+
+  // Parse do header: "ts=1700000000,v1=abcdef..."
+  let ts = '';
+  let v1 = '';
+  for (const parte of xSignature.split(',')) {
+    const [k, val] = parte.split('=').map(s => s?.trim());
+    if (k === 'ts') ts = val ?? '';
+    else if (k === 'v1') v1 = val ?? '';
+  }
+  if (!ts || !v1) return false;
+
+  // Manifest conforme spec do MP. O `data.id` deve ser minúsculo.
+  const manifest = `id:${dataId.toLowerCase()};request-id:${xRequestId ?? ''};ts:${ts};`;
+  const esperado = crypto
+    .createHmac('sha256', secret)
+    .update(manifest)
+    .digest('hex');
+
+  try {
+    const a = Buffer.from(esperado, 'hex');
+    const b = Buffer.from(v1, 'hex');
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
 
 // Re-export da função de tokens LiveKit (ver `./livekit.ts` pra detalhes).
 // Mantida em arquivo separado pra isolar a lógica de tokens de pagamento.
@@ -230,14 +289,28 @@ export const webhookMercadoPago = onRequest(
       return;
     }
 
-    // Valida o secret (X-Signature header) — se configurado
-    // Mercado Pago manda o header `x-signature` com a assinatura HMAC.
-    // Por simplicidade, aqui só logamos. Pra produção real, validar
-    // crypto-strong igual https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks
-    const sig = request.headers['x-signature'];
-    logger.info('[webhook] payload recebido', { body: request.body, signature: sig });
-
     const body = request.body as { type?: string; data?: { id?: string } };
+    const mpPaymentId = body?.data?.id;
+
+    // ── Validação de assinatura HMAC (x-signature) ──────────────────────
+    // Rejeita webhooks forjados/replay ANTES de processar. Defesa em
+    // profundidade: o re-fetch na API do MP (mais abaixo) é a barreira final.
+    const xSignature = request.headers['x-signature'] as string | undefined;
+    const xRequestId = request.headers['x-request-id'] as string | undefined;
+    const assinaturaOk = validarAssinaturaWebhookMP(
+      xSignature,
+      xRequestId,
+      mpPaymentId?.toString(),
+      MP_WEBHOOK_SECRET.value(),
+    );
+    if (!assinaturaOk) {
+      logger.warn('[webhook] assinatura inválida — rejeitando', {
+        signature: xSignature, requestId: xRequestId,
+      });
+      response.status(401).send('assinatura inválida');
+      return;
+    }
+    logger.info('[webhook] payload recebido (assinatura ok)', { type: body?.type });
 
     // Só processa eventos de pagamento
     if (body?.type !== 'payment') {
@@ -245,7 +318,6 @@ export const webhookMercadoPago = onRequest(
       return;
     }
 
-    const mpPaymentId = body?.data?.id;
     if (!mpPaymentId) {
       response.status(400).send('payment.id missing');
       return;
@@ -569,34 +641,81 @@ export const aceitarConviteModerador = onCall(
     // ─────────────────────────────────────────────────────────────────────
     const campSnap = await campRef.get();
     const camp = campSnap.data() ?? {};
-    const moderadoresAtual: Array<{ id: string; permissoes?: Record<string, boolean> }> =
-      Array.isArray(camp.moderadores) ? camp.moderadores : [];
 
-    const editarCampeonatoUids: string[] = [];
-    const gerenciarEquipesUids: string[] = [];
-    const editarResultadosUids: string[] = [];
-    const enviarMidiasUids: string[] = [];
-    const gerenciarEnquetesUids: string[] = [];
-    for (const m of moderadoresAtual) {
-      if (!m?.id) continue;
-      // Placeholder IDs (mod-/mod_) não dão permissão — ainda não tem UID real.
-      if (m.id.startsWith('mod-') || m.id.startsWith('mod_')) continue;
+    const ehUidReal = (id: unknown): id is string =>
+      typeof id === 'string' && !!id && !id.startsWith('mod-') && !id.startsWith('mod_');
+
+    const editarCampeonatoUids = new Set<string>();
+    const gerenciarEquipesUids = new Set<string>();
+    const editarResultadosUids = new Set<string>();
+    const enviarMidiasUids = new Set<string>();
+    const gerenciarEnquetesUids = new Set<string>();
+
+    const concederTudo = (id: string): void => {
+      editarCampeonatoUids.add(id);
+      gerenciarEquipesUids.add(id);
+      editarResultadosUids.add(id);
+      enviarMidiasUids.add(id);
+      gerenciarEnquetesUids.add(id);
+    };
+
+    // Nível campeonato — objeto `permissoes` com as 5 flags.
+    const modsCamp: Array<{ id?: string; permissoes?: Record<string, boolean> }> =
+      Array.isArray(camp.moderadores) ? camp.moderadores : [];
+    for (const m of modsCamp) {
+      if (!ehUidReal(m?.id)) continue;
       const p = m.permissoes ?? {};
-      if (p.editarCampeonato) editarCampeonatoUids.push(m.id);
-      if (p.gerenciarEquipes) gerenciarEquipesUids.push(m.id);
-      if (p.editarResultados) editarResultadosUids.push(m.id);
-      if (p.enviarMidias) enviarMidiasUids.push(m.id);
-      if (p.gerenciarEnquetes) gerenciarEnquetesUids.push(m.id);
+      if (p.editarCampeonato) editarCampeonatoUids.add(m.id!);
+      if (p.gerenciarEquipes) gerenciarEquipesUids.add(m.id!);
+      if (p.editarResultados) editarResultadosUids.add(m.id!);
+      if (p.enviarMidias) enviarMidiasUids.add(m.id!);
+      if (p.gerenciarEnquetes) gerenciarEnquetesUids.add(m.id!);
+    }
+
+    // Nível categoria — `permissoesDetalhadas` (novo) ou `permissoes` string
+    // legado ('gerenciar' | 'apenas-lances'). `editarCampeonato` engloba
+    // equipes + enquetes (mesma regra do front). Sem isto, moderador de
+    // categoria ficava em moderadorUids mas em nenhuma lista granular.
+    const catsSnap = await campRef.collection('categorias').get();
+    for (const catDoc of catsSnap.docs) {
+      const mods = catDoc.data().moderadores;
+      if (!Array.isArray(mods)) continue;
+      for (const raw of mods) {
+        if (typeof raw === 'string') {
+          if (ehUidReal(raw)) concederTudo(raw); // legado: UID = "gerenciar"
+          continue;
+        }
+        const m = raw as {
+          id?: string;
+          permissoes?: string;
+          permissoesDetalhadas?: Record<string, boolean>;
+        };
+        if (!ehUidReal(m?.id)) continue;
+        const pd = m.permissoesDetalhadas;
+        if (pd) {
+          if (pd.editarCampeonato) {
+            editarCampeonatoUids.add(m.id!);
+            gerenciarEquipesUids.add(m.id!);
+            gerenciarEnquetesUids.add(m.id!);
+          }
+          if (pd.editarResultados) editarResultadosUids.add(m.id!);
+          if (pd.enviarMidias) enviarMidiasUids.add(m.id!);
+        } else if (m.permissoes === 'gerenciar') {
+          concederTudo(m.id!);
+        } else if (m.permissoes === 'apenas-lances') {
+          editarResultadosUids.add(m.id!);
+        }
+      }
     }
 
     await campRef.set(
       {
         moderadorUids: admin.firestore.FieldValue.arrayUnion(uid),
-        editarCampeonatoUids,
-        gerenciarEquipesUids,
-        editarResultadosUids,
-        enviarMidiasUids,
-        gerenciarEnquetesUids,
+        editarCampeonatoUids: Array.from(editarCampeonatoUids),
+        gerenciarEquipesUids: Array.from(gerenciarEquipesUids),
+        editarResultadosUids: Array.from(editarResultadosUids),
+        enviarMidiasUids: Array.from(enviarMidiasUids),
+        gerenciarEnquetesUids: Array.from(gerenciarEnquetesUids),
       },
       { merge: true },
     );

@@ -12,6 +12,7 @@ import { CampeonatosService } from '../../../campeonatos/campeonatos.service';
 import { ConvitesModeradorService } from '../../../campeonatos/convites-moderador.service';
 import { AuthService } from '../../../auth/auth.service';
 import { Seguidor } from '../../../campeonatos/models/seguidor.model';
+import { gerarTokenSeguro } from '../../utils/token.utils';
 import { SelecionarSeguidorModalComponent } from '../selecionar-seguidor-modal/selecionar-seguidor-modal.component';
 
 /**
@@ -283,6 +284,11 @@ export class ModeradoresModalComponent implements OnInit {
       // Sem isso, a página `/m/{token}` não acha o convite (Firestore não
       // consulta dentro de arrays de subcoleções com performance aceitável).
       await this.sincronizarConvites();
+      // Recomputa as listas planas de permissão no campeonato (UNIÃO de
+      // campeonato + todas as categorias) — sem isso o moderador de categoria
+      // entra em moderadorUids mas em nenhuma lista granular e as Rules negam
+      // todas as edições dele. Concede E revoga conforme a lista atual.
+      await this.campeonatosSrv.recomputarPermissoesUids(this.campeonatoId);
     } catch (err) {
       console.error('[ModeradoresModal] persistir', err);
       await this.toast('Erro ao salvar moderadores.', 'danger');
@@ -323,11 +329,9 @@ export class ModeradoresModalComponent implements OnInit {
   }
 
   private gerarToken(): string {
-    // Token mais curto/legível pra URL: 12 chars alfanuméricos
-    const alf = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-    let s = '';
-    for (let i = 0; i < 12; i++) s += alf[Math.floor(Math.random() * alf.length)];
-    return s;
+    // Token de convite de moderador → dá acesso de gestão ao campeonato.
+    // CSPRNG + 24 chars (~142 bits). Antes: Math.random() + 12 chars (fraco).
+    return gerarTokenSeguro(24);
   }
 
   rotuloPermissoes(p?: Moderador['permissoes']): string {

@@ -655,6 +655,114 @@ export class CampeonatosService {
     );
   }
 
+  /**
+   * Recomputa as listas planas de permissão (`editarCampeonatoUids`,
+   * `gerenciarEquipesUids`, `editarResultadosUids`, `enviarMidiasUids`,
+   * `gerenciarEnquetesUids`) no doc do campeonato, UNINDO moderadores de
+   * NÍVEL CAMPEONATO + de TODAS as categorias.
+   *
+   * Por que: as Firestore Rules autorizam writes granulares via essas
+   * listas planas. O modal de campeonato já as mantinha (só com os mods de
+   * campeonato), mas o modal de CATEGORIA não — então um moderador de
+   * categoria entrava em `moderadorUids` mas em nenhuma lista granular e o
+   * servidor negava todas as edições dele. Aqui recomputamos a UNIÃO a
+   * partir da fonte de verdade (os arrays `moderadores`), o que tanto
+   * concede quanto revoga corretamente.
+   *
+   * NÃO toca em `moderadorUids` (mantido aditivo pela CF de aceite) — como
+   * todo `pode*` exige também a lista granular, deixar um UID órfão em
+   * `moderadorUids` não concede nenhuma escrita.
+   *
+   * Best-effort: só o dono/admin consegue escrever no doc; erros são
+   * logados e não quebram o fluxo do modal.
+   */
+  async recomputarPermissoesUids(campeonatoId: string): Promise<void> {
+    if (!campeonatoId) return;
+    await runInInjectionContext(this.injector, async () => {
+      try {
+        const ehUidReal = (id: unknown): id is string =>
+          typeof id === 'string' && !!id && !id.startsWith('mod-') && !id.startsWith('mod_');
+
+        const editarCampeonatoUids = new Set<string>();
+        const gerenciarEquipesUids = new Set<string>();
+        const editarResultadosUids = new Set<string>();
+        const enviarMidiasUids = new Set<string>();
+        const gerenciarEnquetesUids = new Set<string>();
+
+        const concederTudo = (uid: string): void => {
+          editarCampeonatoUids.add(uid);
+          gerenciarEquipesUids.add(uid);
+          editarResultadosUids.add(uid);
+          enviarMidiasUids.add(uid);
+          gerenciarEnquetesUids.add(uid);
+        };
+
+        // Nível campeonato — objeto `permissoes` com as 5 flags.
+        const campSnap = await getDoc(this.docRef(campeonatoId));
+        const modsCamp = (campSnap.data()?.moderadores ?? []) as unknown as Array<{
+          id?: string;
+          permissoes?: Record<string, boolean>;
+        }>;
+        for (const m of modsCamp) {
+          if (!ehUidReal(m?.id)) continue;
+          const p = m.permissoes ?? {};
+          if (p['editarCampeonato']) editarCampeonatoUids.add(m.id!);
+          if (p['gerenciarEquipes']) gerenciarEquipesUids.add(m.id!);
+          if (p['editarResultados']) editarResultadosUids.add(m.id!);
+          if (p['enviarMidias']) enviarMidiasUids.add(m.id!);
+          if (p['gerenciarEnquetes']) gerenciarEnquetesUids.add(m.id!);
+        }
+
+        // Nível categoria — `permissoesDetalhadas` (novo) ou `permissoes`
+        // string legado. `editarCampeonato` engloba equipes + enquetes.
+        const catsSnap = await getDocs(
+          collection(this.fs, 'campeonatos', campeonatoId, 'categorias'),
+        );
+        for (const catDoc of catsSnap.docs) {
+          const mods = (catDoc.data() as { moderadores?: unknown }).moderadores;
+          if (!Array.isArray(mods)) continue;
+          for (const raw of mods) {
+            if (typeof raw === 'string') {
+              if (ehUidReal(raw)) concederTudo(raw); // legado: UID = "gerenciar"
+              continue;
+            }
+            const m = raw as {
+              id?: string;
+              permissoes?: string;
+              permissoesDetalhadas?: Record<string, boolean>;
+            };
+            if (!ehUidReal(m?.id)) continue;
+            const pd = m.permissoesDetalhadas;
+            if (pd) {
+              if (pd['editarCampeonato']) {
+                editarCampeonatoUids.add(m.id!);
+                gerenciarEquipesUids.add(m.id!);
+                gerenciarEnquetesUids.add(m.id!);
+              }
+              if (pd['editarResultados']) editarResultadosUids.add(m.id!);
+              if (pd['enviarMidias']) enviarMidiasUids.add(m.id!);
+            } else if (m.permissoes === 'gerenciar') {
+              concederTudo(m.id!);
+            } else if (m.permissoes === 'apenas-lances') {
+              editarResultadosUids.add(m.id!);
+            }
+          }
+        }
+
+        await updateDoc(this.docRef(campeonatoId), {
+          editarCampeonatoUids: Array.from(editarCampeonatoUids),
+          gerenciarEquipesUids: Array.from(gerenciarEquipesUids),
+          editarResultadosUids: Array.from(editarResultadosUids),
+          enviarMidiasUids: Array.from(enviarMidiasUids),
+          gerenciarEnquetesUids: Array.from(gerenciarEnquetesUids),
+          atualizadoEm: serverTimestamp() as unknown as Timestamp,
+        });
+      } catch (err) {
+        console.warn('[Campeonatos] recomputarPermissoesUids falhou (best-effort)', err);
+      }
+    });
+  }
+
   /** Remove o campeonato. */
   async remover(id: string): Promise<void> {
     await runInInjectionContext(this.injector, () => deleteDoc(this.docRef(id)));
