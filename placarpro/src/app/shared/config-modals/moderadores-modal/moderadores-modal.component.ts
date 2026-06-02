@@ -9,6 +9,7 @@ import {
   MODERADOR_PERMISSOES_PADRAO_CAMP,
 } from '../../../campeonatos/campeonato.model';
 import { denormalizarPermissoesUids } from '../../moderador-permissoes.helper';
+import { gerarTokenSeguro } from '../../utils/token.utils';
 
 /**
  * Modal de gerenciamento de moderadores — fluxo SIMPLES.
@@ -272,10 +273,9 @@ export class ModeradoresModalComponent implements OnInit {
     return 'mod-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
   }
   private gerarLinkToken(): string {
-    const alf = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-    let s = '';
-    for (let i = 0; i < 12; i++) s += alf[Math.floor(Math.random() * alf.length)];
-    return s;
+    // Token de convite de moderador → dá acesso de gestão ao campeonato.
+    // CSPRNG + 24 chars (~142 bits). Antes: Math.random() + 12 chars (fraco).
+    return gerarTokenSeguro(24);
   }
   private async toast(message: string, color: 'success' | 'danger'): Promise<void> {
     const t = await this.toastCtrl.create({

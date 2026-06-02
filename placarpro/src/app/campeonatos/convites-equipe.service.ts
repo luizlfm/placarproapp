@@ -68,11 +68,28 @@ export class ConvitesEquipeService {
     return doc(this.fs, 'convitesEquipe', token) as DocumentReference<ConviteEquipe>;
   }
 
-  /** Gera um token de 8 caracteres URL-safe (alfanumérico). */
+  /**
+   * Gera um token URL-safe criptograficamente forte (22 chars ≈ 130 bits de
+   * entropia). Usa `crypto.getRandomValues` (CSPRNG) em vez de `Math.random()`
+   * — que é previsível e não serve pra segredo. Tokens antigos de 8 chars
+   * continuam válidos (mudança só afeta novos convites).
+   */
   private gerarToken(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    const tamanho = 22;
+    const cryptoObj = typeof crypto !== 'undefined' ? crypto : undefined;
+    if (cryptoObj?.getRandomValues) {
+      const buf = new Uint8Array(tamanho);
+      cryptoObj.getRandomValues(buf);
+      let s = '';
+      for (let i = 0; i < tamanho; i++) {
+        s += chars.charAt(buf[i] % chars.length);
+      }
+      return s;
+    }
+    // Fallback (ambientes sem WebCrypto) — ainda melhor que 8 chars.
     let s = '';
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < tamanho; i++) {
       s += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return s;
