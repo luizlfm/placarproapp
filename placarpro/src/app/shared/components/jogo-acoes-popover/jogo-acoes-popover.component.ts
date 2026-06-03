@@ -6,6 +6,7 @@ export type JogoAcao =
   | 'equipes'
   | 'resultado'
   | 'informacoes'
+  | 'arte'
   | 'restaurar'
   | 'remover';
 

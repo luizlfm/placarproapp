@@ -22,6 +22,7 @@ import { JogoModalComponent } from '../../../shared/components/jogo-modal/jogo-m
 import { EditarResultadoModalComponent } from '../../../shared/components/editar-resultado-modal/editar-resultado-modal.component';
 import { SelecionarEquipesModalComponent } from '../../../shared/components/selecionar-equipes-modal/selecionar-equipes-modal.component';
 import { EditarInformacoesModalComponent } from '../jogo-detalhe/editar-informacoes-modal/editar-informacoes-modal.component';
+import { ArteDoJogoModalComponent } from '../../../shared/components/arte-do-jogo-modal/arte-do-jogo-modal.component';
 import { GruposService } from '../../../campeonatos/grupos.service';
 import {
   JogoAcao,
@@ -343,6 +344,29 @@ export class JogosPage {
         await modal.present();
         return;
       }
+      case 'arte': {
+        // Abre direto o gerador de arte do jogo (atalho — antes só via
+        // "Editar informações"). Mesmos props do modal de lá.
+        const [equipes, campeonato, categoria] = await Promise.all([
+          firstValueFrom(this.equipesSrv.list$(this.campeonatoId, this.categoriaId)),
+          firstValueFrom(this.campeonatosSrv.get$(this.campeonatoId)),
+          firstValueFrom(this.categoriasSrv.get$(this.campeonatoId, this.categoriaId)),
+        ]);
+        const modal = await this.modalCtrl.create({
+          component: ArteDoJogoModalComponent,
+          componentProps: {
+            jogo,
+            mandante: equipes.find(e => e.id === jogo.mandanteId),
+            visitante: equipes.find(e => e.id === jogo.visitanteId),
+            campeonato,
+            categoria,
+          },
+          cssClass: 'modal-arte-jogo',
+          backdropDismiss: true,
+        });
+        await modal.present();
+        return;
+      }
       case 'restaurar':
         await this.restaurarJogo(jogo);
         return;
@@ -482,11 +506,21 @@ export class JogosPage {
    *  "DD/MM · HH:MM". Retorna a string original se não conseguir parsear. */
   formatarDataHora(s: string | null | undefined): string {
     if (!s) return '';
-    // Aceita "2026-05-21T15:42" ou "2026-05-21 15:42" ou Date.toISOString()
-    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})/);
-    if (!m) return s;
-    const [, , mes, dia, hh, mm] = m;
-    return `${dia}/${mes} · ${hh}:${mm}`;
+    // Aceita: "2026-05-21T15:42", "2026-05-21 15:42", "2026-05-21" (só data).
+    // Primeiro tenta capturar com hora (T ou espaço); se não casar, cai
+    // pro formato só data — antes retornava a string crua (ISO completo
+    // ou "2026-06-03") sem formatar.
+    const comHora = s.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})/);
+    if (comHora) {
+      const [, , mes, dia, hh, mm] = comHora;
+      return `${dia}/${mes} · ${hh}:${mm}`;
+    }
+    const soData = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (soData) {
+      const [, , mes, dia] = soData;
+      return `${dia}/${mes}`;
+    }
+    return s;
   }
 
   /** Conta jogos por status (pra badges no header). */
