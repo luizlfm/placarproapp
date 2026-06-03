@@ -66,14 +66,14 @@ export class JogosService {
     categoriaId: string,
     jogoId: string,
     equipeId: string,
-  ): DocumentReference<{ jogadorIds: string[] }> {
+  ): DocumentReference<{ jogadorIds: string[]; titularIds?: string[] }> {
     return doc(
       this.fs,
       'campeonatos', campeonatoId,
       'categorias', categoriaId,
       'jogos', jogoId,
       'escalacao', equipeId,
-    ) as DocumentReference<{ jogadorIds: string[] }>;
+    ) as DocumentReference<{ jogadorIds: string[]; titularIds?: string[] }>;
   }
 
   escalacao$(
@@ -104,6 +104,38 @@ export class JogosService {
       } else {
         await setDoc(ref, { jogadorIds });
       }
+    });
+  }
+
+  /** IDs dos jogadores marcados como TITULARES (subconjunto da escalação que
+   *  aparece no campo). Vazio = nenhum marcado (UI mostra todos como fallback). */
+  titulares$(
+    campeonatoId: string,
+    categoriaId: string,
+    jogoId: string,
+    equipeId: string,
+  ): Observable<string[]> {
+    return runInInjectionContext(this.injector, () =>
+      (docData(this.escalacaoDocRef(campeonatoId, categoriaId, jogoId, equipeId)) as Observable<
+        { titularIds?: string[] } | undefined
+      >).pipe(map(d => d?.titularIds ?? [])),
+    );
+  }
+
+  /** Salva os titulares (merge — não mexe em jogadorIds). */
+  async salvarTitulares(
+    campeonatoId: string,
+    categoriaId: string,
+    jogoId: string,
+    equipeId: string,
+    titularIds: string[],
+  ): Promise<void> {
+    await runInInjectionContext(this.injector, async () => {
+      await setDoc(
+        this.escalacaoDocRef(campeonatoId, categoriaId, jogoId, equipeId),
+        { titularIds },
+        { merge: true },
+      );
     });
   }
 
@@ -169,37 +201,6 @@ export class JogosService {
       batch.delete(this.docRef(campeonatoId, categoriaId, jogoId));
       await batch.commit();
     });
-  }
-
-  /**
-   * DEV/TEST: dispara visualização do banner PREMIUM em todas as telas
-   * conectadas (admin + transmissão pública + público-jogo).
-   *
-   * Grava 3 campos `_testePremium*` no doc do jogo:
-   *  - `_testePremiumAt` (Timestamp do servidor) — usado como "trigger"
-   *    pra outros componentes detectarem que houve uma nova requisição
-   *  - `_testePremiumLogoUrl` / `_testePremiumNome` — conteúdo a renderizar
-   *
-   * Outros componentes que escutam o jogo veem o `_testePremiumAt` mudar
-   * e disparam a janela de 6s local. Funciona em tempo real via Firestore
-   * snapshot.
-   *
-   * REMOVER esta função e os 3 campos quando a feature estiver validada.
-   */
-  async disparTestePremium(
-    campeonatoId: string,
-    categoriaId: string,
-    jogoId: string,
-    logoUrl: string,
-    nome: string,
-  ): Promise<void> {
-    await runInInjectionContext(this.injector, () =>
-      updateDoc(this.docRef(campeonatoId, categoriaId, jogoId), {
-        _testePremiumAt: serverTimestamp(),
-        _testePremiumLogoUrl: logoUrl,
-        _testePremiumNome: nome,
-      } as Partial<Jogo>),
-    );
   }
 
   /**

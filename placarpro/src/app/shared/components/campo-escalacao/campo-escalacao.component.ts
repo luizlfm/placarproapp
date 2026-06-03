@@ -99,12 +99,19 @@ export class CampoEscalacaoComponent implements OnChanges {
     const jog$ = this.jogadoresSrv.listPorEquipeSemIndex$(
       this.campeonatoId, this.categoriaId, this.equipeId,
     );
-    this.vm$ = combineLatest([esc$, jog$]).pipe(
-      map(([esc, jogadores]) => {
+    const tit$ = this.jogosSrv.titulares$(
+      this.campeonatoId, this.categoriaId, this.jogoId, this.equipeId,
+    );
+    this.vm$ = combineLatest([esc$, jog$, tit$]).pipe(
+      map(([esc, jogadores, titulares]) => {
         const ids = (esc ?? []) as string[];
         if (!ids.length) return this.vmVazio;
+        // Se há titulares marcados, exibe SÓ eles; senão, todos (fallback).
+        const titIds = (titulares ?? []) as string[];
+        const soTitulares = titIds.length ? ids.filter(id => titIds.includes(id)) : [];
+        const exibir = soTitulares.length ? soTitulares : ids;
         const byId = new Map(jogadores.map(j => [j.id ?? '', j]));
-        const escalados = ids
+        const escalados = exibir
           .map(id => byId.get(id))
           .filter((j): j is Jogador => !!j);
         return this.montar(escalados);

@@ -1001,6 +1001,13 @@
                     <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado"
                       [style.cursor]="p.gerenciarEquipes ? 'pointer' : null"
                       (click)="editarJogadorDaLista(e.jogador, p.gerenciarEquipes)">
+                      <ion-checkbox *ngIf="p.editarResultados" class="jog-titular"
+                        labelPlacement="end"
+                        [checked]="(titularesMandante$ | async)?.includes(e.jogador.id ?? '') ?? false"
+                        (click)="$event.stopPropagation()"
+                        (ionChange)="toggleTitular(e.jogador.id ?? '', 'mandante', $event.detail.checked)"
+                        title="Titular (vai pro campo)"
+                        aria-label="Titular"></ion-checkbox>
                       <div class="foto">
                         <img skel *ngIf="e.jogador.fotoUrl; else fic1" [src]="e.jogador.fotoUrl" alt="" />
                         <ng-template #fic1><ion-icon name="person-circle-outline"></ion-icon></ng-template>
@@ -1049,6 +1056,13 @@
                     <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado"
                       [style.cursor]="p.gerenciarEquipes ? 'pointer' : null"
                       (click)="editarJogadorDaLista(e.jogador, p.gerenciarEquipes)">
+                      <ion-checkbox *ngIf="p.editarResultados" class="jog-titular"
+                        labelPlacement="end"
+                        [checked]="(titularesVisitante$ | async)?.includes(e.jogador.id ?? '') ?? false"
+                        (click)="$event.stopPropagation()"
+                        (ionChange)="toggleTitular(e.jogador.id ?? '', 'visitante', $event.detail.checked)"
+                        title="Titular (vai pro campo)"
+                        aria-label="Titular"></ion-checkbox>
                       <div class="foto">
                         <img skel *ngIf="e.jogador.fotoUrl; else fic2" [src]="e.jogador.fotoUrl" alt="" />
                         <ng-template #fic2><ion-icon name="person-circle-outline"></ion-icon></ng-template>

@@ -542,6 +542,58 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
     }),
   );
 
+  /** IDs dos titulares (subconjunto que vai pro campo) — por lado. */
+  readonly titularesMandante$: Observable<string[]> = this.jogo$.pipe(
+    switchMap(j =>
+      j?.id
+        ? this.jogosSrv.titulares$(this.campeonatoId, this.categoriaId, j.id, j.mandanteId).pipe(
+            startWith<string[]>([]),
+            catchError(() => of<string[]>([])),
+          )
+        : of<string[]>([]),
+    ),
+  );
+  readonly titularesVisitante$: Observable<string[]> = this.jogo$.pipe(
+    switchMap(j =>
+      j?.id
+        ? this.jogosSrv.titulares$(this.campeonatoId, this.categoriaId, j.id, j.visitanteId).pipe(
+            startWith<string[]>([]),
+            catchError(() => of<string[]>([])),
+          )
+        : of<string[]>([]),
+    ),
+  );
+
+  /** Marca/desmarca um jogador como titular (respeita o limite por partida). */
+  async toggleTitular(jogadorId: string, lado: 'mandante' | 'visitante', marcar: boolean): Promise<void> {
+    if (!jogadorId) return;
+    const jogo = await firstValueFrom(this.jogo$);
+    const equipeId = lado === 'mandante' ? jogo?.mandanteId : jogo?.visitanteId;
+    if (!jogo?.id || !equipeId) return;
+    const atuais = new Set(
+      await firstValueFrom(
+        this.jogosSrv.titulares$(this.campeonatoId, this.categoriaId, jogo.id, equipeId),
+      ),
+    );
+    if (marcar) {
+      if (this.jppAtual > 0 && !atuais.has(jogadorId) && atuais.size >= this.jppAtual) {
+        await this.toastTx(`Limite de ${this.jppAtual} titulares por partida atingido.`, 'warning');
+        return;
+      }
+      atuais.add(jogadorId);
+    } else {
+      atuais.delete(jogadorId);
+    }
+    try {
+      await this.jogosSrv.salvarTitulares(
+        this.campeonatoId, this.categoriaId, jogo.id, equipeId, Array.from(atuais),
+      );
+    } catch (err) {
+      console.error('[JogoDetalhe] salvar titulares falhou', err);
+      await this.toastTx('Erro ao salvar titulares.', 'danger');
+    }
+  }
+
   private montarEscalados(
     ids: string[],
     jogadores: Jogador[],
