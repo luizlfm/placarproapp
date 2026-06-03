@@ -1276,13 +1276,19 @@ ion-content {
     --background-checked: var(--ion-color-primary);
     --indicator-color: transparent;
     --border-radius: 8px;
-    --padding-top: 8px;
-    --padding-bottom: 8px;
+    --padding-top: 3px;
+    --padding-bottom: 3px;
     font-weight: 600;
+    font-size: 13px;
     text-transform: none;
-    min-height: 40px;
+    min-height: 30px;
     /* Cada botão também isola seu próprio toque. */
     touch-action: manipulation;
+
+    /* Ícone menor pra reduzir a altura do segment. */
+    ion-icon {
+      font-size: 15px;
+    }
   }
 }
 
@@ -1900,39 +1906,6 @@ ion-content {
   position: relative;
   z-index: 1;
   flex-wrap: wrap;
-}
-
-/* ═══════ DEV/TEST: botão de testar banner premium ═══════
-   TODO: REMOVER junto com `testarBannerPremium()` quando a feature
-   estiver validada em produção. */
-.dev-test-banner {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  position: absolute;
-  top: -6px;
-  right: 6px;
-  z-index: 5;
-  padding: 4px 10px;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: #fff;
-  border: 1px dashed rgba(255, 255, 255, 0.6);
-  border-radius: 999px;
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
-  transition: transform 100ms ease, box-shadow 150ms ease;
-
-  ion-icon { font-size: 14px; }
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
-  }
-  &:active { transform: scale(0.96); }
 }
 
 .live-badge {
