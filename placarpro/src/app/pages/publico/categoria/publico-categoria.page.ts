@@ -172,6 +172,29 @@ export class PublicoCategoriaPage implements OnInit {
     this.escalacaoLado = lado;
   }
 
+  /** Rótulo legível do período do jogo (pra divisórias da timeline). */
+  labelTempo(t?: string): string {
+    switch (t) {
+      case 'primeiro': return '1º Tempo';
+      case 'intervalo': return 'Intervalo';
+      case 'segundo': return '2º Tempo';
+      case 'prorrog-1': return 'Prorrogação · 1º';
+      case 'prorrog-int': return 'Intervalo (Prorrog.)';
+      case 'prorrog-2': return 'Prorrogação · 2º';
+      case 'penaltis': return 'Pênaltis';
+      default: return '';
+    }
+  }
+
+  /** Retorna o rótulo do período quando ele MUDA em relação ao lance anterior
+   *  (pra inserir uma divisória na timeline). Senão, null. */
+  divisorTempo(evs: EventoView[], i: number): string | null {
+    const atual = evs[i]?.tempo;
+    if (!atual) return null;
+    const anterior = i > 0 ? evs[i - 1]?.tempo : undefined;
+    return i === 0 || atual !== anterior ? this.labelTempo(atual) : null;
+  }
+
   /**
    * Estado mantido por compat — antes alternava entre card e player
    * inline. Agora `iniciarAssistir()` navega direto pra rota pública

@@ -873,13 +873,15 @@
               </span>
             </div>
 
-            <!-- Linha de escudos ABAIXO do título -->
-            <div class="lances-escudos-bar">
+            <!-- Placar fixo (escudos + gols) que acompanha a rolagem -->
+            <div class="lances-escudos-bar lances-placar-fixo">
               <span class="lances-escudo lances-escudo-mand">
                 <img skel *ngIf="j.logoMandante; else iLEMb" [src]="j.logoMandante" [alt]="j.nomeMandante" />
                 <ng-template #iLEMb><ion-icon name="shield-outline"></ion-icon></ng-template>
               </span>
-              <span class="lances-escudos-vs">vs</span>
+              <span class="lances-escudos-vs lp-placar">
+                <b>{{ j.golsMandante ?? 0 }}</b><span class="lp-x">×</span><b>{{ j.golsVisitante ?? 0 }}</b>
+              </span>
               <span class="lances-escudo lances-escudo-vis">
                 <img skel *ngIf="j.logoVisitante; else iLEVb" [src]="j.logoVisitante" [alt]="j.nomeVisitante" />
                 <ng-template #iLEVb><ion-icon name="shield-outline"></ion-icon></ng-template>
@@ -887,16 +889,23 @@
             </div>
 
             <ng-container *ngIf="eventos$ | async as evs">
-              <div class="lances-coluna" *ngIf="evs.length > 0; else nadaEv">
-                <div
-                  *ngFor="let e of evs; trackBy: trackByEvento"
-                  class="lance-row"
-                  [class.lado-mandante]="e.lado === 'mandante'"
-                  [class.lado-visitante]="e.lado === 'visitante'"
-                >
-                  <!-- No público o bubble é só visual (sem editar), mas mantemos
-                       a tag <button> read-only pra herdar o estilo do admin. -->
-                  <div class="lance-bubble read-only" [ngClass]="classeTipo(e.tipo)">
+              <div class="lances-coluna lances-timeline" *ngIf="evs.length > 0; else nadaEv">
+                <ng-container *ngFor="let e of evs; let i = index; trackBy: trackByEvento">
+                  <!-- Divisória de período (1º/2º tempo...) -->
+                  <div class="lance-tempo-divider" *ngIf="divisorTempo(evs, i) as t">
+                    <span>{{ t }}</span>
+                  </div>
+                  <div
+                    class="lance-row"
+                    [class.lado-mandante]="e.lado === 'mandante'"
+                    [class.lado-visitante]="e.lado === 'visitante'"
+                  >
+                    <!-- Nó de minuto sobre a linha central -->
+                    <span class="lance-no" [ngClass]="classeTipo(e.tipo)">
+                      <ng-container *ngIf="e.minuto != null; else semMin">{{ e.minuto }}'</ng-container>
+                      <ng-template #semMin>•</ng-template>
+                    </span>
+                    <div class="lance-bubble read-only" [ngClass]="classeTipo(e.tipo)">
                     <!-- Avatar -->
                     <div class="lance-avatar">
                       <ion-icon name="person-circle-outline"></ion-icon>
@@ -943,6 +952,7 @@
                     </div>
                   </div>
                 </div>
+                </ng-container>
               </div>
               <ng-template #nadaEv>
                 <div class="placeholder">

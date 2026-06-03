@@ -2311,6 +2311,147 @@
   gap: 8px;
 }
 
+/* ════════════ TIMELINE CENTRAL DOS LANCES ════════════ */
+.lances-timeline {
+  position: relative;
+  padding-top: 6px;
+
+  /* Linha vertical central conectando os lances. */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    transform: translateX(-50%);
+    background: var(--placar-divider, #e3e3e6);
+    z-index: 0;
+  }
+
+  .lance-row {
+    position: relative;
+    z-index: 1;
+    align-items: center;
+
+    /* Empurra a bolha pra metade do lado, deixando o centro pro nó. */
+    &.lado-mandante {
+      justify-content: flex-start;
+      padding-right: calc(50% + 26px);
+    }
+    &.lado-visitante {
+      justify-content: flex-end;
+      padding-left: calc(50% + 26px);
+    }
+  }
+
+  .lance-bubble {
+    max-width: 100%;
+  }
+
+  /* Nó de minuto sobre a linha central. */
+  .lance-no {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #fff;
+    border: 2px solid var(--placar-divider, #d8d8db);
+    color: var(--placar-text, #222);
+    font-weight: 800;
+    font-size: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+
+    &.tipo-gol,
+    &.tipo-gol-contra {
+      border-color: #2e9e3f;
+      color: #2e9e3f;
+    }
+    &.tipo-amarelo {
+      border-color: #f5c518;
+      color: #b58900;
+    }
+    &.tipo-vermelho {
+      border-color: var(--ion-color-danger, #eb445a);
+      color: var(--ion-color-danger, #eb445a);
+    }
+  }
+}
+
+/* Mobile: a linha central fica apertada → some o spine e o nó vira um
+   chip inline antes da bolha (mantendo legível). */
+@media (max-width: 600px) {
+  .lances-timeline {
+    &::before { display: none; }
+    .lance-row.lado-mandante,
+    .lance-row.lado-visitante {
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .lance-no {
+      position: static;
+      transform: none;
+      height: 26px;
+      min-width: 30px;
+      box-shadow: none;
+      margin: 0 6px;
+      align-self: center;
+    }
+  }
+}
+
+/* Divisória de período (1º/2º tempo...). */
+.lance-tempo-divider {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  margin: 16px 0 6px;
+
+  span {
+    display: inline-block;
+    background: var(--ion-color-step-100, #ededf0);
+    color: var(--placar-text-muted, #6b7280);
+    font-weight: 800;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 14px;
+    border-radius: 999px;
+  }
+}
+
+/* Placar fixo no topo dos lances (acompanha a rolagem). */
+.lances-placar-fixo {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--ion-background-color, #fff);
+  padding: 8px 0;
+
+  .lp-placar {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--placar-text, #1a1a1a);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    .lp-x {
+      opacity: 0.4;
+      font-weight: 700;
+      font-size: 16px;
+    }
+  }
+}
+
 .lance-row {
   display: flex;
   width: 100%;
