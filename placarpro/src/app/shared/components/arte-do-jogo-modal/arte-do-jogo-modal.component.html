@@ -14,7 +14,8 @@
 </ion-header>
 
 <ion-content class="ae-content">
-  <!-- ====== CANVAS ====== -->
+ <div class="ae-layout">
+  <!-- ====== COLUNA ESQUERDA: VISUALIZAÇÃO ====== -->
   <div class="ae-stage">
     <div #canvas class="ae-canvas" [ngClass]="fundoClass()" (pointerdown)="selecionar(null)">
       <div
@@ -59,6 +60,8 @@
     </div>
   </div>
 
+  <!-- ====== COLUNA DIREITA: EDIÇÃO ====== -->
+  <div class="ae-controles">
   <!-- ====== TOOLBAR DE ELEMENTOS ====== -->
   <div class="ae-toolbar">
     <button class="ae-tool" (click)="addTexto()">
@@ -148,4 +151,6 @@
   <div class="ae-dica" *ngIf="!sel">
     Toque num elemento para editar. Arraste para mover, use a alça ↘ para redimensionar.
   </div>
+  </div><!-- /.ae-controles -->
+ </div><!-- /.ae-layout -->
 </ion-content>

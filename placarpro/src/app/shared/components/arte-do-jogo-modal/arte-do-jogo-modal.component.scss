@@ -15,11 +15,47 @@
   --background: #0d0f14;
 }
 
+/* ====== LAYOUT 2 COLUNAS ====== */
+.ae-layout {
+  display: flex;
+  flex-direction: column;
+}
+
 /* ====== STAGE / CANVAS ====== */
 .ae-stage {
   padding: 14px 14px 6px;
   display: flex;
   justify-content: center;
+  align-items: flex-start;
+}
+
+.ae-controles {
+  display: block;
+}
+
+/* Telas largas: visualização à esquerda (fixa) + edição à direita. */
+@media (min-width: 820px) {
+  .ae-layout {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .ae-stage {
+    flex: 0 0 44%;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    padding: 20px 16px;
+  }
+  .ae-controles {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-bottom: 28px;
+  }
+  /* dentro da coluna direita as seções já têm padding lateral próprio */
+  .ae-toolbar {
+    padding-top: 18px;
+  }
 }
 
 .ae-canvas {
