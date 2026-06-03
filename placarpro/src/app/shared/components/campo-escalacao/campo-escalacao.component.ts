@@ -126,30 +126,34 @@ export class CampoEscalacaoComponent implements OnChanges {
     // (posição estável por jogador, sem ficar pulando a cada render) e avisa.
     const temAlgumaPosicao = escalados.some(j => this.norm(j.posicao) !== '');
     if (!temAlgumaPosicao) {
-      const aleatorios = escalados.map(j => {
-        const h = this.hash(j.id || j.nome || '');
-        return {
-          id: j.id ?? '',
-          nome: this.primeiroNome(j),
-          numero: (j.numeroCamisa ?? '').toString().trim(),
-          top: 12 + (h % 74),            // 12%..86%
-          left: 10 + ((h >>> 9) % 78),   // 10%..88%
-        } as AleatorioItem;
-      });
-      return { modo: 'aleatorio', linhas: [], aleatorios, semPosicoes: true };
+      // Sem posições definidas: arruma numa GRADE organizada (linhas iguais,
+      // distribuídas pelo campo) em vez de espalhar aleatório (que sobrepunha
+      // e ficava bagunçado). Continua mostrando o aviso "sem posições".
+      return { modo: 'formacao', linhas: this.montarGrade(escalados), aleatorios: [], semPosicoes: true };
     }
     return { modo: 'formacao', linhas: this.montarLinhas(escalados), aleatorios: [], semPosicoes: false };
   }
 
-  /** Hash estável (FNV-1a) de uma string → uint32. Usado pra posicionar de
-   *  forma "aleatória" mas DETERMINÍSTICA (não muda entre renders). */
-  private hash(s: string): number {
-    let h = 2166136261;
-    for (let i = 0; i < s.length; i++) {
-      h ^= s.charCodeAt(i);
-      h = Math.imul(h, 16777619);
+  /** Distribui os jogadores numa grade equilibrada (sem posições): nº de
+   *  colunas ≈ raiz quadrada do total, chunk por linha. Reusa o layout de
+   *  linhas (space-evenly) — organizado e sem sobreposição. */
+  private montarGrade(jogadores: Jogador[]): LinhaCampo[] {
+    const n = jogadores.length;
+    if (!n) return [];
+    const cols = Math.max(1, Math.min(4, Math.ceil(Math.sqrt(n))));
+    const linhas: LinhaCampo[] = [];
+    for (let i = 0; i < n; i += cols) {
+      linhas.push({
+        jogadores: jogadores.slice(i, i + cols).map(j => ({
+          id: j.id ?? '',
+          nome: this.primeiroNome(j),
+          numero: (j.numeroCamisa ?? '').toString().trim(),
+          posicao: '',
+          posicaoLabel: '',
+        })),
+      });
     }
-    return h >>> 0;
+    return linhas;
   }
 
   private montarLinhas(jogadores: Jogador[]): LinhaCampo[] {
