@@ -1120,12 +1120,30 @@
             </div>
 
             <ng-container *ngIf="eventos$ | async as evs">
-              <div class="lances-coluna" *ngIf="evs.length > 0; else semLances">
-                <div *ngFor="let e of evs; trackBy: trackByEvento" class="lance-row"
-                  [class.lado-mandante]="e.lado === 'mandante'" [class.lado-visitante]="e.lado === 'visitante'">
-                  <!-- Clique pra editar lance só pra quem pode editar
-                     resultados. Pra leitor, fica como card visual sem
-                     handler (cursor default). -->
+              <!-- Placar fixo (escudos + gols) que acompanha a rolagem -->
+              <div class="lances-placar-fixo" *ngIf="(eventos$ | async)?.length">
+                <span class="lpf-escudo">
+                  <img skel *ngIf="j.logoMandante; else lpfM" [src]="j.logoMandante" alt="" />
+                  <ng-template #lpfM><ion-icon name="shield-outline"></ion-icon></ng-template>
+                </span>
+                <span class="lpf-score"><b>{{ j.golsMandante ?? 0 }}</b><span class="lpf-x">×</span><b>{{ j.golsVisitante ?? 0 }}</b></span>
+                <span class="lpf-escudo">
+                  <img skel *ngIf="j.logoVisitante; else lpfV" [src]="j.logoVisitante" alt="" />
+                  <ng-template #lpfV><ion-icon name="shield-outline"></ion-icon></ng-template>
+                </span>
+              </div>
+
+              <div class="lances-coluna lances-timeline" *ngIf="evs.length > 0; else semLances">
+                <ng-container *ngFor="let e of evs; let i = index; trackBy: trackByEvento">
+                  <!-- Divisória de período (1º/2º tempo...) -->
+                  <div class="lance-tempo-divider" *ngIf="divisorTempo(evs, i) as t"><span>{{ t }}</span></div>
+                  <div class="lance-row"
+                    [class.lado-mandante]="e.lado === 'mandante'" [class.lado-visitante]="e.lado === 'visitante'">
+                    <!-- Nó de minuto sobre a linha central -->
+                    <span class="lance-no" [ngClass]="classeTipo(e.tipo)">
+                      <ng-container *ngIf="e.minuto != null; else semMinL">{{ e.minuto }}'</ng-container>
+                      <ng-template #semMinL>•</ng-template>
+                    </span>
                   <button type="button" class="lance-bubble" [ngClass]="classeTipo(e.tipo)"
                     [class.read-only]="!p.editarResultados" (click)="p.editarResultados && editarLance(e)">
                     <!-- Avatar -->
@@ -1165,6 +1183,7 @@
                     </div>
                   </button>
                 </div>
+                </ng-container>
               </div>
 
               <ng-template #semLances>

@@ -1290,7 +1290,7 @@ ion-content {
      "Lances da Partida" e abria o modal "Adicionar lance"). */
   /* Controle segmentado moderno: trilho em pílula + aba ativa em gradiente
      verde com glow. Ícone e texto inline (não empilhados) = baixo e elegante. */
-  margin: 22px 0 14px;
+  margin: -10px 0 0px;
   background: var(--ion-color-step-50, #f1f3f5);
   border-radius: 999px;
   padding: 5px;
@@ -1395,6 +1395,136 @@ ion-content {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* ════════════ TIMELINE CENTRAL DOS LANCES (admin) ════════════ */
+.lances-timeline {
+  position: relative;
+  padding-top: 6px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    transform: translateX(-50%);
+    background: var(--placar-divider, #e3e3e6);
+    z-index: 0;
+  }
+
+  .lance-row {
+    position: relative;
+    z-index: 1;
+    align-items: center;
+
+    &.lado-mandante {
+      justify-content: flex-start;
+      padding-right: calc(50% + 26px);
+    }
+    &.lado-visitante {
+      justify-content: flex-end;
+      padding-left: calc(50% + 26px);
+    }
+  }
+
+  .lance-bubble {
+    max-width: 100%;
+  }
+
+  .lance-no {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--placar-card-bg, #fff);
+    border: 2px solid var(--placar-divider, #d8d8db);
+    color: var(--placar-text, #222);
+    font-weight: 800;
+    font-size: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+
+    &.tipo-gol,
+    &.tipo-gol-contra { border-color: #2e9e3f; color: #2e9e3f; }
+    &.tipo-amarelo { border-color: #f5c518; color: #b58900; }
+    &.tipo-vermelho { border-color: var(--ion-color-danger, #eb445a); color: var(--ion-color-danger, #eb445a); }
+  }
+
+  @media (max-width: 600px) {
+    &::before { display: none; }
+    .lance-row.lado-mandante,
+    .lance-row.lado-visitante { padding-left: 0; padding-right: 0; }
+    .lance-no {
+      position: static;
+      transform: none;
+      height: 26px;
+      min-width: 30px;
+      box-shadow: none;
+      margin: 0 6px;
+      align-self: center;
+    }
+  }
+}
+
+.lance-tempo-divider {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  margin: 16px 0 6px;
+
+  span {
+    display: inline-block;
+    background: var(--ion-color-step-100, #ededf0);
+    color: var(--placar-text-muted, #6b7280);
+    font-weight: 800;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 14px;
+    border-radius: 999px;
+  }
+}
+
+.lances-placar-fixo {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  background: var(--ion-background-color, #fff);
+
+  .lpf-escudo {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    img { width: 100%; height: 100%; object-fit: contain; }
+    ion-icon { font-size: 22px; color: var(--placar-text-muted, #6b7280); }
+  }
+
+  .lpf-score {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--placar-text, #1a1a1a);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    .lpf-x { opacity: 0.4; font-weight: 700; font-size: 16px; }
+  }
 }
 
 .lance-row {

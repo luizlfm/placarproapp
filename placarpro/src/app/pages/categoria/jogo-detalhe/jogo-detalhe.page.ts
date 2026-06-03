@@ -215,6 +215,15 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
     this.escalacaoLado = lado;
   }
 
+  /** Rótulo do período quando MUDA vs o lance anterior (divisória), senão null.
+   *  Reusa o labelTempo() já existente no componente. */
+  divisorTempo(evs: EventoView[], i: number): string | null {
+    const atual = evs[i]?.tempo;
+    if (!atual) return null;
+    const anterior = i > 0 ? evs[i - 1]?.tempo : undefined;
+    return i === 0 || atual !== anterior ? this.labelTempo(atual) : null;
+  }
+
   readonly campeonato$ = this.campeonatoId
     ? this.campeonatosSrv.get$(this.campeonatoId)
     : of(undefined);
