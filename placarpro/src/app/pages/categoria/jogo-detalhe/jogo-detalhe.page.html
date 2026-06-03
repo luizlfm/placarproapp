@@ -935,9 +935,10 @@
                   titulares no campo</span>
               </div>
               <ion-select [value]="jppAtual" interface="popover" placeholder="Livre"
-                (ionChange)="setJogadoresPorPartida($event.detail.value)" style="flex:0 0 auto;width:150px;max-width:160px;font-weight:700;
+                (ionChange)="setJogadoresPorPartida($event.detail.value)" style="flex:0 0 auto;width:210px;max-width:240px;font-weight:700;font-size:13px;
+                       --padding-top:2px;--padding-bottom:2px;min-height:34px;
                        border:1px solid var(--ion-color-step-200,#ddd);border-radius:10px;
-                       padding:6px 10px;background:var(--ion-background-color,#fff);">
+                       padding:2px 10px;background:var(--ion-background-color,#fff);">
                 <ion-select-option [value]="0">Livre</ion-select-option>
                 <ion-select-option [value]="5">5 jogadores (Futsal)</ion-select-option>
                 <ion-select-option [value]="6">6 jogadores</ion-select-option>
