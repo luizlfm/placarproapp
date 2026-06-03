@@ -1,35 +1,19 @@
 <div class="ce-wrap" *ngIf="vm$ | async as vm">
-  <div class="ce-titulo" *ngIf="nomeEquipe">{{ nomeEquipe }}</div>
-
   <ng-container *ngIf="vm.linhas.length; else semEsc">
-    <div class="ce-cols">
-      <!-- Coluna 1: campo -->
-      <div class="ce-col-campo">
-        <div class="ce-campo">
-          <!-- marcações do campo -->
-          <span class="ce-linha-meio"></span>
-          <span class="ce-circulo"></span>
-          <span class="ce-area ce-area-cima"></span>
-          <span class="ce-area ce-area-baixo"></span>
+    <div class="ce-campo">
+      <!-- marcações do campo -->
+      <span class="ce-linha-meio"></span>
+      <span class="ce-circulo"></span>
+      <span class="ce-area ce-area-cima"></span>
+      <span class="ce-area ce-area-baixo"></span>
 
-          <div class="ce-linha" *ngFor="let linha of vm.linhas">
-            <div class="ce-jogador" *ngFor="let j of linha.jogadores">
-              <div class="ce-camisa">
-                <ion-icon name="shirt" aria-hidden="true"></ion-icon>
-                <span class="ce-num">{{ j.numero || '–' }}</span>
-              </div>
-              <div class="ce-pos" *ngIf="j.posicaoLabel">{{ j.posicaoLabel }}</div>
-            </div>
+      <div class="ce-linha" *ngFor="let linha of vm.linhas">
+        <div class="ce-jogador" *ngFor="let j of linha.jogadores">
+          <div class="ce-camisa">
+            <ion-icon name="shirt" aria-hidden="true"></ion-icon>
+            <span class="ce-num">{{ j.numero || '–' }}</span>
           </div>
-        </div>
-      </div>
-
-      <!-- Coluna 2: nomes dos jogadores -->
-      <div class="ce-col-nomes">
-        <div class="ce-nome-item" *ngFor="let j of vm.lista">
-          <span class="ce-nome-num">{{ j.numero || '–' }}</span>
-          <span class="ce-nome-txt">{{ j.nome || '—' }}</span>
-          <span class="ce-nome-pos" *ngIf="j.posicaoLabel">{{ j.posicaoLabel }}</span>
+          <div class="ce-pos" *ngIf="j.posicaoLabel">{{ j.posicaoLabel }}</div>
         </div>
       </div>
     </div>

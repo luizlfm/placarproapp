@@ -4,12 +4,15 @@
 }
 
 .ce-titulo {
-  text-align: center;
+  display: inline-block;
   font-weight: 800;
   letter-spacing: 0.5px;
   color: #b6ff3a;
+  background: #11321b;            /* chip — legível em fundo claro ou escuro */
   text-transform: uppercase;
-  font-size: clamp(12px, 4cqw, 16px);
+  font-size: clamp(11px, 3.4cqw, 15px);
+  padding: 3px 10px;
+  border-radius: 6px;
   margin-bottom: 8px;
 }
 
@@ -44,8 +47,10 @@
   gap: 8px;
   padding: 5px 8px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  /* Chip verde-escuro sólido: legível tanto em telas de fundo CLARO (admin)
+     quanto ESCURO (transmissão/público) — não depende do tema da página. */
+  background: #11321b;
+  border: 1px solid rgba(155, 230, 23, 0.28);
 }
 .ce-nome-num {
   flex: 0 0 auto;
@@ -189,9 +194,9 @@
 
 .ce-vazio {
   text-align: center;
-  color: rgba(255, 255, 255, 0.55);
+  color: #6b7280;
   font-size: 13px;
   padding: 18px 8px;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border: 1px dashed rgba(128, 128, 128, 0.4);
   border-radius: 10px;
 }
