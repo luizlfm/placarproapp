@@ -937,11 +937,22 @@
 
             <!-- Quantos jogadores por partida são liberados (config da categoria). -->
             <div class="esc-jpp" *ngIf="p.editarCampeonato"
-              style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-              <span style="font-size:13px;font-weight:600;opacity:.8;">Jogadores por partida:</span>
+              style="display:flex;align-items:center;gap:12px;margin:2px 0 16px;padding:12px 14px;
+                     border:1px solid var(--ion-color-step-150,#e6e6e6);border-radius:14px;
+                     background:var(--ion-color-step-50,#fafafa);">
+              <ion-icon name="people-circle-outline"
+                style="font-size:26px;color:var(--ion-color-primary);flex:0 0 auto;"></ion-icon>
+              <div style="display:flex;flex-direction:column;line-height:1.2;flex:1;min-width:0;">
+                <span style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:800;opacity:.55;">
+                  Jogadores por partida
+                </span>
+                <span style="font-size:12px;opacity:.6;">Limite de titulares no campo por equipe</span>
+              </div>
               <ion-select [value]="jppAtual" interface="popover" placeholder="Livre"
                 (ionChange)="setJogadoresPorPartida($event.detail.value)"
-                style="min-width:130px;border:1px solid var(--ion-color-step-200,#ddd);border-radius:8px;">
+                style="flex:0 0 auto;min-width:120px;font-weight:700;
+                       border:1px solid var(--ion-color-step-200,#ddd);border-radius:10px;
+                       padding:6px 10px;background:var(--ion-background-color,#fff);">
                 <ion-select-option [value]="0">Livre</ion-select-option>
                 <ion-select-option [value]="5">5 (Futsal)</ion-select-option>
                 <ion-select-option [value]="6">6</ion-select-option>
@@ -992,8 +1003,8 @@
                   <!-- Editar escalação só pra quem pode editar resultados. -->
                   <ion-button *ngIf="p.editarResultados" size="small" color="secondary"
                     (click)="editarEscalacao('mandante')">
-                    <ion-icon slot="start" name="create-outline"></ion-icon>
-                    Editar
+                    <ion-icon slot="start" name="people-outline"></ion-icon>
+                    Seleção de jogadores
                   </ion-button>
                 </div>
                 <ng-container *ngIf="escalacaoMandante$ | async as esc">
@@ -1047,8 +1058,8 @@
                   <span>{{ j.nomeVisitante }}</span>
                   <ion-button *ngIf="p.editarResultados" size="small" color="secondary"
                     (click)="editarEscalacao('visitante')">
-                    <ion-icon slot="start" name="create-outline"></ion-icon>
-                    Editar
+                    <ion-icon slot="start" name="people-outline"></ion-icon>
+                    Seleção de jogadores
                   </ion-button>
                 </div>
                 <ng-container *ngIf="escalacaoVisitante$ | async as esc">

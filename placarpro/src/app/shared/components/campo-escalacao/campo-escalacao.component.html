@@ -2,7 +2,7 @@
   <ng-container *ngIf="vm.linhas.length || vm.aleatorios.length; else semEsc">
     <div class="ce-aviso" *ngIf="vm.semPosicoes">
       <ion-icon name="information-circle" aria-hidden="true"></ion-icon>
-      <span>Sem posições definidas — jogadores espalhados aleatoriamente.</span>
+      <span>Defina a posição de cada jogador para montar a formação.</span>
     </div>
 
     <div class="ce-campo" [class.ce-campo-aleatorio]="vm.modo === 'aleatorio'">
