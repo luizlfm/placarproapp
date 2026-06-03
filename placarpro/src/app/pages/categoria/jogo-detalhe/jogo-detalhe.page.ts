@@ -203,7 +203,7 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
       });
 
   /** Aba ativa do detalhe (escalacao | lances). Padrão = lances (UX prioriza o jogo em si). */
-  segmentAtivo: 'escalacao' | 'lances' = 'lances';
+  segmentAtivo: 'escalacao' | 'lances' = 'escalacao';
 
   /** Lado da escalação atualmente visível (mandante | visitante). Em mobile,
    *  mostrar 2 colunas grudadas é apertado; segment escolhe 1 time por vez. */
@@ -706,8 +706,11 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
       if (j) this.prefilAvisoTela(j);
     });
 
-    // Mantém o nº de jogadores por partida (config da categoria) em sync.
-    this.categoria$.subscribe(c => { this.jppAtual = c?.jogadoresPorPartida ?? 0; });
+    // Mantém o nº de jogadores por partida em sync. Se não foi definido
+    // manualmente, usa o padrão da MODALIDADE da categoria (futsal=5, etc.).
+    this.categoria$.subscribe(c => {
+      this.jppAtual = c?.jogadoresPorPartida ?? this.padraoPorModalidade(c?.modalidade);
+    });
 
     // Vigia o limite de tempo de transmissão (auto-encerra / renova).
     this.vigiarLimiteTransmissao();
@@ -1591,6 +1594,25 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
       ],
     });
     await alert.present();
+  }
+
+  /** Nº de jogadores em campo padrão por modalidade (quando não definido na
+   *  categoria). Casa com as opções do seletor (0/5/6/7/11). */
+  private padraoPorModalidade(modalidade?: string): number {
+    switch (modalidade) {
+      case 'futsal':
+      case 'basquetebol':
+        return 5;
+      case 'voley':
+        return 6;
+      case 'futebol-7':
+      case 'handebol':
+        return 7;
+      case 'futebol':
+        return 11;
+      default:
+        return 0; // demais modalidades → "Livre"
+    }
   }
 
   /** Define quantos jogadores por partida são liberados (salva na categoria).
