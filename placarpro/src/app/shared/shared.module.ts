@@ -55,6 +55,7 @@ import { EsteiraAdsComponent } from './components/esteira-ads/esteira-ads.compon
 import { PremiumOverlayComponent } from './components/premium-overlay/premium-overlay.component';
 import { AvisoTelaComponent } from './components/aviso-tela/aviso-tela.component';
 import { CampoEscalacaoComponent } from './components/campo-escalacao/campo-escalacao.component';
+import { EditarNumPosModalComponent } from './components/editar-num-pos-modal/editar-num-pos-modal.component';
 import { FichaEquipeOcrModalComponent } from './ocr/ficha-equipe-ocr-modal/ficha-equipe-ocr-modal.component';
 
 /**
@@ -111,6 +112,7 @@ import { FichaEquipeOcrModalComponent } from './ocr/ficha-equipe-ocr-modal/ficha
     PremiumOverlayComponent,
     AvisoTelaComponent,
     CampoEscalacaoComponent,
+    EditarNumPosModalComponent,
   ],
   exports: [
     CampeonatoMobileHeaderComponent,
@@ -160,6 +162,7 @@ import { FichaEquipeOcrModalComponent } from './ocr/ficha-equipe-ocr-modal/ficha
     PremiumOverlayComponent,
     AvisoTelaComponent,
     CampoEscalacaoComponent,
+    EditarNumPosModalComponent,
   ],
 })
 export class SharedModule {}

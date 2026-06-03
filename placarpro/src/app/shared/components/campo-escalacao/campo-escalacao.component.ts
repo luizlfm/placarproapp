@@ -1,13 +1,23 @@
-import { Component, Input, OnChanges, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
 import { Observable, combineLatest, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { JogosService } from '../../../campeonatos/jogos.service';
 import { JogadoresService } from '../../../campeonatos/jogadores.service';
 import { Jogador } from '../../../campeonatos/models/jogador.model';
 
-interface JogadorCampo {
+/** Jogador selecionado no campo (pra editar número/posição). */
+export interface JogadorSelecionado {
+  id: string;
   nome: string;
   numero: string;
+  posicao: string;
+}
+
+interface JogadorCampo {
+  id: string;
+  nome: string;
+  numero: string;
+  posicao: string;
   posicaoLabel: string;
 }
 interface LinhaCampo {
@@ -49,11 +59,20 @@ export class CampoEscalacaoComponent implements OnChanges {
   @Input() jogoId = '';
   @Input() equipeId = '';
   @Input() nomeEquipe = '';
+  /** Quando true, as camisas viram botões clicáveis (editar número/posição). */
+  @Input() editavel = false;
+  /** Emite o jogador clicado quando `editavel`. */
+  @Output() selecionarJogador = new EventEmitter<JogadorSelecionado>();
 
   private readonly jogosSrv = inject(JogosService);
   private readonly jogadoresSrv = inject(JogadoresService);
 
   vm$: Observable<CampoVM> = of({ linhas: [], lista: [] });
+
+  onSelecionar(j: JogadorCampo): void {
+    if (!this.editavel || !j.id) return;
+    this.selecionarJogador.emit({ id: j.id, nome: j.nome, numero: j.numero, posicao: j.posicao });
+  }
 
   ngOnChanges(): void {
     if (!this.campeonatoId || !this.categoriaId || !this.jogoId || !this.equipeId) {
@@ -96,8 +115,10 @@ export class CampoEscalacaoComponent implements OnChanges {
     return (['ATA', 'MEI', 'DEF', 'GOL'] as Setor[])
       .map(setor => ({
         jogadores: ordenar(setores[setor]).map(j => ({
+          id: j.id ?? '',
           nome: this.primeiroNome(j),
           numero: (j.numeroCamisa ?? '').toString().trim(),
+          posicao: (j.posicao ?? '').trim(),
           posicaoLabel: (j.posicao ?? '').toUpperCase().trim(),
         })),
       }))

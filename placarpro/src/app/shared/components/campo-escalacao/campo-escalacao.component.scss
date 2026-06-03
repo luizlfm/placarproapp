@@ -151,6 +151,23 @@
   min-width: 0;
   max-width: 24%;
 }
+.ce-jogador.ce-clicavel {
+  cursor: pointer;
+}
+.ce-jogador.ce-clicavel:hover .ce-camisa ion-icon[name='shirt'] {
+  filter: drop-shadow(0 0 7px rgba(182, 255, 58, 0.9));
+}
+.ce-edit-hint {
+  position: absolute;
+  top: -3px;
+  right: -7px;
+  font-size: 13px;
+  color: #fff;
+  background: #2e7d32;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  padding: 2px;
+}
 
 .ce-camisa {
   position: relative;

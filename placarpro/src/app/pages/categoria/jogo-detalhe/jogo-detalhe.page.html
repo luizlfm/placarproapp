@@ -978,7 +978,9 @@
                 </div>
                 <ng-container *ngIf="escalacaoMandante$ | async as esc">
                   <div class="escala-lista" *ngIf="esc.length > 0; else escVazia1">
-                    <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado">
+                    <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado"
+                      [style.cursor]="p.gerenciarEquipes ? 'pointer' : null"
+                      (click)="editarJogadorDaLista(e.jogador, p.gerenciarEquipes)">
                       <div class="foto">
                         <img skel *ngIf="e.jogador.fotoUrl; else fic1" [src]="e.jogador.fotoUrl" alt="" />
                         <ng-template #fic1><ion-icon name="person-circle-outline"></ion-icon></ng-template>
@@ -1024,7 +1026,9 @@
                 </div>
                 <ng-container *ngIf="escalacaoVisitante$ | async as esc">
                   <div class="escala-lista" *ngIf="esc.length > 0; else escVazia2">
-                    <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado">
+                    <div class="jog-card" *ngFor="let e of esc; trackBy: trackByEscalado"
+                      [style.cursor]="p.gerenciarEquipes ? 'pointer' : null"
+                      (click)="editarJogadorDaLista(e.jogador, p.gerenciarEquipes)">
                       <div class="foto">
                         <img skel *ngIf="e.jogador.fotoUrl; else fic2" [src]="e.jogador.fotoUrl" alt="" />
                         <ng-template #fic2><ion-icon name="person-circle-outline"></ion-icon></ng-template>

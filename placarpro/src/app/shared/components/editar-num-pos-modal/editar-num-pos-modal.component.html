@@ -1,0 +1,43 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Editar jogador</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="cancelar()" aria-label="Fechar">
+        <ion-icon name="close" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <p class="enp-nome" *ngIf="nome">{{ nome }}</p>
+
+  <ion-list lines="full">
+    <ion-item>
+      <ion-input
+        label="Número da camisa"
+        labelPlacement="stacked"
+        type="number"
+        inputmode="numeric"
+        placeholder="Ex: 10"
+        [(ngModel)]="numero">
+      </ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-select
+        label="Posição"
+        labelPlacement="stacked"
+        interface="action-sheet"
+        placeholder="Selecione a posição"
+        [(ngModel)]="posicao">
+        <ion-select-option *ngFor="let p of posicoes" [value]="p">{{ p }}</ion-select-option>
+      </ion-select>
+    </ion-item>
+  </ion-list>
+
+  <div class="enp-acoes">
+    <ion-button expand="block" fill="outline" color="medium" (click)="cancelar()">Cancelar</ion-button>
+    <ion-button expand="block" (click)="salvar()">Salvar</ion-button>
+  </div>
+</ion-content>

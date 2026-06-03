@@ -25,6 +25,8 @@ import { JogadoresService } from '../../../campeonatos/jogadores.service';
 import { EditarInformacoesModalComponent } from './editar-informacoes-modal/editar-informacoes-modal.component';
 import { EventoModalComponent } from './evento-modal/evento-modal.component';
 import { EscalacaoModalComponent } from './escalacao-modal/escalacao-modal.component';
+import { EditarNumPosModalComponent } from '../../../shared/components/editar-num-pos-modal/editar-num-pos-modal.component';
+import { JogadorSelecionado } from '../../../shared/components/campo-escalacao/campo-escalacao.component';
 import { TransmissaoModalComponent } from '../../../shared/components/transmissao-modal/transmissao-modal.component';
 import { TransmissoesService } from '../../../campeonatos/transmissoes.service';
 import { PatrociniosService } from '../../../campeonatos/patrocinios.service';
@@ -117,50 +119,6 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
     this.premiumOverlayAtivo = visivel;
   }
 
-  /** Payload de teste passado pro `<app-premium-overlay>` via `[forcedTest]`.
-   *  Setado pelo botão "Testar banner premium". REMOVER junto com o botão
-   *  quando a feature estiver validada. */
-  forcedTestPayload: { patrocinador: { nome: string; logoUrl: string }; duracaoMs: number } | null = null;
-
-  /** DEV/TEST: força a exibição do banner premium por 6s em TODAS as
-   *  telas conectadas (admin, transmissão pública, público-jogo). Grava
-   *  `_testePremiumAt` no doc do jogo → os componentes que escutam
-   *  detectam e disparam a janela local em tempo real via Firestore.
-   *
-   *  REMOVER quando feature for validada em produção. */
-  async testarBannerPremium(): Promise<void> {
-    const ads = await firstValueFrom(this.patrociniosPagos$);
-    // Conta os premium ATIVOS — quando há, o overlay roda a rajada real
-    // (todos em sequência). O logo abaixo serve só de fallback (sem premium).
-    const premiumAtivos = ads.filter(
-      a => a.tipo === 'premium' && a.status === 'ativo' && a.patrocinadores?.[0]?.logoUrl,
-    );
-    const patrocinador = premiumAtivos[0]?.patrocinadores?.[0] ?? {
-      nome: 'Placeholder de teste',
-      logoUrl: 'https://placehold.co/360x640/f59e0b/ffffff?text=PREMIUM',
-    };
-    try {
-      await this.jogosSrv.disparTestePremium(
-        this.campeonatoId, this.categoriaId, this.jogoId,
-        patrocinador.logoUrl, patrocinador.nome,
-      );
-      const msg = premiumAtivos.length > 0
-        ? `Teste disparado! ${premiumAtivos.length} banner(s) premium em sequência (rajada real).`
-        : 'Teste disparado! Nenhum premium ativo — exibindo banner de exemplo.';
-      const t = await this.toastCtrl.create({
-        message: msg,
-        duration: 2600, color: 'success', position: 'top',
-      });
-      await t.present();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      const t = await this.toastCtrl.create({
-        message: 'Falha ao disparar teste: ' + msg,
-        duration: 3000, color: 'danger', position: 'top',
-      });
-      await t.present();
-    }
-  }
 
   /**
    * Stream — o organizador deste campeonato tem créditos de transmissão
@@ -1281,6 +1239,45 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
   private async toastTx(message: string, color: 'success' | 'danger' | 'warning' | 'medium'): Promise<void> {
     const t = await this.toastCtrl.create({ message, duration: 3000, position: 'top', color });
     await t.present();
+  }
+
+  /** Clique num jogador da LISTA da escalação → abre o editor de número/posição
+   *  (só quem pode gerenciar equipes). */
+  editarJogadorDaLista(
+    jog: { id?: string; nome?: string; numeroCamisa?: string; posicao?: string } | undefined,
+    pode: boolean,
+  ): void {
+    if (!pode || !jog?.id) return;
+    void this.abrirEditarNumPos({
+      id: jog.id,
+      nome: jog.nome ?? '',
+      numero: (jog.numeroCamisa ?? '').toString(),
+      posicao: jog.posicao ?? '',
+    });
+  }
+
+  /** Abre o modal de editar número/posição de um jogador escalado. */
+  async abrirEditarNumPos(sel: JogadorSelecionado): Promise<void> {
+    if (!sel?.id) return;
+    const modal = await this.modalCtrl.create({
+      component: EditarNumPosModalComponent,
+      componentProps: { nome: sel.nome, numero: sel.numero, posicao: sel.posicao },
+      breakpoints: [0, 0.5, 0.9],
+      initialBreakpoint: 0.5,
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss<{ numeroCamisa: string; posicao: string }>();
+    if (!data) return;
+    try {
+      await this.jogadoresSrv.atualizar(this.campeonatoId, this.categoriaId, sel.id, {
+        numeroCamisa: data.numeroCamisa,
+        posicao: data.posicao,
+      });
+      await this.toastTx('Jogador atualizado.', 'success');
+    } catch (err) {
+      console.error('[JogoDetalhe] editar numero/posicao falhou', err);
+      await this.toastTx('Erro ao salvar. Você tem permissão para editar equipes?', 'danger');
+    }
   }
 
   // ═══════════════════ AVISO NA TELA (lower-third) ═══════════════════

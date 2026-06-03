@@ -8,10 +8,16 @@
       <span class="ce-area ce-area-baixo"></span>
 
       <div class="ce-linha" *ngFor="let linha of vm.linhas">
-        <div class="ce-jogador" *ngFor="let j of linha.jogadores">
+        <div
+          class="ce-jogador"
+          *ngFor="let j of linha.jogadores"
+          [class.ce-clicavel]="editavel"
+          (click)="onSelecionar(j)"
+        >
           <div class="ce-camisa">
             <ion-icon name="shirt" aria-hidden="true"></ion-icon>
             <span class="ce-num">{{ j.numero || '–' }}</span>
+            <ion-icon *ngIf="editavel" class="ce-edit-hint" name="create" aria-hidden="true"></ion-icon>
           </div>
           <div class="ce-pos" *ngIf="j.posicaoLabel">{{ j.posicaoLabel }}</div>
         </div>
