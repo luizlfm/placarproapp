@@ -1302,6 +1302,8 @@ ion-content {
   touch-action: manipulation;
 
   ion-segment-button {
+    flex: 1 1 0;           /* cada aba ocupa metade do trilho */
+    max-width: none;
     --color: var(--placar-text-muted, #6b7280);
     --color-checked: #fff;
     --background: transparent;
@@ -1323,6 +1325,8 @@ ion-content {
     /* Ícone + texto lado a lado (Ionic md empilha por padrão). */
     &::part(native) {
       flex-direction: row;
+      align-items: center;
+      justify-content: center;
       gap: 7px;
       border-radius: 999px;
       transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
@@ -1330,6 +1334,7 @@ ion-content {
     ion-icon {
       font-size: 17px;
       margin: 0;
+      vertical-align: middle;
     }
 
     /* Aba ativa: pílula verde com gradiente + glow + leve elevação. */
