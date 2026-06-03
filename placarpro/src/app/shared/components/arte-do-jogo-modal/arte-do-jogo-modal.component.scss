@@ -527,19 +527,26 @@
   .ae-layout {
     flex-direction: row;
     align-items: flex-start;
-    gap: 4px;
-    padding: 8px;
+    justify-content: center;
+    gap: 24px;
+    padding: 24px;
+    max-width: 1040px;
+    margin: 0 auto;
   }
   .ae-stage {
-    flex: 0 0 46%;
+    flex: 0 0 360px;
     position: sticky;
     top: 0;
     align-self: flex-start;
-    padding: 14px;
+    padding: 0;
+  }
+  .ae-stage-inner {
+    max-width: 360px;
   }
   .ae-controles {
     flex: 1 1 auto;
     min-width: 0;
-    padding-top: 14px;
+    max-width: 560px;
+    padding: 0;
   }
 }
