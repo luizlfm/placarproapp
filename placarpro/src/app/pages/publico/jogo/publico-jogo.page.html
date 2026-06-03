@@ -181,10 +181,8 @@
                     <img *ngIf="e.jogador.fotoUrl; else fic1" [src]="e.jogador.fotoUrl" />
                     <ng-template #fic1><ion-icon name="person-circle-outline"></ion-icon></ng-template>
                   </div>
-                  <span class="nome">
-                    <span *ngIf="e.jogador.numeroCamisa" class="num">#{{ e.jogador.numeroCamisa }}</span>
-                    {{ e.jogador.nome }}
-                  </span>
+                  <span *ngIf="e.jogador.numeroCamisa" class="num">{{ e.jogador.numeroCamisa }}</span>
+                  <span class="nome">{{ e.jogador.nome }}</span>
                   <span class="badges">
                     <span *ngFor="let _ of [].constructor(e.gols)" class="b-gol" title="Gol">⚽</span>
                     <span *ngFor="let _ of [].constructor(e.amarelos)" class="b-am"></span>
@@ -214,10 +212,8 @@
                     <img *ngIf="e.jogador.fotoUrl; else fic2" [src]="e.jogador.fotoUrl" />
                     <ng-template #fic2><ion-icon name="person-circle-outline"></ion-icon></ng-template>
                   </div>
-                  <span class="nome">
-                    <span *ngIf="e.jogador.numeroCamisa" class="num">#{{ e.jogador.numeroCamisa }}</span>
-                    {{ e.jogador.nome }}
-                  </span>
+                  <span *ngIf="e.jogador.numeroCamisa" class="num">{{ e.jogador.numeroCamisa }}</span>
+                  <span class="nome">{{ e.jogador.nome }}</span>
                   <span class="badges">
                     <span *ngFor="let _ of [].constructor(e.gols)" class="b-gol" title="Gol">⚽</span>
                     <span *ngFor="let _ of [].constructor(e.amarelos)" class="b-am"></span>
