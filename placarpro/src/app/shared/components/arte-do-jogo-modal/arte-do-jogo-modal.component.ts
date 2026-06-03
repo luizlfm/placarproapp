@@ -61,6 +61,12 @@ export class ArteDoJogoModalComponent implements OnInit {
   selecionadoId: string | null = null;
 
   fundo = 'gramado';
+  /** URL/dataURL da imagem de fundo (foto própria ou banco). Quando
+   *  preenchido, sobrepõe o preset CSS de cor. */
+  fundoImgUrl: string | null = null;
+  /** Aba ativa do seletor de fundo. */
+  fundoAba: 'cores' | 'foto' | 'banco' = 'cores';
+
   readonly fundos: { id: string; label: string }[] = [
     { id: 'gramado', label: 'Gramado' },
     { id: 'estadio', label: 'Estádio' },
@@ -68,7 +74,21 @@ export class ArteDoJogoModalComponent implements OnInit {
     { id: 'gradient', label: 'Gradiente' },
     { id: 'escuro', label: 'Escuro' },
     { id: 'liso', label: 'Liso' },
+    { id: 'noturno', label: 'Noturno' },
+    { id: 'holofote', label: 'Holofote' },
+    { id: 'diagonal', label: 'Diagonal' },
+    { id: 'fogo', label: 'Fogo' },
+    { id: 'oceano', label: 'Oceano' },
+    { id: 'roxo', label: 'Roxo' },
   ];
+
+  // ─── banco de imagens online (Pexels) ──────────────────────────────
+  private static readonly PEXELS_KEY_LS = 'placar:pexelsKey';
+  pexelsKey = '';
+  buscaQuery = 'estádio futebol';
+  buscando = false;
+  buscaErro = '';
+  resultados: { thumb: string; full: string; autor: string }[] = [];
 
   readonly fontes: string[] = [
     'Anton', 'Bebas Neue', 'Oswald', 'Archivo Black',
@@ -86,6 +106,10 @@ export class ArteDoJogoModalComponent implements OnInit {
   private rect?: DOMRect;
 
   ngOnInit(): void {
+    try {
+      this.pexelsKey = localStorage.getItem(ArteDoJogoModalComponent.PEXELS_KEY_LS) ?? '';
+    } catch { /* localStorage indisponível */ }
+
     const placarVis = this.jogo?.status === 'encerrado' || this.jogo?.status === 'em-andamento';
     const placar = placarVis
       ? `${this.jogo?.golsMandante ?? 0}  ×  ${this.jogo?.golsVisitante ?? 0}`
@@ -128,7 +152,99 @@ export class ArteDoJogoModalComponent implements OnInit {
     this.selecionadoId = id;
   }
   fundoClass(): string {
-    return `fundo-${this.fundo}`;
+    return this.fundoImgUrl ? 'fundo-img' : `fundo-${this.fundo}`;
+  }
+
+  // ─── fundos: presets / foto / banco ────────────────────────────────
+  /** Escolhe um preset CSS de cor (limpa eventual imagem de fundo). */
+  setFundoPreset(id: string): void {
+    this.fundo = id;
+    this.fundoImgUrl = null;
+  }
+
+  /** Upload de foto do dispositivo como fundo da arte. */
+  onUploadFundo(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { this.fundoImgUrl = String(reader.result); };
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+
+  /** Remove a imagem de fundo, voltando pro preset de cor selecionado. */
+  limparFundoImg(): void {
+    this.fundoImgUrl = null;
+  }
+
+  // ── banco de imagens (Pexels) ──
+  salvarPexelsKey(valor: string): void {
+    this.pexelsKey = (valor ?? '').trim();
+    try {
+      if (this.pexelsKey) localStorage.setItem(ArteDoJogoModalComponent.PEXELS_KEY_LS, this.pexelsKey);
+      else localStorage.removeItem(ArteDoJogoModalComponent.PEXELS_KEY_LS);
+    } catch { /* ignore */ }
+  }
+
+  async buscarBanco(): Promise<void> {
+    const q = this.buscaQuery.trim();
+    if (!q || !this.pexelsKey) return;
+    this.buscando = true;
+    this.buscaErro = '';
+    this.resultados = [];
+    try {
+      const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=24&orientation=portrait`;
+      const resp = await fetch(url, { headers: { Authorization: this.pexelsKey } });
+      if (resp.status === 401) {
+        this.buscaErro = 'Chave inválida. Verifique sua chave Pexels.';
+        return;
+      }
+      if (!resp.ok) {
+        this.buscaErro = 'Falha na busca (erro ' + resp.status + ').';
+        return;
+      }
+      const data = await resp.json() as {
+        photos?: { src?: { medium?: string; portrait?: string; large2x?: string }; photographer?: string }[];
+      };
+      this.resultados = (data.photos ?? []).map(p => ({
+        thumb: p.src?.medium ?? p.src?.portrait ?? '',
+        full: p.src?.portrait ?? p.src?.large2x ?? p.src?.medium ?? '',
+        autor: p.photographer ?? '',
+      })).filter(r => r.full);
+      if (!this.resultados.length) this.buscaErro = 'Nada encontrado para "' + q + '".';
+    } catch (e) {
+      console.error('[ArteJogo] busca banco erro', e);
+      this.buscaErro = 'Erro de rede ao buscar imagens.';
+    } finally {
+      this.buscando = false;
+    }
+  }
+
+  /** Usa uma imagem do banco como fundo. Converte pra dataURL antes
+   *  (garante export via html2canvas sem problema de CORS). */
+  async usarImagemBanco(full: string): Promise<void> {
+    this.buscando = true;
+    try {
+      const resp = await fetch(full);
+      const blob = await resp.blob();
+      this.fundoImgUrl = await this.blobParaDataUrl(blob);
+    } catch (e) {
+      console.error('[ArteJogo] baixar imagem banco erro', e);
+      // fallback: usa a URL direta (export pode exigir CORS)
+      this.fundoImgUrl = full;
+    } finally {
+      this.buscando = false;
+    }
+  }
+
+  private blobParaDataUrl(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result));
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
   }
 
   addTexto(): void {

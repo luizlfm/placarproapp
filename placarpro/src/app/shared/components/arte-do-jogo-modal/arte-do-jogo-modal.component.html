@@ -26,7 +26,13 @@
   <div class="ae-stage">
     <div class="ae-stage-inner">
       <div class="ae-badge-formato">1080 × 1350</div>
-      <div #canvas class="ae-canvas" [ngClass]="fundoClass()" (pointerdown)="selecionar(null)">
+      <div
+        #canvas
+        class="ae-canvas"
+        [ngClass]="fundoClass()"
+        [style.background-image]="fundoImgUrl ? 'url(' + fundoImgUrl + ')' : null"
+        (pointerdown)="selecionar(null)"
+      >
         <div
           *ngFor="let el of elementos"
           class="ae-el"
@@ -90,17 +96,94 @@
     <!-- ── Fundo ── -->
     <div class="ae-card">
       <div class="ae-card-titulo"><ion-icon name="layers-outline"></ion-icon> Fundo</div>
-      <div class="ae-fundos">
+
+      <!-- abas -->
+      <div class="ae-seg ae-seg-full ae-abas">
+        <button class="ae-tg" [class.on]="fundoAba === 'cores'" (click)="fundoAba = 'cores'">
+          <ion-icon name="color-fill-outline"></ion-icon><span>Cores</span>
+        </button>
+        <button class="ae-tg" [class.on]="fundoAba === 'foto'" (click)="fundoAba = 'foto'">
+          <ion-icon name="camera-outline"></ion-icon><span>Foto</span>
+        </button>
+        <button class="ae-tg" [class.on]="fundoAba === 'banco'" (click)="fundoAba = 'banco'">
+          <ion-icon name="search-outline"></ion-icon><span>Banco</span>
+        </button>
+      </div>
+
+      <!-- aba CORES -->
+      <div class="ae-fundos" *ngIf="fundoAba === 'cores'">
         <button
           *ngFor="let f of fundos"
           class="ae-fundo-chip"
-          [class.ativo]="fundo === f.id"
+          [class.ativo]="!fundoImgUrl && fundo === f.id"
           [ngClass]="'fundo-' + f.id"
-          (click)="fundo = f.id"
+          (click)="setFundoPreset(f.id)"
         >
           <ion-icon class="ae-fundo-check" name="checkmark-circle"></ion-icon>
           <span>{{ f.label }}</span>
         </button>
+      </div>
+
+      <!-- aba FOTO -->
+      <div class="ae-foto" *ngIf="fundoAba === 'foto'">
+        <label class="ae-foto-btn">
+          <ion-icon name="cloud-upload-outline"></ion-icon>
+          <span>Escolher foto do dispositivo</span>
+          <input type="file" accept="image/*" hidden (change)="onUploadFundo($event)" />
+        </label>
+        <div class="ae-foto-atual" *ngIf="fundoImgUrl">
+          <img [src]="fundoImgUrl" alt="fundo" />
+          <button class="ae-foto-remover" (click)="limparFundoImg()">
+            <ion-icon name="trash-outline"></ion-icon> Remover fundo
+          </button>
+        </div>
+      </div>
+
+      <!-- aba BANCO -->
+      <div class="ae-banco" *ngIf="fundoAba === 'banco'">
+        <!-- sem chave: setup -->
+        <div class="ae-banco-setup" *ngIf="!pexelsKey">
+          <p>Busque fotos grátis no <b>Pexels</b>. Pegue sua chave gratuita (1 min) e cole abaixo — fica salva no aparelho.</p>
+          <a class="ae-link" href="https://www.pexels.com/api/" target="_blank" rel="noopener">
+            Abrir Pexels API <ion-icon name="open-outline"></ion-icon>
+          </a>
+          <div class="ae-linha">
+            <input class="ae-input" type="text" #keyInput placeholder="Cole sua chave Pexels" />
+            <button class="ae-mini-btn" (click)="salvarPexelsKey(keyInput.value)">Salvar</button>
+          </div>
+        </div>
+
+        <!-- com chave: busca -->
+        <ng-container *ngIf="pexelsKey">
+          <div class="ae-linha">
+            <input
+              class="ae-input"
+              type="text"
+              [(ngModel)]="buscaQuery"
+              placeholder="Ex: estádio, gramado, torcida"
+              (keyup.enter)="buscarBanco()"
+            />
+            <button class="ae-mini-btn" [disabled]="buscando" (click)="buscarBanco()">
+              <ion-icon name="search-outline"></ion-icon>
+            </button>
+          </div>
+
+          <div class="ae-banco-erro" *ngIf="buscaErro">{{ buscaErro }}</div>
+          <div class="ae-banco-loading" *ngIf="buscando">Buscando…</div>
+
+          <div class="ae-banco-grid" *ngIf="resultados.length">
+            <button
+              *ngFor="let r of resultados"
+              class="ae-banco-item"
+              (click)="usarImagemBanco(r.full)"
+              [title]="r.autor"
+            >
+              <img [src]="r.thumb" [alt]="r.autor" loading="lazy" />
+            </button>
+          </div>
+
+          <button class="ae-link ae-trocar-key" (click)="salvarPexelsKey('')">Trocar chave</button>
+        </ng-container>
       </div>
     </div>
 

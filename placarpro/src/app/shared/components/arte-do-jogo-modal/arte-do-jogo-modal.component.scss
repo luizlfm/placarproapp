@@ -114,6 +114,35 @@
 .fundo-liso {
   background: #14532d;
 }
+.fundo-noturno {
+  background:
+    radial-gradient(ellipse at 50% -5%, rgba(255, 255, 255, 0.25) 0%, transparent 38%),
+    linear-gradient(180deg, #0b1f2e 0%, #0a3a2a 60%, #061a14 100%);
+}
+.fundo-holofote {
+  background:
+    radial-gradient(circle at 30% 0%, rgba(255, 244, 200, 0.4) 0%, transparent 30%),
+    radial-gradient(circle at 70% 0%, rgba(255, 244, 200, 0.4) 0%, transparent 30%),
+    linear-gradient(180deg, #11151c 0%, #0a0c11 100%);
+}
+.fundo-diagonal {
+  background:
+    repeating-linear-gradient(135deg, #1f9e4a 0 40px, #178a3f 40px 80px);
+}
+.fundo-fogo {
+  background: linear-gradient(160deg, #ff7a18 0%, #af1f1f 55%, #2b0606 100%);
+}
+.fundo-oceano {
+  background: linear-gradient(160deg, #1fb6d4 0%, #1c4fd4 55%, #0a1c5e 100%);
+}
+.fundo-roxo {
+  background: linear-gradient(160deg, #9b4dff 0%, #5b21b6 55%, #1e0a3c 100%);
+}
+.fundo-img {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
 
 /* ====== ELEMENTOS NO CANVAS ====== */
 .ae-el {
@@ -520,6 +549,148 @@
     font-size: 13px;
     line-height: 1.6;
   }
+}
+
+/* ====== ABAS DE FUNDO ====== */
+.ae-abas {
+  margin-bottom: 12px;
+}
+.ae-abas .ae-tg span {
+  font-size: 12px;
+}
+
+/* aba foto */
+.ae-foto-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  padding: 22px 14px;
+  border-radius: 13px;
+  border: 1.5px dashed var(--ae-border);
+  background: var(--ae-input);
+  color: var(--ae-text);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  ion-icon {
+    font-size: 22px;
+    color: #9fe6ad;
+  }
+}
+.ae-foto-btn:active {
+  border-color: var(--ae-accent);
+}
+.ae-foto-atual {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  img {
+    width: 100%;
+    max-height: 140px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid var(--ae-border);
+  }
+}
+.ae-foto-remover {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 107, 107, 0.12);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* aba banco */
+.ae-banco-setup p {
+  margin: 0 0 10px;
+  color: var(--ae-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ae-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #7bef8e;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+  margin-bottom: 12px;
+  ion-icon {
+    font-size: 15px;
+  }
+}
+.ae-trocar-key {
+  margin: 12px 0 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.ae-mini-btn {
+  flex: 0 0 auto;
+  height: 44px;
+  min-width: 48px;
+  padding: 0 16px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, var(--ae-accent), var(--ae-accent2));
+  color: #06210c;
+  font-weight: 800;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  ion-icon {
+    font-size: 19px;
+  }
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+.ae-banco-erro {
+  margin-top: 10px;
+  color: #ff8585;
+  font-size: 13px;
+}
+.ae-banco-loading {
+  margin-top: 10px;
+  color: var(--ae-muted);
+  font-size: 13px;
+}
+.ae-banco-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.ae-banco-item {
+  padding: 0;
+  border: 1px solid var(--ae-border);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  aspect-ratio: 4 / 5;
+  background: var(--ae-input);
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+.ae-banco-item:active {
+  border-color: #7bef8e;
 }
 
 /* ====== 2 COLUNAS (telas largas) ====== */
