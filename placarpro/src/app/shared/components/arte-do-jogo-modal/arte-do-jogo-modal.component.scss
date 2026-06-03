@@ -12,7 +12,7 @@
 
 /* ====== HEADER ====== */
 .ae-header ion-toolbar {
-  --background: linear-gradient(120deg, #11151c 0%, #0f1318 100%);
+  --background: #12161d;
   --color: #fff;
   --border-color: transparent;
 }
@@ -46,7 +46,7 @@
 
 /* ====== CONTENT / LAYOUT ====== */
 .ae-content {
-  --background: radial-gradient(circle at 50% -10%, #161c26 0%, var(--ae-bg) 55%);
+  --background: #0e1218;
 }
 .ae-layout {
   display: flex;
@@ -88,7 +88,7 @@
   border-radius: 18px;
   overflow: hidden;
   container-type: inline-size;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
   touch-action: none;
   user-select: none;
 }
@@ -198,30 +198,34 @@
 .ae-controles {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 10px 14px 32px;
+  gap: 0;
+  padding: 4px 18px 36px;
 }
 
-/* card genérico */
+/* seção achatada (sem caixa) — separadas por hairline + respiro */
 .ae-card {
-  background: var(--ae-surface);
-  border: 1px solid var(--ae-border);
-  border-radius: 16px;
-  padding: 14px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.ae-card:last-child {
+  border-bottom: none;
 }
 .ae-card-titulo {
   display: flex;
   align-items: center;
   gap: 7px;
   color: var(--ae-muted);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.7px;
-  margin-bottom: 12px;
+  letter-spacing: 1px;
+  margin-bottom: 13px;
   ion-icon {
-    font-size: 16px;
-    color: #7bef8e;
+    font-size: 15px;
+    color: var(--ae-muted);
   }
 }
 
