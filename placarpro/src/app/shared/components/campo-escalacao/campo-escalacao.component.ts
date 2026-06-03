@@ -13,6 +13,12 @@ interface JogadorCampo {
 interface LinhaCampo {
   jogadores: JogadorCampo[];
 }
+interface CampoVM {
+  /** Linhas do campo (topo->base: ATA, MEI, DEF, GOL). */
+  linhas: LinhaCampo[];
+  /** Lista plana pra coluna de nomes (ordem natural: GOL -> ATA). */
+  lista: JogadorCampo[];
+}
 
 type Setor = 'GOL' | 'DEF' | 'MEI' | 'ATA';
 
@@ -47,11 +53,11 @@ export class CampoEscalacaoComponent implements OnChanges {
   private readonly jogosSrv = inject(JogosService);
   private readonly jogadoresSrv = inject(JogadoresService);
 
-  linhas$: Observable<LinhaCampo[]> = of([]);
+  vm$: Observable<CampoVM> = of({ linhas: [], lista: [] });
 
   ngOnChanges(): void {
     if (!this.campeonatoId || !this.categoriaId || !this.jogoId || !this.equipeId) {
-      this.linhas$ = of([]);
+      this.vm$ = of({ linhas: [], lista: [] });
       return;
     }
     const esc$ = this.jogosSrv.escalacao$(
@@ -60,15 +66,18 @@ export class CampoEscalacaoComponent implements OnChanges {
     const jog$ = this.jogadoresSrv.listPorEquipeSemIndex$(
       this.campeonatoId, this.categoriaId, this.equipeId,
     );
-    this.linhas$ = combineLatest([esc$, jog$]).pipe(
+    this.vm$ = combineLatest([esc$, jog$]).pipe(
       map(([esc, jogadores]) => {
         const ids = (esc ?? []) as string[];
-        if (!ids.length) return [];
+        if (!ids.length) return { linhas: [], lista: [] } as CampoVM;
         const byId = new Map(jogadores.map(j => [j.id ?? '', j]));
         const escalados = ids
           .map(id => byId.get(id))
           .filter((j): j is Jogador => !!j);
-        return this.montarLinhas(escalados);
+        const linhas = this.montarLinhas(escalados);
+        // Lista plana em ordem natural (goleiro primeiro): inverte as linhas.
+        const lista = linhas.slice().reverse().flatMap(l => l.jogadores);
+        return { linhas, lista };
       }),
     );
   }
