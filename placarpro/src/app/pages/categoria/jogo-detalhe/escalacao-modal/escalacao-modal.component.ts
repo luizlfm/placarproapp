@@ -20,6 +20,8 @@ export class EscalacaoModalComponent implements OnInit {
   @Input() equipeNome = '';
   /** URL do escudo da equipe (opcional — buscado pelo equipeId se vier vazio) */
   @Input() equipeLogoUrl = '';
+  /** Máximo de jogadores escaláveis (0 = sem limite). */
+  @Input() limite = 0;
 
   private readonly jogosSrv = inject(JogosService);
   private readonly jogadoresSrv = inject(JogadoresService);
@@ -94,8 +96,16 @@ export class EscalacaoModalComponent implements OnInit {
   }
 
   toggle(jogadorId: string): void {
-    if (this.selecionados.has(jogadorId)) this.selecionados.delete(jogadorId);
-    else this.selecionados.add(jogadorId);
+    if (this.selecionados.has(jogadorId)) {
+      this.selecionados.delete(jogadorId);
+      return;
+    }
+    // Respeita o limite de jogadores por partida (0 = sem limite).
+    if (this.limite > 0 && this.selecionados.size >= this.limite) {
+      void this.toast(`Limite de ${this.limite} jogadores por partida atingido.`, 'warning');
+      return;
+    }
+    this.selecionados.add(jogadorId);
   }
 
   estaSelecionado(jogadorId: string): boolean {
@@ -103,7 +113,12 @@ export class EscalacaoModalComponent implements OnInit {
   }
 
   selecionarTodos(): void {
-    this.selecionados = new Set(this.jogadores.map(j => j.id!).filter(Boolean));
+    let ids = this.jogadores.map(j => j.id!).filter(Boolean);
+    if (this.limite > 0 && ids.length > this.limite) {
+      ids = ids.slice(0, this.limite);
+      void this.toast(`Selecionados os primeiros ${this.limite} (limite por partida).`, 'warning');
+    }
+    this.selecionados = new Set(ids);
   }
 
   limpar(): void {
@@ -134,7 +149,7 @@ export class EscalacaoModalComponent implements OnInit {
     return j.id ?? '';
   }
 
-  private async toast(message: string, color: 'success' | 'danger'): Promise<void> {
+  private async toast(message: string, color: 'success' | 'danger' | 'warning'): Promise<void> {
     const t = await this.toastCtrl.create({ message, duration: 2000, position: 'top', color });
     await t.present();
   }

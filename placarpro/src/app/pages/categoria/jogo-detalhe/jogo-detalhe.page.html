@@ -934,6 +934,26 @@
                lado a lado por uma lista vertical confortável, igual ao
                que fizemos no publico-categoria. Em mobile principalmente
                ficava espremido com 2 colunas; agora é 1 time por vez. -->
+
+            <!-- Quantos jogadores por partida são liberados (config da categoria). -->
+            <div class="esc-jpp" *ngIf="p.editarCampeonato"
+              style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+              <span style="font-size:13px;font-weight:600;opacity:.8;">Jogadores por partida:</span>
+              <ion-select [value]="jppAtual" interface="popover" placeholder="Livre"
+                (ionChange)="setJogadoresPorPartida($event.detail.value)"
+                style="min-width:130px;border:1px solid var(--ion-color-step-200,#ddd);border-radius:8px;">
+                <ion-select-option [value]="0">Livre</ion-select-option>
+                <ion-select-option [value]="5">5 (Futsal)</ion-select-option>
+                <ion-select-option [value]="6">6</ion-select-option>
+                <ion-select-option [value]="7">7 (Society)</ion-select-option>
+                <ion-select-option [value]="8">8</ion-select-option>
+                <ion-select-option [value]="9">9</ion-select-option>
+                <ion-select-option [value]="10">10</ion-select-option>
+                <ion-select-option [value]="11">11 (Campo)</ion-select-option>
+                <ion-select-option [value]="12">12</ion-select-option>
+              </ion-select>
+            </div>
+
             <div class="esc-seg">
               <button type="button" class="esc-seg-btn" [class.active]="escalacaoLado === 'mandante'"
                 (click)="selecionarLadoEscalacao('mandante')">

@@ -208,6 +208,8 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
   /** Lado da escalação atualmente visível (mandante | visitante). Em mobile,
    *  mostrar 2 colunas grudadas é apertado; segment escolhe 1 time por vez. */
   escalacaoLado: 'mandante' | 'visitante' = 'mandante';
+  /** Jogadores por partida liberados (config da categoria). 0 = livre. */
+  jppAtual = 0;
 
   selecionarLadoEscalacao(lado: 'mandante' | 'visitante'): void {
     this.escalacaoLado = lado;
@@ -651,6 +653,9 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
       this.statusJogoAtual = j?.status;
       if (j) this.prefilAvisoTela(j);
     });
+
+    // Mantém o nº de jogadores por partida (config da categoria) em sync.
+    this.categoria$.subscribe(c => { this.jppAtual = c?.jogadoresPorPartida ?? 0; });
 
     // Vigia o limite de tempo de transmissão (auto-encerra / renova).
     this.vigiarLimiteTransmissao();
@@ -1536,6 +1541,21 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
+  /** Define quantos jogadores por partida são liberados (salva na categoria).
+   *  Requer permissão de editar campeonato (Rules: write em categorias). */
+  async setJogadoresPorPartida(n: number): Promise<void> {
+    const valor = Number(n) || 0;
+    this.jppAtual = valor;
+    try {
+      await this.categoriasSrv.atualizar(this.campeonatoId, this.categoriaId, {
+        jogadoresPorPartida: valor,
+      });
+    } catch (err) {
+      console.error('[JogoDetalhe] salvar jogadoresPorPartida falhou', err);
+      await this.toastTx('Erro ao salvar. Você tem permissão para editar o campeonato?', 'danger');
+    }
+  }
+
   async editarEscalacao(lado: 'mandante' | 'visitante'): Promise<void> {
     const jogo = await firstValueFrom(this.jogo$);
     if (!jogo?.id) return;
@@ -1551,6 +1571,7 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
         equipeId,
         equipeNome,
         equipeLogoUrl: equipeLogoUrl ?? '',
+        limite: this.jppAtual,
       },
       cssClass: 'modal-escalacao',
       backdropDismiss: true,
@@ -1744,6 +1765,7 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
         equipeId,
         equipeNome,
         equipeLogoUrl: equipeLogoUrl ?? '',
+        limite: this.jppAtual,
       },
       cssClass: 'modal-escalacao',
       backdropDismiss: true,

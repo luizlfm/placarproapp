@@ -19,7 +19,9 @@
     <div class="eq-info">
       <div class="eq-nome">{{ equipeNome || 'Equipe' }}</div>
       <div class="eq-meta">
-        <strong>{{ selecionados.size }}</strong> de {{ jogadores.length }} jogador(es) selecionado(s)
+        <strong>{{ selecionados.size }}</strong>
+        <ng-container *ngIf="limite > 0; else semLimite">/ {{ limite }} (máx por partida)</ng-container>
+        <ng-template #semLimite>de {{ jogadores.length }} jogador(es) selecionado(s)</ng-template>
       </div>
     </div>
   </div>

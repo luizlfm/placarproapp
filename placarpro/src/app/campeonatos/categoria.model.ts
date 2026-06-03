@@ -87,6 +87,9 @@ export interface Categoria {
   subtitulo?: string;
   /** Modalidade esportiva. Define o tipo de jogo (futsal, futebol, etc.). */
   modalidade: ModalidadeId;
+  /** Quantos jogadores cada time pode escalar por partida (titulares em
+   *  campo). 0/ausente = sem limite. Configurável na tela de escalação. */
+  jogadoresPorPartida?: number;
   /** Tipo padrão de fase. */
   tipoFase: TipoFase;
   /** URL do logo/escudo da categoria (opcional) — variante WEB (200×240). */
