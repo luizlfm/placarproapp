@@ -783,8 +783,10 @@
               </button>
             </div>
 
-            <!-- Campo visual da escalação do time selecionado -->
+            <!-- Campo (esquerda) + lista de jogadores (direita) lado a lado -->
+            <div class="jd-esc-campo-lista" style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;">
             <app-campo-escalacao
+              style="flex:1 1 300px;min-width:240px;max-width:480px;"
               [campeonatoId]="campeonato?.id || ''"
               [categoriaId]="categoria?.id || ''"
               [jogoId]="j.id || ''"
@@ -792,11 +794,7 @@
               [nomeEquipe]="escalacaoLado === 'mandante' ? j.nomeMandante : j.nomeVisitante">
             </app-campo-escalacao>
 
-            <!-- Listagem espelhada do admin jogo-detalhe.page:
-                 `.escala-col` + `.escala-head` (nome do time) +
-                 `.escala-lista` > `.jog-card` (foto + #numero + nome + badges).
-                 Mesmas classes pra herdar exatamente o mesmo visual. -->
-            <div class="escala-grid esc-mono">
+            <div class="escala-grid esc-mono" style="flex:1 1 320px;min-width:260px;">
               <!-- Mandante (só quando selecionado no segment) -->
               <div class="escala-col" *ngIf="escalacaoLado === 'mandante'">
                 <div class="escala-head">
@@ -856,6 +854,7 @@
                   </ng-template>
                 </ng-container>
               </div>
+            </div>
             </div>
           </ng-container>
 
