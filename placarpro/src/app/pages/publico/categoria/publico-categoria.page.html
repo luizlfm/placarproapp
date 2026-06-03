@@ -401,7 +401,7 @@
                 <div class="tags">
                   <span *ngIf="j.fase" class="tag tag-fase">{{ j.fase }}</span>
                   <span *ngIf="j.rodada" class="tag tag-rod">{{ j.rodada }}ª rodada</span>
-                  <span *ngIf="j.dataHora" class="tag tag-data">{{ j.dataHora }}</span>
+                  <span *ngIf="j.dataHora" class="tag tag-data">{{ j.dataHora | date:'dd/MM/yyyy • HH:mm' }}</span>
                 </div>
 
                 <!-- Linha principal: equipe ← placar → equipe -->
@@ -444,7 +444,7 @@
                 <div class="jogo-rodape" *ngIf="j.dataHora || j.local">
                   <span class="data" *ngIf="j.dataHora">
                     <ion-icon name="calendar-outline"></ion-icon>
-                    {{ j.dataHora }}
+                    {{ j.dataHora | date:'dd/MM/yyyy • HH:mm' }}
                   </span>
                   <span class="local" *ngIf="j.local">
                     <ion-icon name="location-outline"></ion-icon>
@@ -602,7 +602,7 @@
                   <div class="jcp-extra" *ngIf="j.dataHora || j.local">
                     <span *ngIf="j.dataHora" class="jcp-pill">
                       <ion-icon name="calendar-outline"></ion-icon>
-                      {{ j.dataHora }}
+                      {{ j.dataHora | date:'dd/MM/yyyy • HH:mm' }}
                     </span>
                     <span *ngIf="j.local" class="jcp-pill">
                       <ion-icon name="location-outline"></ion-icon>
@@ -714,7 +714,7 @@
             <div class="jd-fase-info" *ngIf="j.fase || j.rodada || j.dataHora || j.local">
               <div *ngIf="j.fase" class="jd-fase">{{ j.fase }}</div>
               <div *ngIf="j.rodada" class="jd-rodada">{{ j.rodada }}ª rodada</div>
-              <div *ngIf="j.dataHora" class="jd-data">{{ j.dataHora }}</div>
+              <div *ngIf="j.dataHora" class="jd-data">{{ j.dataHora | date:'dd/MM/yyyy • HH:mm' }}</div>
               <div *ngIf="j.local" class="jd-local">{{ j.local }}</div>
             </div>
 
@@ -783,6 +783,15 @@
               </button>
             </div>
 
+            <!-- Campo visual da escalação do time selecionado -->
+            <app-campo-escalacao
+              [campeonatoId]="campeonato?.id || ''"
+              [categoriaId]="categoria?.id || ''"
+              [jogoId]="j.id || ''"
+              [equipeId]="escalacaoLado === 'mandante' ? j.mandanteId : j.visitanteId"
+              [nomeEquipe]="escalacaoLado === 'mandante' ? j.nomeMandante : j.nomeVisitante">
+            </app-campo-escalacao>
+
             <!-- Listagem espelhada do admin jogo-detalhe.page:
                  `.escala-col` + `.escala-head` (nome do time) +
                  `.escala-lista` > `.jog-card` (foto + #numero + nome + badges).
@@ -800,10 +809,8 @@
                         <img skel *ngIf="e.jogador.fotoUrl; else iEscM" [src]="e.jogador.fotoUrl" alt="" loading="lazy" />
                         <ng-template #iEscM><ion-icon name="person-circle-outline"></ion-icon></ng-template>
                       </div>
-                      <span class="nome">
-                        <span *ngIf="e.jogador.numeroCamisa" class="num">#{{ e.jogador.numeroCamisa }}</span>
-                        {{ e.jogador.apelido || e.jogador.nome }}
-                      </span>
+                      <span *ngIf="e.jogador.numeroCamisa" class="num">{{ e.jogador.numeroCamisa }}</span>
+                      <span class="nome">{{ e.jogador.apelido || e.jogador.nome }}</span>
                       <span class="badges">
                         <span *ngFor="let _ of [].constructor(e.gols)" class="b-gol" title="Gol">⚽</span>
                         <span *ngFor="let _ of [].constructor(e.amarelos)" class="b-am" title="Amarelo"></span>
@@ -832,10 +839,8 @@
                         <img skel *ngIf="e.jogador.fotoUrl; else iEscV" [src]="e.jogador.fotoUrl" alt="" loading="lazy" />
                         <ng-template #iEscV><ion-icon name="person-circle-outline"></ion-icon></ng-template>
                       </div>
-                      <span class="nome">
-                        <span *ngIf="e.jogador.numeroCamisa" class="num">#{{ e.jogador.numeroCamisa }}</span>
-                        {{ e.jogador.apelido || e.jogador.nome }}
-                      </span>
+                      <span *ngIf="e.jogador.numeroCamisa" class="num">{{ e.jogador.numeroCamisa }}</span>
+                      <span class="nome">{{ e.jogador.apelido || e.jogador.nome }}</span>
                       <span class="badges">
                         <span *ngFor="let _ of [].constructor(e.gols)" class="b-gol" title="Gol">⚽</span>
                         <span *ngFor="let _ of [].constructor(e.amarelos)" class="b-am" title="Amarelo"></span>

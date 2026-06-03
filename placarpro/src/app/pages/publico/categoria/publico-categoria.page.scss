@@ -2171,40 +2171,45 @@
 .jd-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  background: var(--placar-surface, #fff);
-  border-radius: 12px;
-  padding: 6px;
+  background: var(--ion-color-step-50, #f1f3f5);
+  border-radius: 999px;
+  padding: 5px;
   gap: 4px;
   margin-top: 14px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
 .jd-tab {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 14px 12px;
+  gap: 7px;
+  padding: 9px 12px;
   background: transparent;
   border: none;
   cursor: pointer;
-  border-radius: 10px;
-  color: var(--placar-text-muted, #6b6b70);
-  font-size: 14px;
+  border-radius: 999px;
+  color: var(--placar-text-muted, #6b7280);
+  font-size: 13px;
   font-weight: 700;
-  transition: background 120ms ease, color 120ms ease;
+  letter-spacing: 0.2px;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.25s ease, transform 0.2s ease;
 
   ion-icon {
-    font-size: 18px;
+    font-size: 17px;
   }
 
   &:hover {
-    background: var(--placar-surface-2, #FAFBFC);
+    background: rgba(0, 0, 0, 0.04);
   }
 
+  /* Aba ativa: pílula verde com gradiente + glow (verde explícito pra não
+     cair no preto da --ion-color-primary desta tela). */
   &.active {
-    background: var(--ion-color-primary, #000000);
+    background: linear-gradient(135deg, #2e9e3f 0%, #7bc400 100%);
     color: #fff;
+    box-shadow: 0 6px 16px rgba(110, 191, 0, 0.42), 0 2px 4px rgba(0, 0, 0, 0.16);
+    transform: translateY(-1px);
   }
 }
 
@@ -4115,27 +4120,34 @@
    Layout idêntico ao admin pra que a aba Escalação fique uniforme entre
    admin e público. */
 .jog-card {
-  display: grid;
-  grid-template-columns: 36px 1fr auto;
+  display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 9px 14px;
   background: var(--placar-card-bg, #fff);
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid var(--placar-divider, #ececef);
   box-shadow: var(--placar-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.04));
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    border-color: #2e9e3f;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.09);
+    transform: translateY(-1px);
+  }
 
   .foto {
-    width: 36px;
-    height: 36px;
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.08);
+    background: rgba(0, 0, 0, 0.06);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--ion-color-primary);
-    border: 2px solid rgba(0, 0, 0, 0.15);
+    color: #2e9e3f;
+    border: 2px solid rgba(0, 0, 0, 0.08);
 
     img {
       width: 100%;
@@ -4148,22 +4160,34 @@
     }
   }
 
+  /* Número em badge verde circular. */
+  .num {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 7px;
+    border-radius: 8px;
+    background: #2e9e3f;
+    color: #fff;
+    font-weight: 800;
+    font-size: 12.5px;
+    line-height: 1;
+  }
+
   .nome {
-    font-size: 13px;
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 14px;
     color: var(--placar-text);
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    min-width: 0;
+    letter-spacing: 0.2px;
+    text-align: left;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-
-    .num {
-      font-weight: 700;
-      color: var(--ion-color-primary);
-      margin-right: 4px;
-    }
   }
 
   .badges {
