@@ -169,6 +169,34 @@
   padding: 2px;
 }
 
+/* Jogador posicionado livremente (modo aleatório, sem posições). */
+.ce-jogador-abs {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  max-width: 30%;
+  z-index: 2;
+}
+
+/* Aviso de "sem posições" — chip legível em fundo claro ou escuro. */
+.ce-aviso {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #11321b;
+  border: 1px solid rgba(255, 196, 0, 0.5);
+  color: #ffd24a;
+  font-size: clamp(10px, 3cqw, 12px);
+  font-weight: 600;
+
+  ion-icon {
+    font-size: 16px;
+    flex: 0 0 auto;
+  }
+}
+
 .ce-camisa {
   position: relative;
   line-height: 0;

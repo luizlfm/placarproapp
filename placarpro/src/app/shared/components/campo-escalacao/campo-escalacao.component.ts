@@ -23,11 +23,23 @@ interface JogadorCampo {
 interface LinhaCampo {
   jogadores: JogadorCampo[];
 }
+/** Jogador espalhado aleatoriamente (quando não há posições definidas). */
+interface AleatorioItem {
+  id: string;
+  nome: string;
+  numero: string;
+  top: number;  // % vertical
+  left: number; // % horizontal
+}
 interface CampoVM {
-  /** Linhas do campo (topo->base: ATA, MEI, DEF, GOL). */
+  /** 'formacao' = tem posições; 'aleatorio' = ninguém tem posição. */
+  modo: 'formacao' | 'aleatorio';
+  /** Linhas do campo (topo->base: ATA, MEI, DEF, GOL) — modo formação. */
   linhas: LinhaCampo[];
-  /** Lista plana pra coluna de nomes (ordem natural: GOL -> ATA). */
-  lista: JogadorCampo[];
+  /** Jogadores espalhados — modo aleatório. */
+  aleatorios: AleatorioItem[];
+  /** True quando nenhum jogador tem posição (mostra aviso). */
+  semPosicoes: boolean;
 }
 
 type Setor = 'GOL' | 'DEF' | 'MEI' | 'ATA';
@@ -67,7 +79,9 @@ export class CampoEscalacaoComponent implements OnChanges {
   private readonly jogosSrv = inject(JogosService);
   private readonly jogadoresSrv = inject(JogadoresService);
 
-  vm$: Observable<CampoVM> = of({ linhas: [], lista: [] });
+  private readonly vmVazio: CampoVM = { modo: 'formacao', linhas: [], aleatorios: [], semPosicoes: false };
+
+  vm$: Observable<CampoVM> = of(this.vmVazio);
 
   onSelecionar(j: JogadorCampo): void {
     if (!this.editavel || !j.id) return;
@@ -76,7 +90,7 @@ export class CampoEscalacaoComponent implements OnChanges {
 
   ngOnChanges(): void {
     if (!this.campeonatoId || !this.categoriaId || !this.jogoId || !this.equipeId) {
-      this.vm$ = of({ linhas: [], lista: [] });
+      this.vm$ = of(this.vmVazio);
       return;
     }
     const esc$ = this.jogosSrv.escalacao$(
@@ -88,20 +102,48 @@ export class CampoEscalacaoComponent implements OnChanges {
     this.vm$ = combineLatest([esc$, jog$]).pipe(
       map(([esc, jogadores]) => {
         const ids = (esc ?? []) as string[];
-        if (!ids.length) return { linhas: [], lista: [] } as CampoVM;
+        if (!ids.length) return this.vmVazio;
         const byId = new Map(jogadores.map(j => [j.id ?? '', j]));
         const escalados = ids
           .map(id => byId.get(id))
           .filter((j): j is Jogador => !!j);
-        const linhas = this.montarLinhas(escalados);
-        // Lista plana em ordem natural (goleiro primeiro): inverte as linhas.
-        const lista = linhas.slice().reverse().flatMap(l => l.jogadores);
-        return { linhas, lista };
+        return this.montar(escalados);
       }),
     );
   }
 
   // ─── Internos ────────────────────────────────────────────────────────────
+
+  private montar(escalados: Jogador[]): CampoVM {
+    // Se NINGUÉM tem posição → não dá pra montar formação: espalha aleatório
+    // (posição estável por jogador, sem ficar pulando a cada render) e avisa.
+    const temAlgumaPosicao = escalados.some(j => this.norm(j.posicao) !== '');
+    if (!temAlgumaPosicao) {
+      const aleatorios = escalados.map(j => {
+        const h = this.hash(j.id || j.nome || '');
+        return {
+          id: j.id ?? '',
+          nome: this.primeiroNome(j),
+          numero: (j.numeroCamisa ?? '').toString().trim(),
+          top: 12 + (h % 74),            // 12%..86%
+          left: 10 + ((h >>> 9) % 78),   // 10%..88%
+        } as AleatorioItem;
+      });
+      return { modo: 'aleatorio', linhas: [], aleatorios, semPosicoes: true };
+    }
+    return { modo: 'formacao', linhas: this.montarLinhas(escalados), aleatorios: [], semPosicoes: false };
+  }
+
+  /** Hash estável (FNV-1a) de uma string → uint32. Usado pra posicionar de
+   *  forma "aleatória" mas DETERMINÍSTICA (não muda entre renders). */
+  private hash(s: string): number {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
 
   private montarLinhas(jogadores: Jogador[]): LinhaCampo[] {
     const setores: Record<Setor, Jogador[]> = { GOL: [], DEF: [], MEI: [], ATA: [] };
