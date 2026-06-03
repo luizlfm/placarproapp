@@ -327,12 +327,6 @@
                 </ion-button>
               </div>
             </ng-container>
-            <button type="button" class="dev-test-banner" (click)="testarBannerPremium()"
-              *ngIf="isMaster$ | async"
-              title="DEV: força exibição do banner premium por 6s (ignora timer de 7min)">
-              <ion-icon name="flask-outline"></ion-icon>
-              Testar banner premium
-            </button>
             <!-- ═══════ EM ANDAMENTO ═══════ -->
             <ng-container *ngIf="j.status === 'em-andamento'">
               <!-- ═══════ DEV/TEST: botão pra forçar exibição do banner premium ═══════
@@ -651,7 +645,6 @@
                  Quando visível, esteira-ads e scoreboard sobreposto somem
                  (via classe `.premium-on` no parent). -->
                 <app-premium-overlay [campeonatoId]="campeonatoId" [categoriaId]="categoriaId" [jogoId]="jogoId"
-                  [forcedTest]="forcedTestPayload"
                   (visibilidadeMudou)="onPremiumOverlayMudou($event)"></app-premium-overlay>
 
                 <!-- ═══════ RECADO NA TELA (lower-third) ═══════
@@ -959,6 +952,15 @@
                 <span class="esc-seg-nome">{{ j.nomeVisitante }}</span>
               </button>
             </div>
+
+            <!-- Campo visual da escalação do lado selecionado -->
+            <app-campo-escalacao
+              [campeonatoId]="campeonatoId"
+              [categoriaId]="categoriaId"
+              [jogoId]="jogoId"
+              [equipeId]="escalacaoLado === 'mandante' ? j.mandanteId : j.visitanteId"
+              [nomeEquipe]="escalacaoLado === 'mandante' ? j.nomeMandante : j.nomeVisitante">
+            </app-campo-escalacao>
 
             <div class="escala-grid esc-mono">
               <!-- Mandante (renderiza só quando segment selecionou) -->
