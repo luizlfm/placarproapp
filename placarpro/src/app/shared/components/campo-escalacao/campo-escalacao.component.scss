@@ -1,0 +1,143 @@
+:host {
+  display: block;
+  container-type: inline-size;
+}
+
+.ce-titulo {
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #b6ff3a;
+  text-transform: uppercase;
+  font-size: clamp(12px, 4cqw, 16px);
+  margin-bottom: 8px;
+}
+
+/* ===== Campo ===== */
+.ce-campo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  aspect-ratio: 3 / 4;            /* retrato, como a arte */
+  width: 100%;
+  padding: 4cqw 2cqw;
+  border-radius: 12px;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.025) 0 8%,
+      rgba(0, 0, 0, 0) 8% 16%
+    ),
+    radial-gradient(120% 80% at 50% 0%, #114a22 0%, #0b3317 55%, #07230f 100%);
+  border: 2px solid rgba(155, 230, 23, 0.45);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.55);
+}
+
+/* marcações */
+.ce-linha-meio {
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.22);
+}
+.ce-circulo {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 26%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+}
+.ce-area {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 46%;
+  height: 12%;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+}
+.ce-area-cima { top: -2px; border-top: none; border-radius: 0 0 6px 6px; }
+.ce-area-baixo { bottom: -2px; border-bottom: none; border-radius: 6px 6px 0 0; }
+
+/* ===== Linhas e jogadores ===== */
+.ce-linha {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  gap: 1cqw;
+}
+
+.ce-jogador {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  max-width: 24%;
+}
+
+.ce-camisa {
+  position: relative;
+  line-height: 0;
+
+  ion-icon {
+    font-size: clamp(30px, 11cqw, 56px);
+    color: #9be617;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  }
+
+  .ce-num {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(8%);
+    font-weight: 800;
+    color: #05290f;
+    font-size: clamp(11px, 4cqw, 18px);
+  }
+}
+
+.ce-pos {
+  margin-top: 3px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #d7ffa8;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  font-size: clamp(6px, 2.1cqw, 9px);
+  line-height: 1.2;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ce-nome {
+  margin-top: 2px;
+  color: #fff;
+  font-weight: 600;
+  font-size: clamp(7px, 2.4cqw, 11px);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.ce-vazio {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  padding: 18px 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+}

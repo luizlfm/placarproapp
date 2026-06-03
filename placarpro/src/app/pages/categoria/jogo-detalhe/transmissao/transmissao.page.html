@@ -606,6 +606,17 @@
           </button>
         </nav>
 
+        <!-- Campo visual da escalação do time selecionado -->
+        <div class="tr-esc-campo">
+          <app-campo-escalacao
+            [campeonatoId]="campeonatoId"
+            [categoriaId]="categoriaId"
+            [jogoId]="jogoId"
+            [equipeId]="escTimeAtivo === 'm' ? (jogo?.mandanteId || '') : (jogo?.visitanteId || '')"
+            [nomeEquipe]="escTimeAtivo === 'm' ? (mandante?.nome || '') : (visitante?.nome || '')">
+          </app-campo-escalacao>
+        </div>
+
         <!-- Lista do time selecionado — cor do time é injetada como
              custom property `--time-cor` e usada nas borders dos cards. -->
         <div

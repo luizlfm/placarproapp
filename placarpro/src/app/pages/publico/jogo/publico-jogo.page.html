@@ -140,6 +140,27 @@
     <!-- ════════ FIM WRAPPER FULLSCREEN ════════ -->
 
     <div class="conteudo">
+      <!-- Escalação em campo (visual) -->
+      <section class="section">
+        <h2 class="section-title">Escalação em campo</h2>
+        <div class="escala-grid">
+          <app-campo-escalacao
+            [campeonatoId]="campeonato?.id || ''"
+            [categoriaId]="catId"
+            [jogoId]="jogoId"
+            [equipeId]="j.mandanteId"
+            [nomeEquipe]="j.nomeMandante">
+          </app-campo-escalacao>
+          <app-campo-escalacao
+            [campeonatoId]="campeonato?.id || ''"
+            [categoriaId]="catId"
+            [jogoId]="jogoId"
+            [equipeId]="j.visitanteId"
+            [nomeEquipe]="j.nomeVisitante">
+          </app-campo-escalacao>
+        </div>
+      </section>
+
       <!-- Escalação -->
       <section class="section">
         <h2 class="section-title">Escalação</h2>
