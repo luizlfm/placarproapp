@@ -122,6 +122,14 @@ const routes: Routes = [
   // Compat
   { path: 'home', redirectTo: 'app/meus-campeonatos' },
 
+  // TESTE: editor da Arte do Jogo numa tela fixa (iteração de layout).
+  // Precisa vir ANTES do ':slug' senão o matcher de slug captura.
+  {
+    path: 'arte-teste',
+    loadChildren: () =>
+      import('./pages/arte-teste/arte-teste.module').then(m => m.ArteTestePageModule),
+  },
+
   // URL pública curta estilo copafacil: placarproapp.com/<slug>
   // IMPORTANTE: precisa ficar ANTES do wildcard '**' e DEPOIS de todas as
   // rotas conhecidas (login, cadastro, app, etc.) — caso contrário esse

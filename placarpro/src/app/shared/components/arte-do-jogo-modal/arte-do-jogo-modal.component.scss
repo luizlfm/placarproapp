@@ -49,29 +49,166 @@
 .ae-content {
   --background: var(--ae-bg);
 }
-.ae-layout {
+/* ====== SHELL 3 PAINÉIS (estilo Canva) ====== */
+.ae-shell {
   display: flex;
   flex-direction: column;
 }
 
-/* ====== STAGE / CANVAS ====== */
-.ae-stage {
-  padding: 18px 14px 8px;
+/* rail de ícones */
+.ae-rail {
   display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--ae-surface);
+  border-bottom: 1px solid var(--ae-border);
+}
+.ae-rail-btn {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  color: var(--ae-muted);
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  ion-icon {
+    font-size: 21px;
+  }
+}
+.ae-rail-btn.ativo {
+  color: var(--ae-accent);
+  background: rgba(46, 158, 63, 0.1);
+}
+
+/* painel da seção */
+.ae-panel {
+  background: var(--ae-surface);
+  padding: 16px;
+}
+.ae-panel-titulo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ae-text);
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 14px;
+  ion-icon {
+    font-size: 18px;
+    color: var(--ae-accent);
+  }
+}
+.ae-sub-label {
+  margin: 16px 0 9px;
+  color: var(--ae-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.ae-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  color: var(--ae-muted);
+  padding: 26px 18px;
+  font-size: 13px;
+  ion-icon {
+    font-size: 28px;
+    color: #c4cad2;
+  }
+  p { margin: 0; line-height: 1.5; }
+}
+
+/* workspace (canvas) */
+.ae-work {
+  background: #e7ebf0;
+  padding: 18px 14px;
+  display: baseline;
   justify-content: center;
   align-items: flex-start;
+  overflow: auto;
 }
 .ae-stage-inner {
   position: relative;
   width: 100%;
-  max-width: 420px;
+  max-width: 380px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+.ae-canvas-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.ae-multi {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ae-border);
+  background: var(--ae-surface);
+  color: var(--ae-text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  ion-icon {
+    font-size: 15px;
+  }
+}
+.ae-multi.on {
+  background: linear-gradient(135deg, var(--ae-accent), var(--ae-accent2));
+  color: #06210c;
+  border-color: transparent;
+}
+.ae-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--ae-surface);
+  border: 1px solid var(--ae-border);
+  border-radius: 999px;
+  padding: 2px;
+  button {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--ae-text);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    ion-icon { font-size: 16px; }
+  }
+  button:active { background: var(--ae-surface2); }
+  span {
+    min-width: 44px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ae-text);
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+  }
 }
 .ae-badge-formato {
-  align-self: flex-end;
-  margin-bottom: 8px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -90,6 +227,7 @@
   overflow: hidden;
   container-type: inline-size;
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.14);
+  transform-origin: top center;
   touch-action: none;
   user-select: none;
 }
@@ -139,10 +277,17 @@
 .fundo-roxo {
   background: linear-gradient(160deg, #9b4dff 0%, #5b21b6 55%, #1e0a3c 100%);
 }
-.fundo-img {
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+/* imagem de fundo (ajustável: zoom + posição via transform) */
+.ae-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: center;
+  pointer-events: none;
+  z-index: 0;
+  user-select: none;
 }
 
 /* ====== ELEMENTOS NO CANVAS ====== */
@@ -151,22 +296,25 @@
   transform: translate(-50%, -50%);
   cursor: grab;
   display: inline-flex;
-  max-width: 96cqw;
+  width: max-content;
+  max-width: 90cqw;
+  z-index: 1;
 }
 .ae-el:active {
   cursor: grabbing;
 }
 .ae-el.sel {
-  outline: 2px dashed rgba(123, 239, 142, 0.95);
-  outline-offset: 4px;
-  border-radius: 4px;
+  outline: 1.5px solid var(--ae-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
 }
 .ae-texto {
   line-height: 1.05;
   letter-spacing: 0.3px;
   white-space: pre-wrap;
-  word-break: break-word;
-  max-width: 96cqw;
+  overflow-wrap: break-word;
+  word-break: normal;
+  max-width: 90cqw;
 }
 .ae-texto.sombra {
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.75), 0 1px 2px rgba(0, 0, 0, 0.9);
@@ -182,52 +330,39 @@
   aspect-ratio: 1;
   object-fit: cover;
 }
-.ae-handle {
+/* alças de redimensionamento (8 lados) */
+.ae-h {
   position: absolute;
-  right: -10px;
-  bottom: -10px;
-  width: 22px;
-  height: 22px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: #7bef8e;
-  border: 3px solid var(--ae-bg);
-  cursor: nwse-resize;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  background: #ffffff;
+  border: 2px solid var(--ae-accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  z-index: 3;
+  touch-action: none;
 }
+.ae-h-nw { top: -8px; left: -8px; cursor: nwse-resize; }
+.ae-h-ne { top: -8px; right: -8px; cursor: nesw-resize; }
+.ae-h-sw { bottom: -8px; left: -8px; cursor: nesw-resize; }
+.ae-h-se { bottom: -8px; right: -8px; cursor: nwse-resize; }
+.ae-h-n { top: -8px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+.ae-h-s { bottom: -8px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+.ae-h-e { right: -8px; top: 50%; transform: translateY(-50%); cursor: ew-resize; }
+.ae-h-w { left: -8px; top: 50%; transform: translateY(-50%); cursor: ew-resize; }
 
-/* ====== COLUNA DE CONTROLES ====== */
-.ae-controles {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding: 4px 18px 36px;
+/* caixa da multi-seleção (grupo) */
+.ae-grupo-box {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  border: 1.5px dashed var(--ae-accent);
+  border-radius: 3px;
 }
-
-/* seção achatada (sem caixa) — separadas por hairline + respiro */
-.ae-card {
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 20px 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
-}
-.ae-card:last-child {
-  border-bottom: none;
-}
-.ae-card-titulo {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--ae-muted);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 13px;
-  ion-icon {
-    font-size: 15px;
-    color: var(--ae-muted);
-  }
+.ae-grupo-h {
+  pointer-events: auto;
+  background: var(--ae-accent);
+  border-color: #fff;
 }
 
 /* ── toolbar adicionar ── */
@@ -259,6 +394,49 @@
 .ae-tool:active {
   transform: scale(0.97);
   border-color: var(--ae-accent);
+}
+
+/* textos rápidos (Adicionar) */
+.ae-textos-add {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  button {
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 11px;
+    background: var(--ae-surface2);
+    border: 1px solid var(--ae-border);
+    color: var(--ae-text);
+    text-align: left;
+    cursor: pointer;
+  }
+  button:active { border-color: var(--ae-accent); }
+}
+
+/* elementos rápidos (Elementos) */
+.ae-rapidos {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+.ae-rapido {
+  aspect-ratio: 1;
+  padding: 6px;
+  border: 1px solid var(--ae-border);
+  border-radius: 10px;
+  background: var(--ae-surface2);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  img { width: 100%; height: 100%; object-fit: contain; }
+}
+.ae-rapido:active { border-color: var(--ae-accent); }
+
+/* cor sólida personalizada (Fundo) */
+.ae-cor-solida {
+  margin-top: 12px;
 }
 
 /* ── fundos ── */
@@ -316,11 +494,24 @@
 .ae-camada {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 9px 11px;
+  gap: 2px;
+  padding: 3px 5px 3px 3px;
   border-radius: 10px;
   background: var(--ae-surface2);
   border: 1px solid var(--ae-border);
+}
+.ae-camada.off {
+  opacity: 0.5;
+}
+.ae-camada-sel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px;
+  background: transparent;
+  border: none;
   color: var(--ae-text);
   font-size: 13px;
   font-weight: 600;
@@ -332,6 +523,20 @@
     flex: 0 0 auto;
   }
 }
+.ae-camada-ic {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: var(--ae-muted);
+  cursor: pointer;
+  ion-icon {
+    font-size: 16px;
+  }
+}
 .ae-camada-nome {
   white-space: nowrap;
   overflow: hidden;
@@ -340,10 +545,55 @@
 .ae-camada.ativo {
   border-color: var(--ae-accent);
   background: rgba(46, 158, 63, 0.12);
+}
+.ae-camada.ativo .ae-camada-sel {
   color: var(--ae-accent);
   ion-icon {
     color: var(--ae-accent);
   }
+}
+
+/* header desfazer/refazer */
+.ae-icon-btn {
+  --color: #ffffff;
+  --color-disabled: rgba(255, 255, 255, 0.45);
+}
+
+/* alinhar (multi) */
+.ae-alinhar {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
+.ae-alinhar .ae-grupo-label {
+  margin-bottom: 8px;
+}
+.ae-distribuir {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  span {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ae-muted);
+  }
+  .ae-tg {
+    flex: 0 0 auto;
+    background: var(--ae-surface2);
+    border: 1px solid var(--ae-border);
+    border-radius: 10px;
+  }
+}
+
+/* edição da imagem de fundo (sempre visível) */
+.ae-fundo-editar {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+}
+.ae-fundo-editar .ae-foto-remover {
+  margin-top: 12px;
 }
 
 /* ── painel de propriedades ── */
@@ -410,6 +660,19 @@
   color: var(--ae-accent);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+}
+.ae-num {
+  width: 64px;
+  text-align: right;
+  background: var(--ae-input);
+  border: 1px solid var(--ae-border);
+  border-radius: 8px;
+  color: var(--ae-text);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 7px;
+  font-variant-numeric: tabular-nums;
+  &:focus { outline: none; border-color: var(--ae-accent); }
 }
 
 .ae-input {
@@ -616,6 +879,42 @@
   cursor: pointer;
 }
 
+/* fotos prontas */
+.ae-prontos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.ae-pronto {
+  position: relative;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 11px;
+  overflow: hidden;
+  cursor: pointer;
+  aspect-ratio: 4 / 5;
+  background: var(--ae-surface2);
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  span {
+    position: absolute;
+    inset: auto 0 0 0;
+    font-size: 10px;
+    font-weight: 800;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 3px 0;
+    text-align: center;
+  }
+}
+.ae-pronto.ativo {
+  border-color: var(--ae-accent);
+}
+
 /* aba banco */
 .ae-banco-setup p {
   margin: 0 0 10px;
@@ -664,6 +963,11 @@
     opacity: 0.5;
   }
 }
+.ae-banco-hint {
+  margin-top: 8px;
+  color: var(--ae-muted);
+  font-size: 12px;
+}
 .ae-banco-erro {
   margin-top: 10px;
   color: #ff8585;
@@ -699,31 +1003,314 @@
   border-color: #7bef8e;
 }
 
-/* ====== 2 COLUNAS (telas largas) ====== */
-@media (min-width: 820px) {
-  .ae-layout {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 24px;
-    padding: 24px;
-    max-width: 1040px;
-    margin: 0 auto;
+/* grid de elementos (Iconify) */
+.ae-elem-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.ae-elem-item {
+  aspect-ratio: 1;
+  padding: 10px;
+  border: 1px solid var(--ae-border);
+  border-radius: 10px;
+  background: var(--ae-surface2);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
   }
-  .ae-stage {
-    flex: 0 0 360px;
+}
+.ae-elem-item:active {
+  border-color: var(--ae-accent);
+}
+
+/* ====== OVERLAY DO FUNDO ====== */
+.ae-overlay {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ====== GUIAS DE ALINHAMENTO ====== */
+.ae-guia {
+  position: absolute;
+  pointer-events: none;
+  z-index: 6;
+  background: #ff2db4;
+  box-shadow: 0 0 4px rgba(255, 45, 180, 0.8);
+}
+.ae-guia-v {
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  transform: translateX(-50%);
+}
+.ae-guia-h {
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  transform: translateY(-50%);
+}
+
+/* ====== FORMAS ====== */
+.ae-forma {
+  display: block;
+  box-sizing: border-box;
+}
+.forma-ret {
+  border-radius: 1.4cqw;
+}
+.forma-faixa {
+  border-radius: 0.6cqw;
+}
+.forma-circ {
+  border-radius: 50%;
+}
+.forma-pontos {
+  background-repeat: repeat;
+}
+.ae-forma-tri {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+  border-top-width: 0;
+}
+
+/* ====== MODELOS ====== */
+.ae-modelos {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.ae-modelo {
+  padding: 14px 6px;
+  border-radius: 11px;
+  background: var(--ae-surface2);
+  border: 1px solid var(--ae-border);
+  color: var(--ae-text);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ae-modelo.ativo {
+  background: linear-gradient(135deg, var(--ae-accent), var(--ae-accent2));
+  color: #06210c;
+  border-color: transparent;
+}
+.ae-tema {
+  margin-top: 14px;
+  justify-content: space-between;
+}
+.ae-tema-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ae-text);
+}
+
+/* salvar modelo + meus modelos */
+.ae-btn-padrao {
+  width: 100%;
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--ae-accent), var(--ae-accent2));
+  border: none;
+  color: #06210c;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  ion-icon { font-size: 18px; color: #06210c; }
+}
+.ae-btn-padrao:active { filter: brightness(0.95); }
+.ae-btn-salvar {
+  width: 100%;
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--ae-surface2);
+  border: 1px solid var(--ae-border);
+  color: var(--ae-text);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  ion-icon { font-size: 18px; color: var(--ae-accent); }
+}
+.ae-btn-salvar:active { border-color: var(--ae-accent); }
+.ae-meus {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ae-meu {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 5px 3px 3px;
+  border-radius: 10px;
+  background: var(--ae-surface2);
+  border: 1px solid var(--ae-border);
+}
+.ae-meu.ativo {
+  border-color: var(--ae-accent);
+  background: rgba(46, 158, 63, 0.12);
+}
+.ae-meu-sel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 7px;
+  background: transparent;
+  border: none;
+  color: var(--ae-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  ion-icon { font-size: 16px; color: var(--ae-muted); flex: 0 0 auto; }
+}
+.ae-meu-ic {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: var(--ae-muted);
+  cursor: pointer;
+  ion-icon { font-size: 16px; }
+}
+.ae-meu-ic.on { color: #f5b301; }
+.ae-meu-ic.del { color: #ff6b6b; }
+
+/* ====== BOTÕES DE FORMA (Adicionar) ====== */
+.ae-formas-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  button {
+    flex: 1;
+    height: 44px;
+    border-radius: 11px;
+    background: var(--ae-surface2);
+    border: 1px solid var(--ae-border);
+    color: var(--ae-text);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    ion-icon {
+      font-size: 20px;
+      color: var(--ae-accent);
+    }
+  }
+  button:active {
+    background: #e6e9ec;
+  }
+}
+
+/* cor full-width (forma) */
+.ae-cor-full {
+  flex: none;
+  width: 100%;
+  height: 44px;
+}
+.ae-contorno-tg {
+  flex: 1;
+  height: 44px;
+  background: var(--ae-surface2);
+  border: 1px solid var(--ae-border);
+  border-radius: 11px;
+  span {
+    font-size: 13px;
+  }
+}
+.ae-overlay-ctrl {
+  margin-top: 16px;
+}
+
+/* ====== MOBILE: preview fixo no topo ====== */
+@media (max-width: 819px) {
+  .ae-work {
+    order: -1;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    max-height: 46vh;
+    padding: 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.14);
+  }
+  .ae-stage-inner {
+    max-width: 210px;
+  }
+  .ae-rail {
+    position: sticky;
+    top: 46vh;
+    z-index: 4;
+  }
+}
+
+/* ====== 3 PAINÉIS (telas largas) ====== */
+@media (min-width: 820px) {
+  .ae-shell {
+    flex-direction: row;
+    align-items: stretch;
+    min-height: 100%;
+  }
+  .ae-rail {
+    flex-direction: column;
+    overflow-x: visible;
+    width: 86px;
+    gap: 4px;
+    padding: 12px 8px;
+    border-bottom: none;
+    border-right: 1px solid var(--ae-border);
     position: sticky;
     top: 0;
     align-self: flex-start;
-    padding: 0;
   }
-  .ae-stage-inner {
-    max-width: 360px;
+  .ae-rail-btn {
+    width: 100%;
+    padding: 11px 4px;
   }
-  .ae-controles {
+  .ae-panel {
+    width: 330px;
+    flex: 0 0 330px;
+    border-right: 1px solid var(--ae-border);
+    max-height: 100vh;
+    overflow-y: auto;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+  }
+  .ae-work {
     flex: 1 1 auto;
     min-width: 0;
-    max-width: 560px;
-    padding: 0;
+    align-items: center;
+    padding: 28px;
+    min-height: 100%;
+  }
+  .ae-stage-inner {
+    max-width: 400px;
   }
 }

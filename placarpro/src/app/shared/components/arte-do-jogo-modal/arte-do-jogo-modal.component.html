@@ -12,76 +12,84 @@
       </span>
     </ion-title>
     <ion-buttons slot="end">
+      <ion-button class="ae-icon-btn" [disabled]="!podeDesfazer" (click)="desfazer()" title="Desfazer">
+        <ion-icon slot="icon-only" name="arrow-undo-outline"></ion-icon>
+      </ion-button>
+      <ion-button class="ae-icon-btn" [disabled]="!podeRefazer" (click)="refazer()" title="Refazer">
+        <ion-icon slot="icon-only" name="arrow-redo-outline"></ion-icon>
+      </ion-button>
       <ion-button class="ae-export" [disabled]="gerando" (click)="exportar()">
         <ion-icon slot="start" [name]="gerando ? 'hourglass-outline' : 'download-outline'"></ion-icon>
-        {{ gerando ? 'Gerando' : 'Salvar' }}
+        {{ gerando ? 'Gerando' : 'Baixar' }}
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ae-content">
- <div class="ae-layout">
-  <!-- ====== COLUNA ESQUERDA: VISUALIZAÇÃO ====== -->
-  <div class="ae-stage">
-    <div class="ae-stage-inner">
-      <div class="ae-badge-formato">1080 × 1350</div>
-      <div
-        #canvas
-        class="ae-canvas"
-        [ngClass]="fundoClass()"
-        [style.background-image]="fundoImgUrl ? 'url(' + fundoImgUrl + ')' : null"
-        (pointerdown)="selecionar(null)"
-      >
-        <div
-          *ngFor="let el of elementos"
-          class="ae-el"
-          [class.sel]="el.id === selecionadoId && !capturando"
-          [style.left.%]="el.xPct"
-          [style.top.%]="el.yPct"
-          (pointerdown)="onDown($event, el, 'drag')"
-        >
-          <!-- TEXTO -->
-          <div
-            *ngIf="el.tipo === 'texto'"
-            class="ae-texto"
-            [class.sombra]="el.sombra"
-            [style.font-family]="el.fonte"
-            [style.font-size.cqw]="el.tamanho"
-            [style.color]="el.cor"
-            [style.font-weight]="el.negrito ? '800' : '400'"
-            [style.font-style]="el.italico ? 'italic' : 'normal'"
-            [style.text-align]="el.align"
-          >{{ el.texto }}</div>
+ <div class="ae-shell">
 
-          <!-- IMAGEM -->
-          <img
-            *ngIf="el.tipo === 'imagem'"
-            class="ae-img"
-            [class.circ]="el.circular"
-            [src]="el.src"
-            [style.width.cqw]="el.imgLargura"
-            crossorigin="anonymous"
-            draggable="false"
-          />
+  <!-- ====== RAIL DE ÍCONES (esquerda) ====== -->
+  <nav class="ae-rail">
+    <button
+      *ngFor="let r of rail"
+      class="ae-rail-btn"
+      [class.ativo]="painelAtivo === r.id"
+      (click)="abrirPainel(r.id)"
+    >
+      <ion-icon [name]="r.icon"></ion-icon>
+      <span>{{ r.label }}</span>
+    </button>
+  </nav>
 
-          <!-- handle de redimensionar -->
-          <span
-            *ngIf="el.id === selecionadoId && !capturando"
-            class="ae-handle"
-            (pointerdown)="onDown($event, el, 'resize')"
-          ></span>
-        </div>
+  <!-- ====== PAINEL DA SEÇÃO ====== -->
+  <aside class="ae-panel">
+
+    <!-- ── MODELOS ── -->
+    <ng-container *ngIf="painelAtivo === 'modelos'">
+      <div class="ae-panel-titulo"><ion-icon name="grid-outline"></ion-icon> Modelos</div>
+      <div class="ae-modelos">
+        <button
+          *ngFor="let m of modelos"
+          class="ae-modelo"
+          [class.ativo]="modeloAtivo === m.id"
+          (click)="aplicarModelo(m.id)"
+        >{{ m.label }}</button>
       </div>
-    </div>
-  </div>
+      <div class="ae-linha ae-tema">
+        <span class="ae-tema-label">Cor do tema</span>
+        <label class="ae-cor-wrap"><input class="ae-cor" type="color" [(ngModel)]="accent" (change)="reaplicarAccent()" /></label>
+      </div>
 
-  <!-- ====== COLUNA DIREITA: EDIÇÃO ====== -->
-  <div class="ae-controles">
+      <button class="ae-btn-padrao" (click)="salvarComoPadrao()">
+        <ion-icon name="star"></ion-icon> Salvar como modelo PADRÃO
+      </button>
+      <button class="ae-btn-salvar" (click)="salvarModeloAtual()">
+        <ion-icon name="bookmark-outline"></ion-icon> Salvar como modelo (sem ser padrão)
+      </button>
 
-    <!-- ── Adicionar ── -->
-    <div class="ae-card">
-      <div class="ae-card-titulo"><ion-icon name="add-circle-outline"></ion-icon> Adicionar</div>
+      <ng-container *ngIf="modelosSalvos.length">
+        <div class="ae-sub-label">Meus modelos</div>
+        <div class="ae-meus">
+          <div class="ae-meu" *ngFor="let m of modelosSalvos" [class.ativo]="modeloAtivo === 'salvo:' + m.id">
+            <button class="ae-meu-sel" (click)="aplicarModeloSalvo(m)">
+              <ion-icon name="documents-outline"></ion-icon>
+              <span>{{ m.nome }}</span>
+            </button>
+            <button class="ae-meu-ic" [class.on]="modeloPadraoId === m.id" (click)="definirPadrao(m)" [title]="modeloPadraoId === m.id ? 'É o padrão' : 'Definir como padrão'">
+              <ion-icon [name]="modeloPadraoId === m.id ? 'star' : 'star-outline'"></ion-icon>
+            </button>
+            <button class="ae-meu-ic del" (click)="removerModeloSalvo(m)" title="Remover">
+              <ion-icon name="trash-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- ── ADICIONAR ── -->
+    <ng-container *ngIf="painelAtivo === 'adicionar'">
+      <div class="ae-panel-titulo"><ion-icon name="add-circle-outline"></ion-icon> Adicionar</div>
       <div class="ae-toolbar">
         <button class="ae-tool" (click)="addTexto()">
           <ion-icon name="text-outline"></ion-icon><span>Texto</span>
@@ -91,13 +99,55 @@
           <input type="file" accept="image/*" hidden (change)="onUploadImagem($event)" />
         </label>
       </div>
-    </div>
+      <div class="ae-sub-label">Texto rápido</div>
+      <div class="ae-textos-add">
+        <button (click)="addTextoPreset('titulo')" style="font-weight:800;font-size:16px">Título</button>
+        <button (click)="addTextoPreset('subtitulo')" style="font-weight:700;font-size:14px">Subtítulo</button>
+        <button (click)="addTextoPreset('corpo')" style="font-weight:500;font-size:12px">Corpo de texto</button>
+      </div>
+      <div class="ae-sub-label">Formas</div>
+      <div class="ae-formas-add">
+        <button (click)="addForma('ret')" title="Retângulo"><ion-icon name="square-outline"></ion-icon></button>
+        <button (click)="addForma('faixa')" title="Faixa"><ion-icon name="remove-outline"></ion-icon></button>
+        <button (click)="addForma('circ')" title="Círculo"><ion-icon name="ellipse-outline"></ion-icon></button>
+        <button (click)="addForma('tri')" title="Triângulo"><ion-icon name="triangle-outline"></ion-icon></button>
+        <button (click)="addForma('pontos')" title="Pontos (halftone)"><ion-icon name="apps-outline"></ion-icon></button>
+      </div>
+    </ng-container>
 
-    <!-- ── Fundo ── -->
-    <div class="ae-card">
-      <div class="ae-card-titulo"><ion-icon name="layers-outline"></ion-icon> Fundo</div>
+    <!-- ── ELEMENTOS (Iconify) ── -->
+    <ng-container *ngIf="painelAtivo === 'elementos'">
+      <div class="ae-panel-titulo"><ion-icon name="shapes-outline"></ion-icon> Elementos</div>
+      <div class="ae-seg ae-seg-full ae-abas">
+        <button class="ae-tg" [class.on]="elemModo === 'cor'" (click)="setElemModo('cor')">
+          <ion-icon name="color-palette-outline"></ion-icon><span>Coloridos / 3D</span>
+        </button>
+        <button class="ae-tg" [class.on]="elemModo === 'icones'" (click)="setElemModo('icones')">
+          <ion-icon name="shapes-outline"></ion-icon><span>Ícones</span>
+        </button>
+      </div>
+      <div class="ae-linha">
+        <input class="ae-input" type="text" [(ngModel)]="elemQuery" placeholder="Ex: bola, troféu, fogo, estrela, medalha..." (keyup.enter)="buscarElementos()" />
+        <button class="ae-mini-btn" [disabled]="elemBuscando" (click)="buscarElementos()"><ion-icon name="search-outline"></ion-icon></button>
+      </div>
+      <div class="ae-banco-hint">{{ elemModo === 'cor' ? 'Emojis coloridos/3D (Noto, Fluent) — termo em inglês traz mais' : 'Ícones flat na cor do tema' }} · via Iconify</div>
+      <div class="ae-rapidos">
+        <button *ngFor="let r of elemRapidos" class="ae-rapido" (click)="inserirRapido(r.nome)" [title]="r.rotulo">
+          <img [src]="'https://api.iconify.design/' + r.nome.replace(':','/') + '.svg?height=60'" loading="lazy" alt="" />
+        </button>
+      </div>
+      <div class="ae-banco-erro" *ngIf="elemErro">{{ elemErro }}</div>
+      <div class="ae-banco-loading" *ngIf="elemBuscando">Buscando…</div>
+      <div class="ae-elem-grid" *ngIf="elemResultados.length">
+        <button *ngFor="let e of elemResultados" class="ae-elem-item" (click)="usarElemento(e.nome)" [title]="e.nome">
+          <img [src]="e.url" loading="lazy" alt="" />
+        </button>
+      </div>
+    </ng-container>
 
-      <!-- abas -->
+    <!-- ── FUNDO ── -->
+    <ng-container *ngIf="painelAtivo === 'fundo'">
+      <div class="ae-panel-titulo"><ion-icon name="image-outline"></ion-icon> Fundo</div>
       <div class="ae-seg ae-seg-full ae-abas">
         <button class="ae-tg" [class.on]="fundoAba === 'cores'" (click)="fundoAba = 'cores'">
           <ion-icon name="color-fill-outline"></ion-icon><span>Cores</span>
@@ -110,7 +160,6 @@
         </button>
       </div>
 
-      <!-- aba CORES -->
       <div class="ae-fundos" *ngIf="fundoAba === 'cores'">
         <button
           *ngFor="let f of fundos"
@@ -123,9 +172,25 @@
           <span>{{ f.label }}</span>
         </button>
       </div>
+      <div class="ae-linha ae-cor-solida" *ngIf="fundoAba === 'cores'">
+        <span class="ae-tema-label" style="flex:1">Cor sólida personalizada</span>
+        <label class="ae-cor-wrap"><input class="ae-cor" type="color" [(ngModel)]="fundoCor" (change)="setFundoCor(fundoCor || '#0e1218')" /></label>
+      </div>
 
-      <!-- aba FOTO -->
       <div class="ae-foto" *ngIf="fundoAba === 'foto'">
+        <div class="ae-sub-label" style="margin-top:0">Fotos prontas</div>
+        <div class="ae-prontos">
+          <button
+            *ngFor="let f of fundosFoto"
+            class="ae-pronto"
+            [class.ativo]="fundoImgUrl === f.url"
+            (click)="usarFundoFoto(f.url)"
+          >
+            <img [src]="f.url" [alt]="f.label" loading="lazy" />
+            <span>{{ f.label }}</span>
+          </button>
+        </div>
+        <div class="ae-sub-label">Sua foto</div>
         <label class="ae-foto-btn">
           <ion-icon name="cloud-upload-outline"></ion-icon>
           <span>Escolher foto do dispositivo</span>
@@ -139,152 +204,377 @@
         </div>
       </div>
 
-      <!-- aba BANCO -->
       <div class="ae-banco" *ngIf="fundoAba === 'banco'">
-        <!-- sem chave: setup -->
-        <div class="ae-banco-setup" *ngIf="!pexelsKey">
-          <p>Busque fotos grátis no <b>Pexels</b>. Pegue sua chave gratuita (1 min) e cole abaixo — fica salva no aparelho.</p>
-          <a class="ae-link" href="https://www.pexels.com/api/" target="_blank" rel="noopener">
-            Abrir Pexels API <ion-icon name="open-outline"></ion-icon>
-          </a>
-          <div class="ae-linha">
-            <input class="ae-input" type="text" #keyInput placeholder="Cole sua chave Pexels" />
-            <button class="ae-mini-btn" (click)="salvarPexelsKey(keyInput.value)">Salvar</button>
-          </div>
+        <div class="ae-linha">
+          <input class="ae-input" type="text" [(ngModel)]="buscaQuery" placeholder="Buscar: estádio, gramado, torcida..." (keyup.enter)="buscarBanco()" />
+          <button class="ae-mini-btn" [disabled]="buscando" (click)="buscarBanco()"><ion-icon name="search-outline"></ion-icon></button>
         </div>
-
-        <!-- com chave: busca -->
-        <ng-container *ngIf="pexelsKey">
-          <div class="ae-linha">
-            <input
-              class="ae-input"
-              type="text"
-              [(ngModel)]="buscaQuery"
-              placeholder="Ex: estádio, gramado, torcida"
-              (keyup.enter)="buscarBanco()"
-            />
-            <button class="ae-mini-btn" [disabled]="buscando" (click)="buscarBanco()">
-              <ion-icon name="search-outline"></ion-icon>
-            </button>
-          </div>
-
-          <div class="ae-banco-erro" *ngIf="buscaErro">{{ buscaErro }}</div>
-          <div class="ae-banco-loading" *ngIf="buscando">Buscando…</div>
-
-          <div class="ae-banco-grid" *ngIf="resultados.length">
-            <button
-              *ngFor="let r of resultados"
-              class="ae-banco-item"
-              (click)="usarImagemBanco(r.full)"
-              [title]="r.autor"
-            >
-              <img [src]="r.thumb" [alt]="r.autor" loading="lazy" />
-            </button>
-          </div>
-
-          <button class="ae-link ae-trocar-key" (click)="salvarPexelsKey('')">Trocar chave</button>
-        </ng-container>
+        <div class="ae-banco-hint">Imagens livres via Wikimedia Commons</div>
+        <div class="ae-banco-erro" *ngIf="buscaErro">{{ buscaErro }}</div>
+        <div class="ae-banco-loading" *ngIf="buscando">Buscando…</div>
+        <div class="ae-banco-grid" *ngIf="resultados.length">
+          <button *ngFor="let r of resultados" class="ae-banco-item" (click)="usarImagemBanco(r)" [title]="r.autor">
+            <img [src]="r.thumb" [alt]="r.autor" loading="lazy" />
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- ── Camadas ── -->
-    <div class="ae-card" *ngIf="elementos.length">
-      <div class="ae-card-titulo"><ion-icon name="albums-outline"></ion-icon> Camadas</div>
-      <div class="ae-camadas">
-        <button
-          *ngFor="let el of elementos.slice().reverse()"
-          class="ae-camada"
-          [class.ativo]="el.id === selecionadoId"
-          (click)="selecionar(el.id)"
-        >
-          <ion-icon [name]="el.tipo === 'texto' ? 'text-outline' : 'image-outline'"></ion-icon>
-          <span class="ae-camada-nome">{{ el.tipo === 'texto' ? (el.texto || 'Texto') : 'Imagem' }}</span>
+      <!-- Edição da imagem de fundo (sempre visível) -->
+      <div class="ae-fundo-editar">
+        <ng-container *ngIf="fundoImgUrl">
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Tamanho da imagem <span class="ae-val">{{ fundoZoom | number:'1.0-0' }}%</span></div>
+            <input class="ae-range" type="range" min="100" max="300" step="1" [(ngModel)]="fundoZoom" (change)="commitProp()" />
+          </div>
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Posição ↔</div>
+            <input class="ae-range" type="range" min="-50" max="50" step="1" [(ngModel)]="fundoPosX" (change)="commitProp()" />
+          </div>
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Posição ↕</div>
+            <input class="ae-range" type="range" min="-50" max="50" step="1" [(ngModel)]="fundoPosY" (change)="commitProp()" />
+          </div>
+        </ng-container>
+        <div class="ae-grupo">
+          <div class="ae-grupo-label">Escurecer fundo <span class="ae-val">{{ (fundoOverlay * 100) | number:'1.0-0' }}%</span></div>
+          <input class="ae-range" type="range" min="0" max="0.85" step="0.05" [(ngModel)]="fundoOverlay" (change)="commitProp()" />
+        </div>
+        <button *ngIf="fundoImgUrl" class="ae-foto-remover" (click)="limparFundoImg()">
+          <ion-icon name="trash-outline"></ion-icon> Remover imagem de fundo
         </button>
       </div>
-    </div>
+    </ng-container>
 
-    <!-- ── Propriedades ── -->
-    <div class="ae-card ae-painel" *ngIf="sel as s">
-      <div class="ae-painel-head">
-        <span class="ae-painel-tit">
-          <ion-icon [name]="s.tipo === 'texto' ? 'text-outline' : 'image-outline'"></ion-icon>
-          {{ s.tipo === 'texto' ? 'Texto' : 'Imagem' }}
-        </span>
-        <div class="ae-painel-acoes">
-          <button (click)="tras(s)" title="Para trás"><ion-icon name="chevron-down-outline"></ion-icon></button>
-          <button (click)="frente(s)" title="Para frente"><ion-icon name="chevron-up-outline"></ion-icon></button>
-          <button (click)="duplicar(s)" title="Duplicar"><ion-icon name="copy-outline"></ion-icon></button>
-          <button class="del" (click)="remover(s.id)" title="Remover"><ion-icon name="trash-outline"></ion-icon></button>
+    <!-- ── CAMADAS ── -->
+    <ng-container *ngIf="painelAtivo === 'camadas'">
+      <div class="ae-panel-titulo"><ion-icon name="albums-outline"></ion-icon> Camadas</div>
+      <div class="ae-camadas" *ngIf="elementos.length; else semCamadas">
+        <div
+          *ngFor="let el of elementos.slice().reverse()"
+          class="ae-camada"
+          [class.ativo]="estaSelecionado(el.id)"
+          [class.off]="el.oculto"
+        >
+          <button class="ae-camada-sel" (click)="selecionar(el.id)">
+            <ion-icon [name]="iconeCamada(el)"></ion-icon>
+            <span class="ae-camada-nome">{{ rotuloCamada(el) }}</span>
+          </button>
+          <button class="ae-camada-ic" (click)="toggleOculto(el)" [title]="el.oculto ? 'Mostrar' : 'Ocultar'">
+            <ion-icon [name]="el.oculto ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+          </button>
+          <button class="ae-camada-ic" (click)="toggleBloqueado(el)" [title]="el.bloqueado ? 'Desbloquear' : 'Bloquear'">
+            <ion-icon [name]="el.bloqueado ? 'lock-closed' : 'lock-open-outline'"></ion-icon>
+          </button>
+        </div>
+      </div>
+      <ng-template #semCamadas><div class="ae-vazio">Sem elementos ainda.</div></ng-template>
+    </ng-container>
+
+    <!-- ── EDITAR (propriedades) ── -->
+    <ng-container *ngIf="painelAtivo === 'editar'">
+      <div class="ae-panel-titulo"><ion-icon name="options-outline"></ion-icon> Editar</div>
+
+      <!-- Alinhar entre selecionados (2+) -->
+      <div class="ae-alinhar" *ngIf="selecao.size >= 2">
+        <div class="ae-grupo-label">Alinhar {{ selecao.size }} selecionados</div>
+        <div class="ae-seg ae-seg-full">
+          <button class="ae-tg" (click)="alinhar('esq')" title="Esquerda"><ion-icon name="arrow-back-outline"></ion-icon></button>
+          <button class="ae-tg" (click)="alinhar('cx')" title="Centro H"><ion-icon name="swap-horizontal-outline"></ion-icon></button>
+          <button class="ae-tg" (click)="alinhar('dir')" title="Direita"><ion-icon name="arrow-forward-outline"></ion-icon></button>
+          <button class="ae-tg" (click)="alinhar('topo')" title="Topo"><ion-icon name="arrow-up-outline"></ion-icon></button>
+          <button class="ae-tg" (click)="alinhar('cy')" title="Centro V"><ion-icon name="swap-vertical-outline"></ion-icon></button>
+          <button class="ae-tg" (click)="alinhar('base')" title="Base"><ion-icon name="arrow-down-outline"></ion-icon></button>
+        </div>
+        <div class="ae-distribuir" *ngIf="selecao.size >= 3">
+          <span>Distribuir:</span>
+          <button class="ae-tg" (click)="distribuir('h')" title="Horizontal"><ion-icon name="swap-horizontal-outline"></ion-icon></button>
+          <button class="ae-tg" (click)="distribuir('v')" title="Vertical"><ion-icon name="swap-vertical-outline"></ion-icon></button>
+        </div>
+        <div class="ae-distribuir">
+          <span>Tamanho:</span>
+          <button class="ae-tg" (click)="escalarSelecao(0.9)" title="Diminuir"><ion-icon name="remove-outline"></ion-icon></button>
+          <button class="ae-tg" (click)="escalarSelecao(1.1)" title="Aumentar"><ion-icon name="add-outline"></ion-icon></button>
         </div>
       </div>
 
-      <!-- props de TEXTO -->
-      <ng-container *ngIf="s.tipo === 'texto'">
-        <div class="ae-grupo">
-          <div class="ae-grupo-label">Conteúdo</div>
-          <textarea class="ae-input" rows="2" [(ngModel)]="s.texto" placeholder="Digite o texto"></textarea>
+      <!-- Alinhar à página (1 selecionado) -->
+      <div class="ae-alinhar" *ngIf="selecao.size === 1">
+        <div class="ae-grupo-label">Alinhar à página</div>
+        <div class="ae-seg ae-seg-full">
+          <button class="ae-tg" (click)="alinharPagina('esq')" title="Esquerda"><ion-icon name="arrow-back-outline"></ion-icon></button>
+          <button class="ae-tg" (click)="alinharPagina('cx')" title="Centro H"><ion-icon name="swap-horizontal-outline"></ion-icon></button>
+          <button class="ae-tg" (click)="alinharPagina('dir')" title="Direita"><ion-icon name="arrow-forward-outline"></ion-icon></button>
+          <button class="ae-tg" (click)="alinharPagina('topo')" title="Topo"><ion-icon name="arrow-up-outline"></ion-icon></button>
+          <button class="ae-tg" (click)="alinharPagina('cy')" title="Centro V"><ion-icon name="swap-vertical-outline"></ion-icon></button>
+          <button class="ae-tg" (click)="alinharPagina('base')" title="Base"><ion-icon name="arrow-down-outline"></ion-icon></button>
+        </div>
+      </div>
+
+      <div class="ae-painel" *ngIf="sel as s; else semSel">
+        <div class="ae-painel-head">
+          <span class="ae-painel-tit">
+            <ion-icon [name]="iconeCamada(s)"></ion-icon>
+            {{ s.tipo === 'texto' ? 'Texto' : s.tipo === 'imagem' ? 'Imagem' : 'Forma' }}
+          </span>
+          <div class="ae-painel-acoes">
+            <button (click)="tras(s)" title="Para trás"><ion-icon name="chevron-down-outline"></ion-icon></button>
+            <button (click)="frente(s)" title="Para frente"><ion-icon name="chevron-up-outline"></ion-icon></button>
+            <button (click)="duplicar(s)" title="Duplicar"><ion-icon name="copy-outline"></ion-icon></button>
+            <button class="del" (click)="remover(s.id)" title="Remover"><ion-icon name="trash-outline"></ion-icon></button>
+          </div>
         </div>
 
-        <div class="ae-grupo">
-          <div class="ae-grupo-label">Fonte &amp; cor</div>
-          <div class="ae-linha">
-            <div class="ae-select-wrap">
-              <select class="ae-select" [(ngModel)]="s.fonte" [style.font-family]="s.fonte">
-                <option *ngFor="let f of fontes" [value]="f" [style.font-family]="f">{{ f }}</option>
-              </select>
-              <ion-icon class="ae-select-arrow" name="chevron-down-outline"></ion-icon>
+        <!-- TEXTO -->
+        <ng-container *ngIf="s.tipo === 'texto'">
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Conteúdo</div>
+            <textarea class="ae-input" rows="2" [(ngModel)]="s.texto" (change)="commitProp()" placeholder="Digite o texto"></textarea>
+          </div>
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Fonte &amp; cor</div>
+            <div class="ae-linha">
+              <div class="ae-select-wrap">
+                <select class="ae-select" [(ngModel)]="s.fonte" (change)="commitProp()" [style.font-family]="s.fonte">
+                  <option *ngFor="let f of fontes" [value]="f" [style.font-family]="f">{{ f }}</option>
+                </select>
+                <ion-icon class="ae-select-arrow" name="chevron-down-outline"></ion-icon>
+              </div>
+              <label class="ae-cor-wrap"><input class="ae-cor" type="color" [(ngModel)]="s.cor" (change)="commitProp()" /></label>
             </div>
-            <label class="ae-cor-wrap">
-              <input class="ae-cor" type="color" [(ngModel)]="s.cor" />
-            </label>
           </div>
-        </div>
-
-        <div class="ae-grupo">
-          <div class="ae-grupo-label">Tamanho <span class="ae-val">{{ s.tamanho | number:'1.0-1' }}</span></div>
-          <input class="ae-range" type="range" min="1.5" max="28" step="0.5" [(ngModel)]="s.tamanho" />
-        </div>
-
-        <div class="ae-grupo">
-          <div class="ae-grupo-label">Estilo</div>
-          <div class="ae-seg">
-            <button class="ae-tg" [class.on]="s.negrito" (click)="s.negrito = !s.negrito"><b>B</b></button>
-            <button class="ae-tg" [class.on]="s.italico" (click)="s.italico = !s.italico"><i>I</i></button>
-            <button class="ae-tg" [class.on]="s.sombra" (click)="s.sombra = !s.sombra"><ion-icon name="contrast-outline"></ion-icon></button>
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Tamanho <input class="ae-num" type="number" min="1" max="40" step="0.5" [(ngModel)]="s.tamanho" (change)="commitProp()" /></div>
+            <input class="ae-range" type="range" min="1" max="40" step="0.5" [(ngModel)]="s.tamanho" (change)="commitProp()" />
           </div>
-        </div>
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Estilo</div>
+            <div class="ae-seg">
+              <button class="ae-tg" [class.on]="s.negrito" (click)="s.negrito = !s.negrito; commitProp()"><b>B</b></button>
+              <button class="ae-tg" [class.on]="s.italico" (click)="s.italico = !s.italico; commitProp()"><i>I</i></button>
+              <button class="ae-tg" [class.on]="s.maiusculas" (click)="s.maiusculas = !s.maiusculas; commitProp()">AA</button>
+              <button class="ae-tg" [class.on]="s.sombra" (click)="s.sombra = !s.sombra; commitProp()"><ion-icon name="contrast-outline"></ion-icon></button>
+            </div>
+          </div>
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Alinhamento</div>
+            <div class="ae-seg ae-seg-full">
+              <button class="ae-tg" [class.on]="s.align === 'left'" (click)="s.align = 'left'; commitProp()"><ion-icon name="reorder-three-outline" style="transform:scaleX(.78)"></ion-icon></button>
+              <button class="ae-tg" [class.on]="s.align === 'center'" (click)="s.align = 'center'; commitProp()"><ion-icon name="reorder-two-outline"></ion-icon></button>
+              <button class="ae-tg" [class.on]="s.align === 'right'" (click)="s.align = 'right'; commitProp()"><ion-icon name="reorder-three-outline" style="transform:scaleX(-.78)"></ion-icon></button>
+            </div>
+          </div>
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Espaçamento <input class="ae-num" type="number" min="0" max="8" step="0.1" [(ngModel)]="s.espac" (change)="commitProp()" /></div>
+            <input class="ae-range" type="range" min="0" max="8" step="0.1" [(ngModel)]="s.espac" (change)="commitProp()" />
+          </div>
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Realce (fundo do texto)</div>
+            <div class="ae-linha">
+              <label class="ae-cor-wrap"><input class="ae-cor" type="color" [(ngModel)]="s.realce" (change)="commitProp()" /></label>
+              <button class="ae-tg ae-contorno-tg" (click)="s.realce = null; commitProp()">Sem realce</button>
+            </div>
+          </div>
+        </ng-container>
 
+        <!-- IMAGEM -->
+        <ng-container *ngIf="s.tipo === 'imagem'">
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Tamanho <input class="ae-num" type="number" min="2" max="100" step="1" [(ngModel)]="s.imgLargura" (change)="commitProp()" /></div>
+            <input class="ae-range" type="range" min="2" max="100" step="1" [(ngModel)]="s.imgLargura" (change)="commitProp()" />
+          </div>
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Formato</div>
+            <div class="ae-seg ae-seg-full">
+              <button class="ae-tg" [class.on]="!s.circular" (click)="s.circular = false; commitProp()"><ion-icon name="square-outline"></ion-icon><span>Normal</span></button>
+              <button class="ae-tg" [class.on]="s.circular" (click)="s.circular = true; commitProp()"><ion-icon name="ellipse-outline"></ion-icon><span>Circular</span></button>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- FORMA -->
+        <ng-container *ngIf="s.tipo === 'forma'">
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Tipo</div>
+            <div class="ae-seg ae-seg-full">
+              <button class="ae-tg" [class.on]="s.forma === 'ret'" (click)="s.forma = 'ret'; commitProp()"><ion-icon name="square-outline"></ion-icon></button>
+              <button class="ae-tg" [class.on]="s.forma === 'faixa'" (click)="s.forma = 'faixa'; commitProp()"><ion-icon name="remove-outline"></ion-icon></button>
+              <button class="ae-tg" [class.on]="s.forma === 'circ'" (click)="s.forma = 'circ'; commitProp()"><ion-icon name="ellipse-outline"></ion-icon></button>
+              <button class="ae-tg" [class.on]="s.forma === 'tri'" (click)="s.forma = 'tri'; commitProp()"><ion-icon name="triangle-outline"></ion-icon></button>
+              <button class="ae-tg" [class.on]="s.forma === 'pontos'" (click)="s.forma = 'pontos'; commitProp()"><ion-icon name="apps-outline"></ion-icon></button>
+            </div>
+          </div>
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Cor &amp; estilo</div>
+            <div class="ae-linha">
+              <label class="ae-cor-wrap"><input class="ae-cor" type="color" [(ngModel)]="s.cor" (change)="commitProp()" /></label>
+              <button class="ae-tg ae-contorno-tg" [class.on]="s.borda" (click)="s.borda = !s.borda; s.bordaW = s.bordaW || 0.7; commitProp()" [disabled]="s.forma === 'pontos' || s.forma === 'tri'">
+                <ion-icon name="scan-outline"></ion-icon><span>Contorno</span>
+              </button>
+            </div>
+          </div>
+          <div class="ae-grupo" *ngIf="s.borda">
+            <div class="ae-grupo-label">Espessura do contorno <input class="ae-num" type="number" min="0.2" max="8" step="0.1" [(ngModel)]="s.bordaW" (change)="commitProp()" /></div>
+            <input class="ae-range" type="range" min="0.2" max="8" step="0.1" [(ngModel)]="s.bordaW" (change)="commitProp()" />
+          </div>
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Largura <input class="ae-num" type="number" min="1" max="140" step="1" [(ngModel)]="s.formaLargura" (change)="commitProp()" /></div>
+            <input class="ae-range" type="range" min="1" max="140" step="1" [(ngModel)]="s.formaLargura" (change)="commitProp()" />
+          </div>
+          <div class="ae-grupo">
+            <div class="ae-grupo-label">Altura <input class="ae-num" type="number" min="0.3" max="150" step="0.5" [(ngModel)]="s.formaAltura" (change)="commitProp()" /></div>
+            <input class="ae-range" type="range" min="0.3" max="150" step="0.5" [(ngModel)]="s.formaAltura" (change)="commitProp()" />
+          </div>
+        </ng-container>
+
+        <!-- TRANSFORMAR (todos) -->
         <div class="ae-grupo">
-          <div class="ae-grupo-label">Alinhamento</div>
+          <div class="ae-grupo-label">Rotação <input class="ae-num" type="number" min="-180" max="180" step="1" [(ngModel)]="s.rotacao" (change)="commitProp()" /></div>
+          <input class="ae-range" type="range" min="-180" max="180" step="1" [(ngModel)]="s.rotacao" (change)="commitProp()" />
+        </div>
+        <div class="ae-grupo">
+          <div class="ae-grupo-label">Opacidade % <input class="ae-num" type="number" min="0" max="100" step="5" [ngModel]="round((s.opacidade == null ? 1 : s.opacidade) * 100)" (ngModelChange)="s.opacidade = ($event || 0) / 100" (change)="commitProp()" /></div>
+          <input class="ae-range" type="range" min="0.1" max="1" step="0.05" [(ngModel)]="s.opacidade" (change)="commitProp()" />
+        </div>
+        <div class="ae-grupo">
+          <div class="ae-grupo-label">Espelhar &amp; travar</div>
           <div class="ae-seg ae-seg-full">
-            <button class="ae-tg" [class.on]="s.align === 'left'" (click)="s.align = 'left'"><ion-icon name="reorder-three-outline" style="transform:scaleX(.78)"></ion-icon></button>
-            <button class="ae-tg" [class.on]="s.align === 'center'" (click)="s.align = 'center'"><ion-icon name="reorder-two-outline"></ion-icon></button>
-            <button class="ae-tg" [class.on]="s.align === 'right'" (click)="s.align = 'right'"><ion-icon name="reorder-three-outline" style="transform:scaleX(-.78)"></ion-icon></button>
+            <button class="ae-tg" [class.on]="s.flipH" (click)="flip(s, 'h')" title="Espelhar horizontal"><ion-icon name="swap-horizontal-outline"></ion-icon></button>
+            <button class="ae-tg" [class.on]="s.flipV" (click)="flip(s, 'v')" title="Espelhar vertical"><ion-icon name="swap-vertical-outline"></ion-icon></button>
+            <button class="ae-tg" *ngIf="s.tipo !== 'texto'" [class.on]="s.sombraEl" (click)="s.sombraEl = !s.sombraEl; commitProp()" title="Sombra"><ion-icon name="cloudy-outline"></ion-icon></button>
+            <button class="ae-tg" [class.on]="s.bloqueado" (click)="toggleBloqueado(s)" title="Travar"><ion-icon [name]="s.bloqueado ? 'lock-closed' : 'lock-open-outline'"></ion-icon></button>
           </div>
         </div>
-      </ng-container>
+      </div>
 
-      <!-- props de IMAGEM -->
-      <ng-container *ngIf="s.tipo === 'imagem'">
-        <div class="ae-grupo">
-          <div class="ae-grupo-label">Tamanho <span class="ae-val">{{ s.imgLargura | number:'1.0-0' }}%</span></div>
-          <input class="ae-range" type="range" min="5" max="95" step="1" [(ngModel)]="s.imgLargura" />
+      <ng-template #semSel>
+        <div class="ae-vazio">
+          <ion-icon name="hand-left-outline"></ion-icon>
+          <p>Toque num elemento na arte para editar.</p>
         </div>
-        <div class="ae-grupo">
-          <div class="ae-grupo-label">Formato</div>
-          <div class="ae-seg ae-seg-full">
-            <button class="ae-tg" [class.on]="!s.circular" (click)="s.circular = false"><ion-icon name="square-outline"></ion-icon><span>Normal</span></button>
-            <button class="ae-tg" [class.on]="s.circular" (click)="s.circular = true"><ion-icon name="ellipse-outline"></ion-icon><span>Circular</span></button>
-          </div>
-        </div>
-      </ng-container>
-    </div>
+      </ng-template>
+    </ng-container>
+  </aside>
 
-    <!-- ── Dica (nada selecionado) ── -->
-    <div class="ae-dica" *ngIf="!sel">
-      <ion-icon name="hand-left-outline"></ion-icon>
-      <p>Toque num elemento para editar.<br>Arraste para mover • alça <b>↘</b> para redimensionar.</p>
+  <!-- ====== WORKSPACE (canvas) ====== -->
+  <main class="ae-work">
+    <div class="ae-stage-inner">
+      <div class="ae-canvas-bar">
+        <button class="ae-multi" [class.on]="multiSel" (click)="toggleMulti()">
+          <ion-icon [name]="multiSel ? 'checkmark-done-outline' : 'duplicate-outline'"></ion-icon>
+          {{ multiSel ? 'Vários (' + selecao.size + ') ✓' : 'Selecionar vários' }}
+        </button>
+        <div class="ae-zoom">
+          <button (click)="zoomMenos()" title="Menos zoom"><ion-icon name="remove-outline"></ion-icon></button>
+          <span (click)="zoomReset()" title="Restaurar 100%">{{ zoom }}%</span>
+          <button (click)="zoomMais()" title="Mais zoom"><ion-icon name="add-outline"></ion-icon></button>
+        </div>
+        <div class="ae-badge-formato">1080 × 1350</div>
+      </div>
+      <div
+        #canvas
+        class="ae-canvas"
+        [ngClass]="fundoClass()"
+        [style.background]="(!fundoImgUrl && fundoCor) ? fundoCor : null"
+        [style.transform]="capturando ? null : (zoom !== 100 ? 'scale(' + (zoom / 100) + ')' : null)"
+        (pointerdown)="cliqueCanvas()"
+      >
+        <img
+          *ngIf="fundoImgUrl"
+          class="ae-bg-img"
+          [src]="fundoImgUrl"
+          [style.transform]="fundoTransform"
+          crossorigin="anonymous"
+          draggable="false"
+          alt=""
+        />
+        <div class="ae-overlay" *ngIf="fundoOverlay > 0" [style.opacity]="fundoOverlay"></div>
+        <div class="ae-guia ae-guia-v" *ngIf="guiaV != null && !capturando" [style.left.%]="guiaV"></div>
+        <div class="ae-guia ae-guia-h" *ngIf="guiaH != null && !capturando" [style.top.%]="guiaH"></div>
+
+        <div
+          *ngFor="let el of elementos"
+          class="ae-el"
+          [attr.data-id]="el.id"
+          [class.sel]="estaSelecionado(el.id) && !capturando"
+          [style.left.%]="el.xPct"
+          [style.top.%]="el.yPct"
+          [style.transform]="'translate(-50%, -50%) rotate(' + (el.rotacao || 0) + 'deg) scale(' + (el.flipH ? -1 : 1) + ',' + (el.flipV ? -1 : 1) + ')'"
+          [style.opacity]="el.opacidade == null ? 1 : el.opacidade"
+          [style.filter]="el.sombraEl ? 'drop-shadow(0 0.6cqw 1.4cqw rgba(0,0,0,0.5))' : null"
+          [style.display]="el.oculto ? 'none' : null"
+          (pointerdown)="onDown($event, el, 'drag')"
+        >
+          <div
+            *ngIf="el.tipo === 'texto'"
+            class="ae-texto"
+            [class.sombra]="el.sombra"
+            [style.font-family]="el.fonte"
+            [style.font-size.cqw]="el.tamanho"
+            [style.color]="el.cor"
+            [style.font-weight]="el.negrito ? '800' : '400'"
+            [style.font-style]="el.italico ? 'italic' : 'normal'"
+            [style.text-align]="el.align"
+            [style.text-transform]="el.maiusculas ? 'uppercase' : 'none'"
+            [style.letter-spacing.cqw]="el.espac || 0"
+            [style.background]="el.realce || null"
+            [style.padding]="el.realce ? '0.35em 0.6em' : null"
+            [style.border-radius]="el.realce ? '0.18em' : null"
+          >{{ el.texto }}</div>
+
+          <img
+            *ngIf="el.tipo === 'imagem'"
+            class="ae-img"
+            [class.circ]="el.circular"
+            [src]="el.src"
+            [style.width.cqw]="el.imgLargura"
+            crossorigin="anonymous"
+            draggable="false"
+          />
+
+          <div
+            *ngIf="el.tipo === 'forma' && el.forma === 'tri'"
+            class="ae-forma-tri"
+            [style.border-left-width.cqw]="(el.formaLargura || 20) / 2"
+            [style.border-right-width.cqw]="(el.formaLargura || 20) / 2"
+            [style.border-bottom-width.cqw]="el.formaAltura || 20"
+            [style.border-bottom-color]="el.cor"
+          ></div>
+
+          <div
+            *ngIf="el.tipo === 'forma' && el.forma !== 'tri'"
+            class="ae-forma"
+            [ngClass]="'forma-' + el.forma"
+            [style.width.cqw]="el.formaLargura"
+            [style.height.cqw]="el.formaAltura"
+            [ngStyle]="formaEstilo(el)"
+          ></div>
+
+          <ng-container *ngIf="el.id === selecionadoId && selecao.size === 1 && !capturando && !el.bloqueado">
+            <span class="ae-h ae-h-nw" (pointerdown)="onDown($event, el, 'resize', 'c')"></span>
+            <span class="ae-h ae-h-ne" (pointerdown)="onDown($event, el, 'resize', 'c')"></span>
+            <span class="ae-h ae-h-sw" (pointerdown)="onDown($event, el, 'resize', 'c')"></span>
+            <span class="ae-h ae-h-se" (pointerdown)="onDown($event, el, 'resize', 'c')"></span>
+            <span class="ae-h ae-h-n" (pointerdown)="onDown($event, el, 'resize', 'y')"></span>
+            <span class="ae-h ae-h-s" (pointerdown)="onDown($event, el, 'resize', 'y')"></span>
+            <span class="ae-h ae-h-e" (pointerdown)="onDown($event, el, 'resize', 'x')"></span>
+            <span class="ae-h ae-h-w" (pointerdown)="onDown($event, el, 'resize', 'x')"></span>
+          </ng-container>
+        </div>
+
+        <!-- caixa de seleção do grupo (multi) com alça pra escalar todos -->
+        <div
+          class="ae-grupo-box"
+          *ngIf="grupo && selecao.size >= 2 && !capturando && !emArraste"
+          [style.left.%]="grupo.l"
+          [style.top.%]="grupo.t"
+          [style.width.%]="grupo.w"
+          [style.height.%]="grupo.h"
+        >
+          <span class="ae-h ae-h-se ae-grupo-h" (pointerdown)="onGrupoDown($event)"></span>
+        </div>
+      </div>
     </div>
-  </div><!-- /.ae-controles -->
- </div><!-- /.ae-layout -->
+  </main>
+
+ </div><!-- /.ae-shell -->
 </ion-content>
