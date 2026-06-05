@@ -8,6 +8,7 @@ import { CREDITO_PATROCINIO, PREMIUM_PATROCINIO } from '../../campeonatos/models
 import { PlanosService, PlanoId } from '../../users/planos.service';
 import { CobrancasService } from '../../users/cobrancas.service';
 import { AuthService } from '../../auth/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-meus-creditos',
@@ -99,21 +100,32 @@ export class MeusCreditosPage {
    * painel após confirmar o pagamento.
    */
   async comprarCreditoPatrocinio(tipoLabel: string, creditos: number, precoReais: number): Promise<void> {
+    const pag = environment.contatoPagamento;
     const alert = await this.alertCtrl.create({
       header: `${creditos} crédito${creditos > 1 ? 's' : ''} · ${tipoLabel}`,
       message:
         `Valor: <strong>R$ ${precoReais.toFixed(2).replace('.', ',')}</strong><br><br>` +
-        `Pagamento por Pix (v1):<br>` +
-        `1. Faça o Pix pra <strong>CHAVE-PIX-AQUI</strong><br>` +
-        `2. Envie comprovante pro WhatsApp (XX) XXXXX-XXXX<br>` +
+        `Pagamento por Pix:<br>` +
+        `1. Faça o Pix pra <strong>${pag.pixLabel}</strong> (chave telefone)<br>` +
+        `2. Envie o comprovante pro WhatsApp <strong>${pag.whatsappLabel}</strong><br>` +
         `3. Créditos liberados em até 1h útil.`,
       buttons: [
         { text: 'Fechar', role: 'cancel' },
         {
+          text: 'WhatsApp',
+          handler: () => {
+            const texto = encodeURIComponent(
+              `Olá! Fiz o Pix de R$ ${precoReais.toFixed(2).replace('.', ',')} ` +
+              `para ${creditos} crédito(s) ${tipoLabel}. Segue o comprovante:`,
+            );
+            window.open(`https://wa.me/${pag.whatsapp}?text=${texto}`, '_blank', 'noopener');
+          },
+        },
+        {
           text: 'Copiar chave Pix',
           handler: async () => {
             try {
-              await navigator.clipboard.writeText('CHAVE-PIX-AQUI');
+              await navigator.clipboard.writeText(pag.pixChave);
               const t = await this.toastCtrl.create({
                 message: 'Chave Pix copiada!',
                 duration: 1800,

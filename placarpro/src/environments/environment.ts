@@ -84,6 +84,17 @@ export const environment = {
     /** wss://<seu-projeto>.livekit.cloud — URL do projeto LiveKit Cloud. */
     url: 'wss://placarproapp-nazuh7an.livekit.cloud',
   },
+
+  /**
+   * Dados de pagamento manual (compra de créditos via Pix — v1).
+   * Editar aqui troca em todo o app. Pix por telefone = formato +55DDDNNNN.
+   */
+  contatoPagamento: {
+    pixChave: '+5537999562903',
+    pixLabel: '(37) 99956-2903',
+    whatsapp: '5537999562903',
+    whatsappLabel: '(37) 99956-2903',
+  },
 };
 
 // Para debug do zone.js, descomente em dev:

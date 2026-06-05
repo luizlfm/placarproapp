@@ -39,12 +39,11 @@ export const environment = {
   ] as string[],
 
   /**
-   * Public Key do Mercado Pago em PRODUÇÃO.
-   * IMPORTANTE: trocar pela Public Key real de PROD (não TEST) antes do
-   * deploy de produção. A Public Key TEST não funciona com pagamentos
-   * reais — só sandbox.
+   * Public Key do Mercado Pago em PRODUÇÃO (APP_USR-...).
+   * Pagamentos reais. Pareada com o Access Token de PROD no secret
+   * `MP_ACCESS_TOKEN` (Cloud Functions) — os dois precisam ser de produção.
    */
-  mercadoPagoPublicKey: 'TEST-3f3cadcd-23bc-4f48-8ef1-9e6ebf6d722e',
+  mercadoPagoPublicKey: 'APP_USR-294460d8-9d90-4e3b-9d3e-ea78358f318f',
 
   /**
    * LiveKit Cloud em produção — mesma URL do environment.ts.
@@ -54,5 +53,16 @@ export const environment = {
    */
   livekit: {
     url: 'wss://placarproapp-nazuh7an.livekit.cloud',
+  },
+
+  /**
+   * Dados de pagamento manual (compra de créditos via Pix — v1).
+   * Editar aqui troca em todo o app. Pix por telefone = formato +55DDDNNNN.
+   */
+  contatoPagamento: {
+    pixChave: '+5537999562903',
+    pixLabel: '(37) 99956-2903',
+    whatsapp: '5537999562903',
+    whatsappLabel: '(37) 99956-2903',
   },
 };
