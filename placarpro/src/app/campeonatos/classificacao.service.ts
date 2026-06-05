@@ -263,8 +263,9 @@ export class ClassificacaoService {
           l.jogos > 0 ? Math.round((l.pontosBase / (l.jogos * pontosV)) * 100) : 0,
       }));
 
+      let ordenadas: LinhaClassificacao[];
       if (ordemManual) {
-        linhas.sort((a, b) => {
+        ordenadas = linhas.slice().sort((a, b) => {
           const ma = a.equipe.posicaoManual;
           const mb = b.equipe.posicaoManual;
           if (ma != null && mb != null) return ma - mb;
@@ -273,13 +274,11 @@ export class ClassificacaoService {
           return a.equipe.nome.localeCompare(b.equipe.nome);
         });
       } else {
-        linhas.sort((a, b) =>
-          this.compararPorCriterios(a, b, criterios, confrontoDireto, saldoConfronto),
-        );
+        ordenadas = this.ordenarLinhas(linhas, criterios, confrontoDireto, saldoConfronto);
       }
 
-      linhas.forEach((l, i) => (l.pos = i + 1));
-      return linhas;
+      ordenadas.forEach((l, i) => (l.pos = i + 1));
+      return ordenadas;
     };
 
     /**
@@ -341,53 +340,78 @@ export class ClassificacaoService {
     return resultados;
   }
 
-  private compararPorCriterios(
-    a: LinhaClassificacao,
-    b: LinhaClassificacao,
+  /**
+   * Ordena as linhas aplicando os critérios em cascata, resolvendo empates
+   * por AGRUPAMENTO recursivo (não por comparação par-a-par). Isso corrige o
+   * confronto direto com 3+ times empatados: entre os empatados monta-se uma
+   * MINI-TABELA (pontos/saldo só dos jogos entre eles), evitando o comparador
+   * não-transitivo (ciclo A>B, B>C, C>A que quebra o Array.sort).
+   */
+  private ordenarLinhas(
+    linhas: LinhaClassificacao[],
     criterios: CriterioId[],
     confronto: Map<string, Map<string, number>>,
     saldoConfronto: Map<string, Map<string, number>>,
-  ): number {
-    for (const c of criterios) {
-      const diff =
-        this.valorCriterio(b, c, confronto, saldoConfronto, a) -
-        this.valorCriterio(a, c, confronto, saldoConfronto, b);
-      if (diff !== 0) return diff;
+  ): LinhaClassificacao[] {
+    if (linhas.length <= 1) return linhas.slice();
+    if (criterios.length === 0) {
+      return linhas.slice().sort((a, b) => a.equipe.nome.localeCompare(b.equipe.nome));
     }
-    return a.equipe.nome.localeCompare(b.equipe.nome);
+    const [c, ...resto] = criterios;
+
+    const chaveDe = (l: LinhaClassificacao): number => {
+      if (c === 'confronto-direto' || c === 'saldo-confronto-direto') {
+        // mini-tabela: soma só dos confrontos ENTRE os empatados do grupo atual
+        const mapa = c === 'confronto-direto' ? confronto : saldoConfronto;
+        let soma = 0;
+        for (const o of linhas) {
+          if (o === l) continue;
+          soma += mapa.get(l.equipe.id!)?.get(o.equipe.id!) ?? 0;
+        }
+        return soma;
+      }
+      return this.valorAgregado(l, c);
+    };
+
+    // agrupa por chave idêntica
+    const grupos = new Map<number, LinhaClassificacao[]>();
+    for (const l of linhas) {
+      const k = chaveDe(l);
+      let g = grupos.get(k);
+      if (!g) { g = []; grupos.set(k, g); }
+      g.push(l);
+    }
+
+    // chaves em ordem decrescente; empates dentro do grupo → próximo critério
+    const chavesDesc = Array.from(grupos.keys()).sort((x, y) => y - x);
+    const out: LinhaClassificacao[] = [];
+    for (const k of chavesDesc) {
+      const g = grupos.get(k)!;
+      if (g.length === 1) out.push(g[0]);
+      else out.push(...this.ordenarLinhas(g, resto, confronto, saldoConfronto));
+    }
+    return out;
   }
 
-  private valorCriterio(
-    l: LinhaClassificacao,
-    c: CriterioId,
-    confronto: Map<string, Map<string, number>>,
-    saldoConfronto: Map<string, Map<string, number>>,
-    oponente: LinhaClassificacao,
-  ): number {
+  /** Valor agregado (não-confronto) de um critério para a linha. */
+  private valorAgregado(l: LinhaClassificacao, c: CriterioId): number {
     switch (c) {
       case 'pontos': return l.pontos;
       case 'vitorias': return l.vitorias;
       case 'saldo-gols': return l.saldoGols;
       case 'gols-pro': return l.golsPro;
       case 'gols-contra': return -l.golsContra;
-      case 'confronto-direto':
-        return confronto.get(l.equipe.id!)?.get(oponente.equipe.id!) ?? 0;
       case 'cartoes-vermelhos': return -l.cartoesVermelhos;
       case 'cartoes-amarelos': return -l.cartoesAmarelos;
-      case 'sorteio': return 0;
-      // Novos
       case 'aproveitamento': return l.aproveitamento;
       case 'empates': return -l.empates;
       case 'derrotas': return -l.derrotas;
       case 'cartoes-totais': return -(l.cartoesAmarelos + l.cartoesVermelhos);
-      case 'saldo-confronto-direto':
-        return saldoConfronto.get(l.equipe.id!)?.get(oponente.equipe.id!) ?? 0;
       case 'vitorias-fora': return l.vitoriasFora;
       case 'gols-fora': return l.golsFora;
       case 'jogos-disputados': return l.jogos;
-      case 'menor-idade-media': return 0;
-      case 'maior-idade-media': return 0;
-      case 'criterio-tecnico': return 0;
+      // sorteio / idade-média / critério-técnico / confrontos → sem valor agregado
+      default: return 0;
     }
   }
 }
