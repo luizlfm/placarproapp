@@ -158,6 +158,52 @@
   }
 }
 
+/* Ação em DESTAQUE: Sortear Times — botão largo lime no topo do card. */
+.ri-wc-sortear {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 4px 0 12px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  color: #fff;
+  background: linear-gradient(135deg, #7CC61D 0%, #5fa118 100%);
+  box-shadow: 0 6px 16px rgba(124, 198, 29, 0.35);
+  transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+
+  &:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(124, 198, 29, 0.45); filter: brightness(1.03); }
+  &:active { transform: translateY(0); }
+
+  .ri-wc-sortear-ic {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    ion-icon { font-size: 22px; color: #fff; }
+  }
+
+  .ri-wc-sortear-txt {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+    strong { font-size: 15px; font-weight: 800; }
+    small { font-size: 11.5px; opacity: 0.9; }
+  }
+
+  .ri-wc-sortear-chev { flex: 0 0 auto; font-size: 18px; color: rgba(255, 255, 255, 0.9); }
+}
+
 /* CTAs principais — sempre 3 botões em UMA linha.
    ANTES: `auto-fit, minmax(140px, 1fr)` deixava "Gerenciar" órfão na linha
    seguinte em mobile. Agora 3 colunas iguais em desktop, e em mobile bem
@@ -820,9 +866,18 @@
 .ri-ativ-acoes {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 
-  .ri-btn-amarelo { box-shadow: none; }
+  /* Os dois botões dividem a largura igualmente, na mesma linha. */
+  .ri-btn-amarelo {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    text-align: center;
+    box-shadow: none;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
   .ri-btn-amarelo.solido { background: #f59e0b; color: #fff; }
   .ri-btn-amarelo.solido:hover { box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4); }
 }

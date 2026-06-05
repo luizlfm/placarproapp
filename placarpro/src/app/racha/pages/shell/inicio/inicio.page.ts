@@ -258,6 +258,11 @@ export class RachaInicioPage implements OnInit, OnDestroy {
     this.go(a.route);
   }
 
+  /** Ação em destaque no topo — abre a tela de sorteio de times. */
+  sortearTimes(): void {
+    this.go('sortear');
+  }
+
   irParaUpgrade(): void {
     this.go('upgrade');
   }

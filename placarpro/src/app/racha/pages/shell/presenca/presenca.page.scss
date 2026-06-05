@@ -322,3 +322,148 @@
   margin-top: 16px;
   border-top: 1px solid var(--rp-border);
 }
+
+/* ============ Roster / lista de jogadores ============ */
+.rp-lista {
+  margin-top: 18px;
+}
+.rp-lista-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 2px 10px;
+
+  h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--rp-text);
+  }
+  .rp-lista-count {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--rp-lime-deep, #5fa118);
+    background: rgba(124, 198, 29, 0.14);
+    border-radius: 999px;
+    padding: 1px 9px;
+  }
+}
+
+.rp-vazio {
+  text-align: center;
+  padding: 28px 16px;
+  background: #fff;
+  border: 1px dashed var(--rp-border);
+  border-radius: 12px;
+
+  ion-icon { font-size: 34px; color: var(--rp-text-muted); }
+  p { margin: 8px 0 14px; font-size: 13px; color: var(--rp-text-muted); }
+}
+
+.rp-jog {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--rp-border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  border-left: 4px solid transparent;
+  transition: border-color 150ms ease, background 150ms ease;
+
+  &.s-vou { border-left-color: var(--rp-lime, #7CC61D); }
+  &.s-espera { border-left-color: #f5c518; }
+  &.s-nao { border-left-color: #e55353; opacity: 0.75; }
+}
+
+.rp-jog-avatar {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(124, 198, 29, 0.18), rgba(124, 198, 29, 0.06));
+  color: var(--rp-lime-deep, #5fa118);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  overflow: hidden;
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.rp-jog-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  strong {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--rp-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+.rp-jog-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.rp-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+
+  &.mensalista { color: #5fa118; background: rgba(124, 198, 29, 0.14); }
+  &.convidado { color: #6b7280; background: #f1f5f9; }
+  &.pago {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    font-family: inherit;
+    color: #8a6a08;
+    background: rgba(245, 197, 24, 0.16);
+    border-color: rgba(245, 197, 24, 0.35);
+    ion-icon { font-size: 12px; }
+    &.on { color: #fff; background: var(--rp-lime, #7CC61D); border-color: var(--rp-lime, #7CC61D); }
+  }
+}
+
+.rp-jog-acoes {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+}
+.rp-st {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 1.5px solid var(--rp-border);
+  background: #fff;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 150ms ease;
+  ion-icon { font-size: 18px; }
+
+  &:active { transform: scale(0.94); }
+
+  &.vou.on { background: var(--rp-lime, #7CC61D); border-color: var(--rp-lime, #7CC61D); color: #fff; }
+  &.espera.on { background: #f5c518; border-color: #f5c518; color: #1a1a1a; }
+  &.nao.on { background: #e55353; border-color: #e55353; color: #fff; }
+}

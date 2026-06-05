@@ -163,7 +163,7 @@ export class RachaFinanceiroPage implements OnInit, OnDestroy {
     }
     const alert = await this.alertCtrl.create({
       header: 'Remover lançamento?',
-      message: `Confirma remover "<b>${l.descricao}</b>" (R$ ${l.valorRs.toFixed(2)})?`,
+      message: `Confirma remover "<b>${l.descricao ?? ''}</b>" (R$ ${(l.valorRs ?? 0).toFixed(2)})?`,
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
@@ -223,7 +223,7 @@ export class RachaFinanceiroPage implements OnInit, OnDestroy {
       linhas.push('*Últimos lançamentos:*');
       this.lancamentos.slice(0, 10).forEach(l => {
         const sinal = l.tipo === 'entrada' ? '+' : '-';
-        linhas.push(`${sinal} R$ ${l.valorRs.toFixed(2)} — ${l.descricao}`);
+        linhas.push(`${sinal} R$ ${(l.valorRs ?? 0).toFixed(2)} — ${l.descricao ?? ''}`);
       });
     }
     navigator.clipboard?.writeText(linhas.join('\n')).then(
@@ -241,8 +241,8 @@ export class RachaFinanceiroPage implements OnInit, OnDestroy {
     this.lancamentos.forEach(l => {
       linhas.push([
         l.tipo,
-        `"${l.descricao.replace(/"/g, '""')}"`,
-        l.valorRs.toFixed(2),
+        `"${(l.descricao ?? '').replace(/"/g, '""')}"`,
+        (l.valorRs ?? 0).toFixed(2),
         l.categoria ?? '',
       ].join(','));
     });

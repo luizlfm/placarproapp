@@ -35,9 +35,18 @@ export class RachaPartidasPage implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.rachaId = this.route.snapshot.parent?.paramMap.get('id') ?? '';
     if (!this.rachaId) return;
-    this.sub = this.rachaSrv.listPartidas$(this.rachaId).subscribe(lista => {
-      this.partidas = lista;
-      this.loading = false;
+    this.sub = this.rachaSrv.listPartidas$(this.rachaId).subscribe({
+      next: lista => {
+        this.partidas = lista;
+        this.loading = false;
+      },
+      // Sem este handler, um erro do stream (ex.: permissão Firestore)
+      // deixaria `loading` true pra sempre → spinner infinito.
+      error: err => {
+        console.error('[Partidas] listPartidas erro', err);
+        this.partidas = [];
+        this.loading = false;
+      },
     });
   }
 

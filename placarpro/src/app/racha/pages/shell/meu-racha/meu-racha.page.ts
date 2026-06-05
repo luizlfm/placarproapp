@@ -122,7 +122,10 @@ export class RachaMeuRachaPage implements OnInit, OnDestroy {
     pesoEstatisticas: [40, [Validators.min(0), Validators.max(100)]],
   });
 
-  private sub?: Subscription;
+  /** Agrega TODAS as subscriptions da tela pra desinscrever no destroy
+   *  (autocomplete de endereço + 2 valueChanges dos sliders + get do racha).
+   *  Antes só `get$` era gerenciado → as outras vazavam a cada navegação. */
+  private readonly subs = new Subscription();
 
   /** Dispara busca quando o user digita no campo de endereço. */
   onDigitarEndereco(termo: string | null | undefined): void {
@@ -152,7 +155,7 @@ export class RachaMeuRachaPage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     // Pipeline do autocomplete de endereço (debounce 350ms + Nominatim/OSM).
-    this.buscaEndereco$
+    this.subs.add(this.buscaEndereco$
       .pipe(
         debounceTime(350),
         distinctUntilChanged(),
@@ -172,14 +175,14 @@ export class RachaMeuRachaPage implements OnInit, OnDestroy {
       .subscribe(arr => {
         this.buscandoEndereco = false;
         this.sugestoes = arr;
-      });
+      }));
 
     this.rachaId = this.route.snapshot.parent?.paramMap.get('id') ?? '';
     if (!this.rachaId) {
       this.router.navigateByUrl('/racha');
       return;
     }
-    this.sub = this.rachaSrv.get$(this.rachaId).subscribe(r => {
+    this.subs.add(this.rachaSrv.get$(this.rachaId).subscribe(r => {
       if (!r) {
         this.router.navigateByUrl('/racha');
         return;
@@ -187,31 +190,31 @@ export class RachaMeuRachaPage implements OnInit, OnDestroy {
       this.racha = r;
       this.loading = false;
       this.popularForm(r);
-    });
+    }));
 
     /**
      * Slider de "Peso do Craque": quando muda Avaliação, ajusta
      * Estatísticas automaticamente pra somar 100 (e vice-versa). Mantém
      * os dois sempre complementares.
      */
-    this.formAvaliacao.get('pesoAvaliacao')!.valueChanges.subscribe(v => {
+    this.subs.add(this.formAvaliacao.get('pesoAvaliacao')!.valueChanges.subscribe(v => {
       const novo = 100 - Number(v ?? 0);
       const atual = this.formAvaliacao.get('pesoEstatisticas')!.value;
       if (atual !== novo) {
         this.formAvaliacao.get('pesoEstatisticas')!.setValue(novo, { emitEvent: false });
       }
-    });
-    this.formAvaliacao.get('pesoEstatisticas')!.valueChanges.subscribe(v => {
+    }));
+    this.subs.add(this.formAvaliacao.get('pesoEstatisticas')!.valueChanges.subscribe(v => {
       const novo = 100 - Number(v ?? 0);
       const atual = this.formAvaliacao.get('pesoAvaliacao')!.value;
       if (atual !== novo) {
         this.formAvaliacao.get('pesoAvaliacao')!.setValue(novo, { emitEvent: false });
       }
-    });
+    }));
   }
 
   ngOnDestroy(): void {
-    this.sub?.unsubscribe();
+    this.subs.unsubscribe();
   }
 
   /** Popula os forms com dados existentes do racha (chamado on load). */

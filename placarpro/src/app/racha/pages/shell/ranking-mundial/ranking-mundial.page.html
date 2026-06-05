@@ -1,53 +1,88 @@
 <div class="r-page">
-  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
-    <ion-icon name="arrow-back-outline"></ion-icon>
-  </button>
+  <header class="r-toolbar">
+    <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+      <ion-icon name="arrow-back-circle"></ion-icon>
+    </button>
     <span class="r-toolbar-title">Ranking Mundial</span>
   </header>
 
   <!-- ═══════════ Page header ═══════════ -->
   <header class="r-page-head">
-    <span class="r-page-tag">🌎 RANKING MUNDIAL</span>
-    <h1>Compare-se com o mundo todo</h1>
-    <p>
-      Veja como você e seu racha se posicionam entre todos os jogadores e
-      rachas cadastrados no PlacarPro.
-    </p>
+    <span class="r-page-tag">🌎 RANKING GERAL</span>
+    <h1>Os melhores dos seus rachas</h1>
+    <p>Estatísticas consolidadas de {{ totalRachas }} {{ totalRachas === 1 ? 'racha' : 'rachas' }} — gols, assistências e presença de todo mundo num lugar só.</p>
   </header>
 
   <!-- Faixa verde com CTA -->
   <div class="r-hero-strip">
     <button type="button" class="r-hero-strip-btn" (click)="irRankingLocal()">
       <ion-icon name="trophy"></ion-icon>
-      RANKING LOCAL
+      RANKING DESTE RACHA
     </button>
   </div>
 
-  <!-- ═══════════ 4 categorias ═══════════ -->
-  <section class="rrm-grid">
-    <article
-      *ngFor="let c of categorias; trackBy: trackByLabel"
-      class="r-card rrm-card"
-    >
-      <div class="rrm-icone" [style.background]="c.cor + '22'" [style.color]="c.cor">
-        <ion-icon [name]="c.icon"></ion-icon>
-      </div>
-      <h3>{{ c.label }}</h3>
-      <p>—</p>
-      <span class="rrm-em-breve">Em breve</span>
-    </article>
-  </section>
+  <!-- Loading -->
+  <div class="rrm-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
 
-  <!-- ═══════════ Card explicação ═══════════ -->
-  <section class="r-card rrm-explicacao">
-    <ion-icon name="lock-closed"></ion-icon>
-    <div>
-      <strong>Disponível no plano Premium / PRO</strong>
-      <p>
-        O Ranking Mundial compara estatísticas entre todos os rachas do
-        PlacarPro. Pra liberar essa visão e ver onde seus jogadores
-        aparecem no ranking global, ative um dos planos pagos.
-      </p>
-    </div>
-  </section>
+  <ng-container *ngIf="!loading">
+    <!-- Empty state -->
+    <section class="r-card rrm-explicacao" *ngIf="!temDados">
+      <ion-icon name="podium-outline"></ion-icon>
+      <div>
+        <strong>Ainda não há dados pra ranquear</strong>
+        <p>
+          Registre <button type="button" class="rrm-link" (click)="irPartidas()">partidas</button>
+          com gols e assistências nos seus rachas. Conforme os lances entram,
+          o ranking consolidado aparece aqui.
+        </p>
+      </div>
+    </section>
+
+    <ng-container *ngIf="temDados">
+      <!-- Seletor de categoria -->
+      <div class="rrm-tabs">
+        <button
+          *ngFor="let c of categorias"
+          type="button"
+          class="rrm-tab"
+          [class.on]="categoria === c.id"
+          [style.--cat-cor]="c.cor"
+          (click)="selecionar(c.id)"
+        >
+          <ion-icon [name]="c.icon"></ion-icon>
+          <span>{{ c.label }}</span>
+        </button>
+      </div>
+
+      <!-- Lista ranqueada -->
+      <section class="rrm-lista">
+        <div class="rrm-vazio-cat" *ngIf="ranking.length === 0">
+          <p>Ninguém pontuou em "{{ catAtual.label }}" ainda.</p>
+        </div>
+
+        <div
+          class="rrm-row"
+          *ngFor="let i of ranking; let idx = index; trackBy: trackByItem"
+        >
+          <span class="rrm-pos" [class.ouro]="idx === 0" [class.prata]="idx === 1" [class.bronze]="idx === 2">
+            {{ idx + 1 }}
+          </span>
+          <span class="rrm-av">
+            <img *ngIf="i.foto; else iniTpl" [src]="i.foto" alt="" referrerpolicy="no-referrer" />
+            <ng-template #iniTpl>{{ iniciais(i.nome) }}</ng-template>
+          </span>
+          <div class="rrm-info">
+            <strong>{{ i.nome }}</strong>
+            <span>{{ i.rachaNome }}</span>
+          </div>
+          <span class="rrm-valor" [style.color]="catAtual.cor">
+            {{ valorAtual(i) }}
+            <small>{{ catAtual.unidade }}</small>
+          </span>
+        </div>
+      </section>
+    </ng-container>
+  </ng-container>
 </div>

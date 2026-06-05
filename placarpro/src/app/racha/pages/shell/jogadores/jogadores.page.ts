@@ -49,6 +49,7 @@ export class RachaJogadoresPage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
+    try { this.recognition?.abort(); } catch { /* ignore */ }
   }
 
   private carregar(): void {
@@ -144,8 +145,101 @@ export class RachaJogadoresPage implements OnInit, OnDestroy {
     await modal.present();
   }
 
+  /** True enquanto o microfone está captando. */
+  escutando = false;
+  // Instância do SpeechRecognition (sem types oficiais).
+  private recognition?: { start: () => void; stop: () => void; abort: () => void; lang: string; interimResults: boolean; continuous: boolean; maxAlternatives: number; onresult: ((e: unknown) => void) | null; onerror: ((e: unknown) => void) | null; onend: (() => void) | null };
+
+  /**
+   * Cadastro por voz usando a Web Speech API (nativa do navegador, sem
+   * serviço pago). Fala o nome → cria o jogador. Aceita vários nomes
+   * separados por vírgula ou "e" (ex.: "João, Pedro e Lucas").
+   * Disponível no Chrome/Edge; em navegadores sem suporte, avisa.
+   */
   cadastrarPorVoz(): void {
-    this.toast('Em breve! Cadastro por voz com IA chega na próxima atualização.', 'medium');
+    if (this.escutando) { this.pararVoz(); return; }
+
+    const w = window as unknown as { SpeechRecognition?: new () => unknown; webkitSpeechRecognition?: new () => unknown };
+    const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if (!SR) {
+      this.toast('Reconhecimento de voz não é suportado neste navegador. Use o Chrome ou Edge.', 'medium');
+      return;
+    }
+
+    const rec = new SR() as typeof this.recognition & object;
+    this.recognition = rec as typeof this.recognition;
+    rec.lang = 'pt-BR';
+    rec.interimResults = false;
+    rec.continuous = false;
+    rec.maxAlternatives = 1;
+
+    rec.onresult = (e: unknown) => {
+      const ev = e as { results?: Array<Array<{ transcript?: string }>> };
+      const txt = ev.results?.[0]?.[0]?.transcript ?? '';
+      this.escutando = false;
+      void this.processarVoz(txt);
+    };
+    rec.onerror = (e: unknown) => {
+      this.escutando = false;
+      const err = (e as { error?: string }).error;
+      if (err === 'not-allowed' || err === 'service-not-allowed') {
+        this.toast('Permita o acesso ao microfone pra usar o cadastro por voz.', 'danger');
+      } else if (err === 'no-speech') {
+        this.toast('Não ouvi nada. Toque em "Por voz" e fale o nome.', 'medium');
+      } else if (err !== 'aborted') {
+        this.toast('Não consegui captar o áudio. Tenta de novo.', 'danger');
+      }
+    };
+    rec.onend = () => { this.escutando = false; };
+
+    this.escutando = true;
+    this.toast('🎤 Pode falar o nome do jogador...', 'medium');
+    try { rec.start(); } catch { this.escutando = false; }
+  }
+
+  private pararVoz(): void {
+    try { this.recognition?.stop(); } catch { /* ignore */ }
+    this.escutando = false;
+  }
+
+  /** Processa o texto reconhecido e cria o(s) jogador(es). */
+  private async processarVoz(transcript: string): Promise<void> {
+    const bruto = (transcript || '').trim();
+    if (!bruto) { this.toast('Não entendi o nome. Tenta de novo.', 'medium'); return; }
+    const nomes = bruto
+      .split(/\s*,\s*|\s+e\s+|\s*;\s*/i)
+      .map(n => this.capitalizarNome(n))
+      .filter(n => n.length >= 2);
+    if (nomes.length === 0) { this.toast('Não entendi o nome. Tenta de novo.', 'medium'); return; }
+    try {
+      for (const nome of nomes) {
+        await this.rachaSrv.criarJogador(this.rachaId, {
+          nome,
+          apelido: nome.split(' ')[0],
+          ativo: true,
+          convidado: this.tabAtiva === 'convidados',
+        });
+      }
+      this.toast(
+        nomes.length === 1
+          ? `Jogador "${nomes[0]}" cadastrado! ✅`
+          : `${nomes.length} jogadores cadastrados! ✅`,
+        'success',
+      );
+    } catch (e) {
+      console.error('[Jogadores] cadastro por voz', e);
+      this.toast('Falha ao cadastrar. Tenta de novo.', 'danger');
+    }
+  }
+
+  /** Title Case simples respeitando acentuação (Unicode). */
+  private capitalizarNome(s: string): string {
+    return (s || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/(^|\s)\p{L}/gu, c => c.toUpperCase())
+      .trim();
   }
 
   voltar(): void {

@@ -1,6 +1,6 @@
 <div class="rj-page">
   <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
-    <ion-icon name="arrow-back-outline"></ion-icon>
+    <ion-icon name="arrow-back-circle"></ion-icon>
   </button>
     <span class="r-toolbar-title">Elenco</span>
   </header>
@@ -18,9 +18,9 @@
       <ion-icon name="person-add"></ion-icon>
       NOVO JOGADOR
     </button>
-    <button type="button" class="r-hero-strip-btn alt" (click)="cadastrarPorVoz()">
-      <ion-icon name="mic"></ion-icon>
-      POR VOZ
+    <button type="button" class="r-hero-strip-btn alt" [class.escutando]="escutando" (click)="cadastrarPorVoz()">
+      <ion-icon [name]="escutando ? 'radio' : 'mic'"></ion-icon>
+      {{ escutando ? 'OUVINDO...' : 'POR VOZ' }}
     </button>
   </div>
 

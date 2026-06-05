@@ -27,6 +27,7 @@ import { RachaMercadoPage } from '../pages/shell/mercado/mercado.page';
 import { JogadorModalComponent } from '../modals/jogador-modal/jogador-modal.component';
 import { MascaraInputDirective } from '../directives/mascara-input.directive';
 import { SharedModule } from '../../shared/shared.module';
+import { EscolherPeriodicidadeModalModule } from '../../pages/planos/escolher-periodicidade-modal/escolher-periodicidade-modal.module';
 
 /**
  * Módulo Shell do Racha — empacota o layout (sidebar + topbar + outlet) e
@@ -43,6 +44,7 @@ import { SharedModule } from '../../shared/shared.module';
     IonicModule,
     RachaShellRoutingModule,
     SharedModule,
+    EscolherPeriodicidadeModalModule,
   ],
   declarations: [
     RachaShellPage,

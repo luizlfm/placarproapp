@@ -45,6 +45,17 @@
       </div>
     </div>
 
+    <!-- ═══ Ação em DESTAQUE: Sortear Times ═══
+         Atalho principal do racha, posicionado no topo pra acesso rápido. -->
+    <button type="button" class="ri-wc-sortear" (click)="sortearTimes()">
+      <span class="ri-wc-sortear-ic"><ion-icon name="shuffle"></ion-icon></span>
+      <span class="ri-wc-sortear-txt">
+        <strong>Sortear Times</strong>
+        <small>Monte times equilibrados em segundos</small>
+      </span>
+      <ion-icon name="chevron-forward-outline" class="ri-wc-sortear-chev"></ion-icon>
+    </button>
+
     <!-- CTAs principais (3 ações que realmente funcionam) -->
     <div class="ri-wc-cta-row">
       <button type="button" class="ri-wc-cta primario" (click)="verRankings()">

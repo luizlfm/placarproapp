@@ -82,6 +82,88 @@ export function computarStatsJogador(
   };
 }
 
+/** Evento possivelmente enriquecido com o id da partida (vem do service). */
+type EventoComPartida = RachaEvento & { partidaId?: string };
+
+/** Dupla ofensiva: dois jogadores que combinaram em gols (gol + assistência). */
+export interface DuplaGol {
+  aId: string;
+  bId: string;
+  /** Quantos gols a dupla combinou (um assistiu o outro), em qualquer direção. */
+  gols: number;
+}
+
+/** Companheiros de time: dois jogadores que jogaram juntos (mesmo time/partida). */
+export interface DuplaJunta {
+  aId: string;
+  bId: string;
+  /** Em quantas partidas apareceram juntos no mesmo time. */
+  partidas: number;
+}
+
+/** Chave canônica (não-ordenada) pra um par de jogadores. */
+function chavePar(a: string, b: string): string {
+  return a < b ? `${a}|${b}` : `${b}|${a}`;
+}
+
+/**
+ * Duplas de GOL — pares de jogadores em que um assistiu o gol do outro.
+ * Conta na direção combinada (par não-ordenado). Ordenado por gols desc.
+ * Sinal mais confiável de "parça" porque não depende de escalação completa.
+ */
+export function computarDuplasGol(eventos: EventoComPartida[]): DuplaGol[] {
+  const mapa = new Map<string, number>();
+  for (const ev of eventos) {
+    if (ev.tipo !== 'gol') continue;
+    const goleador = ev.jogadorId;
+    const assist = ev.assistJogadorId;
+    if (!goleador || !assist || goleador === assist) continue;
+    const k = chavePar(goleador, assist);
+    mapa.set(k, (mapa.get(k) ?? 0) + 1);
+  }
+  return Array.from(mapa.entries())
+    .map(([k, gols]) => {
+      const [aId, bId] = k.split('|');
+      return { aId, bId, gols } as DuplaGol;
+    })
+    .sort((a, b) => b.gols - a.gols);
+}
+
+/**
+ * Companheiros de time — pares que apareceram juntos no MESMO time numa
+ * partida. Agrupa eventos por (partida, time) e conta os pares. Só usa
+ * eventos com `timeId` definido (pra não parear adversários). Ordenado desc.
+ */
+export function computarCompanheiros(eventos: EventoComPartida[]): DuplaJunta[] {
+  // (partidaId#timeId) → set de jogadorIds daquele time naquela partida
+  const grupos = new Map<string, Set<string>>();
+  for (const ev of eventos) {
+    if (!ev.timeId || !ev.jogadorId) continue;
+    const key = `${ev.partidaId ?? ''}#${ev.timeId}`;
+    let set = grupos.get(key);
+    if (!set) { set = new Set<string>(); grupos.set(key, set); }
+    set.add(ev.jogadorId);
+    // O assistente também estava nesse time naquela partida.
+    if (ev.assistJogadorId) set.add(ev.assistJogadorId);
+  }
+  const pares = new Map<string, number>();
+  for (const set of grupos.values()) {
+    const ids = Array.from(set);
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        const k = chavePar(ids[i], ids[j]);
+        pares.set(k, (pares.get(k) ?? 0) + 1);
+      }
+    }
+  }
+  return Array.from(pares.entries())
+    .map(([k, partidas]) => {
+      const [aId, bId] = k.split('|');
+      return { aId, bId, partidas } as DuplaJunta;
+    })
+    .sort((a, b) => b.partidas - a.partidas);
+}
+
 /**
  * Stats vazias — usado quando o jogador ainda não tem eventos registrados.
  * Mantém shape consistente pros consumidores não precisarem de null-check.

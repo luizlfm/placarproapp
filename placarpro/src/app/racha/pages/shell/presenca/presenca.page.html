@@ -1,7 +1,8 @@
 <div class="r-page" *ngIf="!loading">
-  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
-    <ion-icon name="arrow-back-outline"></ion-icon>
-  </button>
+  <header class="r-toolbar">
+    <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+      <ion-icon name="arrow-back-circle"></ion-icon>
+    </button>
     <span class="r-toolbar-title">Lista de Presença</span>
   </header>
 
@@ -12,57 +13,15 @@
       {{ filaAberta ? 'Fila liberada' : 'Fila fechada' }}
     </span>
     <h1>Lista de Presença</h1>
-    <p>Confirme sua presença abaixo e acompanhe o status da fila.</p>
+    <p>Marque quem confirmou presença. Tudo fica salvo e sincronizado.</p>
   </header>
 
-  <!-- Faixa verde com VOU / NÃO VOU -->
-  <div class="r-hero-strip">
-    <button
-      type="button"
-      class="r-hero-strip-btn"
-      [class.ativo]="meuStatus === 'vou'"
-      (click)="marcarVou()"
-    >
-      <ion-icon name="checkmark-circle"></ion-icon>
-      VOU
-    </button>
-    <button
-      type="button"
-      class="r-hero-strip-btn alt"
-      [class.ativo]="meuStatus === 'nao-vou'"
-      (click)="marcarNaoVou()"
-    >
-      <ion-icon name="close-circle"></ion-icon>
-      NÃO VOU
-    </button>
-  </div>
-
-  <!-- Status atual -->
-  <p class="rp-status-atual">
-    Status atual:
-    <strong>{{
-      meuStatus === 'vou' ? 'confirmado' :
-      meuStatus === 'nao-vou' ? 'não vou' : 'sem resposta.'
-    }}</strong>
-  </p>
-
-  <!-- Métricas em 4 cards brancos -->
+  <!-- Métricas em 4 cards -->
   <div class="rp-metricas">
-    <div class="rp-metrica destaque">
-      <span class="rp-metrica-lbl">SEU STATUS</span>
-      <strong class="rp-metrica-grande">
-        {{ meuStatus === 'vou' ? 'Você está dentro' : 'Você está fora' }}
-      </strong>
-      <span class="rp-metrica-sub">
-        {{ meuStatus === 'vou'
-            ? 'Confirmado pra jogar.'
-            : 'Entre na fila para disputar sua vaga.' }}
-      </span>
-    </div>
     <div class="rp-metrica">
-      <span class="rp-metrica-lbl">CAPACIDADE</span>
-      <strong class="rp-metrica-num">{{ capacidade }}</strong>
-      <span class="rp-metrica-sub">{{ confirmados }} confirmados</span>
+      <span class="rp-metrica-lbl">CONFIRMADOS</span>
+      <strong class="rp-metrica-num">{{ confirmados }}</strong>
+      <span class="rp-metrica-sub">de {{ capacidade }}</span>
     </div>
     <div class="rp-metrica">
       <span class="rp-metrica-lbl">VAGAS LIVRES</span>
@@ -72,7 +31,12 @@
     <div class="rp-metrica">
       <span class="rp-metrica-lbl">EM ESPERA</span>
       <strong class="rp-metrica-num">{{ emEspera }}</strong>
-      <span class="rp-metrica-sub">Atualizado {{ horarioAtualizacao }}</span>
+      <span class="rp-metrica-sub">aguardando vaga</span>
+    </div>
+    <div class="rp-metrica">
+      <span class="rp-metrica-lbl">NÃO VÃO</span>
+      <strong class="rp-metrica-num">{{ naoVou }}</strong>
+      <span class="rp-metrica-sub">{{ pagosCount }} pagaram</span>
     </div>
   </div>
 
@@ -82,13 +46,79 @@
     {{ racha?.endereco || 'Adicionar endereço do racha' }}
   </button>
 
+  <!-- ═══════════ Roster / lista de jogadores ═══════════ -->
+  <section class="rp-lista">
+    <div class="rp-lista-head">
+      <h2>Jogadores</h2>
+      <span class="rp-lista-count">{{ roster.length }}</span>
+    </div>
+
+    <!-- Vazio: sem jogadores cadastrados -->
+    <div class="rp-vazio" *ngIf="roster.length === 0">
+      <ion-icon name="people-outline"></ion-icon>
+      <p>Nenhum jogador cadastrado ainda.</p>
+      <button type="button" class="r-btn r-btn-navy" (click)="irParaJogadores()">
+        <ion-icon name="person-add-outline"></ion-icon>
+        Cadastrar jogadores
+      </button>
+    </div>
+
+    <!-- Linhas do roster -->
+    <div
+      class="rp-jog"
+      *ngFor="let item of roster; trackBy: trackByItem"
+      [class.s-vou]="item.status === 'vou'"
+      [class.s-espera]="item.status === 'espera'"
+      [class.s-nao]="item.status === 'nao-vou'"
+    >
+      <span class="rp-jog-avatar">
+        <img *ngIf="item.jogador.fotoUrl; else iniTpl" [src]="item.jogador.fotoUrl" [alt]="item.jogador.nome" referrerpolicy="no-referrer" />
+        <ng-template #iniTpl>{{ iniciais(item.jogador.apelido || item.jogador.nome) }}</ng-template>
+      </span>
+
+      <div class="rp-jog-info">
+        <strong>{{ item.jogador.apelido || item.jogador.nome }}</strong>
+        <span class="rp-jog-tags">
+          <span *ngIf="item.jogador.mensalista" class="rp-tag mensalista">Mensalista</span>
+          <span *ngIf="item.jogador.convidado" class="rp-tag convidado">Convidado</span>
+          <button
+            *ngIf="item.status === 'vou' || item.status === 'espera'"
+            type="button"
+            class="rp-tag pago"
+            [class.on]="item.pago"
+            (click)="togglePago(item, $event)"
+          >
+            <ion-icon [name]="item.pago ? 'checkmark-circle' : 'cash-outline'"></ion-icon>
+            {{ item.pago ? 'Pago' : 'Pagar' }}
+          </button>
+        </span>
+      </div>
+
+      <!-- Botões de status -->
+      <div class="rp-jog-acoes">
+        <button type="button" class="rp-st vou" [class.on]="item.status === 'vou'"
+          (click)="definir(item, 'vou')" aria-label="Confirmar presença" title="Vou">
+          <ion-icon name="checkmark"></ion-icon>
+        </button>
+        <button type="button" class="rp-st espera" [class.on]="item.status === 'espera'"
+          (click)="definir(item, 'espera')" aria-label="Lista de espera" title="Espera">
+          <ion-icon name="hourglass-outline"></ion-icon>
+        </button>
+        <button type="button" class="rp-st nao" [class.on]="item.status === 'nao-vou'"
+          (click)="definir(item, 'nao-vou')" aria-label="Não vou" title="Não vou">
+          <ion-icon name="close"></ion-icon>
+        </button>
+      </div>
+    </div>
+  </section>
+
   <!-- ═══════════ Administração da Fila ═══════════ -->
   <section class="r-card rp-admin">
     <div class="rp-admin-head">
       <ion-icon name="settings" class="rp-admin-icon"></ion-icon>
       <div class="rp-admin-info">
         <h2>Administração da Fila</h2>
-        <p>Gerencie horários, pagamentos e configurações</p>
+        <p>Abra/feche a fila e use a lista no sorteio</p>
       </div>
       <button
         type="button"
@@ -102,27 +132,6 @@
     </div>
 
     <div class="rp-accordion">
-      <!-- Janela de Abertura -->
-      <button
-        type="button"
-        class="rp-accord-item"
-        [class.aberto]="accordionAberto === 'janela'"
-        (click)="toggleAccordion('janela')"
-      >
-        <ion-icon name="time-outline" class="rp-accord-icon"></ion-icon>
-        <div class="rp-accord-info">
-          <strong>Janela de Abertura</strong>
-          <span>Abre: Não definido — Fecha: Não definido</span>
-        </div>
-        <ion-icon
-          class="rp-accord-chev"
-          [name]="accordionAberto === 'janela' ? 'chevron-up' : 'chevron-down'"
-        ></ion-icon>
-      </button>
-      <div class="rp-accord-body" *ngIf="accordionAberto === 'janela'">
-        <p>Em breve: defina horário automático de abertura e fechamento da lista.</p>
-      </div>
-
       <!-- Capacidade -->
       <button
         type="button"
@@ -179,7 +188,7 @@
         <ion-icon name="cash-outline" class="rp-accord-icon"></ion-icon>
         <div class="rp-accord-info">
           <strong>Pagamento PIX</strong>
-          <span>Não definido • {{ pagosCount }}/{{ capacidade }} pagos</span>
+          <span>{{ pagosCount }}/{{ confirmados }} confirmados pagaram</span>
         </div>
         <ion-icon
           class="rp-accord-chev"
@@ -187,7 +196,7 @@
         ></ion-icon>
       </button>
       <div class="rp-accord-body" *ngIf="accordionAberto === 'pix'">
-        <p>Em breve: configure chave PIX e cobre automaticamente os confirmados.</p>
+        <p>Marque "Pagar" em cada confirmado pra controlar quem já acertou. Chave PIX configurável em <strong>Meu Racha</strong>.</p>
       </div>
     </div>
 

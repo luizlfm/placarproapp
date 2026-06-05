@@ -1,27 +1,26 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription, of } from 'rxjs';
-import { catchError, startWith } from 'rxjs/operators';
+import { Subscription, combineLatest, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { ToastController } from '@ionic/angular';
 import { RachaService } from '../../../racha.service';
-import { Racha } from '../../../models/racha.model';
+import { Racha, RachaJogador, RachaPresenca } from '../../../models/racha.model';
 
-/**
- * Item local da fila — em iterações futuras viraria subcoleção
- * `rachas/{id}/sessoes/{sessaoId}/presencas/{jogadorId}` no Firestore.
- */
-interface ItemPresenca {
-  nome: string;
-  status: 'vou' | 'nao-vou' | 'espera';
-  mensalista?: boolean;
-  pago?: boolean;
+/** Status possível na lista de presença. */
+type PresencaStatus = 'vou' | 'espera' | 'nao-vou' | 'sem';
+
+/** Linha do roster: jogador + status atual na sessão. */
+interface RosterItem {
+  jogador: RachaJogador;
+  status: PresencaStatus;
+  pago: boolean;
 }
 
 /**
- * Página LISTA DE PRESENÇA — usuário marca Vou/Não Vou. Admin (dono)
- * vê painel administrativo (janela de abertura, capacidade, dia/horário,
- * PIX). Estado da fila persistido localmente por enquanto — quando
- * implementarmos sessões, vira subcoleção.
+ * Página LISTA DE PRESENÇA — agora persistida no Firestore.
+ * Mostra o elenco do racha e o organizador marca quem vai / em espera /
+ * não vai. Tudo grava na sessão atual (`rachas/{id}/sessoes/atual/presencas`)
+ * e sincroniza entre dispositivos. A fila aberta/fechada também é persistida.
  */
 @Component({
   selector: 'app-racha-presenca',
@@ -39,42 +38,63 @@ export class RachaPresencaPage implements OnInit, OnDestroy {
   loading = true;
   racha?: Racha;
 
-  /** Status do usuário atual na fila — placeholder até integrarmos auth. */
-  meuStatus: 'sem-resposta' | 'vou' | 'nao-vou' = 'sem-resposta';
-  /** Estado da fila (admin pode abrir/fechar). */
+  /** Fila aberta/fechada (persistido na sessão). Default: aberta. */
   filaAberta = true;
 
-  /** Lista local de presenças. Apenas demonstração — produção usaria Firestore. */
-  presencas: ItemPresenca[] = [];
+  /** Roster combinado (jogadores + status da presença). */
+  roster: RosterItem[] = [];
 
   /** Accordion: qual painel admin está expandido. */
   accordionAberto: 'janela' | 'capacidade' | 'horario' | 'pix' | null = null;
 
-  /** Horário atualizado (pra mostrar "Atualizado HH:MM" no card). */
-  horarioAtualizacao = this.formatHora(new Date());
-
-  private sub?: Subscription;
+  private subs: Subscription[] = [];
 
   ngOnInit(): void {
     this.rachaId = this.route.snapshot.parent?.paramMap.get('id') ?? '';
     if (!this.rachaId) { this.router.navigateByUrl('/racha'); return; }
-    this.sub = this.rachaSrv.get$(this.rachaId).pipe(
-      startWith(undefined),
+
+    const combined$ = combineLatest([
+      this.rachaSrv.get$(this.rachaId),
+      this.rachaSrv.listJogadores$(this.rachaId),
+      this.rachaSrv.listPresencas$(this.rachaId),
+      this.rachaSrv.sessaoAtual$(this.rachaId),
+    ]).pipe(
       catchError(err => {
-        console.error('[Presenca] get racha', err);
-        return of(undefined);
+        console.error('[Presenca] stream', err);
+        return of([undefined, [], [], undefined] as [Racha | undefined, RachaJogador[], RachaPresenca[], { filaAberta?: boolean } | undefined]);
       }),
-    ).subscribe(r => {
-      this.racha = r ?? undefined;
+    );
+
+    this.subs.push(combined$.subscribe(([racha, jogadores, presencas, sessao]) => {
+      this.racha = racha ?? undefined;
+      this.filaAberta = sessao?.filaAberta !== false; // default aberta
+      const mapa = new Map<string, RachaPresenca>();
+      for (const p of presencas) if (p.jogadorId) mapa.set(p.jogadorId, p);
+      this.roster = (jogadores ?? [])
+        .filter(j => j.ativo !== false)
+        .map(j => {
+          const p = j.id ? mapa.get(j.id) : undefined;
+          return {
+            jogador: j,
+            status: (p?.status as PresencaStatus) ?? 'sem',
+            pago: !!p?.pago,
+          } as RosterItem;
+        })
+        // confirmados primeiro, depois espera, depois sem-resposta, depois não-vou
+        .sort((a, b) => this.pesoStatus(a.status) - this.pesoStatus(b.status));
       this.loading = false;
-    });
+    }));
   }
 
   ngOnDestroy(): void {
-    this.sub?.unsubscribe();
+    this.subs.forEach(s => s.unsubscribe());
   }
 
-  // ============== Métricas ==============
+  private pesoStatus(s: PresencaStatus): number {
+    return { vou: 0, espera: 1, sem: 2, 'nao-vou': 3 }[s];
+  }
+
+  // ============== Métricas (dados reais) ==============
 
   get capacidade(): number {
     const r = this.racha;
@@ -82,41 +102,83 @@ export class RachaPresencaPage implements OnInit, OnDestroy {
     return (r.qtdTimes ?? 0) * (r.jogadoresPorTime ?? 0);
   }
   get confirmados(): number {
-    return this.presencas.filter(p => p.status === 'vou').length;
+    return this.roster.filter(r => r.status === 'vou').length;
   }
   get vagasLivres(): number {
     return Math.max(0, this.capacidade - this.confirmados);
   }
   get emEspera(): number {
-    return this.presencas.filter(p => p.status === 'espera').length;
+    return this.roster.filter(r => r.status === 'espera').length;
+  }
+  get naoVou(): number {
+    return this.roster.filter(r => r.status === 'nao-vou').length;
   }
   get pagosCount(): number {
-    return this.presencas.filter(p => p.pago).length;
+    return this.roster.filter(r => r.pago).length;
   }
 
-  // ============== Ações do usuário ==============
+  // ============== Ações por jogador ==============
 
-  marcarVou(): void {
-    if (!this.filaAberta) {
+  /**
+   * Define o status de um jogador. Se clicar no status que já está ativo,
+   * limpa (volta pra sem-resposta). Quando confirma "vou" e a capacidade
+   * está cheia, entra automaticamente em espera.
+   */
+  async definir(item: RosterItem, alvo: 'vou' | 'espera' | 'nao-vou'): Promise<void> {
+    const jid = item.jogador.id;
+    if (!jid) return;
+    if (alvo === 'vou' && !this.filaAberta) {
       this.toast('A fila está fechada no momento.', 'danger');
       return;
     }
-    this.meuStatus = 'vou';
-    this.horarioAtualizacao = this.formatHora(new Date());
-    this.toast('Confirmado! Você está dentro 🎯', 'success');
+
+    // Toggle: clicar no mesmo status remove a presença.
+    if (item.status === alvo) {
+      try {
+        await this.rachaSrv.removerPresenca(this.rachaId, jid);
+      } catch (e) { console.error(e); this.toast('Falha ao atualizar.', 'danger'); }
+      return;
+    }
+
+    let status: 'vou' | 'espera' | 'nao-vou' = alvo;
+    // Lotou? confirma como espera.
+    if (alvo === 'vou' && this.confirmados >= this.capacidade && this.capacidade > 0) {
+      status = 'espera';
+    }
+    try {
+      await this.rachaSrv.setPresenca(this.rachaId, jid, {
+        nome: item.jogador.apelido || item.jogador.nome,
+        status,
+        mensalista: !!item.jogador.mensalista,
+      });
+      if (status === 'espera' && alvo === 'vou') {
+        this.toast('Lista cheia — entrou na lista de espera.', 'medium');
+      }
+    } catch (e) { console.error(e); this.toast('Falha ao salvar presença.', 'danger'); }
   }
 
-  marcarNaoVou(): void {
-    this.meuStatus = 'nao-vou';
-    this.horarioAtualizacao = this.formatHora(new Date());
-    this.toast('Marcado: não vou. Fica pro próximo!', 'medium');
+  /** Alterna o "pago" (PIX) de um jogador confirmado. */
+  async togglePago(item: RosterItem, ev: Event): Promise<void> {
+    ev.stopPropagation();
+    const jid = item.jogador.id;
+    if (!jid) return;
+    try {
+      await this.rachaSrv.setPresenca(this.rachaId, jid, {
+        nome: item.jogador.apelido || item.jogador.nome,
+        status: item.status === 'sem' ? 'vou' : (item.status as 'vou' | 'espera' | 'nao-vou'),
+        pago: !item.pago,
+      });
+    } catch (e) { console.error(e); }
   }
 
   // ============== Admin ==============
 
-  toggleFila(): void {
-    this.filaAberta = !this.filaAberta;
-    this.toast(this.filaAberta ? 'Fila aberta — pessoal já pode confirmar!' : 'Fila fechada.', 'success');
+  async toggleFila(): Promise<void> {
+    const novo = !this.filaAberta;
+    try {
+      await this.rachaSrv.setFilaAberta(this.rachaId, novo);
+      this.toast(novo ? 'Fila aberta — pessoal já pode confirmar!' : 'Fila fechada.', 'success');
+    } catch (e) { console.error(e); this.toast('Falha ao mudar a fila.', 'danger'); }
   }
 
   toggleAccordion(secao: 'janela' | 'capacidade' | 'horario' | 'pix'): void {
@@ -131,14 +193,15 @@ export class RachaPresencaPage implements OnInit, OnDestroy {
     this.router.navigate(['/racha', this.rachaId, 'sortear']);
   }
 
-  limparFila(): void {
-    if (this.presencas.length === 0) {
-      this.toast('Fila já está vazia.', 'medium');
+  async limparFila(): Promise<void> {
+    if (this.roster.every(r => r.status === 'sem')) {
+      this.toast('A lista já está vazia.', 'medium');
       return;
     }
-    this.presencas = [];
-    this.meuStatus = 'sem-resposta';
-    this.toast('Fila limpa.', 'success');
+    try {
+      await this.rachaSrv.limparPresencas(this.rachaId);
+      this.toast('Lista limpa.', 'success');
+    } catch (e) { console.error(e); this.toast('Falha ao limpar.', 'danger'); }
   }
 
   voltar(): void {
@@ -149,7 +212,20 @@ export class RachaPresencaPage implements OnInit, OnDestroy {
     this.router.navigate(['/racha', this.rachaId, 'meu-racha']);
   }
 
+  irParaJogadores(): void {
+    this.router.navigate(['/racha', this.rachaId, 'jogadores']);
+  }
+
   // ============== Helpers ==============
+
+  trackByItem(_i: number, item: RosterItem): string {
+    return item.jogador.id ?? item.jogador.nome;
+  }
+
+  iniciais(nome: string): string {
+    const partes = (nome || '?').trim().split(/\s+/);
+    return ((partes[0]?.[0] ?? '') + (partes[1]?.[0] ?? '')).toUpperCase() || '?';
+  }
 
   diaSemanaLabel(d?: string): string {
     const map: Record<string, string> = {
@@ -157,10 +233,6 @@ export class RachaPresencaPage implements OnInit, OnDestroy {
       qui: 'Quinta', sex: 'Sexta', sab: 'Sábado',
     };
     return d ? map[d] ?? '—' : '—';
-  }
-
-  private formatHora(d: Date): string {
-    return d.toTimeString().slice(0, 5);
   }
 
   private async toast(message: string, color: 'success' | 'danger' | 'medium'): Promise<void> {

@@ -1,61 +1,101 @@
 <div class="r-page">
-  <header class="r-toolbar">  <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
-    <ion-icon name="arrow-back-outline"></ion-icon>
-  </button>
+  <header class="r-toolbar">
+    <button type="button" class="r-toolbar-back" (click)="voltar()" aria-label="Voltar">
+      <ion-icon name="arrow-back-circle"></ion-icon>
+    </button>
     <span class="r-toolbar-title">Parça do Racha</span>
   </header>
 
   <!-- ═══════════ Page header ═══════════ -->
   <header class="r-page-head">
-    <span class="r-page-tag">PARÇAS &amp; RIVAIS</span>
+    <span class="r-page-tag">PARÇAS DO RACHA</span>
     <h1>Parça do Racha</h1>
-    <p>
-      Descubra com quem você mais joga junto, suas duplas inseparáveis e quem
-      é seu maior rival nas partidas.
-    </p>
+    <p>As duplas que mais brilham juntas — combinações de gol e companheiros de time, direto do histórico de partidas.</p>
   </header>
 
-  <!-- ═══════════ 3 cards das métricas (em breve) ═══════════ -->
-  <section class="rpc-grid">
-    <article class="r-card rpc-card">
-      <div class="rpc-card-icone azul">
-        <ion-icon name="people"></ion-icon>
-      </div>
-      <h3>Top Duplas</h3>
-      <p>Quais 2 jogadores se cruzam mais vezes no mesmo time. Quem é a dupla campeã do racha.</p>
-      <span class="rpc-em-breve">Em breve</span>
-    </article>
+  <!-- Loading -->
+  <div class="rpc-loading" *ngIf="loading">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
 
-    <article class="r-card rpc-card">
-      <div class="rpc-card-icone amarelo">
-        <ion-icon name="trending-up"></ion-icon>
-      </div>
-      <h3>Melhor Performance</h3>
-      <p>Combinações que mais vencem juntas — vitória vs. derrota quando jogam juntos.</p>
-      <span class="rpc-em-breve">Em breve</span>
-    </article>
-
-    <article class="r-card rpc-card">
-      <div class="rpc-card-icone vermelho">
-        <ion-icon name="flame"></ion-icon>
-      </div>
-      <h3>Maiores Rivais</h3>
-      <p>Quem mais joga contra você nos sorteios e qual o histórico de confrontos.</p>
-      <span class="rpc-em-breve">Em breve</span>
-    </article>
-  </section>
-
-  <!-- ═══════════ Card explicação ═══════════ -->
-  <section class="r-card rpc-explicacao">
-    <ion-icon name="information-circle-outline"></ion-icon>
-    <div>
-      <strong>Como funciona</strong>
+  <ng-container *ngIf="!loading">
+    <!-- Empty state -->
+    <section class="r-card rpc-vazio" *ngIf="!temDados">
+      <ion-icon name="people-outline"></ion-icon>
+      <strong>Ainda não dá pra ver as parças</strong>
       <p>
-        A "Parça" usa o histórico de partidas pra cruzar quem jogou com quem.
-        Cadastre jogadores em <button type="button" (click)="irJogadores()">Elenco</button>
-        e termine algumas partidas — em algumas semanas você já terá dados
-        suficientes pra ver os destaques.
+        Registre <button type="button" class="rpc-link" (click)="irPartidas()">partidas</button>
+        com gols e assistências que as duplas aparecem aqui automaticamente.
       </p>
-    </div>
-  </section>
+    </section>
+
+    <!-- ═══════════ Duplas de gol ═══════════ -->
+    <section class="rpc-bloco" *ngIf="duplasGol.length > 0">
+      <div class="rpc-bloco-head">
+        <ion-icon name="football"></ion-icon>
+        <h2>Duplas de gol</h2>
+      </div>
+      <p class="rpc-bloco-sub">Quem mais combinou gol + assistência</p>
+
+      <div class="rpc-dupla" *ngFor="let d of duplasGol; let i = index; trackBy: trackByDupla">
+        <span class="rpc-pos" [class.ouro]="i === 0" [class.prata]="i === 1" [class.bronze]="i === 2">{{ i + 1 }}</span>
+        <div class="rpc-avatares">
+          <span class="rpc-av">
+            <img *ngIf="d.aFoto; else ai" [src]="d.aFoto" alt="" referrerpolicy="no-referrer" />
+            <ng-template #ai>{{ iniciais(d.aNome) }}</ng-template>
+          </span>
+          <span class="rpc-av segundo">
+            <img *ngIf="d.bFoto; else bi" [src]="d.bFoto" alt="" referrerpolicy="no-referrer" />
+            <ng-template #bi>{{ iniciais(d.bNome) }}</ng-template>
+          </span>
+        </div>
+        <div class="rpc-dupla-info">
+          <strong>{{ d.aNome }} & {{ d.bNome }}</strong>
+          <span>{{ d.valor }} {{ d.valor === 1 ? 'gol combinado' : 'gols combinados' }}</span>
+        </div>
+        <span class="rpc-dupla-num">{{ d.valor }}</span>
+      </div>
+    </section>
+
+    <!-- ═══════════ Companheiros de time ═══════════ -->
+    <section class="rpc-bloco" *ngIf="companheiros.length > 0">
+      <div class="rpc-bloco-head">
+        <ion-icon name="people"></ion-icon>
+        <h2>Companheiros de time</h2>
+      </div>
+      <p class="rpc-bloco-sub">Quem mais jogou junto no mesmo time</p>
+
+      <div class="rpc-dupla" *ngFor="let d of companheiros; let i = index; trackBy: trackByDupla">
+        <span class="rpc-pos" [class.ouro]="i === 0" [class.prata]="i === 1" [class.bronze]="i === 2">{{ i + 1 }}</span>
+        <div class="rpc-avatares">
+          <span class="rpc-av">
+            <img *ngIf="d.aFoto; else ci" [src]="d.aFoto" alt="" referrerpolicy="no-referrer" />
+            <ng-template #ci>{{ iniciais(d.aNome) }}</ng-template>
+          </span>
+          <span class="rpc-av segundo">
+            <img *ngIf="d.bFoto; else di" [src]="d.bFoto" alt="" referrerpolicy="no-referrer" />
+            <ng-template #di>{{ iniciais(d.bNome) }}</ng-template>
+          </span>
+        </div>
+        <div class="rpc-dupla-info">
+          <strong>{{ d.aNome }} & {{ d.bNome }}</strong>
+          <span>{{ d.valor }} {{ d.valor === 1 ? 'partida juntos' : 'partidas juntos' }}</span>
+        </div>
+        <span class="rpc-dupla-num">{{ d.valor }}</span>
+      </div>
+    </section>
+
+    <!-- ═══════════ Card explicação ═══════════ -->
+    <section class="r-card rpc-explicacao" *ngIf="temDados">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      <div>
+        <strong>Como funciona</strong>
+        <p>
+          As parças são calculadas a partir dos gols, assistências e times das
+          partidas registradas. Quanto mais jogos você registrar, mais precisas
+          ficam as duplas.
+        </p>
+      </div>
+    </section>
+  </ng-container>
 </div>

@@ -3,9 +3,18 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { NavBackService } from '../../../../shared/nav-back.service';
 import { Subscription, of } from 'rxjs';
 import { catchError, startWith } from 'rxjs/operators';
-import { AlertController, LoadingController, ToastController } from '@ionic/angular';
+import { AlertController, LoadingController, ModalController, ToastController } from '@ionic/angular';
 import { RachaService } from '../../../racha.service';
+import { RachaPlanosService } from '../../../racha-planos.service';
 import { PlanoRacha, Racha } from '../../../models/racha.model';
+import { AuthService } from '../../../../auth/auth.service';
+import { UsersService } from '../../../../users/users.service';
+import { CobrancasService } from '../../../../users/cobrancas.service';
+import { PlanoRachaId } from '../../../../users/models/cobranca.model';
+import {
+  EscolherPeriodicidadeModalComponent,
+  EscolherPeriodicidadeResult,
+} from '../../../../pages/planos/escolher-periodicidade-modal/escolher-periodicidade-modal.component';
 
 interface UsoMes {
   label: string;
@@ -39,9 +48,14 @@ export class RachaUpgradePage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly rachaSrv = inject(RachaService);
+  private readonly rachaPlanosSrv = inject(RachaPlanosService);
   private readonly alertCtrl = inject(AlertController);
   private readonly loadingCtrl = inject(LoadingController);
   private readonly toastCtrl = inject(ToastController);
+  private readonly modalCtrl = inject(ModalController);
+  private readonly auth = inject(AuthService);
+  private readonly users = inject(UsersService);
+  private readonly cobrancasSrv = inject(CobrancasService);
   private readonly navBack = inject(NavBackService);
 
   rachaId = '';
@@ -139,18 +153,35 @@ export class RachaUpgradePage implements OnInit, OnDestroy {
     return `${u.usado} de ${u.limite} ${u.unidade}`;
   }
 
-  /** Click no botão de plano — confirma e atualiza o doc.
-   *  Pagamento real ainda não tá ligado (integração Stripe/PIX em outra task). */
+  /**
+   * Click no botão de plano. Mesmo fluxo da tela de Planos dos campeonatos:
+   *  - Plano atual → nada a fazer.
+   *  - Downgrade pro Gratuito → confirma e atualiza o doc direto (sem cobrança).
+   *  - Plano pago → abre o modal de periodicidade, cria uma cobrança
+   *    (`tipo: 'racha-assinatura'`, status `aguardando`) e redireciona pra
+   *    tela de pagamento (`/pagamento/:id`). O plano só é ativado depois que
+   *    o pagamento é confirmado (admin marca pago / webhook MP).
+   */
   async escolherPlano(p: PlanoCard): Promise<void> {
     if (p.id === this.planoAtual) {
       this.toast('Esse já é o seu plano atual.', 'medium');
       return;
     }
+
+    // Downgrade pro Gratuito — sem cobrança.
+    if (p.id === 'gratis' || p.precoMes <= 0) {
+      await this.voltarParaGratuito();
+      return;
+    }
+
+    await this.iniciarAssinatura(p);
+  }
+
+  /** Confirma e volta o racha pro plano Gratuito (sem cobrança). */
+  private async voltarParaGratuito(): Promise<void> {
     const alert = await this.alertCtrl.create({
-      header: `Ativar ${p.nome}?`,
-      message: p.precoMes > 0
-        ? `Você será redirecionado para o pagamento de <b>R$ ${p.precoMes.toFixed(2)}/mês</b>. Cancele quando quiser, sem fidelidade.`
-        : `Voltar ao plano <b>Gratuito</b>?`,
+      header: 'Voltar ao plano Gratuito?',
+      message: 'Os recursos premium do racha serão desativados ao fim do período pago.',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
@@ -160,10 +191,10 @@ export class RachaUpgradePage implements OnInit, OnDestroy {
             const loader = await this.loadingCtrl.create({ message: 'Atualizando plano...' });
             await loader.present();
             try {
-              await this.rachaSrv.atualizar(this.rachaId, { plano: p.id });
-              this.toast(`Plano alterado para ${p.nome}!`, 'success');
+              await this.rachaSrv.atualizar(this.rachaId, { plano: 'gratis' });
+              this.toast('Plano alterado para Gratuito.', 'success');
             } catch (err) {
-              console.error('[Upgrade] alterar plano', err);
+              console.error('[Upgrade] downgrade gratis', err);
               this.toast('Falha ao alterar plano.', 'danger');
             } finally {
               await loader.dismiss();
@@ -174,6 +205,93 @@ export class RachaUpgradePage implements OnInit, OnDestroy {
       ],
     });
     await alert.present();
+  }
+
+  /** Abre o modal de periodicidade → cria cobrança → vai pro pagamento. */
+  private async iniciarAssinatura(p: PlanoCard): Promise<void> {
+    const uid = this.auth.currentUser?.uid;
+    if (!uid) {
+      this.toast('Faça login pra continuar.', 'danger');
+      return;
+    }
+
+    // 1) Modal de periodicidade (reusa o dos campeonatos com a def do racha).
+    const planoDef = this.rachaPlanosSrv.getPlanoDefCompat(p.id as PlanoRachaId);
+    const modal = await this.modalCtrl.create({
+      component: EscolherPeriodicidadeModalComponent,
+      componentProps: { plano: planoDef },
+      cssClass: 'modal-escolher-periodicidade',
+    });
+    await modal.present();
+    const { data } = await modal.onDidDismiss<EscolherPeriodicidadeResult | null>();
+    if (!data) return; // cancelou
+
+    // 2) Cria a cobrança em status 'aguardando'.
+    const loader = await this.loadingCtrl.create({ message: 'Gerando cobrança...' });
+    await loader.present();
+    try {
+      const perfil = await this.dadosUsuario();
+      const payload = this.limparUndefined({
+        tipo: 'racha-assinatura' as const,
+        usuarioId: uid,
+        usuarioEmail: perfil.email,
+        usuarioNome: perfil.nome,
+        rachaId: this.rachaId,
+        rachaNome: this.racha?.nome,
+        planoRacha: p.id as PlanoRachaId,
+        periodicidade: data.periodicidade,
+        valorCentavos: data.valorCentavos,
+        vencimento: this.calcularVencimento(7),
+        status: 'aguardando' as const,
+        observacao: `Assinatura do racha "${this.racha?.nome ?? this.rachaId}" (${p.nome}, período ${data.periodicidade}).`,
+        criadoPor: uid,
+      });
+      const cobrancaId = await this.cobrancasSrv.criar(
+        payload as Parameters<typeof this.cobrancasSrv.criar>[0],
+      );
+      await loader.dismiss();
+      await this.router.navigate(['/pagamento', cobrancaId]);
+    } catch (err) {
+      console.error('[Upgrade] criar cobrança racha', err);
+      await loader.dismiss();
+      this.toast('Falha ao gerar cobrança. Tente novamente.', 'danger');
+    }
+  }
+
+  /** Nome/email do usuário pra denormalizar na cobrança. */
+  private async dadosUsuario(): Promise<{ nome?: string; email?: string }> {
+    const u = this.auth.currentUser;
+    const out: { nome?: string; email?: string } = {};
+    if (u?.email) out.email = u.email;
+    if (u?.displayName) out.nome = u.displayName;
+    if (!out.nome) {
+      try {
+        const perfil = await new Promise<{ nome?: string } | undefined>(resolve => {
+          const sub = this.users.profile$().subscribe(prof => {
+            resolve(prof ? { nome: prof.nome } : undefined);
+            setTimeout(() => sub.unsubscribe(), 0);
+          });
+        });
+        if (perfil?.nome) out.nome = perfil.nome;
+      } catch { /* cobrança aceita sem nome */ }
+    }
+    return out;
+  }
+
+  /** Remove chaves undefined (Firestore rejeita undefined). */
+  private limparUndefined<T extends Record<string, unknown>>(obj: T): Partial<T> {
+    const out: Record<string, unknown> = {};
+    for (const k of Object.keys(obj)) {
+      if (obj[k] !== undefined) out[k] = obj[k];
+    }
+    return out as Partial<T>;
+  }
+
+  /** Data de vencimento somando N dias a partir de hoje (YYYY-MM-DD). */
+  private calcularVencimento(dias: number): string {
+    const d = new Date();
+    d.setDate(d.getDate() + dias);
+    return d.toISOString().split('T')[0];
   }
 
   scrollParaPlanos(): void {

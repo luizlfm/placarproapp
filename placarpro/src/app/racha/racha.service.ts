@@ -11,11 +11,13 @@ import {
   doc,
   docData,
   getDoc,
+  getDocs,
   orderBy,
   query,
   serverTimestamp,
   updateDoc,
   where,
+  writeBatch,
 } from '@angular/fire/firestore';
 import { Observable, combineLatest, of, switchMap } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -29,6 +31,7 @@ import {
   RachaLancamento,
   RachaPartida,
   RachaEvento,
+  RachaPresenca,
 } from './models/racha.model';
 import { setDoc } from '@angular/fire/firestore';
 
@@ -87,6 +90,30 @@ export class RachaService {
         });
       }),
     );
+  }
+
+  /**
+   * Lista TODOS os rachas do sistema, mais recentes primeiro.
+   * Uso EXCLUSIVO do painel admin (gated pelo adminGuard; as rules
+   * permitem `list` em /rachas). Não use em telas de usuário comum.
+   */
+  listAllSystem$(): Observable<Racha[]> {
+    return runInInjectionContext(this.injector, () => {
+      const q = query(this.col, orderBy('criadoEm', 'desc'));
+      return collectionData(q, { idField: 'id' }) as Observable<Racha[]>;
+    });
+  }
+
+  /** Altera o plano de QUALQUER racha (admin master). */
+  async alterarPlanoDoRacha(rachaId: string, novoPlano: Racha['plano']): Promise<void> {
+    if (!rachaId) throw new Error('rachaId obrigatório');
+    await this.atualizar(rachaId, { plano: novoPlano });
+  }
+
+  /** Altera o status de QUALQUER racha (admin master). */
+  async alterarStatusDoRacha(rachaId: string, novoStatus: Racha['status']): Promise<void> {
+    if (!rachaId) throw new Error('rachaId obrigatório');
+    await this.atualizar(rachaId, { status: novoStatus });
   }
 
   /** Observa um racha específico (reativo). */
@@ -382,6 +409,88 @@ export class RachaService {
   }
 
   // ──────────────────────────────────────────────────────────────────
+  // Lista de presença (sessão do racha)
+  // Doc da sessão: rachas/{id}/sessoes/{sessaoId}  (guarda filaAberta)
+  // Presenças:     rachas/{id}/sessoes/{sessaoId}/presencas/{jogadorId}
+  // Usamos sessaoId fixo 'atual' (sessão corrente) — simples e suficiente
+  // pra confirmar/limpar a fila; histórico por data fica pra evolução.
+  // ──────────────────────────────────────────────────────────────────
+
+  private sessaoDocRef(rachaId: string, sessaoId = 'atual'): DocumentReference {
+    return doc(this.fs, 'rachas', rachaId, 'sessoes', sessaoId);
+  }
+
+  private presencasCol(rachaId: string, sessaoId = 'atual'): CollectionReference<RachaPresenca> {
+    return collection(this.fs, 'rachas', rachaId, 'sessoes', sessaoId, 'presencas') as CollectionReference<RachaPresenca>;
+  }
+
+  /** Doc da sessão atual (contém `filaAberta`). */
+  sessaoAtual$(rachaId: string, sessaoId = 'atual'): Observable<{ filaAberta?: boolean } | undefined> {
+    if (!rachaId) return of(undefined);
+    return runInInjectionContext(this.injector, () =>
+      docData(this.sessaoDocRef(rachaId, sessaoId)) as Observable<{ filaAberta?: boolean } | undefined>,
+    );
+  }
+
+  /** Abre/fecha a fila da sessão (persistido). */
+  async setFilaAberta(rachaId: string, aberta: boolean, sessaoId = 'atual'): Promise<void> {
+    return runInInjectionContext(this.injector, async () => {
+      await setDoc(
+        this.sessaoDocRef(rachaId, sessaoId),
+        { filaAberta: aberta, atualizadoEm: serverTimestamp() },
+        { merge: true },
+      );
+    });
+  }
+
+  /** Stream das presenças da sessão (ordenado por chegada). */
+  listPresencas$(rachaId: string, sessaoId = 'atual'): Observable<RachaPresenca[]> {
+    if (!rachaId) return of([] as RachaPresenca[]);
+    return runInInjectionContext(this.injector, () =>
+      collectionData(this.presencasCol(rachaId, sessaoId), { idField: 'id' }) as Observable<RachaPresenca[]>,
+    );
+  }
+
+  /** Upsert da presença de um jogador (doc id = jogadorId). */
+  async setPresenca(
+    rachaId: string,
+    jogadorId: string,
+    data: Partial<RachaPresenca>,
+    sessaoId = 'atual',
+  ): Promise<void> {
+    return runInInjectionContext(this.injector, async () => {
+      const ref = doc(this.fs, 'rachas', rachaId, 'sessoes', sessaoId, 'presencas', jogadorId);
+      await setDoc(
+        ref,
+        this.cleanUndefined({
+          ...data,
+          jogadorId,
+          atualizadoEm: serverTimestamp(),
+          criadoEm: serverTimestamp(),
+        } as Record<string, unknown>),
+        { merge: true },
+      );
+    });
+  }
+
+  async removerPresenca(rachaId: string, jogadorId: string, sessaoId = 'atual'): Promise<void> {
+    return runInInjectionContext(this.injector, async () => {
+      await deleteDoc(doc(this.fs, 'rachas', rachaId, 'sessoes', sessaoId, 'presencas', jogadorId));
+    });
+  }
+
+  /** Apaga todas as presenças da sessão (limpar fila). */
+  async limparPresencas(rachaId: string, sessaoId = 'atual'): Promise<void> {
+    return runInInjectionContext(this.injector, async () => {
+      const snap = await getDocs(this.presencasCol(rachaId, sessaoId));
+      if (snap.empty) return;
+      const batch = writeBatch(this.fs);
+      snap.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+    });
+  }
+
+  // ──────────────────────────────────────────────────────────────────
   // Partidas + Eventos
   // ──────────────────────────────────────────────────────────────────
 
@@ -491,6 +600,36 @@ export class RachaService {
     return runInInjectionContext(this.injector, async () => {
       await deleteDoc(doc(this.fs, 'rachas', rachaId, 'partidas', partidaId, 'eventos', eventoId));
     });
+  }
+
+  /**
+   * Agrega estatísticas de TODOS os rachas do usuário logado (cross-racha).
+   * Para cada racha próprio, combina jogadores + eventos e retorna um
+   * stream único com a lista de rachas e, por racha, jogadores e eventos.
+   * Usado no Ranking "Mundial" (entre os seus rachas) sem precisar de
+   * collectionGroup/regras especiais.
+   */
+  listAgregadoMeusRachas$(): Observable<Array<{ racha: Racha; jogadores: RachaJogador[]; eventos: RachaEvento[] }>> {
+    return this.listMeus$().pipe(
+      switchMap(rachas => {
+        if (rachas.length === 0) return of([] as Array<{ racha: Racha; jogadores: RachaJogador[]; eventos: RachaEvento[] }>);
+        return runInInjectionContext(this.injector, () => {
+          const streams = rachas
+            .filter(r => r.id)
+            .map(r =>
+              combineLatest([
+                this.listJogadores$(r.id!),
+                this.listEventosDoRacha$(r.id!),
+              ]).pipe(
+                map(([jogadores, eventos]) => ({ racha: r, jogadores, eventos })),
+              ),
+            );
+          return streams.length === 0
+            ? of([] as Array<{ racha: Racha; jogadores: RachaJogador[]; eventos: RachaEvento[] }>)
+            : combineLatest(streams);
+        });
+      }),
+    );
   }
 }
 
