@@ -82,6 +82,13 @@ export const authGuard: CanActivateFn = async (_route, state): Promise<boolean |
   // entrar normalmente em /app/*.
   const decidirAposLogin = (): boolean | UrlTree => {
     const tipo = getTipoLogin();
+    // Rotas COMPARTILHADAS — qualquer conta logada acessa (não são "área admin").
+    // Ex: página de pagamento de cobrança (organizador E racha geram cobrança
+    // e abrem `/pagamento/:id`). Sem isso, o racha era jogado pra /racha ao
+    // clicar em "Gerar cobrança" do plano premium.
+    if (state.url.startsWith('/pagamento/') || state.url.startsWith('/pagamento?')) {
+      return true;
+    }
     if (tipo === 'cliente') {
       console.warn('[authGuard] espectador tentou acessar área admin', { url: state.url });
       return router.parseUrl('/espectador');
