@@ -27,13 +27,15 @@
       </div>
 
       <div class="features">
-        <div class="feature" *ngFor="let f of p.features">
-          <ion-icon [name]="f.icon"></ion-icon>
-          <div class="f-text">
-            <div class="f-titulo">{{ f.titulo }}</div>
-            <div class="f-desc">{{ f.desc }}</div>
+        <ng-container *ngFor="let f of p.features">
+          <div class="feature" *ngIf="!f.transmissao || (transmissoesAtivas$ | async)">
+            <ion-icon [name]="f.icon"></ion-icon>
+            <div class="f-text">
+              <div class="f-titulo">{{ f.titulo }}</div>
+              <div class="f-desc">{{ f.desc }}</div>
+            </div>
           </div>
-        </div>
+        </ng-container>
       </div>
 
       <ion-button

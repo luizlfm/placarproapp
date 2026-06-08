@@ -2,9 +2,10 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, catchError, startWith } from 'rxjs/operators';
 import { UsersService } from '../../users/users.service';
 import { PlanosService, PlanoId } from '../../users/planos.service';
+import { ConfigGlobalService } from '../../users/config-global.service';
 import { CobrancasService } from '../../users/cobrancas.service';
 import { AuthService } from '../../auth/auth.service';
 import {
@@ -16,6 +17,9 @@ interface Feature {
   icon: string;
   titulo: string;
   desc: string;
+  /** Marca recursos de transmissão ao vivo — ocultados quando o admin
+   *  desliga a transmissão do sistema (kill switch global). */
+  transmissao?: boolean;
 }
 
 interface Plano {
@@ -44,6 +48,14 @@ export class PlanosPage {
   private readonly cobrancasSrv = inject(CobrancasService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly configSrv = inject(ConfigGlobalService);
+
+  /** Kill switch global de transmissão — esconde o recurso "Transmissão
+   *  ao vivo" dos planos quando o admin desliga a transmissão do sistema. */
+  readonly transmissoesAtivas$ = this.configSrv.transmissoesHabilitadas$().pipe(
+    startWith(true),
+    catchError(() => of(true)),
+  );
 
   /** Plano atual do usuário, lido do perfil em Firestore. */
   readonly planoAtual$: Observable<Plano['id']> = this.users.profile$().pipe(
@@ -72,7 +84,7 @@ export class PlanosPage {
         { icon: 'trophy-outline', titulo: '3 campeonatos', desc: 'Crie e gerencie até 3 campeonatos simultaneamente.' },
         { icon: 'people-outline', titulo: 'Maior limite de jogadores', desc: 'Adicione até 300 jogadores por campeonato.' },
         { icon: 'megaphone-outline', titulo: 'Adicionar Patrocinadores', desc: 'Adicione patrocinadores por campeonato.' },
-        { icon: 'radio-outline', titulo: 'Transmissão ao vivo', desc: 'Transmita seus jogos ao vivo pelo site (créditos de transmissão à parte).' },
+        { icon: 'radio-outline', titulo: 'Transmissão ao vivo', desc: 'Transmita seus jogos ao vivo pelo site (créditos de transmissão à parte).', transmissao: true },
         { icon: 'globe-outline', titulo: 'Definir link do site', desc: 'placarpro.app/seu-campeonato' },
         { icon: 'image-outline', titulo: 'Melhor resolução de imagens', desc: 'Imagens em qualidade superior.' },
         { icon: 'videocam-outline', titulo: 'Enviar vídeos', desc: 'Vídeos de até 2 minutos.' },
@@ -91,7 +103,7 @@ export class PlanosPage {
         { icon: 'trophy-outline', titulo: '10 campeonatos', desc: 'Crie e gerencie até 10 campeonatos simultaneamente.' },
         { icon: 'people-outline', titulo: 'Maior limite de jogadores', desc: 'Adicione até 600 jogadores por campeonato.' },
         { icon: 'megaphone-outline', titulo: 'Adicionar Patrocinadores', desc: 'Adicione patrocinadores por campeonato.' },
-        { icon: 'radio-outline', titulo: 'Transmissão ao vivo', desc: 'Transmita seus jogos ao vivo pelo site (créditos de transmissão à parte).' },
+        { icon: 'radio-outline', titulo: 'Transmissão ao vivo', desc: 'Transmita seus jogos ao vivo pelo site (créditos de transmissão à parte).', transmissao: true },
         { icon: 'color-palette-outline', titulo: 'White-label (sua marca)', desc: 'Personalize o app com sua identidade visual.' },
         { icon: 'globe-outline', titulo: 'Definir link do site', desc: 'Link personalizado.' },
         { icon: 'image-outline', titulo: 'Melhor resolução de imagens', desc: 'Qualidade superior.' },
@@ -110,7 +122,7 @@ export class PlanosPage {
         { icon: 'trophy-outline', titulo: '30 campeonatos', desc: 'Crie e gerencie até 30 campeonatos simultaneamente.' },
         { icon: 'people-outline', titulo: 'Maior limite de jogadores', desc: 'Adicione até 900 jogadores por campeonato.' },
         { icon: 'megaphone-outline', titulo: 'Adicionar Patrocinadores', desc: 'Adicione patrocinadores por campeonato.' },
-        { icon: 'radio-outline', titulo: 'Transmissão ao vivo', desc: 'Transmita seus jogos ao vivo pelo site (créditos de transmissão à parte).' },
+        { icon: 'radio-outline', titulo: 'Transmissão ao vivo', desc: 'Transmita seus jogos ao vivo pelo site (créditos de transmissão à parte).', transmissao: true },
         { icon: 'color-palette-outline', titulo: 'White-label (sua marca)', desc: 'Personalize o app com sua identidade visual.' },
         { icon: 'globe-outline', titulo: 'Definir link do site', desc: 'Link personalizado.' },
         { icon: 'image-outline', titulo: 'Melhor resolução de imagens', desc: 'Qualidade superior.' },
@@ -129,7 +141,7 @@ export class PlanosPage {
         { icon: 'infinite-outline', titulo: 'Campeonatos ilimitados', desc: 'Sem limite de campeonatos simultâneos.' },
         { icon: 'people-outline', titulo: 'Maior limite de jogadores', desc: 'Sem limite de jogadores.' },
         { icon: 'megaphone-outline', titulo: 'Adicionar Patrocinadores', desc: 'Adicione patrocinadores por campeonato.' },
-        { icon: 'radio-outline', titulo: 'Transmissão ao vivo', desc: 'Transmita seus jogos ao vivo pelo site (créditos de transmissão à parte).' },
+        { icon: 'radio-outline', titulo: 'Transmissão ao vivo', desc: 'Transmita seus jogos ao vivo pelo site (créditos de transmissão à parte).', transmissao: true },
         { icon: 'color-palette-outline', titulo: 'White-label (sua marca)', desc: 'Personalize o app com sua identidade visual.' },
         { icon: 'globe-outline', titulo: 'Definir link do site', desc: 'Link personalizado.' },
         { icon: 'image-outline', titulo: 'Melhor resolução de imagens', desc: 'Qualidade superior.' },
