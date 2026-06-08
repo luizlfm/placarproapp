@@ -11,6 +11,7 @@ import { Campeonato } from '../campeonatos/campeonato.model';
 import { Categoria } from '../campeonatos/categoria.model';
 import { CampeonatoThemeService } from '../shared/campeonato-theme.service';
 import { UsersService } from '../users/users.service';
+import { ConfigGlobalService } from '../users/config-global.service';
 import { startWith, catchError } from 'rxjs/operators';
 import { AdminNavigationService } from '../shared/admin-navigation.service';
 import { NavBackService } from '../shared/nav-back.service';
@@ -59,6 +60,7 @@ export class ShellPage {
   private readonly categoriasSrv = inject(CategoriasService);
   private readonly campTheme = inject(CampeonatoThemeService);
   private readonly usersSrv = inject(UsersService);
+  private readonly configSrv = inject(ConfigGlobalService);
   private readonly adminNav = inject(AdminNavigationService);
   private readonly navBack = inject(NavBackService);
   private readonly modPerms = inject(ModeradorPermissoesService);
@@ -95,6 +97,11 @@ export class ShellPage {
   readonly mode = signal<ShellMode>('global');
   readonly campeonatoId = signal<string | null>(null);
   readonly categoriaId = signal<string | null>(null);
+
+  /** True quando estamos na rota do Painel Admin Master (`/app/admin`).
+   *  Nesse caso a sidebar global do shell é ocultada — o painel admin tem
+   *  sua própria navegação (abas no topo + botão voltar). */
+  readonly isAdmin = signal<boolean>(false);
 
   /** No mobile (≤ 767px) a sidebar é off-canvas. true = visível. */
   readonly sidebarAberta = signal<boolean>(false);
@@ -158,11 +165,16 @@ export class ShellPage {
 
   /** Menu global filtrado pelo tipo de conta do user logado. Stream pra
    *  reagir a mudanças de perfil (raro, mas mantém consistência). */
-  readonly menuGlobal$: Observable<MenuItem[]> = this.usersSrv.profile$().pipe(
-    startWith(undefined),
-    map(profile => {
+  readonly menuGlobal$: Observable<MenuItem[]> = combineLatest([
+    this.usersSrv.profile$().pipe(startWith(undefined)),
+    this.configSrv.transmissoesHabilitadas$().pipe(startWith(true), catchError(() => of(true))),
+  ]).pipe(
+    map(([profile, transmissoesAtivas]) => {
       const tipo = profile?.tipo;
       return this.menuGlobalBase.filter(item => {
+        // Kill switch global: "Meus créditos (ads)" só faz sentido com
+        // transmissão habilitada (créditos são de transmissão/ads).
+        if (item.path === '/app/meus-creditos' && !transmissoesAtivas) return false;
         if (!item.hideForTipo || !tipo) return true;
         return !item.hideForTipo.includes(tipo);
       });
@@ -385,6 +397,8 @@ export class ShellPage {
 
   private updateMode(): void {
     const url = this.router.url;
+    // Painel Admin Master ocupa a tela inteira — sem sidebar global.
+    this.isAdmin.set(url.startsWith('/app/admin'));
     const cat = url.match(/^\/app\/campeonato\/([^/]+)\/categoria\/([^/]+)/);
     const camp = url.match(/^\/app\/campeonato\/([^/]+)/);
 
