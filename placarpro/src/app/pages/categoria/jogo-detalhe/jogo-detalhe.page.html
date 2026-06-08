@@ -58,7 +58,7 @@
              Cada ativação debita créditos do organizador e tem validade
              contada do início da transmissão.
              ════════════════════════════════════════════════════════ -->
-          <section class="patjogo-section" *ngIf="p.editarResultados">
+          <section class="patjogo-section" *ngIf="p.editarResultados && (transmissoesAtivas$ | async)">
             <div class="section-head">
               <h3 class="section-title">
                 <ion-icon name="ribbon-outline"></ion-icon>
