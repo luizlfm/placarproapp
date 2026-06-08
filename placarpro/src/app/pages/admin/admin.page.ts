@@ -1262,7 +1262,7 @@ export class AdminPage implements OnInit {
     if (this.salvandoConfig) return;
     this.salvandoConfig = true;
     try {
-      await this.configSrv.salvar(this.configForm);
+      await this.configSrv.salvar(this.configForm, this.auth.currentUser?.uid);
       // Registra a alteração no log de auditoria
       void this.logsSrv.registrar(
         'config_alterada',

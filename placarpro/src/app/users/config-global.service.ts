@@ -74,15 +74,14 @@ export class ConfigGlobalService {
   async salvar(patch: Partial<ConfigGlobal>, uidAdmin?: string): Promise<void> {
     return runInInjectionContext(this.injector, async () => {
       const ref = doc(this.fs, 'config', 'global');
-      await setDoc(
-        ref,
-        {
-          ...patch,
-          atualizadoEm: serverTimestamp() as unknown as Timestamp,
-          atualizadoPor: uidAdmin,
-        },
-        { merge: true },
-      );
+      // O Firestore rejeita campos `undefined`. Só inclui `atualizadoPor`
+      // quando o uid do admin for conhecido (chamadas sem uid não gravam).
+      const payload: Record<string, unknown> = {
+        ...patch,
+        atualizadoEm: serverTimestamp() as unknown as Timestamp,
+      };
+      if (uidAdmin) payload['atualizadoPor'] = uidAdmin;
+      await setDoc(ref, payload, { merge: true });
     });
   }
 
