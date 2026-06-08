@@ -38,7 +38,7 @@
           >
             <!-- Badge AO VIVO — vermelho pulsante, canto sup. direito.
                  Aparece quando `campeonato.transmissaoLiveAtiva` está setado. -->
-            <div class="es-card-live-badge" *ngIf="c.campeonato?.transmissaoLiveAtiva">
+            <div class="es-card-live-badge" *ngIf="c.campeonato?.transmissaoLiveAtiva && (transmissoesAtivas$ | async)">
               <span class="dot"></span>
               AO VIVO
             </div>
@@ -71,7 +71,7 @@
           <!-- Botão ASSISTIR AO VIVO — só aparece se há transmissão ativa.
                Vermelho pulsante, leva direto pro player /transmissao/... -->
           <button
-            *ngIf="c.campeonato?.transmissaoLiveAtiva"
+            *ngIf="c.campeonato?.transmissaoLiveAtiva && (transmissoesAtivas$ | async)"
             class="es-btn-live"
             type="button"
             (click)="assistirAoVivo(c.campeonato!, $event)"
@@ -172,7 +172,7 @@
           >
             <!-- Badge AO VIVO — vermelho pulsante, canto sup. esquerdo
                  (esq. porque o botão de coração já ocupa o canto direito). -->
-            <div class="es-card-live-badge" *ngIf="camp.transmissaoLiveAtiva">
+            <div class="es-card-live-badge" *ngIf="camp.transmissaoLiveAtiva && (transmissoesAtivas$ | async)">
               <span class="dot"></span>
               AO VIVO
             </div>
@@ -205,7 +205,7 @@
 
           <!-- Botão ASSISTIR AO VIVO — só quando há transmissão ativa. -->
           <button
-            *ngIf="camp.transmissaoLiveAtiva"
+            *ngIf="camp.transmissaoLiveAtiva && (transmissoesAtivas$ | async)"
             class="es-btn-live"
             type="button"
             (click)="assistirAoVivo(camp, $event)"

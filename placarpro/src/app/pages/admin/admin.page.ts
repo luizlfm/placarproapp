@@ -1,6 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
+import { User } from '@angular/fire/auth';
+import { AuthService } from '../../auth/auth.service';
 import {
   CollectionReference,
   Firestore,
@@ -33,6 +35,10 @@ import { CobrancasService } from '../../users/cobrancas.service';
 import { ConfigGlobalService, ConfigGlobal } from '../../users/config-global.service';
 import { ConfigComercialService, ConfigComercial } from '../../users/config-comercial.service';
 import { LogsService } from '../../users/logs.service';
+import { RachaService } from '../../racha/racha.service';
+import { RachaPlanosService } from '../../racha/racha-planos.service';
+import { PlanoRachaId } from '../../users/models/cobranca.model';
+import { Racha } from '../../racha/models/racha.model';
 import {
   LogAuditoria,
   LogAcao,
@@ -54,12 +60,20 @@ type SecaoAdmin =
   | 'campeonatos'
   | 'inscricoes'
   | 'organizadores'
+  | 'rachas'
   | 'planos'
   | 'valores'
   | 'cobrancas'
   | 'financeiro'
   | 'configuracoes'
   | 'logs';
+
+/** Linha da tabela de rachas no admin — racha enriquecido com o dono. */
+export interface RachaLinha {
+  racha: Racha;
+  donoNome?: string;
+  donoEmail?: string;
+}
 
 /** Linha da tabela de planos no admin — user enriquecido com a def do plano. */
 export interface LinhaPlano {
@@ -90,10 +104,38 @@ interface AdminStats {
   totalJogadores: number;
   totalJogos: number;
   jogosEmAndamento: number;
+  // ===== Rachas (documentos em /rachas) =====
+  /** Total de rachas (peladas) cadastrados — docs em /rachas. */
+  totalRachasDocs: number;
+  /** Rachas com status 'ativo'. */
+  rachasAtivos: number;
+  /** Rachas públicos. */
+  rachasPublicos: number;
+  /** Soma de seguidores de todos os rachas. */
+  seguidoresRacha: number;
+  /** Distribuição de rachas por plano. */
+  rachasPorPlano: Record<PlanoRachaId, number>;
 }
 
 interface CampeonatoLinha extends Campeonato {
   donoNome?: string;
+}
+
+/** Fatia de um gráfico (donut ou barra). */
+export interface ChartItem {
+  label: string;
+  valor: number;
+  cor: string;
+  /** % do total (0-100). */
+  pct: number;
+}
+
+/** Dados prontos pra um gráfico donut (gradient + legenda). */
+export interface DonutData {
+  /** String pronta pra `background: conic-gradient(...)`. */
+  gradient: string;
+  total: number;
+  legenda: ChartItem[];
 }
 
 /** Barra de gráfico mensal (12 últimos meses). */
@@ -131,6 +173,19 @@ export interface FinanceiroResumo {
   mesesGrafico: MesGrafico[];
   /** Top 10 pagantes ordenado por valor total. */
   topPagantes: TopPagante[];
+  // ===== Split por origem (campeonato × racha) =====
+  /** MRR só de assinaturas de campeonato. */
+  mrrCampeonatos: number;
+  /** MRR só de assinaturas de racha. */
+  mrrRachas: number;
+  /** ARR (×12) de campeonatos. */
+  arrCampeonatos: number;
+  /** ARR (×12) de rachas. */
+  arrRachas: number;
+  /** Receita total (lifetime) de campeonatos. */
+  receitaCampeonatos: number;
+  /** Receita total (lifetime) de rachas. */
+  receitaRachas: number;
 }
 
 interface InscricaoLinha extends Inscricao {
@@ -171,6 +226,12 @@ export class AdminPage implements OnInit {
   private readonly configSrv = inject(ConfigGlobalService);
   private readonly configComercialSrv = inject(ConfigComercialService);
   private readonly logsSrv = inject(LogsService);
+  private readonly rachaSrv = inject(RachaService);
+  private readonly rachaPlanosSrv = inject(RachaPlanosService);
+  private readonly auth = inject(AuthService);
+
+  /** Usuário logado — exibido no header do painel (avatar + nome + Sair). */
+  readonly user$: Observable<User | null> = this.auth.user$;
 
   /** Expostos pro template. */
   readonly LOG_ACAO_LABEL = LOG_ACAO_LABEL;
@@ -204,6 +265,8 @@ export class AdminPage implements OnInit {
     totalRachas: 0,
     totalAdmins: 0, totalCampeonatos: 0, campeonatosPublicos: 0, campeonatosPrivados: 0,
     totalInscricoes: 0, totalEquipes: 0, totalJogadores: 0, totalJogos: 0, jogosEmAndamento: 0,
+    totalRachasDocs: 0, rachasAtivos: 0, rachasPublicos: 0, seguidoresRacha: 0,
+    rachasPorPlano: { gratis: 0, premium: 0, pro: 0 },
   });
 
   /** Grupos por organizador — agrupa campeonatos por ownerId. */
@@ -231,8 +294,11 @@ export class AdminPage implements OnInit {
   cobrancasFiltradas$: Observable<Cobranca[]> = of([]);
   /** Filtro de status atual (null = todos). */
   filtroStatusCobranca: CobrancaStatus | null = null;
+  /** Filtro de ORIGEM da cobrança (separa campeonato × racha). */
+  filtroOrigemCobranca: 'todas' | 'campeonato' | 'racha' = 'todas';
   private readonly buscaCobrancas$ = new BehaviorSubject<string>('');
   private readonly filtroStatusCobranca$ = new BehaviorSubject<CobrancaStatus | null>(null);
+  private readonly filtroOrigemCobranca$ = new BehaviorSubject<'todas' | 'campeonato' | 'racha'>('todas');
 
   /** Form inline "Nova Cobrança" (admin pode criar manualmente). */
   novaCobAberta = false;
@@ -252,7 +318,46 @@ export class AdminPage implements OnInit {
     receitaTotal: 0, cobrancasPagas: 0, cobrancasAguardando: 0,
     cobrancasAtrasadas: 0, mesesGrafico: [],
     topPagantes: [],
+    mrrCampeonatos: 0, mrrRachas: 0, arrCampeonatos: 0, arrRachas: 0,
+    receitaCampeonatos: 0, receitaRachas: 0,
   });
+
+  // ============ Rachas (admin) ============
+  rachas$: Observable<Racha[]> = of([]);
+  rachasFiltrados$: Observable<RachaLinha[]> = of([]);
+  contagemRachaPlanos$: Observable<Record<PlanoRachaId, number>> = of({ gratis: 0, premium: 0, pro: 0 });
+  private readonly buscaRachas$ = new BehaviorSubject<string>('');
+  filtroStatusRacha: 'todos' | 'rascunho' | 'ativo' | 'pausado' | 'encerrado' = 'todos';
+  filtroPlanoRacha: 'todos' | PlanoRachaId = 'todos';
+  filtroVisibilidadeRacha: 'todos' | 'publico' | 'privado' = 'todos';
+  private readonly filtroStatusRacha$ = new BehaviorSubject<typeof this.filtroStatusRacha>('todos');
+  private readonly filtroPlanoRacha$ = new BehaviorSubject<typeof this.filtroPlanoRacha>('todos');
+  private readonly filtroVisibilidadeRacha$ = new BehaviorSubject<typeof this.filtroVisibilidadeRacha>('todos');
+  /** Sub-aba da seção Planos: campeonatos × racha. */
+  abaPlanos: 'campeonatos' | 'racha' = 'campeonatos';
+
+  // ============ Gráficos do Dashboard ============
+  /** Donut de usuários por tipo. */
+  usuariosChart$: Observable<DonutData> = of({ gradient: '', total: 0, legenda: [] });
+  /** Donut de campeonatos público × privado. */
+  campChart$: Observable<DonutData> = of({ gradient: '', total: 0, legenda: [] });
+  /** Donut de rachas por plano. */
+  rachaPlanoChart$: Observable<DonutData> = of({ gradient: '', total: 0, legenda: [] });
+  /** Barras de distribuição dos planos de campeonato (por usuários). */
+  planosCampBars$: Observable<ChartItem[]> = of([]);
+  /** Planos de racha pra dropdown (id + label). */
+  readonly opcoesPlanoRacha: { id: PlanoRachaId; label: string }[] = [
+    { id: 'gratis', label: 'Gratuito' },
+    { id: 'premium', label: 'Premium' },
+    { id: 'pro', label: 'Premium PRO' },
+  ];
+  /** Status de racha pra dropdown. */
+  readonly opcoesStatusRacha: { id: NonNullable<Racha['status']>; label: string }[] = [
+    { id: 'rascunho', label: 'Rascunho' },
+    { id: 'ativo', label: 'Ativo' },
+    { id: 'pausado', label: 'Pausado' },
+    { id: 'encerrado', label: 'Encerrado' },
+  ];
 
   // ============ Configurações globais (form local) ============
   config$: Observable<ConfigGlobal> = of({});
@@ -263,6 +368,7 @@ export class AdminPage implements OnInit {
     modoManutencao: false,
     mensagemManutencao: '',
     asaasUrl: '',
+    transmissoesHabilitadas: true,
   };
   /** Campo temporário pra adicionar novo código. */
   novoCodigoOrg = '';
@@ -343,13 +449,22 @@ export class AdminPage implements OnInit {
     this.jogadores$ = this.listAllCG$<Jogador>('jogadores');
     this.jogos$ = this.listAllCG$<Jogo>('jogos');
 
-    // ============ Stats (agora inclui equipes/jogadores/jogos) ============
+    // Todos os rachas do sistema (admin-wide)
+    this.rachas$ = this.rachaSrv.listAllSystem$().pipe(
+      catchError(err => {
+        console.error('[Admin] listAllSystem rachas falhou', err);
+        return of([] as Racha[]);
+      }),
+      startWith([] as Racha[]),
+    );
+
+    // ============ Stats (inclui equipes/jogadores/jogos + rachas) ============
     this.stats$ = combineLatest([
       this.usuarios$, this.campeonatos$, this.inscricoes$,
-      this.equipes$, this.jogadores$, this.jogos$,
+      this.equipes$, this.jogadores$, this.jogos$, this.rachas$,
     ]).pipe(
-      map(([users, camps, inscs, eqs, jgds, jgs]) =>
-        this.calcularStats(users, camps, inscs, eqs, jgds, jgs)),
+      map(([users, camps, inscs, eqs, jgds, jgs, rachas]) =>
+        this.calcularStats(users, camps, inscs, eqs, jgds, jgs, rachas)),
     );
 
     // ============ Organizadores agrupados ============
@@ -466,9 +581,9 @@ export class AdminPage implements OnInit {
     );
 
     this.cobrancasFiltradas$ = combineLatest([
-      this.cobrancas$, this.buscaCobrancas$, this.filtroStatusCobranca$,
+      this.cobrancas$, this.buscaCobrancas$, this.filtroStatusCobranca$, this.filtroOrigemCobranca$,
     ]).pipe(
-      map(([list, t, status]) => this.filtrarCobrancas(list, t, status)),
+      map(([list, t, status, origem]) => this.filtrarCobrancas(list, t, status, origem)),
     );
 
     // Resumo financeiro derivado das cobranças + usuários
@@ -485,6 +600,7 @@ export class AdminPage implements OnInit {
         modoManutencao: c.modoManutencao ?? false,
         mensagemManutencao: c.mensagemManutencao ?? '',
         asaasUrl: c.asaasUrl ?? '',
+        transmissoesHabilitadas: c.transmissoesHabilitadas ?? true,
       };
     });
 
@@ -515,6 +631,66 @@ export class AdminPage implements OnInit {
     this.linhasPlanosFiltradas$ = combineLatest([this.linhasPlanos$, this.buscaPlanos$]).pipe(
       map(([list, t]) => this.filtrarLinhasPlanos(list, t)),
     );
+
+    // ============ Rachas (lista + contagem por plano) ============
+    this.contagemRachaPlanos$ = this.rachas$.pipe(
+      map(rs => this.contarRachasPorPlano(rs)),
+    );
+    this.rachasFiltrados$ = combineLatest([
+      this.rachas$, this.usuarios$, this.buscaRachas$,
+      this.filtroStatusRacha$, this.filtroPlanoRacha$, this.filtroVisibilidadeRacha$,
+    ]).pipe(
+      map(([rs, users, t, st, pl, vis]) => this.filtrarRachas(rs, users, t, st, pl, vis)),
+    );
+
+    // ============ Gráficos do Dashboard (derivados das stats) ============
+    this.usuariosChart$ = this.stats$.pipe(map(s => this.buildDonut([
+      { label: 'Organizadores', valor: s.totalOrganizadores, cor: '#f59e0b' },
+      { label: 'Espectadores',  valor: s.totalClientes,      cor: '#4dabf7' },
+      { label: 'Moderadores',   valor: s.totalModeradores,   cor: '#7c3aed' },
+      { label: 'Admins',        valor: s.totalAdmins,        cor: '#16a34a' },
+    ])));
+    this.campChart$ = this.stats$.pipe(map(s => this.buildDonut([
+      { label: 'Públicos', valor: s.campeonatosPublicos, cor: '#16a34a' },
+      { label: 'Privados', valor: s.campeonatosPrivados, cor: '#94a3b8' },
+    ])));
+    this.rachaPlanoChart$ = this.contagemRachaPlanos$.pipe(map(c => this.buildDonut([
+      { label: 'Gratuito', valor: c.gratis,  cor: '#94a3b8' },
+      { label: 'Premium',  valor: c.premium, cor: '#14b8a6' },
+      { label: 'PRO',      valor: c.pro,     cor: '#16a34a' },
+    ])));
+    this.planosCampBars$ = this.contagemPlanos$.pipe(map(ct => {
+      const itens = this.catalogoPlanos.map(p => ({ label: p.label, valor: ct[p.id] || 0, cor: p.cor, pct: 0 }));
+      const max = Math.max(1, ...itens.map(i => i.valor));
+      return itens.map(i => ({ ...i, pct: Math.round((i.valor / max) * 100) }));
+    }));
+  }
+
+  /**
+   * Monta os dados de um gráfico DONUT a partir de fatias {label,valor,cor}.
+   * Calcula percentuais e a string `conic-gradient(...)`. Sem dados → anel cinza.
+   */
+  private buildDonut(segs: { label: string; valor: number; cor: string }[]): DonutData {
+    const total = segs.reduce((s, x) => s + (x.valor || 0), 0);
+    const legenda: ChartItem[] = segs.map(x => ({
+      label: x.label,
+      valor: x.valor || 0,
+      cor: x.cor,
+      pct: total > 0 ? Math.round((x.valor / total) * 100) : 0,
+    }));
+    if (total <= 0) {
+      return { gradient: 'conic-gradient(#e5e7eb 0% 100%)', total: 0, legenda };
+    }
+    let acc = 0;
+    const stops: string[] = [];
+    for (const x of segs) {
+      if (!x.valor) continue;
+      const start = (acc / total) * 100;
+      acc += x.valor;
+      const end = (acc / total) * 100;
+      stops.push(`${x.cor} ${start}% ${end}%`);
+    }
+    return { gradient: `conic-gradient(${stops.join(', ')})`, total, legenda };
   }
 
   // ============ Helpers de stream ============
@@ -568,6 +744,7 @@ export class AdminPage implements OnInit {
     eqs: Equipe[],
     jgds: Jogador[],
     jgs: Jogo[],
+    rachas: Racha[] = [],
   ): AdminStats {
     const byTipo = (t: TipoConta) => users.filter(u => u.tipo === t).length;
     return {
@@ -585,7 +762,54 @@ export class AdminPage implements OnInit {
       totalJogadores: jgds.length,
       totalJogos: jgs.length,
       jogosEmAndamento: jgs.filter(j => j.status === 'em-andamento').length,
+      // ===== Rachas =====
+      totalRachasDocs: rachas.length,
+      rachasAtivos: rachas.filter(r => r.status === 'ativo').length,
+      rachasPublicos: rachas.filter(r => r.visibilidade === 'publico').length,
+      seguidoresRacha: rachas.reduce((s, r) => s + (r.seguidores ?? 0), 0),
+      rachasPorPlano: this.contarRachasPorPlano(rachas),
     };
+  }
+
+  /** Conta rachas por plano ('gratis' default quando ausente). */
+  private contarRachasPorPlano(rachas: Racha[]): Record<PlanoRachaId, number> {
+    const acc: Record<PlanoRachaId, number> = { gratis: 0, premium: 0, pro: 0 };
+    for (const r of rachas) {
+      const p = (r.plano ?? 'gratis') as PlanoRachaId;
+      acc[p] = (acc[p] ?? 0) + 1;
+    }
+    return acc;
+  }
+
+  /** Filtra/enriquece rachas pra tabela do admin (busca + status + plano + visibilidade). */
+  private filtrarRachas(
+    rachas: Racha[],
+    users: UserProfile[],
+    termo: string,
+    status: typeof this.filtroStatusRacha,
+    plano: typeof this.filtroPlanoRacha,
+    visibilidade: typeof this.filtroVisibilidadeRacha,
+  ): RachaLinha[] {
+    const uMap = new Map(users.map(u => [u.uid, u]));
+    let out = rachas;
+    if (status !== 'todos') out = out.filter(r => (r.status ?? 'rascunho') === status);
+    if (plano !== 'todos') out = out.filter(r => (r.plano ?? 'gratis') === plano);
+    if (visibilidade !== 'todos') out = out.filter(r => (r.visibilidade ?? 'privado') === visibilidade);
+    const t = (termo ?? '').trim().toLowerCase();
+    if (t) {
+      out = out.filter(r => {
+        const dono = r.ownerId ? uMap.get(r.ownerId) : undefined;
+        return (r.nome ?? '').toLowerCase().includes(t)
+          || (r.local ?? '').toLowerCase().includes(t)
+          || (r.municipio ?? '').toLowerCase().includes(t)
+          || (dono?.nome ?? '').toLowerCase().includes(t)
+          || (dono?.email ?? '').toLowerCase().includes(t);
+      });
+    }
+    return out.map(r => {
+      const dono = r.ownerId ? uMap.get(r.ownerId) : undefined;
+      return { racha: r, donoNome: dono?.nome, donoEmail: dono?.email };
+    });
   }
 
   /** Agrupa campeonatos por ownerId, enriquecendo com o perfil do dono. */
@@ -632,8 +856,14 @@ export class AdminPage implements OnInit {
     list: Cobranca[],
     termo: string,
     status: CobrancaStatus | null,
+    origem: 'todas' | 'campeonato' | 'racha' = 'todas',
   ): Cobranca[] {
     let out = list;
+    if (origem === 'racha') {
+      out = out.filter(c => c.tipo === 'racha-assinatura');
+    } else if (origem === 'campeonato') {
+      out = out.filter(c => c.tipo !== 'racha-assinatura');
+    }
     if (status) out = out.filter(c => c.status === status);
     const t = (termo ?? '').trim().toLowerCase();
     if (t) {
@@ -641,10 +871,30 @@ export class AdminPage implements OnInit {
         (c.usuarioNome ?? '').toLowerCase().includes(t) ||
         (c.usuarioEmail ?? '').toLowerCase().includes(t) ||
         (c.planoId ?? '').toLowerCase().includes(t) ||
+        (c.planoRacha ?? '').toLowerCase().includes(t) ||
+        (c.rachaNome ?? '').toLowerCase().includes(t) ||
         (c.id ?? '').toLowerCase().includes(t),
       );
     }
     return out;
+  }
+
+  /** Seleciona o filtro de origem das cobranças (campeonato × racha). */
+  selecionarFiltroOrigemCobranca(origem: 'todas' | 'campeonato' | 'racha'): void {
+    this.filtroOrigemCobranca = origem;
+    this.filtroOrigemCobranca$.next(origem);
+  }
+
+  /** Label do plano de uma cobrança (racha ou campeonato) pra exibição. */
+  nomePlanoCobranca(c: Cobranca): string {
+    if (c.tipo === 'racha-assinatura') {
+      const labels: Record<string, string> = {
+        gratis: 'Gratuito', premium: 'Premium', pro: 'Premium PRO',
+      };
+      return labels[c.planoRacha ?? ''] ?? 'Premium';
+    }
+    const id = c.planoId ?? '';
+    return id ? id.charAt(0).toUpperCase() + id.slice(1) : '—';
   }
 
   // ====================== Handlers de Cobranças ======================
@@ -665,18 +915,31 @@ export class AdminPage implements OnInit {
    * pagamento (via Asaas, transferência, dinheiro, etc).
    */
   async marcarCobrancaPaga(c: Cobranca): Promise<void> {
-    if (!c.id || !c.usuarioId) return;
+    if (!c.id) return;
     try {
       // 1) Atualiza status da cobrança
       await this.cobrancasSrv.atualizarStatus(c.id, 'pago');
-      // 2) Promove o usuário ao plano referenciado
-      await this.planosSrv.alterarPlanoDoUsuario(c.usuarioId, c.planoId);
-      // 3) Audita
-      void this.logsSrv.registrar(
-        'cobranca_paga',
-        `Cobrança ${c.id} marcada como paga — usuário ${c.usuarioNome ?? c.usuarioId} promovido ao plano ${c.planoId}`,
-        { cobrancaId: c.id, usuarioId: c.usuarioId, planoId: c.planoId },
-      );
+
+      // 2) Ativa o plano referenciado.
+      if (c.tipo === 'racha-assinatura') {
+        // Cobrança de RACHA → promove o racha (rachas/{id}.plano).
+        if (c.rachaId && c.planoRacha) {
+          await this.rachaSrv.atualizar(c.rachaId, { plano: c.planoRacha });
+          void this.logsSrv.registrar(
+            'cobranca_paga',
+            `Cobrança ${c.id} (racha) marcada como paga — racha ${c.rachaNome ?? c.rachaId} promovido ao plano ${c.planoRacha}`,
+            { cobrancaId: c.id, rachaId: c.rachaId, planoRacha: c.planoRacha },
+          );
+        }
+      } else if (c.usuarioId && c.planoId) {
+        // Cobrança de CAMPEONATO → promove o usuário (users/{uid}.plano).
+        await this.planosSrv.alterarPlanoDoUsuario(c.usuarioId, c.planoId);
+        void this.logsSrv.registrar(
+          'cobranca_paga',
+          `Cobrança ${c.id} marcada como paga — usuário ${c.usuarioNome ?? c.usuarioId} promovido ao plano ${c.planoId}`,
+          { cobrancaId: c.id, usuarioId: c.usuarioId, planoId: c.planoId },
+        );
+      }
     } catch (err) {
       console.error('[Admin] marcarCobrancaPaga falhou', err);
       alert('Falha ao confirmar pagamento. Verifique o console.');
@@ -843,6 +1106,31 @@ export class AdminPage implements OnInit {
 
     const totalPagantes = pagoPorUsuario.size;
 
+    // ===== Split campeonato × racha =====
+    const ehRacha = (c: Cobranca) => c.tipo === 'racha-assinatura';
+    // Receita lifetime por origem
+    const receitaRachasCentavos = cobrancasPagas
+      .filter(ehRacha).reduce((s, c) => s + (c.valorCentavos || 0), 0);
+    const receitaCampeonatosCentavos = receitaTotalCentavos - receitaRachasCentavos;
+    // MRR por origem: campeonato = última paga por usuário; racha = última por racha.
+    const ultPorRacha = new Map<string, Cobranca>();
+    for (const c of cobrancasPagas.filter(ehRacha)) {
+      const key = c.rachaId ?? c.id ?? '';
+      const atual = ultPorRacha.get(key);
+      const atualTs = (atual?.criadoEm as unknown as { seconds?: number })?.seconds ?? 0;
+      const cTs = (c.criadoEm as unknown as { seconds?: number })?.seconds ?? 0;
+      if (!atual || cTs > atualTs) ultPorRacha.set(key, c);
+    }
+    let mrrRachasCentavos = 0;
+    for (const c of ultPorRacha.values()) {
+      mrrRachasCentavos += (c.valorCentavos || 0) / this.planosSrv.mesesDePeriodo(c.periodicidade);
+    }
+    let mrrCampeonatosCentavos = 0;
+    for (const c of pagoPorUsuario.values()) {
+      if (ehRacha(c)) continue; // já contabilizado por racha
+      mrrCampeonatosCentavos += (c.valorCentavos || 0) / this.planosSrv.mesesDePeriodo(c.periodicidade);
+    }
+
     // Top 10 pagantes — agrupa por usuario, soma cobrancas
     const acumPorUser = new Map<string, TopPagante>();
     const userMap = new Map(users.map(u => [u.uid, u]));
@@ -878,6 +1166,12 @@ export class AdminPage implements OnInit {
       cobrancasAtrasadas: cobrancasAtrasadas.length,
       mesesGrafico,
       topPagantes,
+      mrrCampeonatos: mrrCampeonatosCentavos,
+      mrrRachas: mrrRachasCentavos,
+      arrCampeonatos: mrrCampeonatosCentavos * 12,
+      arrRachas: mrrRachasCentavos * 12,
+      receitaCampeonatos: receitaCampeonatosCentavos,
+      receitaRachas: receitaRachasCentavos,
     };
   }
 
@@ -1320,6 +1614,12 @@ export class AdminPage implements OnInit {
     { id: 'grande', label: 'Grande', temPreco: true, cor: '#F39C12', icon: 'ribbon-outline' },
   ];
 
+  /** Planos de RACHA editáveis (só preço — pagos). */
+  readonly valoresRachaPlanos: { id: PlanoRachaId; label: string; cor: string; icon: string }[] = [
+    { id: 'premium', label: 'Racha Premium', cor: '#14b8a6', icon: 'flame-outline' },
+    { id: 'pro', label: 'Racha Premium PRO', cor: '#16a34a', icon: 'sparkles-outline' },
+  ];
+
   readonly camposPreco: { key: 'mensal' | 'trimestral' | 'semestral' | 'anual'; label: string }[] = [
     { key: 'mensal', label: 'Mensal' },
     { key: 'trimestral', label: 'Trimestral' },
@@ -1340,6 +1640,7 @@ export class AdminPage implements OnInit {
   /** Estado do formulário (carregado dos valores efetivos atuais). */
   valoresForm: {
     planos: Record<string, { precos: Record<string, number>; limites: Record<string, number> }>;
+    rachaPlanos: Record<string, { precos: Record<string, number> }>;
     creditos: {
       patrocinioNormal: { preco: number; patrocinadores: number; duracaoMin: number };
       patrocinioPremium: { preco: number; patrocinadores: number; janelaSeg: number; intervaloMin: number };
@@ -1347,6 +1648,7 @@ export class AdminPage implements OnInit {
     };
   } = {
     planos: {},
+    rachaPlanos: {},
     creditos: {
       patrocinioNormal: { preco: 0, patrocinadores: 0, duracaoMin: 0 },
       patrocinioPremium: { preco: 0, patrocinadores: 0, janelaSeg: 0, intervaloMin: 0 },
@@ -1378,8 +1680,21 @@ export class AdminPage implements OnInit {
         },
       };
     }
+    const rachaPlanos: Record<string, { precos: Record<string, number> }> = {};
+    for (const p of this.valoresRachaPlanos) {
+      const def = this.rachaPlanosSrv.getRachaPlanoDef(p.id);
+      rachaPlanos[p.id] = {
+        precos: {
+          mensal: def.precos.mensal,
+          trimestral: def.precos.trimestral,
+          semestral: def.precos.semestral,
+          anual: def.precos.anual,
+        },
+      };
+    }
     this.valoresForm = {
       planos,
+      rachaPlanos,
       creditos: {
         patrocinioNormal: {
           preco: this.planosSrv.precoCreditoNormal,
@@ -1429,11 +1744,26 @@ export class AdminPage implements OnInit {
             }
           : { limites };
       }
+      // Preços dos planos de RACHA (separados dos campeonatos).
+      const rachaPlanosPatch: NonNullable<ConfigComercial['rachaPlanos']> = {};
+      for (const p of this.valoresRachaPlanos) {
+        const f = this.valoresForm.rachaPlanos[p.id];
+        if (!f) continue;
+        rachaPlanosPatch[p.id] = {
+          precos: {
+            mensal: Number(f.precos['mensal']),
+            trimestral: Number(f.precos['trimestral']),
+            semestral: Number(f.precos['semestral']),
+            anual: Number(f.precos['anual']),
+          },
+        };
+      }
       const cn = this.valoresForm.creditos.patrocinioNormal;
       const cp = this.valoresForm.creditos.patrocinioPremium;
       const ct = this.valoresForm.creditos.transmissaoAvulsa;
       await this.configComercialSrv.salvar({
         planos: planosPatch,
+        rachaPlanos: rachaPlanosPatch,
         creditos: {
           patrocinioNormal: {
             preco: Number(cn.preco),
@@ -1509,6 +1839,104 @@ export class AdminPage implements OnInit {
   /** Helper template — formata o preço de um plano. */
   formatarPrecoPlano(p: PlanoDef): string {
     return this.planosSrv.formatarPreco(p);
+  }
+
+  // ====================== Rachas (admin) ======================
+
+  onBuscaRachas(ev: { target?: { value?: string } }): void {
+    this.buscaRachas$.next(ev.target?.value ?? '');
+  }
+  selecionarFiltroStatusRacha(s: typeof this.filtroStatusRacha): void {
+    this.filtroStatusRacha = s;
+    this.filtroStatusRacha$.next(s);
+  }
+  selecionarFiltroPlanoRacha(p: typeof this.filtroPlanoRacha): void {
+    this.filtroPlanoRacha = p;
+    this.filtroPlanoRacha$.next(p);
+  }
+  selecionarFiltroVisibilidadeRacha(v: typeof this.filtroVisibilidadeRacha): void {
+    this.filtroVisibilidadeRacha = v;
+    this.filtroVisibilidadeRacha$.next(v);
+  }
+  selecionarAbaPlanos(aba: 'campeonatos' | 'racha'): void {
+    this.abaPlanos = aba;
+  }
+
+  /** Altera o plano de um racha direto da tabela (admin). */
+  async alterarPlanoRacha(rachaId: string, novoPlano: PlanoRachaId): Promise<void> {
+    if (!rachaId || !novoPlano) return;
+    try {
+      await this.rachaSrv.alterarPlanoDoRacha(rachaId, novoPlano);
+      void this.logsSrv.registrar(
+        'plano_alterado',
+        `Plano do racha ${rachaId} alterado para ${novoPlano}`,
+        { rachaId, novoPlano },
+      );
+      await this.toast('Plano do racha atualizado.', 'success');
+    } catch (err) {
+      console.error('[Admin] alterar plano do racha', err);
+      await this.toast('Falha ao alterar plano do racha.', 'danger');
+    }
+  }
+
+  /** Altera o status de um racha direto da tabela (admin). */
+  async alterarStatusRacha(rachaId: string, novoStatus: NonNullable<Racha['status']>): Promise<void> {
+    if (!rachaId || !novoStatus) return;
+    try {
+      await this.rachaSrv.alterarStatusDoRacha(rachaId, novoStatus);
+      void this.logsSrv.registrar(
+        'plano_alterado',
+        `Status do racha ${rachaId} alterado para ${novoStatus}`,
+        { rachaId, novoStatus },
+      );
+      await this.toast('Status do racha atualizado.', 'success');
+    } catch (err) {
+      console.error('[Admin] alterar status do racha', err);
+      await this.toast('Falha ao alterar status do racha.', 'danger');
+    }
+  }
+
+  // ====================== Header (usuário + logout) ======================
+
+  /** Inicial do usuário pra avatar fallback. */
+  initials(user: User | null): string {
+    return (user?.displayName || user?.email || '?').charAt(0).toUpperCase();
+  }
+
+  /** Confirma e sai da conta direto do header do painel admin. */
+  async confirmLogout(): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header: 'Sair da conta?',
+      message: 'Você precisará entrar novamente para acessar.',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Sair', role: 'destructive', handler: () => this.doLogout() },
+      ],
+    });
+    await alert.present();
+  }
+
+  private async doLogout(): Promise<void> {
+    this.adminNav.encerrar();
+    await this.auth.signOut();
+    await this.router.navigateByUrl('/', { replaceUrl: true });
+  }
+
+  /** Abre o racha (área admin) — acesso total como dono. */
+  abrirRacha(r: Racha): void {
+    if (!r.id) return;
+    this.adminNav.iniciar();
+    this.router.navigate(['/racha', r.id, 'inicio']);
+  }
+
+  labelPlanoRacha(p?: string): string {
+    return this.opcoesPlanoRacha.find(o => o.id === p)?.label ?? 'Gratuito';
+  }
+  labelStatusRacha(s?: string): string {
+    return this.opcoesStatusRacha.find(o => o.id === s)?.label ?? 'Rascunho';
+  }
+  trackByRacha(_i: number, l: RachaLinha): string {
+    return l.racha.id ?? '';
   }
 
   /** Abre o campeonato como dono (área admin) — fornece acesso total.

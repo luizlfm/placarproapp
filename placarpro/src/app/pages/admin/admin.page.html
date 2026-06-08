@@ -1,12 +1,30 @@
-<!-- Header padrão Ionic com botão voltar + título. Resolve o problema do
-     menu lateral não funcionar em mobile (botão hambúrguer + back fica
-     no toolbar nativo) e dá hierarquia visual clara. -->
+<!-- Header do painel admin: logo PlacarPro + usuário logado + botão Sair.
+     Sem botão "voltar" — o painel é a home do admin master e tem suas
+     próprias abas de navegação. -->
 <ion-header>
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/app/meus-campeonatos"></ion-back-button>
+      <img src="assets/images/logo3.png" alt="PlacarPro" class="ad-hd-logo" />
     </ion-buttons>
     <ion-title>Painel Admin Master</ion-title>
+    <ion-buttons slot="end">
+      <div class="ad-hd-user" *ngIf="user$ | async as user">
+        <div class="ad-hd-avatar">
+          <img
+            *ngIf="user.photoURL; else hdIni"
+            [src]="user.photoURL"
+            [alt]="user.displayName || user.email"
+            referrerpolicy="no-referrer"
+          />
+          <ng-template #hdIni><span>{{ initials(user) }}</span></ng-template>
+        </div>
+        <span class="ad-hd-name">{{ user.displayName || (user.email | slice:0:18) }}</span>
+      </div>
+      <ion-button class="ad-hd-sair" fill="clear" (click)="confirmLogout()">
+        <ion-icon slot="start" name="log-out-outline"></ion-icon>
+        Sair
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -70,6 +88,15 @@
       >
         <ion-icon name="briefcase-outline"></ion-icon>
         <span>Organizadores</span>
+      </button>
+      <button
+        type="button"
+        class="ad-tab"
+        [class.active]="secao === 'rachas'"
+        (click)="selecionarSecao('rachas')"
+      >
+        <ion-icon name="football-outline"></ion-icon>
+        <span>Rachas</span>
       </button>
       <button
         type="button"
@@ -203,6 +230,8 @@
       </ng-container>
 
       <ng-container *ngIf="stats$ | async as s">
+      <div class="ad-stats-2col">
+        <div class="ad-stat-group">
         <h2 class="ad-secao-title">Visão geral</h2>
         <div class="ad-cards">
           <div class="ad-card primary">
@@ -241,7 +270,9 @@
             </div>
           </div>
         </div>
+        </div>
 
+        <div class="ad-stat-group">
         <h2 class="ad-secao-title">Campeonatos</h2>
         <div class="ad-cards">
           <div class="ad-card primary">
@@ -266,7 +297,50 @@
             </div>
           </div>
         </div>
+        </div>
 
+        <div class="ad-stat-group">
+        <h2 class="ad-secao-title">Rachas (peladas)</h2>
+        <div class="ad-cards">
+          <div class="ad-card primary" (click)="selecionarSecao('rachas')" style="cursor:pointer">
+            <div class="ad-card-icon"><ion-icon name="football-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.totalRachasDocs }}</div>
+              <div class="ad-card-label">Total no sistema</div>
+            </div>
+          </div>
+          <div class="ad-card success">
+            <div class="ad-card-icon"><ion-icon name="play-circle-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.rachasAtivos }}</div>
+              <div class="ad-card-label">Ativos</div>
+            </div>
+          </div>
+          <div class="ad-card">
+            <div class="ad-card-icon"><ion-icon name="eye-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.rachasPublicos }}</div>
+              <div class="ad-card-label">Públicos</div>
+            </div>
+          </div>
+          <div class="ad-card">
+            <div class="ad-card-icon"><ion-icon name="star-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ (s.rachasPorPlano.premium || 0) + (s.rachasPorPlano.pro || 0) }}</div>
+              <div class="ad-card-label">Rachas pagos (Premium/PRO)</div>
+            </div>
+          </div>
+          <div class="ad-card">
+            <div class="ad-card-icon"><ion-icon name="heart-outline"></ion-icon></div>
+            <div class="ad-card-body">
+              <div class="ad-card-num">{{ s.seguidoresRacha }}</div>
+              <div class="ad-card-label">Seguidores (somados)</div>
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <div class="ad-stat-group">
         <h2 class="ad-secao-title">Atividade do sistema</h2>
         <div class="ad-cards">
           <div class="ad-card">
@@ -305,7 +379,109 @@
             </div>
           </div>
         </div>
+        </div><!-- /ad-stat-group -->
+      </div><!-- /ad-stats-2col -->
       </ng-container>
+
+      <!-- ============ GRÁFICOS ============ -->
+      <h2 class="ad-secao-title">Gráficos</h2>
+      <div class="ad-charts">
+        <!-- Receita dos últimos 12 meses (barras verticais) -->
+        <div class="ad-chart-card wide" *ngIf="financeiro$ | async as f">
+          <div class="ad-chart-head">
+            <ion-icon name="trending-up-outline"></ion-icon>
+            <strong>Receita (12 meses)</strong>
+            <small>Total recebido: {{ formatarCentavos(f.receitaTotal) }}</small>
+          </div>
+          <div class="ad-vbars">
+            <div class="ad-vbar" *ngFor="let m of f.mesesGrafico" [title]="m.label + ': ' + formatarCentavos(m.valorCentavos)">
+              <div class="ad-vbar-fill" [style.height.%]="m.altura"></div>
+              <span class="ad-vbar-lbl">{{ m.label }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Donut: usuários por tipo -->
+        <div class="ad-chart-card" *ngIf="usuariosChart$ | async as d">
+          <div class="ad-chart-head">
+            <ion-icon name="people-outline"></ion-icon>
+            <strong>Usuários por tipo</strong>
+          </div>
+          <div class="ad-donut-wrap">
+            <div class="ad-donut" [style.background]="d.gradient">
+              <div class="ad-donut-center"><strong>{{ d.total }}</strong><span>total</span></div>
+            </div>
+            <div class="ad-legenda">
+              <div class="ad-legenda-item" *ngFor="let l of d.legenda">
+                <span class="dot" [style.background]="l.cor"></span>
+                <span class="lbl">{{ l.label }}</span>
+                <span class="val">{{ l.valor }}</span>
+                <span class="pct">{{ l.pct }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Donut: campeonatos público × privado -->
+        <div class="ad-chart-card" *ngIf="campChart$ | async as d">
+          <div class="ad-chart-head">
+            <ion-icon name="trophy-outline"></ion-icon>
+            <strong>Campeonatos</strong>
+          </div>
+          <div class="ad-donut-wrap">
+            <div class="ad-donut" [style.background]="d.gradient">
+              <div class="ad-donut-center"><strong>{{ d.total }}</strong><span>total</span></div>
+            </div>
+            <div class="ad-legenda">
+              <div class="ad-legenda-item" *ngFor="let l of d.legenda">
+                <span class="dot" [style.background]="l.cor"></span>
+                <span class="lbl">{{ l.label }}</span>
+                <span class="val">{{ l.valor }}</span>
+                <span class="pct">{{ l.pct }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Donut: rachas por plano -->
+        <div class="ad-chart-card" *ngIf="rachaPlanoChart$ | async as d">
+          <div class="ad-chart-head">
+            <ion-icon name="football-outline"></ion-icon>
+            <strong>Rachas por plano</strong>
+          </div>
+          <div class="ad-donut-wrap">
+            <div class="ad-donut" [style.background]="d.gradient">
+              <div class="ad-donut-center"><strong>{{ d.total }}</strong><span>rachas</span></div>
+            </div>
+            <div class="ad-legenda">
+              <div class="ad-legenda-item" *ngFor="let l of d.legenda">
+                <span class="dot" [style.background]="l.cor"></span>
+                <span class="lbl">{{ l.label }}</span>
+                <span class="val">{{ l.valor }}</span>
+                <span class="pct">{{ l.pct }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barras: distribuição de planos de campeonato (por usuários) -->
+        <div class="ad-chart-card" *ngIf="planosCampBars$ | async as bars">
+          <div class="ad-chart-head">
+            <ion-icon name="card-outline"></ion-icon>
+            <strong>Planos de campeonato</strong>
+            <small>usuários por plano</small>
+          </div>
+          <div class="ad-bars">
+            <div class="ad-bar-row" *ngFor="let b of bars">
+              <span class="ad-bar-lbl">{{ b.label }}</span>
+              <div class="ad-bar-track">
+                <div class="ad-bar-fill" [style.width.%]="b.pct" [style.background]="b.cor"></div>
+              </div>
+              <span class="ad-bar-val">{{ b.valor }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- ============ TOPS — Organizadores + Campeonatos ============ -->
       <div class="ad-tops-grid">
@@ -732,6 +908,131 @@
       </ng-container>
     </section>
 
+    <!-- ============ Seção: RACHAS ============ -->
+    <section class="ad-secao" *ngIf="secao === 'rachas'">
+      <div class="ad-secao-head">
+        <h2 class="ad-secao-title">Todos os rachas (peladas)</h2>
+        <div class="ad-busca">
+          <ion-icon name="search-outline"></ion-icon>
+          <input
+            type="text"
+            placeholder="Buscar por nome, dono, local, cidade..."
+            (input)="onBuscaRachas($any($event))"
+          />
+        </div>
+      </div>
+
+      <!-- Cards de contagem por plano de racha -->
+      <div class="ad-planos-cards" *ngIf="contagemRachaPlanos$ | async as cont">
+        <div class="ad-plano-card gratis">
+          <div class="ad-plano-card-num">{{ cont.gratis }}</div>
+          <div class="ad-plano-card-lbl">Gratuito</div>
+        </div>
+        <div class="ad-plano-card premium">
+          <div class="ad-plano-card-num">{{ cont.premium }}</div>
+          <div class="ad-plano-card-lbl">Premium</div>
+        </div>
+        <div class="ad-plano-card pro">
+          <div class="ad-plano-card-num">{{ cont.pro }}</div>
+          <div class="ad-plano-card-lbl">Premium PRO</div>
+        </div>
+      </div>
+
+      <!-- Filtros: status + plano + visibilidade -->
+      <div class="ad-filtros">
+        <div class="ad-filtros-grupo">
+          <span class="ad-filtros-lbl">Status:</span>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroStatusRacha === 'todos'"     (click)="selecionarFiltroStatusRacha('todos')">Todos</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroStatusRacha === 'ativo'"      (click)="selecionarFiltroStatusRacha('ativo')">Ativos</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroStatusRacha === 'rascunho'"   (click)="selecionarFiltroStatusRacha('rascunho')">Rascunho</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroStatusRacha === 'pausado'"    (click)="selecionarFiltroStatusRacha('pausado')">Pausados</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroStatusRacha === 'encerrado'"  (click)="selecionarFiltroStatusRacha('encerrado')">Encerrados</button>
+        </div>
+        <div class="ad-filtros-grupo">
+          <span class="ad-filtros-lbl">Plano:</span>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroPlanoRacha === 'todos'"   (click)="selecionarFiltroPlanoRacha('todos')">Todos</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroPlanoRacha === 'gratis'"  (click)="selecionarFiltroPlanoRacha('gratis')">Gratuito</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroPlanoRacha === 'premium'" (click)="selecionarFiltroPlanoRacha('premium')">Premium</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroPlanoRacha === 'pro'"     (click)="selecionarFiltroPlanoRacha('pro')">PRO</button>
+        </div>
+        <div class="ad-filtros-grupo">
+          <span class="ad-filtros-lbl">Visibilidade:</span>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroVisibilidadeRacha === 'todos'"   (click)="selecionarFiltroVisibilidadeRacha('todos')">Todos</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroVisibilidadeRacha === 'publico'" (click)="selecionarFiltroVisibilidadeRacha('publico')">Públicos</button>
+          <button type="button" class="ad-filtro-chip" [class.ativo]="filtroVisibilidadeRacha === 'privado'" (click)="selecionarFiltroVisibilidadeRacha('privado')">Privados</button>
+        </div>
+      </div>
+
+      <ng-container *ngIf="rachasFiltrados$ | async as linhas">
+        <div class="ad-vazio" *ngIf="linhas.length === 0">
+          <ion-icon name="football-outline"></ion-icon>
+          <p>Nenhum racha encontrado.</p>
+        </div>
+
+        <div class="ad-grid" *ngIf="linhas.length > 0">
+          <div class="ad-camp-card" *ngFor="let l of linhas; trackBy: trackByRacha">
+            <div
+              class="ad-camp-cover"
+              [style.backgroundImage]="l.racha.capaUrl ? 'url(' + l.racha.capaUrl + ')' : null"
+            >
+              <span class="ad-camp-status" [class.privado]="l.racha.visibilidade !== 'publico'">
+                <ion-icon [name]="l.racha.visibilidade === 'publico' ? 'eye' : 'lock-closed'"></ion-icon>
+                {{ l.racha.visibilidade === 'publico' ? 'Público' : 'Privado' }}
+              </span>
+              <span class="ad-racha-plano-tag" [ngClass]="l.racha.plano || 'gratis'">
+                {{ labelPlanoRacha(l.racha.plano) }}
+              </span>
+              <div class="ad-camp-logo">
+                <img *ngIf="l.racha.logoUrl; else iconR" [src]="l.racha.logoUrl" [alt]="l.racha.nome" loading="lazy" />
+                <ng-template #iconR><ion-icon name="football-outline"></ion-icon></ng-template>
+              </div>
+            </div>
+            <div class="ad-camp-body">
+              <div class="ad-camp-titulo">{{ l.racha.nome }}</div>
+              <div class="ad-camp-meta">
+                <ion-icon name="person-circle-outline"></ion-icon>
+                {{ l.donoNome || l.racha.ownerId }}
+              </div>
+              <div class="ad-camp-meta" *ngIf="l.racha.local || l.racha.municipio">
+                <ion-icon name="location-outline"></ion-icon>
+                {{ l.racha.local }}{{ l.racha.local && l.racha.municipio ? ' · ' : '' }}{{ l.racha.municipio }}
+              </div>
+              <div class="ad-camp-meta" *ngIf="l.racha.criadoEm">
+                <ion-icon name="calendar-outline"></ion-icon>
+                Criado em {{ formatarDataTs(l.racha.criadoEm) }}
+              </div>
+
+              <!-- Gestão inline: status + plano -->
+              <div class="ad-racha-controls">
+                <label class="ad-racha-ctrl">
+                  <span>Status</span>
+                  <select [ngModel]="l.racha.status || 'rascunho'" (ngModelChange)="alterarStatusRacha(l.racha.id!, $any($event))">
+                    <option *ngFor="let o of opcoesStatusRacha" [value]="o.id">{{ o.label }}</option>
+                  </select>
+                </label>
+                <label class="ad-racha-ctrl">
+                  <span>Plano</span>
+                  <select [ngModel]="l.racha.plano || 'gratis'" (ngModelChange)="alterarPlanoRacha(l.racha.id!, $any($event))">
+                    <option *ngFor="let o of opcoesPlanoRacha" [value]="o.id">{{ o.label }}</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div class="ad-camp-foot">
+              <span class="ad-camp-seguidores">
+                <ion-icon name="heart-outline"></ion-icon>
+                {{ l.racha.seguidores ?? 0 }}
+              </span>
+              <button type="button" class="ad-btn-abrir" (click)="abrirRacha(l.racha)">
+                <ion-icon name="open-outline"></ion-icon>
+                Abrir como dono
+              </button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </section>
+
     <!-- ============ Seção: INSCRIÇÕES ============ -->
     <section class="ad-secao" *ngIf="secao === 'inscricoes'">
       <div class="ad-secao-head">
@@ -787,7 +1088,19 @@
 
     <!-- ============ Seção: PLANOS (gerencia plano de cada usuário) ============ -->
     <section class="ad-secao" *ngIf="secao === 'planos'">
-      <h2 class="ad-secao-title">Distribuição de planos</h2>
+      <!-- Sub-abas: Campeonatos × Racha -->
+      <div class="ad-subtabs">
+        <button type="button" class="ad-subtab" [class.on]="abaPlanos === 'campeonatos'" (click)="selecionarAbaPlanos('campeonatos')">
+          <ion-icon name="trophy-outline"></ion-icon> Campeonatos
+        </button>
+        <button type="button" class="ad-subtab" [class.on]="abaPlanos === 'racha'" (click)="selecionarAbaPlanos('racha')">
+          <ion-icon name="football-outline"></ion-icon> Racha
+        </button>
+      </div>
+
+      <!-- ===== ABA CAMPEONATOS ===== -->
+      <div [hidden]="abaPlanos !== 'campeonatos'">
+      <h2 class="ad-secao-title">Distribuição de planos — Campeonatos</h2>
       <ng-container *ngIf="contagemPlanos$ | async as ct">
         <div class="ad-planos-cards">
           <div class="ad-plano-card" *ngFor="let p of catalogoPlanos" [style.--cor]="p.cor">
@@ -870,6 +1183,70 @@
           </div>
         </div>
       </ng-container>
+      </div><!-- /aba campeonatos -->
+
+      <!-- ===== ABA RACHA ===== -->
+      <div [hidden]="abaPlanos !== 'racha'">
+        <h2 class="ad-secao-title">Distribuição de planos — Racha</h2>
+        <div class="ad-planos-cards" *ngIf="contagemRachaPlanos$ | async as cont">
+          <div class="ad-plano-card gratis" style="--cor:#94a3b8">
+            <div class="ad-plano-head"><span class="ad-plano-label">Gratuito</span></div>
+            <div class="ad-plano-cont"><div class="num">{{ cont.gratis }}</div><div class="lbl">rachas</div></div>
+          </div>
+          <div class="ad-plano-card premium" style="--cor:#14b8a6">
+            <div class="ad-plano-head"><span class="ad-plano-label">Premium</span></div>
+            <div class="ad-plano-cont"><div class="num">{{ cont.premium }}</div><div class="lbl">rachas</div></div>
+          </div>
+          <div class="ad-plano-card pro" style="--cor:#16a34a">
+            <div class="ad-plano-head"><span class="ad-plano-label">Premium PRO</span></div>
+            <div class="ad-plano-cont"><div class="num">{{ cont.pro }}</div><div class="lbl">rachas</div></div>
+          </div>
+        </div>
+
+        <div class="ad-secao-head" style="margin-top: 22px;">
+          <h2 class="ad-secao-title">Plano de cada racha</h2>
+          <div class="ad-busca">
+            <ion-icon name="search-outline"></ion-icon>
+            <input type="text" placeholder="Buscar por nome, dono, local..." (input)="onBuscaRachas($any($event))" />
+          </div>
+        </div>
+
+        <ng-container *ngIf="rachasFiltrados$ | async as linhas">
+          <div class="ad-vazio" *ngIf="linhas.length === 0">
+            <ion-icon name="football-outline"></ion-icon>
+            <p>Nenhum racha encontrado.</p>
+          </div>
+          <div class="ad-table planos" *ngIf="linhas.length > 0">
+            <div class="ad-thead">
+              <div class="th">Racha</div>
+              <div class="th">Dono</div>
+              <div class="th">Plano atual</div>
+              <div class="th">Alterar para</div>
+            </div>
+            <div class="ad-tr" *ngFor="let l of linhas; trackBy: trackByRacha">
+              <div class="td">
+                <div class="ad-nome">{{ l.racha.nome || '(sem nome)' }}</div>
+                <div class="ad-uid">{{ labelStatusRacha(l.racha.status) }}</div>
+              </div>
+              <div class="td">{{ l.donoNome || l.donoEmail || l.racha.ownerId }}</div>
+              <div class="td">
+                <span class="ad-plano-chip ad-racha-plano-tag" [ngClass]="l.racha.plano || 'gratis'">
+                  {{ labelPlanoRacha(l.racha.plano) }}
+                </span>
+              </div>
+              <div class="td">
+                <select
+                  class="ad-plano-select"
+                  [ngModel]="l.racha.plano || 'gratis'"
+                  (ngModelChange)="alterarPlanoRacha(l.racha.id!, $any($event))"
+                >
+                  <option *ngFor="let o of opcoesPlanoRacha" [value]="o.id">{{ o.label }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div><!-- /aba racha -->
     </section>
 
     <!-- ============ Seção: VALORES (preços/limites/créditos) ============ -->
@@ -929,6 +1306,40 @@
                     <ion-icon [name]="c.icon"></ion-icon> {{ c.label }}
                   </span>
                   <input type="number" step="1" [(ngModel)]="f.limites[c.key]" />
+                </label>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- ===== Bloco: PLANOS DO RACHA ===== -->
+      <div class="ad-val-bloco-titulo">
+        <ion-icon name="football-outline"></ion-icon>
+        <span>Planos do Racha (pelada)</span>
+        <small>Preços separados dos campeonatos — válidos por racha</small>
+      </div>
+
+      <div class="ad-val-planos">
+        <div class="ad-val-card ad-val-plano" *ngFor="let p of valoresRachaPlanos"
+          [hidden]="!valoresForm.rachaPlanos[p.id]" [style.--cor]="p.cor">
+          <div class="ad-val-plano-bar"></div>
+          <div class="ad-val-plano-head">
+            <div class="ad-val-plano-ic"><ion-icon [name]="p.icon"></ion-icon></div>
+            <h3>{{ p.label }}</h3>
+            <span class="ad-val-plano-badge">Pago</span>
+          </div>
+
+          <ng-container *ngIf="valoresForm.rachaPlanos[p.id] as f">
+            <div class="ad-val-grupo">
+              <span class="ad-val-grupo-titulo">
+                <ion-icon name="cash-outline"></ion-icon> Preços por período
+              </span>
+              <div class="ad-val-grid">
+                <label class="ad-val-field money" *ngFor="let c of camposPreco">
+                  <span class="ad-val-lbl">{{ c.label }}</span>
+                  <input brlMask type="text" inputmode="numeric"
+                    [(ngModel)]="f.precos[c.key]" />
                 </label>
               </div>
             </div>
@@ -1119,6 +1530,28 @@
       </div>
 
       <!-- Filtros + Busca -->
+      <!-- Filtro de ORIGEM: separa cobranças de campeonato × racha -->
+      <div class="ad-cobr-chips ad-cobr-origem">
+        <button
+          class="ad-cobr-chip"
+          type="button"
+          [class.on]="filtroOrigemCobranca === 'todas'"
+          (click)="selecionarFiltroOrigemCobranca('todas')"
+        ><ion-icon name="layers-outline"></ion-icon> Todas as origens</button>
+        <button
+          class="ad-cobr-chip"
+          type="button"
+          [class.on]="filtroOrigemCobranca === 'campeonato'"
+          (click)="selecionarFiltroOrigemCobranca('campeonato')"
+        ><ion-icon name="trophy-outline"></ion-icon> Campeonatos</button>
+        <button
+          class="ad-cobr-chip"
+          type="button"
+          [class.on]="filtroOrigemCobranca === 'racha'"
+          (click)="selecionarFiltroOrigemCobranca('racha')"
+        ><ion-icon name="football-outline"></ion-icon> Racha</button>
+      </div>
+
       <div class="ad-cobr-toolbar">
         <div class="ad-cobr-chips">
           <button
@@ -1213,9 +1646,15 @@
             <div class="ad-cobr-info">
               <strong>{{ c.usuarioNome || c.usuarioId }}</strong>
               <span *ngIf="c.usuarioEmail">{{ c.usuarioEmail }}</span>
+              <span *ngIf="c.tipo === 'racha-assinatura' && c.rachaNome" class="ad-cobr-racha">
+                <ion-icon name="football-outline"></ion-icon> {{ c.rachaNome }}
+              </span>
             </div>
             <div class="ad-cobr-meta">
-              <span class="ad-cobr-tag">{{ c.planoId | titlecase }}</span>
+              <span class="ad-cobr-tag" [class.racha]="c.tipo === 'racha-assinatura'">
+                <ion-icon *ngIf="c.tipo === 'racha-assinatura'" name="football-outline"></ion-icon>
+                {{ c.tipo === 'racha-assinatura' ? 'Racha · ' : '' }}{{ nomePlanoCobranca(c) }}
+              </span>
               <span class="ad-cobr-tag">{{ labelPeriodicidade(c.periodicidade) }}</span>
               <span class="ad-cobr-venc">
                 <ion-icon name="calendar-outline"></ion-icon>
@@ -1264,6 +1703,30 @@
             <div class="ad-fin-kpi-label">Pagantes</div>
             <div class="ad-fin-kpi-valor">{{ f.totalPagantes }}</div>
             <div class="ad-fin-kpi-sub">Usuários com pagamento</div>
+          </div>
+        </div>
+
+        <!-- Split de receita por origem: Campeonatos × Racha -->
+        <div class="ad-fin-split">
+          <div class="ad-fin-split-card campeonatos">
+            <div class="ad-fin-split-head">
+              <ion-icon name="trophy-outline"></ion-icon> Campeonatos
+            </div>
+            <div class="ad-fin-split-rows">
+              <div><span>MRR</span><strong>{{ formatarCentavos(f.mrrCampeonatos) }}</strong></div>
+              <div><span>ARR</span><strong>{{ formatarCentavos(f.arrCampeonatos) }}</strong></div>
+              <div><span>Receita total</span><strong>{{ formatarCentavos(f.receitaCampeonatos) }}</strong></div>
+            </div>
+          </div>
+          <div class="ad-fin-split-card racha">
+            <div class="ad-fin-split-head">
+              <ion-icon name="football-outline"></ion-icon> Racha
+            </div>
+            <div class="ad-fin-split-rows">
+              <div><span>MRR</span><strong>{{ formatarCentavos(f.mrrRachas) }}</strong></div>
+              <div><span>ARR</span><strong>{{ formatarCentavos(f.arrRachas) }}</strong></div>
+              <div><span>Receita total</span><strong>{{ formatarCentavos(f.receitaRachas) }}</strong></div>
+            </div>
           </div>
         </div>
 
@@ -1411,6 +1874,26 @@
             Adicionar
           </button>
         </div>
+      </div>
+
+      <!-- Kill switch global da transmissão ao vivo -->
+      <div class="ad-cfg-card">
+        <h3 class="ad-cfg-titulo">
+          <ion-icon name="radio-outline"></ion-icon>
+          Transmissão ao vivo
+        </h3>
+        <label class="ad-cfg-toggle">
+          <input type="checkbox" [(ngModel)]="configForm.transmissoesHabilitadas" />
+          <span>Transmissão ao vivo habilitada no sistema</span>
+        </label>
+        <p class="ad-cfg-hint" [class.alerta]="!configForm.transmissoesHabilitadas">
+          <ion-icon
+            [name]="configForm.transmissoesHabilitadas ? 'checkmark-circle-outline' : 'warning-outline'"
+          ></ion-icon>
+          {{ configForm.transmissoesHabilitadas
+            ? 'Organizadores podem iniciar transmissões e os espectadores assistem normalmente.'
+            : 'DESLIGADO: ninguém consegue iniciar transmissões e qualquer transmissão ativa some pra todos os espectadores (app + páginas públicas).' }}
+        </p>
       </div>
 
       <!-- Modo manutenção + Asaas URL -->

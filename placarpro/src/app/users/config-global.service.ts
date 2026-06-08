@@ -30,6 +30,13 @@ export interface ConfigGlobal {
   mensagemManutencao?: string;
   /** URL base do Asaas para gerar cobranças. */
   asaasUrl?: string;
+  /**
+   * Liga/desliga TODA a transmissão ao vivo do sistema (kill switch global).
+   * Quando `false`: ninguém consegue iniciar novas transmissões E qualquer
+   * transmissão ativa some pra todos os espectadores (app + páginas públicas).
+   * Default `true` (transmissão habilitada).
+   */
+  transmissoesHabilitadas?: boolean;
   /** Auditoria. */
   atualizadoEm?: Timestamp;
   atualizadoPor?: string;
@@ -52,6 +59,15 @@ export class ConfigGlobalService {
         }),
       );
     });
+  }
+
+  /**
+   * Stream booleano do kill switch global de transmissão ao vivo.
+   * `true` = habilitada (default), `false` = desabilitada pelo admin.
+   * Atalho sobre `config$()` pra quem só precisa dessa flag.
+   */
+  transmissoesHabilitadas$(): Observable<boolean> {
+    return this.config$().pipe(map(c => c.transmissoesHabilitadas !== false));
   }
 
   /** Atualiza o doc de config. Admin master only (rules garantem). */
@@ -83,6 +99,7 @@ export class ConfigGlobalService {
       modoManutencao: c?.modoManutencao ?? false,
       mensagemManutencao: c?.mensagemManutencao ?? '',
       asaasUrl: c?.asaasUrl ?? 'https://www.asaas.com',
+      transmissoesHabilitadas: c?.transmissoesHabilitadas ?? true,
       atualizadoEm: c?.atualizadoEm,
       atualizadoPor: c?.atualizadoPor,
     };

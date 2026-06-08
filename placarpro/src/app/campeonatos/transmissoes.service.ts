@@ -19,11 +19,12 @@ import {
   updateDoc,
   where,
 } from '@angular/fire/firestore';
-import { Observable, catchError, map, of } from 'rxjs';
+import { Observable, catchError, map, of, switchMap } from 'rxjs';
 import {
   NovaTransmissaoInput,
   Transmissao,
 } from './models/transmissao.model';
+import { ConfigGlobalService } from '../users/config-global.service';
 
 /**
  * CRUD + queries da coleção de transmissões ao vivo.
@@ -46,6 +47,7 @@ import {
 export class TransmissoesService {
   private readonly fs = inject(Firestore);
   private readonly injector = inject(Injector);
+  private readonly configSrv = inject(ConfigGlobalService);
 
   private col(campeonatoId: string, categoriaId: string, jogoId: string): CollectionReference<Transmissao> {
     return collection(
@@ -103,6 +105,18 @@ export class TransmissoesService {
 
   ativa$(campeonatoId: string, categoriaId: string, jogoId: string): Observable<Transmissao | null> {
     if (!campeonatoId || !categoriaId || !jogoId) return of(null);
+    // Kill switch global: quando o admin desliga a transmissão ao vivo do
+    // sistema, NENHUM player aparece — mesmo pra transmissões já no ar.
+    return this.configSrv.transmissoesHabilitadas$().pipe(
+      switchMap(habilitada => {
+        if (!habilitada) return of(null);
+        return this.ativaRaw$(campeonatoId, categoriaId, jogoId);
+      }),
+    );
+  }
+
+  /** Implementação interna do `ativa$` (sem o gate global). */
+  private ativaRaw$(campeonatoId: string, categoriaId: string, jogoId: string): Observable<Transmissao | null> {
     return runInInjectionContext(this.injector, () => {
       const q = query(
         this.col(campeonatoId, categoriaId, jogoId),
@@ -438,6 +452,14 @@ export class TransmissoesService {
   }
 
   todasAtivas$(): Observable<Transmissao[]> {
+    // Kill switch global: desligado → lista vazia (some "Ao Vivo Agora").
+    return this.configSrv.transmissoesHabilitadas$().pipe(
+      switchMap(habilitada => (habilitada ? this.todasAtivasRaw$() : of([] as Transmissao[]))),
+    );
+  }
+
+  /** Implementação interna do `todasAtivas$` (sem o gate global). */
+  private todasAtivasRaw$(): Observable<Transmissao[]> {
     return runInInjectionContext(this.injector, () => {
       const q = query(
         collectionGroup(this.fs, 'transmissoes'),

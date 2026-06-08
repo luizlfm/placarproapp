@@ -380,7 +380,7 @@
                 <div class="capa-overlay"></div>
 
                 <!-- Badge AO VIVO — vermelho pulsante, canto superior direito. -->
-                <div class="capa-ao-vivo" *ngIf="c.transmissaoLiveAtiva">
+                <div class="capa-ao-vivo" *ngIf="c.transmissaoLiveAtiva && (transmissoesAtivas$ | async)">
                   <span class="dot"></span>
                   AO VIVO
                 </div>
@@ -429,7 +429,7 @@
               <!-- Botão ASSISTIR AO VIVO — só quando transmissão ativa.
                    Stop propagation pra não abrir a home do campeonato. -->
               <div
-                *ngIf="c.transmissaoLiveAtiva"
+                *ngIf="c.transmissaoLiveAtiva && (transmissoesAtivas$ | async)"
                 class="camp-card-assistir"
                 (click)="assistirAoVivo(c, $event)"
                 role="button"

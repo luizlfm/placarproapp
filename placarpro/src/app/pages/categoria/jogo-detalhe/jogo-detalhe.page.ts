@@ -44,6 +44,7 @@ import {
   PermissoesEfetivas,
 } from '../../../shared/moderador-permissoes.service';
 import { PlanosService } from '../../../users/planos.service';
+import { ConfigGlobalService } from '../../../users/config-global.service';
 import { PwaInstallService } from '../../../shared/pwa-install.service';
 import {
   precisaTutorialPwaIos,
@@ -93,6 +94,7 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
   private readonly navBack = inject(NavBackService);
   private readonly modPerms = inject(ModeradorPermissoesService);
   private readonly planosSrv = inject(PlanosService);
+  private readonly configSrv = inject(ConfigGlobalService);
   private readonly transmissoesSrv = inject(TransmissoesService);
   private readonly pwaInstall = inject(PwaInstallService);
   private readonly patrSrv = inject(PatrociniosService);
@@ -1005,6 +1007,18 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
    * `transmissaoLiveAtiva$` e mostra o player.
    */
   async iniciarTransmissaoLive(): Promise<void> {
+    // ── KILL SWITCH GLOBAL ──
+    // Admin desligou a transmissão ao vivo do sistema → nem abre a câmera.
+    const habilitada = await firstValueFrom(this.configSrv.transmissoesHabilitadas$());
+    if (!habilitada) {
+      const t = await this.toastCtrl.create({
+        message: 'Transmissão ao vivo temporariamente indisponível.',
+        duration: 2800, position: 'top', color: 'warning',
+      });
+      await t.present();
+      return;
+    }
+
     // ── Já existe transmissão ativa? ──
     // Pode ter sido iniciada em OUTRO dispositivo. Não deixa abrir outra
     // (evita duplicar/conflitar) — apenas informa o estado.

@@ -203,79 +203,82 @@
 }
 
 /* ============ Cards do Dashboard ============ */
+/* Cards compactos do dashboard — grid denso de mini-KPIs. */
 .ad-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 14px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
 
-  /* Em mobile, 2 cards por linha (mais compacto) — antes ficava 1 por
-     linha porque o minmax 220px não cabia em 380px de viewport. */
   @media (max-width: 600px) {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-bottom: 18px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
   }
 }
 
 .ad-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 18px;
+  gap: 9px;
+  padding: 10px 11px;
   background: #fff;
-  border-radius: 14px;
+  border-radius: 11px;
   border: 1px solid #eef0f3;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   transition: transform 120ms ease, box-shadow 120ms ease;
 
-  &:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); }
+  &:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07); }
 
-  /* Mobile: cards mais compactos pra caber 2 por linha sem cortar. */
   @media (max-width: 600px) {
-    padding: 12px;
-    gap: 10px;
-    border-radius: 12px;
+    padding: 9px;
+    gap: 7px;
+    border-radius: 10px;
   }
 
   .ad-card-icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 12px;
-    background: rgba(0, 0, 0, 0.08);
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.07);
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--ion-color-primary, #000000);
     flex-shrink: 0;
-    ion-icon { font-size: 28px; }
+    ion-icon { font-size: 19px; }
 
     @media (max-width: 600px) {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
-      ion-icon { font-size: 20px; }
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      ion-icon { font-size: 17px; }
     }
   }
+  /* Permite o texto encolher/quebrar dentro do flex (senão a palavra
+     longa transborda e corta, ex.: "ORGANIZADORES"). */
+  .ad-card-body { min-width: 0; flex: 1 1 auto; }
+
   .ad-card-num {
-    font-size: 26px;
+    font-size: 19px;
     font-weight: 800;
-    line-height: 1.1;
+    line-height: 1.05;
     color: var(--placar-text, #2d2d2d);
 
-    @media (max-width: 600px) { font-size: 20px; }
+    @media (max-width: 600px) { font-size: 17px; }
   }
   .ad-card-label {
-    font-size: 12.5px;
+    font-size: 10px;
     color: var(--ion-color-medium);
-    margin-top: 3px;
+    margin-top: 1px;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.2px;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
 
-    @media (max-width: 600px) {
-      font-size: 10px;
-      letter-spacing: 0.2px;
-    }
+    @media (max-width: 600px) { font-size: 9px; }
   }
 
   &.primary .ad-card-icon {
@@ -290,6 +293,121 @@
     background: rgba(255, 196, 9, 0.18);
     color: #e9a800;
   }
+}
+
+/* ============ Gráficos do Dashboard ============ */
+.ad-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin: 8px 0 24px;
+}
+.ad-chart-card {
+  background: #fff;
+  border: 1px solid #eef0f3;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+.ad-chart-card.wide { grid-column: 1 / -1; }
+.ad-chart-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 14px;
+  ion-icon { font-size: 17px; color: var(--ion-color-medium); }
+  strong { font-size: 14px; }
+  small { margin-left: auto; color: var(--ion-color-medium); font-size: 11.5px; }
+}
+
+/* Donut + legenda */
+.ad-donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.ad-donut {
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 26px;
+    background: #fff;
+    border-radius: 50%;
+  }
+  .ad-donut-center {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    strong { display: block; font-size: 22px; font-weight: 800; line-height: 1; }
+    span { font-size: 9.5px; color: var(--ion-color-medium); text-transform: uppercase; letter-spacing: 0.3px; }
+  }
+}
+.ad-legenda {
+  flex: 1 1 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 130px;
+}
+.ad-legenda-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  .dot { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 auto; }
+  .lbl { color: var(--placar-text, #2d2d2d); }
+  .val { margin-left: auto; font-weight: 800; }
+  .pct { color: var(--ion-color-medium); font-size: 11px; min-width: 34px; text-align: right; }
+}
+
+/* Barras horizontais */
+.ad-bars { display: flex; flex-direction: column; gap: 10px; }
+.ad-bar-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 34px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  .ad-bar-lbl { color: var(--placar-text, #2d2d2d); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ad-bar-track { height: 12px; background: #f1f3f5; border-radius: 999px; overflow: hidden; }
+  .ad-bar-fill { height: 100%; border-radius: 999px; transition: width 300ms ease; min-width: 3px; }
+  .ad-bar-val { font-weight: 800; text-align: right; }
+}
+
+/* Barras verticais (receita mensal) */
+.ad-vbars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 150px;
+  padding-top: 8px;
+}
+.ad-vbar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 4px;
+  .ad-vbar-fill {
+    width: 100%;
+    max-width: 30px;
+    background: linear-gradient(180deg, #7CC61D, #16a34a);
+    border-radius: 5px 5px 0 0;
+    min-height: 2px;
+    transition: height 300ms ease;
+  }
+  .ad-vbar-lbl { font-size: 9px; color: var(--ion-color-medium); white-space: nowrap; }
 }
 
 /* ============ Tabela (Usuários, Inscrições) ============ */
@@ -1212,6 +1330,26 @@
     color: var(--placar-text-muted);
     font-size: 12px;
   }
+  .ad-cobr-racha {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+    color: #16a34a;
+    font-weight: 600;
+    ion-icon { font-size: 13px; }
+  }
+}
+
+/* Filtro de origem (campeonato × racha) */
+.ad-cobr-origem {
+  margin-bottom: 10px;
+  .ad-cobr-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    ion-icon { font-size: 14px; }
+  }
 }
 
 .ad-cobr-meta {
@@ -1230,6 +1368,15 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    ion-icon { font-size: 12px; }
+
+    &.racha {
+      background: rgba(22, 163, 74, 0.12);
+      color: #16a34a;
+    }
   }
   .ad-cobr-venc {
     display: inline-flex;
@@ -1563,6 +1710,18 @@
     font-size: 12.5px;
     color: var(--placar-text-muted);
     line-height: 1.4;
+
+    ion-icon {
+      vertical-align: -2px;
+      margin-right: 4px;
+      font-size: 14px;
+    }
+
+    // Estado "desligado" — destaca em vermelho que algo foi desativado.
+    &.alerta {
+      color: #c0392b;
+      font-weight: 600;
+    }
   }
 }
 
@@ -2531,4 +2690,193 @@
   background: var(--ion-color-secondary, #7CC61D);
   color: #fff;
   box-shadow: 0 6px 16px rgba(124, 198, 29, 0.35);
+}
+
+/* ============ Sub-abas (Planos: Campeonatos × Racha) ============ */
+.ad-subtabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid var(--placar-border, #e5e7eb);
+}
+.ad-subtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--placar-text-muted, #6b7280);
+  cursor: pointer;
+  ion-icon { font-size: 16px; }
+  &.on {
+    color: #16a34a;
+    border-bottom-color: #16a34a;
+  }
+}
+
+/* ============ Tag de plano do racha ============ */
+.ad-racha-plano-tag {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #fff;
+  background: #94a3b8;
+  &.premium { background: #14b8a6; }
+  &.pro { background: #16a34a; }
+  &.gratis { background: #94a3b8; }
+}
+/* quando usada como chip em tabela (não absoluta) */
+.ad-table .ad-racha-plano-tag {
+  position: static;
+}
+
+/* ============ Controles inline de gestão do racha ============ */
+.ad-racha-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ad-racha-ctrl {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  span {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--placar-text-muted, #6b7280);
+    letter-spacing: 0.3px;
+  }
+  select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--placar-border, #e5e7eb);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    background: #fff;
+  }
+}
+
+/* ============ Split financeiro (Campeonatos × Racha) ============ */
+.ad-fin-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 16px 0;
+}
+.ad-fin-split-card {
+  border: 1px solid var(--placar-border, #e5e7eb);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: #fff;
+  border-top: 4px solid #6b7280;
+  &.campeonatos { border-top-color: #f59e0b; }
+  &.racha { border-top-color: #16a34a; }
+}
+.ad-fin-split-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  font-size: 14px;
+  margin-bottom: 10px;
+  ion-icon { font-size: 18px; }
+}
+.ad-fin-split-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 13px;
+    span { color: var(--placar-text-muted, #6b7280); }
+    strong { font-weight: 800; font-size: 15px; }
+  }
+}
+
+@media (max-width: 640px) {
+  .ad-fin-split { grid-template-columns: 1fr; }
+}
+
+/* ============ Header do painel (logo + usuário + Sair) ============ */
+.ad-hd-logo {
+  height: 30px;
+  width: auto;
+  margin-left: 12px;
+  object-fit: contain;
+}
+.ad-hd-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 4px;
+}
+.ad-hd-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  img { width: 100%; height: 100%; object-fit: cover; }
+  span { color: #fff; font-weight: 800; font-size: 14px; }
+}
+.ad-hd-name {
+  color: #fff;
+  font-weight: 600;
+  font-size: 13.5px;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ad-hd-sair {
+  --color: #fff;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .ad-hd-name { display: none; }
+  .ad-hd-logo { height: 26px; margin-left: 8px; }
+}
+
+/* ============ Dashboard em 2 colunas (grupos de métricas) ============ */
+.ad-stats-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 22px;
+  align-items: start;
+  margin-bottom: 8px;
+
+  @media (max-width: 820px) {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+.ad-stat-group {
+  min-width: 0;
+  .ad-secao-title { margin-top: 6px; }
+  .ad-cards {
+    margin-bottom: 14px;
+    /* Dentro de cada coluna o espaço é menor → cards um pouco mais estreitos. */
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  }
 }

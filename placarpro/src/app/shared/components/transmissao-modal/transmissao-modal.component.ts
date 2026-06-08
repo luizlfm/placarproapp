@@ -29,6 +29,7 @@ import { LiveKitService } from '../../livekit/livekit.service';
 import { TransmissoesService } from '../../../campeonatos/transmissoes.service';
 import { CampeonatosService } from '../../../campeonatos/campeonatos.service';
 import { PlanosService } from '../../../users/planos.service';
+import { ConfigGlobalService } from '../../../users/config-global.service';
 import { INTERVALO_HEARTBEAT_MS } from '../../constants/transmissao.constants';
 
 /**
@@ -140,6 +141,7 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
   private readonly transmissoesSrv = inject(TransmissoesService);
   private readonly campeonatosSrv = inject(CampeonatosService);
   private readonly planosSrv = inject(PlanosService);
+  private readonly configSrv = inject(ConfigGlobalService);
   private readonly router = inject(Router);
 
   async ngAfterViewInit(): Promise<void> {
@@ -788,6 +790,15 @@ export class TransmissaoModalComponent implements AfterViewInit, OnDestroy {
     if (this.estado !== 'idle') return;
     if (!this.localVideoTrack || !this.localAudioTrack) {
       this.toast('Preview da câmera ainda não está pronto.', 'warning');
+      return;
+    }
+
+    // ── KILL SWITCH GLOBAL ──
+    // Se o admin desligou a transmissão ao vivo do sistema, ninguém inicia.
+    // Checado no chokepoint de TODOS os caminhos (antes de gastar crédito).
+    const habilitada = await firstValueFrom(this.configSrv.transmissoesHabilitadas$());
+    if (!habilitada) {
+      this.toast('Transmissão ao vivo temporariamente indisponível.', 'warning');
       return;
     }
 

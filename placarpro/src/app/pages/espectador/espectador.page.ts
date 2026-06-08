@@ -6,6 +6,7 @@ import { AuthService } from '../../auth/auth.service';
 import { ConvitesEquipeService, MeuConvite } from '../../campeonatos/convites-equipe.service';
 import { CampeonatosService } from '../../campeonatos/campeonatos.service';
 import { UsersService } from '../../users/users.service';
+import { ConfigGlobalService } from '../../users/config-global.service';
 import { Campeonato } from '../../campeonatos/campeonato.model';
 import { ToastController } from '@ionic/angular';
 
@@ -42,7 +43,15 @@ export class EspectadorPage implements OnInit, OnDestroy {
   private readonly convitesSrv = inject(ConvitesEquipeService);
   private readonly campsSrv = inject(CampeonatosService);
   private readonly usersSrv = inject(UsersService);
+  private readonly configSrv = inject(ConfigGlobalService);
   private readonly toastCtrl = inject(ToastController);
+
+  /** Kill switch global de transmissão — esconde badges "AO VIVO" e o
+   *  botão "Assistir" quando o admin desliga a transmissão do sistema. */
+  readonly transmissoesAtivas$ = this.configSrv.transmissoesHabilitadas$().pipe(
+    startWith(true),
+    catchError(() => of(true)),
+  );
 
   // Seção 1: convites
   cards: CardConvite[] = [];

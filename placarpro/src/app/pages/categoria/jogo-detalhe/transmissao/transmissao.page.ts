@@ -18,6 +18,7 @@ import { Transmissao } from '../../../../campeonatos/models/transmissao.model';
 import { PatrociniosService } from '../../../../campeonatos/patrocinios.service';
 import { UsersService } from '../../../../users/users.service';
 import { PlanosService } from '../../../../users/planos.service';
+import { ConfigGlobalService } from '../../../../users/config-global.service';
 import { NavBackService } from '../../../../shared/nav-back.service';
 import { ModeradorPermissoesService, PermissoesEfetivas } from '../../../../shared/moderador-permissoes.service';
 import { ModalController, ToastController, AlertController } from '@ionic/angular';
@@ -97,6 +98,7 @@ export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
   private readonly patrSrv = inject(PatrociniosService);
   private readonly usersSrv = inject(UsersService);
   private readonly planosSrv = inject(PlanosService);
+  private readonly configSrv = inject(ConfigGlobalService);
   private readonly navBack = inject(NavBackService);
   private readonly toastCtrl = inject(ToastController);
   private readonly modalCtrl = inject(ModalController);
@@ -671,6 +673,17 @@ export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
    * ver os controles (mute mic, cam toggle, stop).
    */
   async iniciarTransmissaoCamera(): Promise<void> {
+    // ── KILL SWITCH GLOBAL ──
+    // Admin desligou a transmissão ao vivo do sistema → nem abre a câmera.
+    const habilitada = await firstValueFrom(this.configSrv.transmissoesHabilitadas$());
+    if (!habilitada) {
+      const t = await this.toastCtrl.create({
+        message: 'Transmissão ao vivo temporariamente indisponível.',
+        duration: 2800, position: 'top', color: 'warning',
+      });
+      await t.present();
+      return;
+    }
     const rotulo = `${this.mandante?.nome ?? '?'} x ${this.visitante?.nome ?? '?'}`;
     const modal = await this.modalCtrl.create({
       component: TransmissaoModalComponent,

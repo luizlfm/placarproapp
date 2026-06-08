@@ -6,6 +6,7 @@ import { Campeonato } from '../../campeonatos/campeonato.model';
 import { CampeonatosService } from '../../campeonatos/campeonatos.service';
 import { AuthService } from '../../auth/auth.service';
 import { UsersService } from '../../users/users.service';
+import { ConfigGlobalService } from '../../users/config-global.service';
 
 @Component({
   selector: 'app-home-publica',
@@ -19,6 +20,14 @@ export class HomePublicaPage implements OnInit, OnDestroy {
   private readonly campSrv = inject(CampeonatosService);
   private readonly authSrv = inject(AuthService);
   private readonly usersSrv = inject(UsersService);
+  private readonly configSrv = inject(ConfigGlobalService);
+
+  /** Kill switch global de transmissão — esconde badges "AO VIVO" e o
+   *  botão "Assistir" quando o admin desliga a transmissão do sistema. */
+  readonly transmissoesAtivas$ = this.configSrv.transmissoesHabilitadas$().pipe(
+    startWith(true),
+    catchError(() => of(true)),
+  );
 
   /** Cache pra não rodar migração mais de uma vez por id. */
   private migrados = new Set<string>();
