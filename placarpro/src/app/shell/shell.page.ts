@@ -274,7 +274,10 @@ export class ShellPage {
         label: 'Apoios e Patrocinadores',
         icon: 'megaphone-outline',
         path: '/app/patrocinadores',
-        queryParams: { campeonatoId: id },
+        // Passa também o `categoriaId` pra o shell manter o menu da
+        // CATEGORIA (que num campeonato "único" É o menu do campeonato),
+        // em vez de cair pro menu global ao abrir patrocinadores.
+        queryParams: { campeonatoId: id, categoriaId: catId },
         requirePerm: 'editarCampeonato',
       });
     }
@@ -424,8 +427,18 @@ export class ShellPage {
     const queryCampId = this.extrairCampeonatoIdDaQuery(url);
     if (queryCampId) {
       this.campeonatoId.set(queryCampId);
-      this.categoriaId.set(null);
-      this.mode.set('campeonato');
+      // Se a query também trouxe `categoriaId`, mantemos o menu da
+      // CATEGORIA (num campeonato "único" o menuCampeonato é vazio, então
+      // sem isso o menu ficaria em branco e caía pro global). Com o
+      // `categoriaId`, o `menuCategoria$` renderiza o menu completo.
+      const queryCatId = this.extrairQueryParam(url, 'categoriaId');
+      if (queryCatId) {
+        this.categoriaId.set(queryCatId);
+        this.mode.set('categoria');
+      } else {
+        this.categoriaId.set(null);
+        this.mode.set('campeonato');
+      }
       return;
     }
 
@@ -438,12 +451,18 @@ export class ShellPage {
    *  Usado pra manter modo "campeonato" em rotas globais que recebem o ID
    *  via query param. Retorna `null` se não encontrar. */
   private extrairCampeonatoIdDaQuery(url: string): string | null {
+    return this.extrairQueryParam(url, 'campeonatoId');
+  }
+
+  /** Extrai um query param arbitrário da URL (ex: `categoriaId`).
+   *  Retorna `null` se ausente ou vazio. */
+  private extrairQueryParam(url: string, chave: string): string | null {
     const idx = url.indexOf('?');
     if (idx < 0) return null;
     try {
       const params = new URLSearchParams(url.slice(idx + 1));
-      const id = params.get('campeonatoId');
-      return id && id.trim() ? id.trim() : null;
+      const v = params.get(chave);
+      return v && v.trim() ? v.trim() : null;
     } catch {
       return null;
     }

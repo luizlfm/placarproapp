@@ -21,7 +21,7 @@
        botão back, não precisa abrir a sidebar global de dentro do
        contexto de campeonato. Pra voltar pro global, usa o back. -->
   <button
-    *ngIf="mode() === 'global'"
+    *ngIf="mode() === 'global' && !isAdmin()"
     type="button"
     class="shell-hamburger"
     [class.escondido]="sidebarAberta()"
@@ -39,7 +39,7 @@
   ></div>
 
   <!-- ============ SIDEBAR GLOBAL ============ -->
-  <aside class="shell-aside global" *ngIf="mode() === 'global'">
+  <aside class="shell-aside global" *ngIf="mode() === 'global' && !isAdmin()">
     <div class="sidebar-user" *ngIf="user$ | async as user">
       <div class="user-avatar">
         <img
@@ -72,6 +72,7 @@
       <a
         *ngFor="let item of (menuGlobal$ | async)"
         [routerLink]="item.path"
+        [queryParams]="item.queryParams || null"
         routerLinkActive="active"
         class="nav-item"
       >
@@ -152,6 +153,7 @@
       <a
         *ngFor="let item of (menuCategoria$ | async)"
         [routerLink]="item.path"
+        [queryParams]="item.queryParams || null"
         routerLinkActive="active"
         class="nav-item"
       >
