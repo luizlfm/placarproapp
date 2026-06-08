@@ -12,7 +12,7 @@
            INICIA uma transmissão usando a câmera do navegador/celular.
            Fica DESABILITADO quando já há uma transmissão ativa (em outro
            dispositivo) pra evitar duplicar. -->
-      <ion-button *ngIf="(permissoes$ | async)?.enviarMidias || (permissoes$ | async)?.editarResultados"
+      <ion-button *ngIf="((permissoes$ | async)?.enviarMidias || (permissoes$ | async)?.editarResultados) && (transmissoesAtivas$ | async)"
         [disabled]="transmissaoLiveAtiva$ | async" (click)="iniciarTransmissaoLive()" aria-label="Transmitir ao vivo"
         [title]="(transmissaoLiveAtiva$ | async) ? 'Transmissão já ativa em outro dispositivo' : 'Transmitir ao vivo com sua câmera'">
         <ion-icon slot="icon-only" name="radio-outline" color="danger"></ion-icon>
@@ -229,7 +229,7 @@
                do vídeo. -->
             <section class="tx-quick" [class.transmitindo]="(transmissaoLiveAtiva$ | async)">
               <!-- ── ESTADO 1: NÃO transmitindo → botão "Transmitir agora" ── -->
-              <button type="button" *ngIf="(p.enviarMidias || p.editarResultados) && !(transmissaoLiveAtiva$ | async)"
+              <button type="button" *ngIf="(p.enviarMidias || p.editarResultados) && !(transmissaoLiveAtiva$ | async) && (transmissoesAtivas$ | async)"
                 class="tx-card tx-card-camera" (click)="iniciarTransmissaoLive()" title="Transmitir com sua câmera">
                 <div class="tx-card-icon">
                   <ion-icon name="videocam-outline"></ion-icon>
@@ -1302,7 +1302,7 @@
        Esconde quando há transmissão ATIVA (broadcaster já transmitindo;
        o player no painel grande mostra o "Encerrar" lá). -->
   <ng-container *ngIf="permissoes$ | async as p">
-    <button *ngIf="(p.enviarMidias || p.editarResultados) && !(transmissaoLiveAtiva$ | async)" type="button"
+    <button *ngIf="(p.enviarMidias || p.editarResultados) && !(transmissaoLiveAtiva$ | async) && (transmissoesAtivas$ | async)" type="button"
       class="fab-transmitir-mobile" (click)="iniciarTransmissaoLive()" aria-label="Transmitir ao vivo"
       title="Transmitir ao vivo com sua câmera">
       <ion-icon name="radio-outline"></ion-icon>

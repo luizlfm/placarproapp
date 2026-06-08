@@ -55,14 +55,16 @@ export class LogsService {
     return runInInjectionContext(this.injector, async () => {
       try {
         const u = this.auth.currentUser;
+        // O Firestore rejeita campos `undefined` — só inclui o que existe.
         const payload: LogAuditoria = {
           acao,
           descricao,
-          meta,
-          usuarioId: u?.uid,
-          usuarioLabel: u?.displayName ?? u?.email ?? undefined,
           criadoEm: Timestamp.now(),
         };
+        if (meta !== undefined) payload.meta = meta;
+        if (u?.uid) payload.usuarioId = u.uid;
+        const label = u?.displayName ?? u?.email;
+        if (label) payload.usuarioLabel = label;
         await addDoc(this.col(), payload);
       } catch (err) {
         // Silencioso — logging falho não deve quebrar nada

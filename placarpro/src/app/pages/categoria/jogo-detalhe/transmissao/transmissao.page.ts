@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, inject, ChangeDetectorRef, ElementRef, ViewChild, AfterViewInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, Observable, of, Subscription } from 'rxjs';
+import { startWith, catchError } from 'rxjs/operators';
 import { Campeonato } from '../../../../campeonatos/campeonato.model';
 import { Categoria } from '../../../../campeonatos/categoria.model';
 import { Equipe } from '../../../../campeonatos/models/equipe.model';
@@ -140,6 +141,13 @@ export class TransmissaoPage implements OnInit, OnDestroy, AfterViewInit {
   /** Transmissão LiveKit ATIVA pro jogo (ou null se ninguém transmitindo).
    *  Inicializado em `ngOnInit` após termos campeonatoId/categoriaId/jogoId. */
   transmissaoAtiva$: Observable<Transmissao | null> = of(null);
+
+  /** Kill switch global de transmissão — esconde o botão "Iniciar
+   *  transmissão" do empty state quando o admin desliga o sistema. */
+  readonly transmissoesAtivas$ = this.configSrv.transmissoesHabilitadas$().pipe(
+    startWith(true),
+    catchError(() => of(true)),
+  );
 
   /** Permissões efetivas do usuário no campeonato (owner/moderador/visitante).
    *  Usado pra decidir se mostra o botão "Iniciar Transmissão" no empty state

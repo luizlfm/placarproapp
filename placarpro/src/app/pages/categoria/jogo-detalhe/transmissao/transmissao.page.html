@@ -96,7 +96,7 @@
          comuns NÃO veem (eles caem só na opção "Voltar"). -->
     <ng-container *ngIf="permissoes$ | async as p">
       <ion-button
-        *ngIf="p.enviarMidias || p.editarResultados"
+        *ngIf="(p.enviarMidias || p.editarResultados) && (transmissoesAtivas$ | async)"
         color="danger"
         (click)="iniciarTransmissaoCamera()"
         class="tr-btn-iniciar-camera"
@@ -572,8 +572,12 @@
         </div>
       </div>
 
-      <!-- ===== Conteúdo: ESCALAÇÃO (com sub-tabs por equipe) ===== -->
+      <!-- ===== Conteúdo: ESCALAÇÃO (com sub-tabs por equipe) =====
+           Wrapper scrollável: em landscape mobile o painel é baixo e
+           campo+lista não cabem. Esse wrapper rola tudo junto (sub-tabs
+           ficam sticky pra continuar visíveis). -->
       <ng-container *ngIf="segmentAtivo === 'escalacao'">
+        <div class="tr-esc-conteudo">
         <!-- Sub-tabs Mandante / Visitante (cor extraída da logo do time) -->
         <nav class="tr-esc-tabs" aria-label="Trocar equipe">
           <button
@@ -666,6 +670,7 @@
             </div>
           </div>
         </ng-template>
+        </div><!-- /.tr-esc-conteudo -->
       </ng-container>
     </aside>
 

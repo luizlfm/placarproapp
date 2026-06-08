@@ -139,6 +139,13 @@ export class JogoDetalhePage implements OnInit, OnDestroy {
       )
     : of(false);
 
+  /** Kill switch global de transmissão — esconde os botões de "Transmitir
+   *  agora" quando o admin desliga a transmissão ao vivo do sistema. */
+  readonly transmissoesAtivas$ = this.configSrv.transmissoesHabilitadas$().pipe(
+    startWith(true),
+    catchError(() => of(true)),
+  );
+
   /** Transmissão LiveKit ativa pra este jogo (Observable do Firestore).
    *  Usado no template pra decidir se mostra o LiveKit player no painel
    *  "Ao Vivo" abaixo do placar. Quando o broadcaster inicia transmissão,
