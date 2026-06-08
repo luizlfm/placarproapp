@@ -55,6 +55,15 @@
       </ng-container>
     </header>
 
+    <!-- Apoios e Patrocinadores — mesma esteira da tela pública/início,
+         pra o organizador ver os patrocinadores também aqui em Jogos. -->
+    <app-patrocinadores-faixa
+      *ngIf="(campeonato$ | async) as camp"
+      [ownerId]="camp.ownerId || ''"
+      [campeonatoId]="campeonatoId"
+      [categoriaId]="categoriaId"
+    ></app-patrocinadores-faixa>
+
     <!-- ════════ Card principal ════════ -->
     <section class="painel-card">
       <!-- FAB "+" sobreposto no topo -->
@@ -111,8 +120,13 @@
                Layout: faixa colorida lateral por status + tags topo +
                linha principal de placar (escudo|nome|placar|nome|escudo)
                + rodapé com local. Hover sobe 2px com shadow. -->
-          <button
-            type="button"
+          <!-- DIV em vez de BUTTON porque HTML proíbe buttons aninhados.
+               O `.btn-menu` (kebab) dentro só funcionava sem essa mudança
+               se o usuário clicasse em pixels exatos. role/tabindex/keydown
+               mantém acessibilidade de teclado. -->
+          <div
+            role="button"
+            tabindex="0"
             class="jogo-card"
             [class.card-vivo]="j.status === 'em-andamento'"
             [class.card-fim]="j.status === 'encerrado'"
@@ -120,6 +134,8 @@
             [class.card-cancelado]="j.status === 'cancelado' || j.status === 'wo'"
             *ngFor="let j of lista; trackBy: trackById"
             (click)="irParaDetalhe(j)"
+            (keydown.enter)="irParaDetalhe(j)"
+            (keydown.space)="$event.preventDefault(); irParaDetalhe(j)"
           >
             <!-- Faixa lateral colorida (estado da partida) -->
             <span class="status-stripe" aria-hidden="true"></span>
@@ -129,10 +145,7 @@
               <div class="tags">
                 <span *ngIf="j.fase" class="tag tag-fase">{{ j.fase }}</span>
                 <span *ngIf="j.rodada" class="tag tag-rod">{{ j.rodada }}ª rodada</span>
-                <span *ngIf="j.dataHora" class="tag tag-data">
-                  <ion-icon name="calendar-outline"></ion-icon>
-                  {{ formatarDataHora(j.dataHora) }}
-                </span>
+                <!-- Data movida pro rodapé do card (abaixo do placar) -->
               </div>
               <button
                 type="button"
@@ -144,6 +157,10 @@
                 <ion-icon name="ellipsis-vertical"></ion-icon>
               </button>
             </div>
+
+            <!-- Título do jogo (se houver) — centralizado acima do placar.
+                 Ex: "Decisão do título", "Final da copa", etc. -->
+            <div class="jogo-titulo" *ngIf="j.titulo">{{ j.titulo }}</div>
 
             <!-- Linha principal: equipe ← placar → equipe -->
             <div class="placar-row">
@@ -199,14 +216,18 @@
               </span>
             </div>
 
-            <!-- Rodapé: local + indicadores extras -->
-            <div class="card-footer" *ngIf="j.local">
-              <span class="local">
+            <!-- Rodapé: data/hora (se houver) + local (se houver) -->
+            <div class="card-footer" *ngIf="j.dataHora || j.local">
+              <span *ngIf="j.dataHora" class="tag tag-data">
+                <ion-icon name="calendar-outline"></ion-icon>
+                {{ formatarDataHora(j.dataHora) }}
+              </span>
+              <span class="local" *ngIf="j.local">
                 <ion-icon name="location-outline"></ion-icon>
                 {{ j.local }}
               </span>
             </div>
-          </button>
+          </div>
         </div>
 
         <ng-template #empty>
