@@ -24,7 +24,12 @@
    suficientes, pra não criar "fantasmas". */
 .pf-scroller {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  /* `auto-fill` + largura MÁXIMA capada (200px) — antes era `1fr`, que
+     esticava os cards pra preencher a linha (com 1-2 patrocinadores eles
+     ficavam gigantes). Agora cada card tem ~180-200px e a linha alinha
+     à esquerda; o espaço que sobra fica vazio em vez de inflar os cards. */
+  grid-template-columns: repeat(auto-fill, minmax(180px, 200px));
+  justify-content: start;
   gap: 10px;
   padding: 4px 4px 10px;
 

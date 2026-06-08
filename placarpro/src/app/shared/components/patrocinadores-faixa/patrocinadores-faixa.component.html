@@ -18,7 +18,7 @@
         <button
           type="button"
           class="pf-card pf-card-marquee"
-          *ngFor="let p of lista; trackBy: trackById"
+          *ngFor="let p of marqueeItens; let i = index; trackBy: trackByIdx"
           [class.clicavel]="p.link || p.site"
           (click)="abrirLink(p, $event)"
           [title]="p.nome"
@@ -47,7 +47,7 @@
         <button
           type="button"
           class="pf-card pf-card-marquee"
-          *ngFor="let p of lista; trackBy: trackById"
+          *ngFor="let p of marqueeItens; let i = index; trackBy: trackByIdx"
           [class.clicavel]="p.link || p.site"
           (click)="abrirLink(p, $event)"
           [title]="p.nome"

@@ -83,12 +83,31 @@ export class PatrocinadoresFaixaComponent
     return this.rotativoAtivo && this.listaAtual.length > 1;
   }
 
-  /** Duração da animação marquee em segundos — 4s por card. Mais cards
-   *  = animação mais longa pra manter a velocidade visual constante
-   *  (caso contrário, com 20 cards ficaria absurdamente rápido). */
+  /**
+   * Itens renderizados em CADA passagem do marquee. Repete a lista
+   * original o suficiente pra que UMA passagem seja mais larga que o
+   * container — assim, com poucos patrocinadores (ex: 2), a esteira
+   * preenche a faixa e desliza sem deixar buraco à direita.
+   *
+   * O template renderiza isso em DUAS passagens (1ª + cópia) e a
+   * animação faz `translateX(-50%)`, criando o loop contínuo.
+   */
+  get marqueeItens(): Patrocinador[] {
+    const base = this.listaAtual;
+    if (base.length === 0) return [];
+    // Quantos cards precisamos numa passagem pra cobrir a faixa inteira
+    // (cardsPorPagina = quantos cabem na largura atual) + folga.
+    const alvo = Math.max(this.cardsPorPagina + 1, base.length);
+    const out: Patrocinador[] = [];
+    while (out.length < alvo) out.push(...base);
+    return out;
+  }
+
+  /** Duração da animação marquee em segundos — 4s por card visível.
+   *  Escala com o nº de itens da passagem pra manter velocidade constante. */
   get marqueeDuration(): string {
     const segundosPorCard = 4;
-    return `${this.listaAtual.length * segundosPorCard}s`;
+    return `${Math.max(1, this.marqueeItens.length) * segundosPorCard}s`;
   }
   /** True quando viewport é ≤767px — usado pra escolher entre banner
    *  app web (805×453) e mobile (1:1). Atualizado no resize. */
@@ -182,30 +201,26 @@ export class PatrocinadoresFaixaComponent
    *    carregando, navegação entre seções).
    */
   private atualizarModoRotativo(): void {
-    const ehMobile = typeof window !== 'undefined' && window.innerWidth <= 600;
-    let novoModo = false;
     let cardsPorPag = 1;
 
-    if (ehMobile && this.listaAtual.length >= 1) {
-      novoModo = true;
-      cardsPorPag = 1;
-    } else if (this.scrollerRef) {
+    // Calcula quantos cards cabem na largura atual — usado pra dimensionar
+    // quantas vezes a lista é repetida no marquee (preencher a faixa).
+    if (this.scrollerRef) {
       const el = this.scrollerRef.nativeElement;
       const larguraScroller = el.clientWidth;
       if (larguraScroller > 0) {
-        // Sincronizado com .pf-scroller no SCSS: `grid-template-columns:
-        // repeat(auto-fill, minmax(180px, 180px))`, `gap: 10px`. Cada
-        // card ocupa 180+10 = 190px efetivos, mas o gap só conta entre
-        // cards, então a fórmula é `floor((W + gap) / (cardW + gap))`.
         const CARD_W = 180;
         const GAP = 10;
         cardsPorPag = Math.max(
           1,
           Math.floor((larguraScroller + GAP) / (CARD_W + GAP)),
         );
-        novoModo = this.listaAtual.length > cardsPorPag;
       }
     }
+
+    // Esteira (marquee) SEMPRE que houver 2+ patrocinadores — desktop e
+    // mobile. Com 1 só, fica estático (não há o que rotacionar).
+    const novoModo = this.listaAtual.length > 1;
 
     const mudou = novoModo !== this.rotativoAtivo;
     this.rotativoAtivo = novoModo;
