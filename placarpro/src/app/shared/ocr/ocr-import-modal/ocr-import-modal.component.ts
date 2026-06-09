@@ -5,6 +5,7 @@ import { OcrSpaceService } from '../ocr-space.service';
 import { OcrCameraService } from '../ocr-camera.service';
 import { parseDocumentoBR, DadosDocumentoBR } from '../parsers/rg-parser';
 import { pdfParaPrimeiraImagem } from '../pdf-to-image.util';
+import { cpfValido } from '../../directives/mask.directive';
 
 /**
  * Modal de captura + extração OCR de documento (RG/CNH/CPF).
@@ -187,6 +188,11 @@ export class OcrImportModalComponent {
   async importar(): Promise<void> {
     if (!this.nome.trim()) {
       await this.toast('Nome é obrigatório.', 'medium');
+      return;
+    }
+    // CPF preenchido precisa ser válido (OCR pode ler errado). Vazio passa.
+    if (this.cpf.trim() && !cpfValido(this.cpf)) {
+      await this.toast('CPF inválido — corrija antes de importar.', 'danger');
       return;
     }
     await this.modalCtrl.dismiss({

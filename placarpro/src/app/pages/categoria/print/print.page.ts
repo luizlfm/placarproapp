@@ -872,9 +872,21 @@ export class PrintPage implements OnInit {
     }
   }
 
-  /** Mostra DD/MM/YYYY a partir de ISO. */
+  /** Mostra DD/MM/YYYY a partir de ISO.
+   *  IMPORTANTE: datas DATE-ONLY ("YYYY-MM-DD", ex.: dataNascimento) NÃO
+   *  podem passar por `new Date(iso)` — isso as interpreta como meia-noite
+   *  UTC e, no fuso do Brasil (UTC-3), `getDate()` volta o DIA ANTERIOR.
+   *  Por isso parseamos a parte de data direto da string. Datas COM hora
+   *  (dataHora de jogos) caem no `new Date` normal (o componente de hora
+   *  ancora o dia corretamente no fuso local). */
   formatarData(iso?: string | null): string {
     if (!iso) return '';
+    // Date-only no início da string (com ou sem T/hora depois).
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
+    if (m) {
+      const [, yyyy, mm, dd] = m;
+      return `${dd}/${mm}/${yyyy}`;
+    }
     try {
       const d = new Date(iso);
       if (Number.isNaN(d.getTime())) return iso;

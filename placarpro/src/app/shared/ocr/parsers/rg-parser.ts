@@ -16,6 +16,8 @@
  * extras, caracteres trocados, acentos perdidos).
  */
 
+import { cpfValido } from '../../directives/mask.directive';
+
 export interface DadosDocumentoBR {
   /** Texto bruto do OCR (pra debugging/manual review). */
   textoOriginal: string;
@@ -296,18 +298,9 @@ function ehCpfValidoFormatado(cpf: string): boolean {
 }
 
 function validarCpfBruto(cpf: string): boolean {
-  if (cpf.length !== 11) return false;
-  if (/^(\d)\1+$/.test(cpf)) return false;
-  let soma = 0;
-  for (let i = 0; i < 9; i++) soma += parseInt(cpf[i], 10) * (10 - i);
-  let dig1 = 11 - (soma % 11);
-  if (dig1 >= 10) dig1 = 0;
-  if (dig1 !== parseInt(cpf[9], 10)) return false;
-  soma = 0;
-  for (let i = 0; i < 10; i++) soma += parseInt(cpf[i], 10) * (11 - i);
-  let dig2 = 11 - (soma % 11);
-  if (dig2 >= 10) dig2 = 0;
-  return dig2 === parseInt(cpf[10], 10);
+  // Delega pra função central (shared/directives/mask.directive) — fonte
+  // única de verdade da validação de CPF em todo o app.
+  return cpfValido(cpf);
 }
 
 // ──────────────────────────────────────────────────────────────────────

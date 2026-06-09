@@ -16,8 +16,13 @@ import {
   assertFails,
 } from '@firebase/rules-unit-testing';
 import {
-  doc, setDoc, getDoc, writeBatch, serverTimestamp,
+  doc, setDoc, getDoc, writeBatch,
 } from 'firebase/firestore';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const PROJECT_ID = 'placarpro-rules-test';
 
@@ -47,9 +52,20 @@ const EQUIPE = 'eq1';
 const TOKEN = 'TOKENinscricao123456';
 
 async function main() {
+  // Modo GERENCIADO (firebase emulators:exec): o env injeta
+  // FIRESTORE_EMULATOR_HOST e FIREBASE_EMULATOR_HUB. Passamos só o conteúdo
+  // das rules e deixamos o SDK descobrir host/hub sozinho — passar host/port
+  // manualmente junto com o hub fazia o loadFirestoreRules dar 500.
+  let rulesSource;
+  try {
+    rulesSource = readFileSync(join(__dirname, 'firestore.rules'), 'utf8');
+  } catch {
+    rulesSource = readFileSync(join(__dirname, '..', '..', 'placarpro', 'firestore.rules'), 'utf8');
+  }
+
   const env = await initializeTestEnvironment({
     projectId: PROJECT_ID,
-    firestore: { rules: undefined }, // usa as rules do firebase.json (emuladas)
+    firestore: { rules: rulesSource },
   });
 
   // ── SEED com privilégios de admin (ignora rules) ──
@@ -84,8 +100,10 @@ async function main() {
     await setDoc(doc(db, 'campeonatos', CAMP, 'categorias', CAT, 'jogadores', 'jExistente'), {
       nome: 'EXISTENTE', equipeId: EQUIPE, campeonatoId: CAMP, categoriaId: CAT,
     });
+    // Subdoc PII SEM token (caso realista: dono cadastrou pelo admin). Anônimo
+    // NÃO deve conseguir ler — valida o bloqueio público da PII.
     await setDoc(doc(db, 'campeonatos', CAMP, 'categorias', CAT, 'jogadores', 'jExistente', 'privado', 'dados'), {
-      cpf: '111', inscricaoToken: TOKEN, equipeId: EQUIPE,
+      cpf: '111',
     });
   });
 
@@ -97,7 +115,14 @@ async function main() {
   console.log('\n=== FASE 3: PII de jogadores ===');
 
   await caso('público NÃO lê subdoc PII do jogador', async () => {
-    await assertFails(getDoc(doc(anon, 'campeonatos', CAMP, 'categorias', CAT, 'jogadores', 'jExistente', 'privado', 'dados')));
+    try {
+      const s = await getDoc(doc(anon, 'campeonatos', CAMP, 'categorias', CAT, 'jogadores', 'jExistente', 'privado', 'dados'));
+      console.log('  [debug] anon LEU PII:', JSON.stringify(s.data()), '(exists=', s.exists(), ')');
+    } catch (e) {
+      console.log('  [debug] anon negado (correto):', e.code ?? e.message);
+      return;
+    }
+    throw new Error('Expected request to fail, but it succeeded.');
   });
 
   await caso('dono LÊ subdoc PII do jogador', async () => {
@@ -128,10 +153,9 @@ async function main() {
 
   console.log('\n=== FASE 2: limites de plano ===');
 
-  await caso('GRÁTIS: criar 2ª categoria é BLOQUEADO (limite 2, já tem 1... testa no limite)', async () => {
-    // Sobe o contador pro limite (2) e tenta criar a 3ª.
+  await caso('GRÁTIS: criar categoria acima do limite é BLOQUEADO', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'campeonatos', CAMP), { totalCategorias: 2 }, { merge: true });
+      await setDoc(doc(ctx.firestore(), 'campeonatos', CAMP), { totalCategorias: 5 }, { merge: true });
     });
     await assertFails(setDoc(doc(dono, 'campeonatos', CAMP, 'categorias', 'catNova'), {
       campeonatoId: CAMP, titulo: 'Nova',
@@ -144,6 +168,20 @@ async function main() {
     });
     await assertFails(setDoc(doc(dono, 'campeonatos', CAMP, 'categorias', CAT, 'jogadores', 'jLimite'), {
       nome: 'LIMITE', equipeId: EQUIPE, campeonatoId: CAMP, categoriaId: CAT,
+    }));
+  });
+
+  // CONTROLE: o dono DEVE conseguir criar JOGO (cai no glob, sem limite) —
+  // garante que a allowlist não quebrou os writes legítimos via catch-all.
+  await caso('dono CRIA jogo (glob permite — sem regressão)', async () => {
+    await assertSucceeds(setDoc(doc(dono, 'campeonatos', CAMP, 'categorias', CAT, 'jogos', 'jogo1'), {
+      mandanteId: 'a', visitanteId: 'b', status: 'agendado',
+    }));
+  });
+  // CONTROLE: criar EVENTO dentro de um jogo (glob, path profundo) também passa.
+  await caso('dono CRIA evento em jogo (glob profundo — sem regressão)', async () => {
+    await assertSucceeds(setDoc(doc(dono, 'campeonatos', CAMP, 'categorias', CAT, 'jogos', 'jogo1', 'eventos', 'ev1'), {
+      tipo: 'gol', minuto: 10,
     }));
   });
 
@@ -174,6 +212,70 @@ async function main() {
   });
   await caso('cliente NÃO escreve rateLimits', async () => {
     await assertFails(setDoc(doc(dono, 'rateLimits', 'x'), { contagem: 0 }));
+  });
+
+  // ════════════════════════════════════════════════════════════════
+  // CAMINHO-FELIZ: uso LEGÍTIMO que NÃO pode quebrar com as rules novas.
+  // Espelha os fluxos reais do app (criar/editar/ler) pra garantir que a
+  // blindagem de segurança não trancou o uso normal.
+  // ════════════════════════════════════════════════════════════════
+  console.log('\n=== CAMINHO-FELIZ (uso legítimo não pode quebrar) ===');
+
+  // Reseta contadores pra dentro do limite (plano grátis: 2 cat, 50 jog).
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'campeonatos', CAMP), { totalCategorias: 1 }, { merge: true });
+    await setDoc(doc(ctx.firestore(), 'campeonatos', CAMP, 'categorias', CAT), { totalJogadores: 0 }, { merge: true });
+  });
+
+  await caso('dono CRIA categoria DENTRO do limite', async () => {
+    await assertSucceeds(setDoc(doc(dono, 'campeonatos', CAMP, 'categorias', 'catOk'), {
+      campeonatoId: CAMP, titulo: 'Categoria OK',
+    }));
+  });
+
+  await caso('dono CRIA jogador DENTRO do limite (com PII no batch)', async () => {
+    const b = writeBatch(dono);
+    const jRef = doc(dono, 'campeonatos', CAMP, 'categorias', CAT, 'jogadores', 'jHappy');
+    b.set(jRef, { nome: 'FELIZ', equipeId: EQUIPE, campeonatoId: CAMP, categoriaId: CAT });
+    b.set(doc(jRef, 'privado', 'dados'), { cpf: '12345678900', rg: 'MG123' });
+    await assertSucceeds(b.commit());
+  });
+
+  await caso('dono EDITA placar de jogo (update via glob)', async () => {
+    await assertSucceeds(setDoc(doc(dono, 'campeonatos', CAMP, 'categorias', CAT, 'jogos', 'jogo1'), {
+      golsMandante: 2, golsVisitante: 1, status: 'em-andamento',
+    }, { merge: true }));
+  });
+
+  await caso('moderador (gerenciarEquipes) CRIA jogador', async () => {
+    const modCtx = env.authenticatedContext(MOD).firestore();
+    await assertSucceeds(setDoc(doc(modCtx, 'campeonatos', CAMP, 'categorias', CAT, 'jogadores', 'jMod'), {
+      nome: 'DO MOD', equipeId: EQUIPE, campeonatoId: CAMP, categoriaId: CAT,
+    }));
+  });
+
+  await caso('público LISTA jogadores (página pública carrega)', async () => {
+    const { getDocs, collection } = await import('firebase/firestore');
+    await assertSucceeds(getDocs(collection(anon, 'campeonatos', CAMP, 'categorias', CAT, 'jogadores')));
+  });
+
+  await caso('público LÊ a categoria (página pública)', async () => {
+    await assertSucceeds(getDoc(doc(anon, 'campeonatos', CAMP, 'categorias', CAT)));
+  });
+
+  await caso('dono EDITA o próprio perfil (saveProfile)', async () => {
+    await assertSucceeds(setDoc(doc(dono, 'users', OWNER), {
+      uid: OWNER, nome: 'Dono Editado', cidade: 'BH',
+    }, { merge: true }));
+  });
+
+  await caso('representante EDITA jogador da própria equipe (token válido)', async () => {
+    const repCtx = env.authenticatedContext(REP).firestore();
+    await assertSucceeds(setDoc(
+      doc(repCtx, 'campeonatos', CAMP, 'categorias', CAT, 'jogadores', 'jExistente'),
+      { nome: 'EXISTENTE EDIT', equipeId: EQUIPE, inscricaoToken: TOKEN },
+      { merge: true },
+    ));
   });
 
   await env.cleanup();

@@ -15,7 +15,6 @@ import { Timestamp } from '@angular/fire/firestore';
 import { PatrociniosService } from '../../../campeonatos/patrocinios.service';
 import { PatrocinioJogo } from '../../../campeonatos/models/patrocinio-jogo.model';
 import { TransmissoesService } from '../../../campeonatos/transmissoes.service';
-import { JogosService } from '../../../campeonatos/jogos.service';
 import { PlanosService } from '../../../users/planos.service';
 
 /**
@@ -75,30 +74,6 @@ export class PremiumOverlayComponent implements OnChanges, OnDestroy {
   @Input() categoriaId = '';
   @Input() jogoId = '';
 
-  /**
-   * TEST / DEV — quando setado, força a exibição do banner imediatamente
-   * (ignora timers de janela) por `forcedTest.duracaoMs` ms.
-   *
-   * Usado pelo botão "Testar banner premium" no jogo-detalhe pra previewar
-   * o efeito sem ter que esperar 7min de transmissão.
-   *
-   * REMOVER quando o feature estiver validado em produção.
-   */
-  @Input() set forcedTest(payload: { patrocinador: { nome: string; logoUrl: string; tipoMidia?: 'imagem' | 'video' }; duracaoMs: number } | null) {
-    if (!payload) return;
-    const tipo = payload.patrocinador.tipoMidia ?? detectarTipoMidiaPorUrl(payload.patrocinador.logoUrl);
-    this.patrocinadorAtual = {
-      patrocinador: { ...payload.patrocinador, tipoMidia: tipo },
-      patrocinioId: 'TEST',
-    };
-    this.saindoJanela = false;
-    this.janelaAberta = true;
-    this.visibilidadeMudou.emit(true);
-    this.cdr.markForCheck();
-    // No fim da duração, fecha com animação de saída (mesma curva da entrada).
-    setTimeout(() => this.fecharJanela(), payload.duracaoMs);
-  }
-
   /** Emite `true` no início da janela, `false` no fim. Container usa
    *  pra recolher o vídeo + esconder esteira/scoreboard. */
   @Output() readonly visibilidadeMudou = new EventEmitter<boolean>();
@@ -129,12 +104,8 @@ export class PremiumOverlayComponent implements OnChanges, OnDestroy {
 
   private adsSub?: Subscription;
   private txSub?: Subscription;
-  private jogoSub?: Subscription;
   private timerJanela?: ReturnType<typeof setTimeout>;
   private timerFecha?: ReturnType<typeof setTimeout>;
-
-  /** Último `_testePremiumAt` visto — pra detectar mudança e disparar. */
-  private ultimoTesteAtMs: number | null = null;
 
   /** Cache de imagens pré-carregadas (chave = logoUrl). Mantém a referência
    *  viva pra que a troca de banner na rajada (round-robin) seja instantânea
@@ -144,7 +115,6 @@ export class PremiumOverlayComponent implements OnChanges, OnDestroy {
 
   private readonly patrSrv = inject(PatrociniosService);
   private readonly txSrv = inject(TransmissoesService);
-  private readonly jogosSrv = inject(JogosService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly planosSrv = inject(PlanosService);
 
@@ -157,7 +127,6 @@ export class PremiumOverlayComponent implements OnChanges, OnDestroy {
   ngOnDestroy(): void {
     this.adsSub?.unsubscribe();
     this.txSub?.unsubscribe();
-    this.jogoSub?.unsubscribe();
     this.cancelarTimers();
   }
 
@@ -168,64 +137,15 @@ export class PremiumOverlayComponent implements OnChanges, OnDestroy {
   private refresh(): void {
     this.adsSub?.unsubscribe();
     this.txSub?.unsubscribe();
-    this.jogoSub?.unsubscribe();
     this.cancelarTimers();
     this.premiums = [];
     this.patrocinadorAtual = null;
     this.janelaAberta = false;
     this.filaBurst = 0;
     this.inicioTransmissaoMs = null;
-    this.ultimoTesteAtMs = null;
     this.cdr.markForCheck();
 
     if (!this.campeonatoId || !this.categoriaId || !this.jogoId) return;
-
-    // ─── DEV/TEST: escuta o jogo pra detectar disparos do botão
-    //     "Testar banner premium" (admin grava `_testePremiumAt`).
-    //     REMOVER junto com a feature de teste. ───
-    this.jogoSub = this.jogosSrv
-      .get$(this.campeonatoId, this.categoriaId, this.jogoId)
-      .subscribe(jogo => {
-        const at = (jogo?._testePremiumAt as { toMillis?: () => number } | undefined)?.toMillis?.();
-        if (!at || at === this.ultimoTesteAtMs) return;
-        // Primeira vez que vemos o campo (snapshot inicial) — só guarda
-        // o valor, não dispara (evita banner pop-up ao abrir a página).
-        if (this.ultimoTesteAtMs === null) {
-          this.ultimoTesteAtMs = at;
-          return;
-        }
-        // Mudou desde o último visto → DISPARAR.
-        this.ultimoTesteAtMs = at;
-
-        // Se há premium ATIVOS, valida o FLUXO REAL: roda a rajada (burst)
-        // mostrando TODOS os premium ativos em sequência (janela de cada um),
-        // exatamente como acontece a cada `intervaloMin` durante a transmissão.
-        // Assim o teste prova que múltiplos premium aparecem (round-robin).
-        if (this.premiums.length > 0) {
-          this.cancelarTimers();
-          this.abrirJanela();
-          return;
-        }
-
-        // Fallback (nenhum premium ativo): banner de teste único.
-        const url = jogo?._testePremiumLogoUrl;
-        const nome = jogo?._testePremiumNome ?? 'Patrocinador';
-        if (!url) return;
-        const tipoMidia = detectarTipoMidiaPorUrl(url);
-        this.patrocinadorAtual = {
-          patrocinador: { nome, logoUrl: url, tipoMidia },
-          patrocinioId: 'TEST',
-        };
-        this.saindoJanela = false;
-        this.janelaAberta = true;
-        this.visibilidadeMudou.emit(true);
-        this.cdr.markForCheck();
-        // No fim da janela, fecha com animação de saída.
-        this.timerFecha = setTimeout(
-          () => this.fecharJanela(),
-          this.planosSrv.premiumJanelaSeg * 1_000,
-        );
-      });
 
     this.adsSub = this.patrSrv
       .listarPremiumAtivos$(this.campeonatoId, this.categoriaId, this.jogoId)

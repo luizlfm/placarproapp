@@ -7,7 +7,7 @@ import { IonicModule } from '@ionic/angular';
 import { PlanosPageRoutingModule } from './planos-routing.module';
 
 import { PlanosPage } from './planos.page';
-import { EscolherPeriodicidadeModalComponent } from './escolher-periodicidade-modal/escolher-periodicidade-modal.component';
+import { EscolherPeriodicidadeModalModule } from './escolher-periodicidade-modal/escolher-periodicidade-modal.module';
 
 @NgModule({
   imports: [
@@ -15,10 +15,10 @@ import { EscolherPeriodicidadeModalComponent } from './escolher-periodicidade-mo
     FormsModule,
     IonicModule,
     PlanosPageRoutingModule,
+    EscolherPeriodicidadeModalModule,
   ],
   declarations: [
     PlanosPage,
-    EscolherPeriodicidadeModalComponent,
   ],
 })
 export class PlanosPageModule {}

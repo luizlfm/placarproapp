@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LoadingController, ToastController } from '@ionic/angular';
 import { Observable, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, tap } from 'rxjs/operators';
 import { CobrancasService } from '../../users/cobrancas.service';
 import {
   Cobranca,
@@ -57,6 +57,13 @@ export class PagamentoPage implements OnInit {
   /** Método selecionado pelo usuário (default: PIX — mais usado no Brasil). */
   metodo: MetodoPagamento = 'pix';
 
+  /**
+   * Rota de retorno após pagar/voltar. Default é a tela de Planos dos
+   * campeonatos; quando a cobrança é de um racha (`tipo === 'racha-assinatura'`),
+   * passa a apontar pra tela de upgrade do racha correspondente.
+   */
+  private rotaRetorno: unknown[] = ['/app/planos'];
+
   /** Form do cartão. */
   cartao = {
     numero: '',
@@ -76,6 +83,14 @@ export class PagamentoPage implements OnInit {
       return;
     }
     this.cobranca$ = this.cobrancasSrv.get$(this.cobrancaId).pipe(
+      tap(c => {
+        // Define pra onde voltar/redirecionar conforme a origem da cobrança.
+        if (c?.tipo === 'racha-assinatura' && c.rachaId) {
+          this.rotaRetorno = ['/racha', c.rachaId, 'upgrade'];
+        } else {
+          this.rotaRetorno = ['/app/planos'];
+        }
+      }),
       catchError(err => {
         console.error('[Pagamento] erro ao carregar cobrança', err);
         return of(undefined);
@@ -88,7 +103,7 @@ export class PagamentoPage implements OnInit {
   }
 
   voltar(): void {
-    this.navBack.back(['/app/planos']);
+    this.navBack.back(this.rotaRetorno as string[]);
   }
 
   /**
@@ -187,8 +202,8 @@ export class PagamentoPage implements OnInit {
           mensagem: 'Pagamento aprovado! Seu plano já está ativo.',
         };
         await this.toast('Pagamento aprovado!', 'success');
-        // Redireciona pra planos depois de 2s
-        setTimeout(() => this.router.navigate(['/app/planos']), 2500);
+        // Redireciona pra origem (planos ou upgrade do racha) depois de 2s
+        setTimeout(() => this.router.navigate(this.rotaRetorno as string[]), 2500);
       } else if (status === 'in_process' || status === 'pending') {
         this.cartaoStatus = {
           tipo: 'pendente',
@@ -227,6 +242,20 @@ export class PagamentoPage implements OnInit {
   /** Formata centavos como string R$. */
   formatarValor(centavos: number): string {
     return `R$ ${(centavos / 100).toFixed(2).replace('.', ',')}`;
+  }
+
+  /** Nome do plano pra exibir no resumo (racha ou campeonato). */
+  nomePlano(c: Cobranca): string {
+    if (c.tipo === 'racha-assinatura') {
+      const labels: Record<string, string> = {
+        gratis: 'Racha Gratuito',
+        premium: 'Racha Premium',
+        pro: 'Racha Premium PRO',
+      };
+      return labels[c.planoRacha ?? ''] ?? 'Racha Premium';
+    }
+    const id = c.planoId ?? '';
+    return id ? id.charAt(0).toUpperCase() + id.slice(1) : '—';
   }
 
   /** Periodicidade legível. */

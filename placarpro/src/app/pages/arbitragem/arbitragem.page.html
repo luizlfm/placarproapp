@@ -37,6 +37,9 @@
             placeholder="000.000.000-00"
             mask="cpf"
             formControlName="documento"
+            [class.ion-invalid]="form.get('documento')?.invalid && form.get('documento')?.touched"
+            [class.ion-touched]="form.get('documento')?.touched"
+            errorText="CPF inválido"
           ></ion-input>
           <ion-input
             fill="outline"

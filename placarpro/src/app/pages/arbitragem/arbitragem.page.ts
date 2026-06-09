@@ -1,5 +1,6 @@
 import { Component, Input, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { cpfValidator } from '../../shared/directives/mask.directive';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { Observable } from 'rxjs';
 import { Arbitro } from '../../users/models/arbitro.model';
@@ -35,7 +36,7 @@ export class ArbitragemPage {
 
   readonly form: FormGroup = this.fb.nonNullable.group({
     nome: ['', [Validators.required, Validators.minLength(2)]],
-    documento: [''],
+    documento: ['', [cpfValidator()]],
     telefone: [''],
     federacao: [''],
   });

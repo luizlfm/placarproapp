@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnInit, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LoadingController, ModalController, ToastController } from '@ionic/angular';
 import { firstValueFrom } from 'rxjs';
@@ -40,7 +40,7 @@ interface CartaoView {
   standalone: false,
   host: { class: 'ion-page' },
 })
-export class CarteirinhasPreviewPage implements OnInit, AfterViewInit {
+export class CarteirinhasPreviewPage implements OnInit, AfterViewInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly campsSrv = inject(CampeonatosService);
@@ -62,6 +62,8 @@ export class CarteirinhasPreviewPage implements OnInit, AfterViewInit {
   equipes: Equipe[] = [];
   jogadores: Jogador[] = [];
   loading = true;
+  /** True quando o carregamento inicial dos dados falhou — exibe aviso + retry. */
+  erroCarregar = false;
 
   // ─── Configurações editáveis pelo usuário ───
   readonly tamanhos = TAMANHOS_CARTEIRINHA;
@@ -96,6 +98,15 @@ export class CarteirinhasPreviewPage implements OnInit, AfterViewInit {
   /** Timer pra debounce de regeneração quando configs mudam. */
   private regenTimer: number | null = null;
 
+  /** Botão "Tentar de novo" do estado de erro — reabre o carregamento. */
+  async recarregar(): Promise<void> {
+    this.loading = true;
+    this.erroCarregar = false;
+    await this.ngOnInit();
+    // Re-agenda a preview após recarregar com sucesso.
+    if (!this.erroCarregar) this.scheduleGerarPreview(400);
+  }
+
   async ngOnInit(): Promise<void> {
     try {
       const [camp, cat, equipes, jogadores] = await Promise.all([
@@ -126,8 +137,18 @@ export class CarteirinhasPreviewPage implements OnInit, AfterViewInit {
       }
     } catch (err) {
       console.error('[Carteirinhas] erro carregando dados', err);
+      this.erroCarregar = true;
     } finally {
       this.loading = false;
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Cancela o debounce pendente — sem isso, sair da tela na janela de
+    // 500-800ms dispara gerarPreviewMobile() num componente já destruído.
+    if (this.regenTimer !== null) {
+      window.clearTimeout(this.regenTimer);
+      this.regenTimer = null;
     }
   }
 

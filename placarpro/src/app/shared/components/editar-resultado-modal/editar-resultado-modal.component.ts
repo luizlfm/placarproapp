@@ -1,5 +1,5 @@
 import { Component, Input, OnInit, inject } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ModalController, ToastController } from '@ionic/angular';
 import { Equipe } from '../../../campeonatos/models/equipe.model';
 import { Jogo, JogoStatus } from '../../../campeonatos/models/jogo.model';
@@ -34,8 +34,10 @@ export class EditarResultadoModalComponent implements OnInit {
   loading = false;
 
   readonly form: FormGroup = this.fb.nonNullable.group({
-    golsMandante: [null as number | null],
-    golsVisitante: [null as number | null],
+    // min(0) evita gravar gols negativos, que corromperiam saldo de gols
+    // e a classificação. max alto só pra barrar erro grosseiro de digitação.
+    golsMandante: [null as number | null, [Validators.min(0), Validators.max(999)]],
+    golsVisitante: [null as number | null, [Validators.min(0), Validators.max(999)]],
     status: ['agendado' as JogoStatus],
   });
 
@@ -75,6 +77,12 @@ export class EditarResultadoModalComponent implements OnInit {
 
   private async persistir(novoStatus: JogoStatus): Promise<void> {
     if (!this.jogo.id) return;
+    // Barra gols negativos / fora de faixa (corromperiam saldo + classificação).
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      await this.toast('Placar inválido — gols não podem ser negativos.', 'warning');
+      return;
+    }
     this.loading = true;
     try {
       const v = this.form.getRawValue();

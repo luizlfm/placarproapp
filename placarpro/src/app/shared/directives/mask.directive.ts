@@ -1,5 +1,5 @@
 import { Directive, ElementRef, HostListener, Input, OnInit, Optional } from '@angular/core';
-import { NgControl } from '@angular/forms';
+import { AbstractControl, NgControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
 /**
  * Tipos de máscara suportados.
@@ -145,6 +145,46 @@ export function mascaraCpf(v: string): string {
   if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
   if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
   return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9, 11)}`;
+}
+
+/**
+ * Valida um CPF pelos dígitos verificadores (algoritmo oficial da Receita).
+ * Aceita CPF com ou sem máscara. Retorna `false` pra:
+ *  - quantidade de dígitos != 11
+ *  - sequências repetidas (000..., 111..., etc.)
+ *  - dígitos verificadores incorretos
+ */
+export function cpfValido(v: string | null | undefined): boolean {
+  const d = soDigitos(v ?? '');
+  if (d.length !== 11) return false;
+  // Rejeita todos iguais (00000000000, 11111111111, ...).
+  if (/^(\d)\1{10}$/.test(d)) return false;
+
+  const calcDig = (qtd: number): number => {
+    let soma = 0;
+    for (let i = 0; i < qtd; i++) {
+      soma += parseInt(d[i], 10) * (qtd + 1 - i);
+    }
+    const resto = (soma * 10) % 11;
+    return resto === 10 ? 0 : resto;
+  };
+
+  return calcDig(9) === parseInt(d[9], 10) && calcDig(10) === parseInt(d[10], 10);
+}
+
+/**
+ * ValidatorFn pra usar em FormControl reativo. CPF é OPCIONAL: campo vazio
+ * passa (use `Validators.required` à parte se for obrigatório). Só valida
+ * quando há conteúdo. Erro: `{ cpfInvalido: true }`.
+ *
+ * Uso: `documento: ['', [cpfValidator()]]`
+ */
+export function cpfValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const v = control.value as string | null | undefined;
+    if (v == null || String(v).trim() === '') return null; // opcional
+    return cpfValido(v) ? null : { cpfInvalido: true };
+  };
 }
 
 export function mascaraCnpj(v: string): string {

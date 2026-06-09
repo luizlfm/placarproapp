@@ -195,6 +195,24 @@ se necessário.
 
 ---
 
+## Teste automatizado das Rules (emulador) — RODE ANTES DO DEPLOY
+
+Há um teste das Firestore Rules em `scripts/rules-test/` que valida os fluxos
+sensíveis no emulador, incluindo o caso crítico da inscrição pública
+(jogador + subdoc PII no mesmo batch). Rode na sua máquina:
+
+```bash
+cd scripts/rules-test
+npm install
+npm test
+```
+
+Precisa de Java (21+ pra firebase-tools v15, ou v13 com Java 11–17). Veja o
+`scripts/rules-test/README.md`. Todos os casos devem passar antes de publicar
+as rules.
+
+---
+
 ## Checklist de testes manuais (pós-deploy)
 
 Marque cada item. Faça em **aba anônima** os testes "público" e logado os "admin".

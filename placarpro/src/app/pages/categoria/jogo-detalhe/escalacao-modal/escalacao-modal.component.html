@@ -10,7 +10,7 @@
 </ion-header>
 
 <ion-content class="bg">
-  <!-- Cabeçalho da equipe -->
+  <!-- Cabeçalho da equipe + contadores Titulares × Reservas -->
   <div class="eq-header">
     <div class="eq-logo">
       <img *ngIf="equipeLogoUrl; else iconE" [src]="equipeLogoUrl" [alt]="equipeNome" />
@@ -19,11 +19,24 @@
     <div class="eq-info">
       <div class="eq-nome">{{ equipeNome || 'Equipe' }}</div>
       <div class="eq-meta">
-        <strong>{{ selecionados.size }}</strong>
-        <ng-container *ngIf="limite > 0; else semLimite">/ {{ limite }} (máx por partida)</ng-container>
-        <ng-template #semLimite>de {{ jogadores.length }} jogador(es) selecionado(s)</ng-template>
+        <span class="cnt cnt-tit">
+          <ion-icon name="star"></ion-icon>
+          <strong>{{ qtdTitulares }}</strong>
+          <ng-container *ngIf="limite > 0">/ {{ limite }}</ng-container>
+          titulares
+        </span>
+        <span class="cnt-sep">·</span>
+        <span class="cnt cnt-res">
+          <strong>{{ qtdReservas }}</strong> reservas
+        </span>
       </div>
     </div>
+  </div>
+
+  <!-- Dica do fluxo (some quando o user já entendeu — após primeira convocação) -->
+  <div class="dica" *ngIf="!carregando && convocados.size === 0">
+    <ion-icon name="information-circle-outline"></ion-icon>
+    <span>Toque pra <strong>convocar</strong> o jogador (vira reserva). Toque na <ion-icon name="star-outline" class="ic-inline"></ion-icon> pra promover a <strong>titular</strong>.</span>
   </div>
 
   <!-- Toolbar: busca + ações em lote -->
@@ -41,26 +54,30 @@
       </button>
     </div>
     <div class="acoes-lote">
-      <button type="button" class="link-btn" (click)="limpar()" [disabled]="selecionados.size === 0">
+      <button type="button" class="link-btn" (click)="limpar()" [disabled]="convocados.size === 0">
         Limpar
       </button>
       <button type="button" class="link-btn primary" (click)="selecionarTodos()">
-        Selecionar todos
+        Convocar todos
       </button>
     </div>
   </div>
 
   <!-- Lista de jogadores -->
   <div class="lista" *ngIf="!carregando; else loading">
-    <button
-      type="button"
+    <div
       *ngFor="let j of jogadoresFiltrados; trackBy: trackById"
       class="jog-row"
-      [class.sel]="estaSelecionado(j.id!)"
-      (click)="toggle(j.id!)"
+      [class.sel]="estaConvocado(j.id!)"
+      [class.titular]="ehTitular(j.id!)"
+      role="button"
+      tabindex="0"
+      (click)="toggleConvocar(j.id!)"
+      (keydown.enter)="toggleConvocar(j.id!)"
+      (keydown.space)="toggleConvocar(j.id!); $event.preventDefault()"
     >
-      <div class="check" [class.checked]="estaSelecionado(j.id!)">
-        <ion-icon *ngIf="estaSelecionado(j.id!)" name="checkmark"></ion-icon>
+      <div class="check" [class.checked]="estaConvocado(j.id!)">
+        <ion-icon *ngIf="estaConvocado(j.id!)" name="checkmark"></ion-icon>
       </div>
       <div class="foto">
         <img *ngIf="j.fotoUrl; else iconF" [src]="j.fotoUrl" [alt]="j.nome" />
@@ -71,9 +88,31 @@
           <span *ngIf="j.numeroCamisa" class="numero">#{{ j.numeroCamisa }}</span>
           {{ j.nome }}
         </span>
-        <span class="posicao" *ngIf="j.posicao">{{ j.posicao }}</span>
+        <span class="meta-row">
+          <span class="posicao" *ngIf="j.posicao">{{ j.posicao }}</span>
+          <span
+            class="badge"
+            *ngIf="estaConvocado(j.id!)"
+            [class.badge-tit]="ehTitular(j.id!)"
+            [class.badge-res]="!ehTitular(j.id!)"
+          >
+            {{ ehTitular(j.id!) ? 'TITULAR' : 'RESERVA' }}
+          </span>
+        </span>
       </div>
-    </button>
+      <!-- Estrela: promove a titular. Só visível quando o jogador já está convocado. -->
+      <button
+        type="button"
+        class="star"
+        *ngIf="estaConvocado(j.id!)"
+        [class.on]="ehTitular(j.id!)"
+        (click)="toggleTitular(j.id!, $event)"
+        [attr.aria-label]="ehTitular(j.id!) ? 'Rebaixar para reserva' : 'Promover a titular'"
+        [title]="ehTitular(j.id!) ? 'Rebaixar para reserva' : 'Promover a titular'"
+      >
+        <ion-icon [name]="ehTitular(j.id!) ? 'star' : 'star-outline'"></ion-icon>
+      </button>
+    </div>
 
     <div *ngIf="jogadores.length === 0" class="empty">
       <ion-icon name="people-outline"></ion-icon>
@@ -100,7 +139,7 @@
       <div class="spacer"></div>
       <ion-button color="primary" (click)="salvar()" [disabled]="salvando">
         <ion-spinner *ngIf="salvando" name="dots" slot="start"></ion-spinner>
-        Salvar ({{ selecionados.size }})
+        Salvar ({{ qtdTitulares }} + {{ qtdReservas }})
       </ion-button>
     </div>
   </ion-toolbar>

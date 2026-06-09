@@ -65,9 +65,24 @@ export interface CreditoConfig {
   validadeMeses?: number;
 }
 
+/**
+ * Override de preços de um plano de RACHA (pelada). Apenas preços —
+ * os recursos liberados por plano de racha são fixos no código.
+ */
+export interface RachaPlanoOverride {
+  precos?: {
+    mensal?: number;
+    trimestral?: number;
+    semestral?: number;
+    anual?: number;
+  };
+}
+
 export interface ConfigComercial {
   /** Overrides por id de plano: 'gratis' | 'pequeno' | 'medio' | 'grande' | 'profissional'. */
   planos?: { [planoId: string]: PlanoOverride };
+  /** Overrides de preços dos planos de RACHA: 'premium' | 'pro'. */
+  rachaPlanos?: { [planoRachaId: string]: RachaPlanoOverride };
   /** Configuração dos créditos. `number` é aceito como legado (= só o preço). */
   creditos?: {
     /** Crédito de patrocinador NORMAL. */

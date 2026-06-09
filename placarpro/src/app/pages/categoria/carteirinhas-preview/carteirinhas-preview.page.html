@@ -37,7 +37,14 @@
     <ion-spinner name="dots"></ion-spinner>
   </div>
 
-  <div class="cp-layout" *ngIf="!loading" [class.painel-fechado]="!painelAberto">
+  <!-- Falha de carregamento: antes ficava tela vazia silenciosa. -->
+  <div class="cp-loading" *ngIf="!loading && erroCarregar" style="text-align:center; padding:32px;">
+    <ion-icon name="alert-circle-outline" style="font-size:42px; color:var(--ion-color-danger);"></ion-icon>
+    <p>Não foi possível carregar os dados das carteirinhas.</p>
+    <ion-button fill="outline" (click)="recarregar()">Tentar de novo</ion-button>
+  </div>
+
+  <div class="cp-layout" *ngIf="!loading && !erroCarregar" [class.painel-fechado]="!painelAberto">
     <!-- ============ Painel lateral de configurações (no-print) ============ -->
     <aside class="cp-painel no-print">
       <div class="cp-painel-head">

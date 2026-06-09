@@ -1,5 +1,6 @@
 import { Component, ElementRef, Input, OnInit, ViewChild, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { cpfValidator } from '../../../../shared/directives/mask.directive';
 import {
   AlertController,
   LoadingController,
@@ -92,7 +93,7 @@ export class JogadorModalComponent implements OnInit {
     // CPF e RG separados (antes era um campo `documento` único combinado).
     // Continuamos populando `documento` no salvar pra retrocompat com
     // listagens antigas que leem desse campo.
-    cpf: [''],
+    cpf: ['', [cpfValidator()]],
     rg: [''],
     dataNascimento: [''],
     telefone: [''],
@@ -524,6 +525,9 @@ export class JogadorModalComponent implements OnInit {
   async salvar(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      if (this.form.get('cpf')?.hasError('cpfInvalido')) {
+        await this.toast('CPF inválido. Confira os números.', 'warning');
+      }
       return;
     }
     this.loading = true;

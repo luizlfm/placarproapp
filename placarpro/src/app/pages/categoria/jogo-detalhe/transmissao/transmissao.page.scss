@@ -3085,6 +3085,45 @@
   }
 }
 
+/* ═════ Wrapper scrollável do conteúdo da Escalação ═════
+   Em landscape mobile (~412px de altura) o painel é baixo demais
+   pra mostrar sub-tabs + campo (aspect 3/4) + lista sem cortar.
+   Esse wrapper rola TUDO junto, e os sub-tabs ficam sticky no topo. */
+.tr-esc-conteudo {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 8px 12px;
+  /* Smooth scroll no iOS */
+  -webkit-overflow-scrolling: touch;
+
+  /* Sub-tabs do time ficam sticky no topo durante o scroll */
+  > .tr-esc-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: #000;
+    padding: 8px 0 6px;
+    margin: 0;
+  }
+
+  /* Campo e lista voltam ao fluxo normal — sem altura fixa, sem scroll
+     próprio (o pai rola). */
+  > .tr-esc-campo {
+    flex: 0 0 auto;
+  }
+
+  > .tr-esc-list {
+    flex: 0 0 auto;
+    overflow: visible;
+    padding: 0;
+  }
+}
+
 /* ═════ Lista de Escalação ═════ */
 .tr-esc-list {
   gap: 4px;

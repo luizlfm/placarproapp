@@ -233,13 +233,6 @@ export interface Jogo {
    * Setado uma única vez (quando ainda é `undefined`).
    */
   transmissaoSegundosBase?: number;
-
-  /** DEV/TEST — quando admin clica em "Testar banner premium", grava o
-   *  timestamp aqui. Todos os componentes que escutam o jogo veem e
-   *  disparam a janela local. REMOVER junto com a feature de teste. */
-  _testePremiumAt?: Timestamp;
-  _testePremiumLogoUrl?: string;
-  _testePremiumNome?: string;
 }
 
 /**

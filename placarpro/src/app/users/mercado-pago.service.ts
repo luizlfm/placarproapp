@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
+import { cpfValido } from '../shared/directives/mask.directive';
 
 /**
  * Tipos do SDK do Mercado Pago — declarados localmente porque o SDK é
@@ -100,31 +101,13 @@ export class MercadoPagoService {
   }
 
   /**
-   * Valida CPF pelo algoritmo dos dígitos verificadores (módulo 11).
-   * Mercado Pago rejeita CPFs com sequências (111.111.111-11) ou que
-   * não passam no algoritmo. Validar aqui evita chamada inútil ao backend.
+   * Valida CPF pelos dígitos verificadores. Delega pra função central
+   * `cpfValido` (shared/directives/mask.directive) — fonte única de verdade,
+   * usada em todos os formulários do app. Validar aqui evita chamada inútil
+   * ao backend do Mercado Pago.
    */
   private validarCpf(cpf: string): boolean {
-    const s = cpf.replace(/\D/g, '');
-    if (s.length !== 11) return false;
-    // Rejeita sequências (111.111.111-11, 222..., etc)
-    if (/^(\d)\1{10}$/.test(s)) return false;
-
-    // Primeiro dígito verificador
-    let sum = 0;
-    for (let i = 0; i < 9; i++) sum += parseInt(s[i], 10) * (10 - i);
-    let resto = (sum * 10) % 11;
-    if (resto === 10) resto = 0;
-    if (resto !== parseInt(s[9], 10)) return false;
-
-    // Segundo dígito verificador
-    sum = 0;
-    for (let i = 0; i < 10; i++) sum += parseInt(s[i], 10) * (11 - i);
-    resto = (sum * 10) % 11;
-    if (resto === 10) resto = 0;
-    if (resto !== parseInt(s[10], 10)) return false;
-
-    return true;
+    return cpfValido(cpf);
   }
 
   /**

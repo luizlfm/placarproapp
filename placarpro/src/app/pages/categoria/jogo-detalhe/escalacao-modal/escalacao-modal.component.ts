@@ -6,6 +6,22 @@ import { JogosService } from '../../../../campeonatos/jogos.service';
 import { JogadoresService } from '../../../../campeonatos/jogadores.service';
 import { EquipesService } from '../../../../campeonatos/equipes.service';
 
+/**
+ * Modal de Escalação.
+ *
+ * Fluxo (refatorado):
+ *  • Convocados = todo jogador que entra na partida (titulares + reservas).
+ *    NÃO tem limite — o teto é o tamanho do plantel da equipe.
+ *  • Titulares = subconjunto que começa em campo. Limitado a `limite`
+ *    (jogadoresPorPartida da categoria; 0 = sem limite).
+ *  • Reservas = convocados que NÃO são titulares. Disponíveis pra
+ *    substituição durante a transmissão.
+ *
+ * UI:
+ *  • Checkbox à esquerda na linha → convoca/desconvoca.
+ *  • Estrela à direita → promove o convocado a titular (respeitando o limite).
+ *  • Desconvocar tira da titularidade automaticamente.
+ */
 @Component({
   selector: 'app-escalacao-modal',
   templateUrl: './escalacao-modal.component.html',
@@ -20,7 +36,7 @@ export class EscalacaoModalComponent implements OnInit {
   @Input() equipeNome = '';
   /** URL do escudo da equipe (opcional — buscado pelo equipeId se vier vazio) */
   @Input() equipeLogoUrl = '';
-  /** Máximo de jogadores escaláveis (0 = sem limite). */
+  /** Máximo de TITULARES por partida (0 = sem limite). Reservas não têm teto. */
   @Input() limite = 0;
 
   private readonly jogosSrv = inject(JogosService);
@@ -30,7 +46,10 @@ export class EscalacaoModalComponent implements OnInit {
   private readonly toastCtrl = inject(ToastController);
 
   jogadores: Jogador[] = [];
-  selecionados = new Set<string>();
+  /** IDs dos jogadores convocados pra partida (titulares + reservas). */
+  convocados = new Set<string>();
+  /** IDs dos titulares (subconjunto de `convocados`, máx `limite`). */
+  titulares = new Set<string>();
   carregando = true;
   salvando = false;
 
@@ -39,12 +58,12 @@ export class EscalacaoModalComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
-      const [jogadores, ids] = await Promise.all([
+      const [jogadores, escalacao] = await Promise.all([
         firstValueFrom(
           this.jogadoresSrv.listPorEquipe$(this.campeonatoId, this.categoriaId, this.equipeId),
         ),
         firstValueFrom(
-          this.jogosSrv.escalacao$(
+          this.jogosSrv.escalacaoCompleta$(
             this.campeonatoId,
             this.categoriaId,
             this.jogoId,
@@ -56,7 +75,24 @@ export class EscalacaoModalComponent implements OnInit {
       this.jogadores = [...jogadores].sort((a, b) =>
         (a.nome ?? '').localeCompare(b.nome ?? '', 'pt-BR'),
       );
-      this.selecionados = new Set(ids);
+      this.convocados = new Set(escalacao.jogadorIds);
+      // Migração de docs antigos: se ninguém marcado como titular E há
+      // convocados, considera os N primeiros (até o limite) como titulares
+      // por padrão. Mantém retrocompatibilidade pra escalações já gravadas.
+      if (escalacao.titularIds.length > 0) {
+        this.titulares = new Set(
+          escalacao.titularIds.filter(id => this.convocados.has(id)),
+        );
+      } else if (this.convocados.size > 0 && this.limite > 0) {
+        // Sem titulares definidos: pega os N primeiros convocados (ordem do
+        // plantel, que é por nome). User pode reescolher antes de salvar.
+        const ordemConvocados = this.jogadores
+          .map(j => j.id!)
+          .filter(id => id && this.convocados.has(id));
+        this.titulares = new Set(ordemConvocados.slice(0, this.limite));
+      } else {
+        this.titulares = new Set();
+      }
       // Se equipeNome veio vazio (ou logoUrl), busca pela equipeId
       if ((!this.equipeNome || !this.equipeLogoUrl) && this.equipeId) {
         try {
@@ -91,38 +127,76 @@ export class EscalacaoModalComponent implements OnInit {
     );
   }
 
+  /** Quantos titulares estão marcados agora (pra header/footer). */
+  get qtdTitulares(): number {
+    return this.titulares.size;
+  }
+
+  /** Quantos reservas estão marcados agora (convocado e não-titular). */
+  get qtdReservas(): number {
+    let n = 0;
+    for (const id of this.convocados) if (!this.titulares.has(id)) n++;
+    return n;
+  }
+
   dismiss(): Promise<boolean> {
     return this.modalCtrl.dismiss();
   }
 
-  toggle(jogadorId: string): void {
-    if (this.selecionados.has(jogadorId)) {
-      this.selecionados.delete(jogadorId);
+  /** Convoca (ou desconvoca) — toggle do checkbox da linha. */
+  toggleConvocar(jogadorId: string): void {
+    if (this.convocados.has(jogadorId)) {
+      // Desconvocar: remove da convocação E da titularidade.
+      this.convocados.delete(jogadorId);
+      this.titulares.delete(jogadorId);
       return;
     }
-    // Respeita o limite de jogadores por partida (0 = sem limite).
-    if (this.limite > 0 && this.selecionados.size >= this.limite) {
-      void this.toast(`Limite de ${this.limite} jogadores por partida atingido.`, 'warning');
+    this.convocados.add(jogadorId);
+    // Se ainda há vaga de titular E nenhum titular foi marcado ainda,
+    // entra direto como titular pra acelerar a escalação. Caso contrário,
+    // entra como reserva.
+    if (this.limite > 0 && this.titulares.size < this.limite) {
+      // NÃO promove automaticamente — deixa o user decidir clicando na estrela.
+      // (Comportamento antigo: titularizava automaticamente — confundia user.)
+    }
+  }
+
+  /** Marca/desmarca um convocado como titular (estrela). */
+  toggleTitular(jogadorId: string, ev?: Event): void {
+    ev?.stopPropagation();
+    if (!this.convocados.has(jogadorId)) return; // só convocados viram titulares
+    if (this.titulares.has(jogadorId)) {
+      this.titulares.delete(jogadorId);
       return;
     }
-    this.selecionados.add(jogadorId);
+    if (this.limite > 0 && this.titulares.size >= this.limite) {
+      void this.toast(`Limite de ${this.limite} titulares atingido. Tire um titular antes.`, 'warning');
+      return;
+    }
+    this.titulares.add(jogadorId);
   }
 
-  estaSelecionado(jogadorId: string): boolean {
-    return this.selecionados.has(jogadorId);
+  estaConvocado(jogadorId: string): boolean {
+    return this.convocados.has(jogadorId);
   }
 
+  ehTitular(jogadorId: string): boolean {
+    return this.titulares.has(jogadorId);
+  }
+
+  /** Convoca todo o plantel (sem mexer em titulares, que ficam até o limite). */
   selecionarTodos(): void {
-    let ids = this.jogadores.map(j => j.id!).filter(Boolean);
-    if (this.limite > 0 && ids.length > this.limite) {
-      ids = ids.slice(0, this.limite);
-      void this.toast(`Selecionados os primeiros ${this.limite} (limite por partida).`, 'warning');
+    const ids = this.jogadores.map(j => j.id!).filter(Boolean);
+    this.convocados = new Set(ids);
+    // Se o user nunca marcou titulares, preenche até o limite na ordem.
+    if (this.titulares.size === 0 && this.limite > 0) {
+      this.titulares = new Set(ids.slice(0, this.limite));
     }
-    this.selecionados = new Set(ids);
   }
 
   limpar(): void {
-    this.selecionados.clear();
+    this.convocados.clear();
+    this.titulares.clear();
   }
 
   async salvar(): Promise<void> {
@@ -133,9 +207,13 @@ export class EscalacaoModalComponent implements OnInit {
         this.categoriaId,
         this.jogoId,
         this.equipeId,
-        Array.from(this.selecionados),
+        Array.from(this.convocados),
+        Array.from(this.titulares),
       );
-      await this.toast('Escalação salva.', 'success');
+      await this.toast(
+        `Escalação salva (${this.qtdTitulares} titulares · ${this.qtdReservas} reservas).`,
+        'success',
+      );
       await this.modalCtrl.dismiss({ saved: true });
     } catch (err) {
       console.error('[EscalacaoModal] salvar', err);

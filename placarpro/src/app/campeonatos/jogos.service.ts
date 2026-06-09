@@ -95,16 +95,38 @@ export class JogosService {
     jogoId: string,
     equipeId: string,
     jogadorIds: string[],
+    titularIds?: string[],
   ): Promise<void> {
     await runInInjectionContext(this.injector, async () => {
       const ref = this.escalacaoDocRef(campeonatoId, categoriaId, jogoId, equipeId);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        await updateDoc(ref, { jogadorIds });
-      } else {
-        await setDoc(ref, { jogadorIds });
-      }
+      // Sanitiza: titularIds tem que ser subconjunto de jogadorIds.
+      const tituSaneados = titularIds !== undefined
+        ? titularIds.filter(id => jogadorIds.includes(id))
+        : undefined;
+      const payload: { jogadorIds: string[]; titularIds?: string[] } = { jogadorIds };
+      if (tituSaneados !== undefined) payload.titularIds = tituSaneados;
+      // setDoc com merge cria o doc se não existir e atualiza só os campos passados.
+      await setDoc(ref, payload, { merge: true });
     });
+  }
+
+  /** Lê convocados + titulares juntos (uma só assinatura do doc). */
+  escalacaoCompleta$(
+    campeonatoId: string,
+    categoriaId: string,
+    jogoId: string,
+    equipeId: string,
+  ): Observable<{ jogadorIds: string[]; titularIds: string[] }> {
+    return runInInjectionContext(this.injector, () =>
+      (docData(this.escalacaoDocRef(campeonatoId, categoriaId, jogoId, equipeId)) as Observable<
+        { jogadorIds?: string[]; titularIds?: string[] } | undefined
+      >).pipe(
+        map(d => ({
+          jogadorIds: d?.jogadorIds ?? [],
+          titularIds: d?.titularIds ?? [],
+        })),
+      ),
+    );
   }
 
   /** IDs dos jogadores marcados como TITULARES (subconjunto da escalação que

@@ -29,10 +29,16 @@ export type MetodoPagamento =
  */
 /**
  * Tipo da cobrança:
- *  - `assinatura`: mensalidade/período de um plano.
+ *  - `assinatura`: mensalidade/período de um plano de CAMPEONATO (organizador).
  *  - `transmissao-avulsa`: créditos de transmissão ao vivo (R$30 cada).
+ *  - `racha-assinatura`: mensalidade/período de um plano de RACHA (pelada).
+ *    Nesse caso `rachaId`/`planoRacha` identificam qual racha será promovido,
+ *    e `planoId` fica vazio (planos de racha usam IDs próprios).
  */
-export type CobrancaTipo = 'assinatura' | 'transmissao-avulsa';
+export type CobrancaTipo = 'assinatura' | 'transmissao-avulsa' | 'racha-assinatura';
+
+/** ID de plano de racha (independente dos planos de campeonato). */
+export type PlanoRachaId = 'gratis' | 'premium' | 'pro';
 
 export interface Cobranca {
   id?: string;
@@ -48,8 +54,20 @@ export interface Cobranca {
   usuarioEmail?: string;
   /** Nome (denormalizado). */
   usuarioNome?: string;
-  /** Plano referente à cobrança. Pode ser null em transmissao-avulsa. */
-  planoId: PlanoId;
+  /**
+   * Plano de CAMPEONATO referente à cobrança. Pode ser ausente em
+   * `transmissao-avulsa` e em `racha-assinatura` (que usa `planoRacha`).
+   */
+  planoId?: PlanoId;
+  /**
+   * ID do racha cobrado — preenchido apenas quando `tipo === 'racha-assinatura'`.
+   * Ao confirmar o pagamento, o admin promove `rachas/{rachaId}.plano`.
+   */
+  rachaId?: string;
+  /** Nome do racha (denormalizado pra exibição no painel admin). */
+  rachaNome?: string;
+  /** Plano de racha referente à cobrança (quando `tipo === 'racha-assinatura'`). */
+  planoRacha?: PlanoRachaId;
   /** Periodicidade da cobrança (define duração da assinatura paga). */
   periodicidade: Periodicidade;
   /**

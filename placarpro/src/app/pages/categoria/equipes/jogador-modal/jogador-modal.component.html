@@ -188,8 +188,14 @@
         <ion-input fill="outline" label="Nº camisa/registro" labelPlacement="stacked" inputmode="numeric"
           placeholder="Ex: 10" formControlName="numeroCamisa"></ion-input>
         <ion-input fill="outline" label="CPF" labelPlacement="stacked" inputmode="numeric"
-          placeholder="000.000.000-00" mask="cpf" formControlName="cpf"></ion-input>
+          placeholder="000.000.000-00" mask="cpf" formControlName="cpf"
+          [class.ion-invalid]="form.get('cpf')?.invalid && form.get('cpf')?.touched"
+          [class.ion-touched]="form.get('cpf')?.touched"
+          errorText="CPF inválido"></ion-input>
       </div>
+      <p class="erro-inline" *ngIf="form.get('cpf')?.hasError('cpfInvalido') && form.get('cpf')?.touched">
+        CPF inválido — confira os números.
+      </p>
 
       <!-- RG separado em sua própria linha — formato variado (CNH inclui
            órgão emissor + UF tipo "MG14967119 SSP MG", RG comum só dígitos). -->

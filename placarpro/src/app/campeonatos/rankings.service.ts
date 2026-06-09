@@ -102,8 +102,11 @@ export class RankingsService {
     eventos.forEach(e => {
       const qtd = e.quantidade ?? 1;
       if (tipo === 'assistencia') {
+        // Assistência conta 1 por evento de gol com assistente — NÃO multiplica
+        // por `quantidade`. Um `assistenteId` único representa UM passe; mesmo
+        // que o gol esteja agrupado (quantidade>1), foi um lance de assistência.
         if (e.tipo === 'gol' && e.assistenteId) {
-          addPonto(e.assistenteId, qtd);
+          addPonto(e.assistenteId, 1);
         }
         return;
       }

@@ -1,9 +1,8 @@
 <div class="ce-wrap" *ngIf="vm$ | async as vm">
   <ng-container *ngIf="vm.linhas.length || vm.aleatorios.length; else semEsc">
-    <div class="ce-aviso" *ngIf="vm.semPosicoes">
-      <ion-icon name="information-circle" aria-hidden="true"></ion-icon>
-      <span>Defina a posição de cada jogador para montar a formação.</span>
-    </div>
+    <!-- Aviso "Defina a posição..." removido a pedido do user — ocupava topo
+         em landscape mobile e dava sensação de tela travada. A info da posição
+         já aparece embaixo de cada camisa quando configurada. -->
 
     <div class="ce-campo" [class.ce-campo-aleatorio]="vm.modo === 'aleatorio'">
       <!-- marcações do campo -->

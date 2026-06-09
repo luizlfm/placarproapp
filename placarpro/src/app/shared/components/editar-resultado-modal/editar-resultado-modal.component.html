@@ -1,7 +1,7 @@
-<ion-header>
-  <ion-toolbar color="primary">
+<ion-header class="ion-no-border">
+  <ion-toolbar color="light" class="topbar">
     <ion-buttons slot="start">
-      <ion-button (click)="dismiss()" aria-label="Fechar">
+      <ion-button (click)="dismiss()" aria-label="Fechar" fill="clear">
         <ion-icon slot="icon-only" name="close-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -11,74 +11,91 @@
 
 <ion-content class="bg">
   <form [formGroup]="form" (ngSubmit)="salvar()" novalidate class="wrap">
-    <!-- ─── Placar: equipes lado a lado + gols centralizados ─── -->
+    <!-- ─── Placar: escudo + input em cima (par), nomes embaixo, × fixo no meio ─── -->
     <div class="placar-card">
-      <div class="lado mandante">
-        <div class="escudo">
-          <img *ngIf="mandante?.logoUrl; else iconM" [src]="mandante!.logoUrl" [alt]="mandante!.nome" />
-          <ng-template #iconM><ion-icon name="shield-outline"></ion-icon></ng-template>
+      <div class="placar-top">
+        <div class="lado">
+          <div class="escudo">
+            <img *ngIf="mandante?.logoUrl; else iconM" [src]="mandante!.logoUrl" [alt]="mandante!.nome" />
+            <ng-template #iconM><ion-icon name="shield-outline"></ion-icon></ng-template>
+          </div>
+          <input
+            type="number"
+            min="0"
+            inputmode="numeric"
+            class="gols-input"
+            formControlName="golsMandante"
+            placeholder="0"
+            aria-label="Gols mandante"
+          />
         </div>
-        <div class="nome">{{ mandante?.nome || '?' }}</div>
-        <input
-          type="number"
-          min="0"
-          inputmode="numeric"
-          class="gols-input"
-          formControlName="golsMandante"
-          placeholder="0"
-          aria-label="Gols mandante"
-        />
+
+        <div class="vs"><span>×</span></div>
+
+        <div class="lado">
+          <input
+            type="number"
+            min="0"
+            inputmode="numeric"
+            class="gols-input"
+            formControlName="golsVisitante"
+            placeholder="0"
+            aria-label="Gols visitante"
+          />
+          <div class="escudo">
+            <img *ngIf="visitante?.logoUrl; else iconV" [src]="visitante!.logoUrl" [alt]="visitante!.nome" />
+            <ng-template #iconV><ion-icon name="shield-outline"></ion-icon></ng-template>
+          </div>
+        </div>
       </div>
 
-      <div class="vs"><span>×</span></div>
-
-      <div class="lado visitante">
-        <div class="escudo">
-          <img *ngIf="visitante?.logoUrl; else iconV" [src]="visitante!.logoUrl" [alt]="visitante!.nome" />
-          <ng-template #iconV><ion-icon name="shield-outline"></ion-icon></ng-template>
-        </div>
-        <div class="nome">{{ visitante?.nome || '?' }}</div>
-        <input
-          type="number"
-          min="0"
-          inputmode="numeric"
-          class="gols-input"
-          formControlName="golsVisitante"
-          placeholder="0"
-          aria-label="Gols visitante"
-        />
+      <div class="placar-nomes">
+        <div class="nome-eq esq" [title]="mandante?.nome">{{ mandante?.nome || '?' }}</div>
+        <div class="nome-eq dir" [title]="visitante?.nome">{{ visitante?.nome || '?' }}</div>
       </div>
     </div>
 
     <!-- ─── Status da partida ─── -->
-    <ion-select
-      fill="outline"
-      label="Status"
-      labelPlacement="stacked"
-      formControlName="status"
-      interface="popover"
-    >
-      <ion-select-option value="agendado">Agendado</ion-select-option>
-      <ion-select-option value="em-andamento">Em andamento</ion-select-option>
-      <ion-select-option value="encerrado">Encerrado</ion-select-option>
-      <ion-select-option value="cancelado">Cancelado</ion-select-option>
-      <ion-select-option value="wo">W.O.</ion-select-option>
-    </ion-select>
+    <div class="field">
+      <label class="field-label">Status</label>
+      <ion-select
+        fill="outline"
+        formControlName="status"
+        interface="popover"
+        class="status-select"
+      >
+        <ion-select-option value="agendado">Agendado</ion-select-option>
+        <ion-select-option value="em-andamento">Em andamento</ion-select-option>
+        <ion-select-option value="encerrado">Encerrado</ion-select-option>
+        <ion-select-option value="cancelado">Cancelado</ion-select-option>
+        <ion-select-option value="wo">W.O.</ion-select-option>
+      </ion-select>
+    </div>
 
-    <!-- ─── Botões ─── -->
-    <ion-row class="ion-no-padding actions">
-      <ion-col size="12" size-md="6" *ngIf="form.value.status !== 'encerrado'">
-        <ion-button class="buttons" color="success" type="button" (click)="encerrar()" [disabled]="loading" expand="block">
-          <ion-icon slot="start" name="checkmark-done-outline"></ion-icon>
-          Encerrar jogo
-        </ion-button>
-      </ion-col>
-      <ion-col size="12" size-md="6">
-        <ion-button class="buttons" color="primary" type="submit" [disabled]="loading" expand="block">
-          <ion-icon slot="start" name="save-outline"></ion-icon>
-          Salvar
-        </ion-button>
-      </ion-col>
-    </ion-row>
+    <!-- ─── Botões — lado a lado, sempre ─── -->
+    <div class="actions">
+      <ion-button
+        *ngIf="form.value.status !== 'encerrado'"
+        class="btn btn-encerrar"
+        color="success"
+        type="button"
+        (click)="encerrar()"
+        [disabled]="loading"
+        expand="block"
+      >
+        <ion-icon slot="start" name="checkmark-done-outline"></ion-icon>
+        Encerrar
+      </ion-button>
+      <ion-button
+        class="btn btn-salvar"
+        color="primary"
+        type="submit"
+        [disabled]="loading"
+        expand="block"
+      >
+        <ion-icon slot="start" name="save-outline"></ion-icon>
+        Salvar
+      </ion-button>
+    </div>
   </form>
 </ion-content>
