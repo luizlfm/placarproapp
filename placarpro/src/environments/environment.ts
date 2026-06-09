@@ -1,12 +1,15 @@
-// Dev environment — projeto Firebase: placaPro (placapro-d276d)
+// Dev/TESTE environment — projeto Firebase: placaPro (placapro-d276d).
+// Este projeto deixou de ser produção e virou o ambiente de testes (mantém
+// todos os dados existentes). Produção agora é placarproapp-ed05a (environment.prod.ts).
 // Console: https://console.firebase.google.com/project/placapro-d276d
 
 export const environment = {
   production: false,
   firebase: {
     apiKey: 'AIzaSyAgfVhr8jCwyMuTqQiVHElrZH4qwbslE5c',
-    // Em prod, o authDomain aponta pro mesmo origin (web.app) pra evitar Safari ITP.
-    // Em dev (localhost) qualquer um dos dois funciona. Mantemos web.app pra consistência.
+    // authDomain no domínio padrão do projeto de teste. O placarproapp.com saiu
+    // daqui (foi pra produção), então usamos o .web.app. Em dev (localhost) o
+    // login Google/Apple funciona normalmente com este authDomain.
     authDomain: 'placapro-d276d.web.app',
     projectId: 'placapro-d276d',
     storageBucket: 'placapro-d276d.firebasestorage.app',
@@ -14,6 +17,15 @@ export const environment = {
     appId: '1:1009050256280:web:9b003cb47aa2e6ded2e1ed',
     measurementId: 'G-MMPK5LMZWD',
   },
+
+  /**
+   * Liga/desliga o botão "Entrar/Cadastrar com Apple" nas telas de login/signup.
+   * Desligado porque o Sign in with Apple exige um Services ID configurado em
+   * uma conta do Apple Developer Program (paga). Quando o domínio
+   * `placarproapp.com` estiver verificado no Services ID + Return URL
+   * `https://placarproapp.com/__/auth/handler`, basta voltar pra `true`.
+   */
+  appleLoginEnabled: false,
 
   /**
    * Lista de códigos válidos para cadastro de novos ORGANIZADORES.

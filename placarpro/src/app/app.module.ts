@@ -51,7 +51,14 @@ import { environment } from '../environments/environment';
     // na tela de Locais, e disponível pra qualquer service futuro.
     provideHttpClient(withInterceptorsFromDi()),
     provideFirebaseApp(() => initializeApp(environment.firebase)),
-    provideAuth(() => getAuth()),
+    provideAuth(() => {
+      const auth = getAuth();
+      // Força os e-mails do Firebase Auth (reset de senha, verificação) e a
+      // tela padrão de ação (/__/auth/action) a saírem em PORTUGUÊS (Brasil).
+      // Sem isso, o Firebase manda tudo em inglês (lang=en).
+      auth.languageCode = 'pt-BR';
+      return auth;
+    }),
     provideFirestore(() => getFirestore()),
     provideStorage(() => getStorage()),
     // Cloud Functions na região southamerica-east1 — onde estão as funções

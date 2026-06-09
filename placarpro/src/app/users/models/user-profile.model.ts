@@ -50,7 +50,7 @@ export interface UserProfile {
   bannerSiteUrl?: string;
   /** Cor primária do perfil (hex). */
   corPrimaria?: string;
-  /** Slug do link: placarpro.app/{slug}. */
+  /** Slug do link: placarproapp.com/{slug}. */
   slug?: string;
 
   visibilidade?: Visibilidade;

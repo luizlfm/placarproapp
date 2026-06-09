@@ -165,6 +165,47 @@
 
     <!-- ============ Seção: DASHBOARD ============ -->
     <section class="ad-secao" *ngIf="secao === 'dashboard'">
+      <!-- Visitas ao site — alimentado pela Cloud Function `registrarVisita`.
+           total geral + gráfico dos últimos 14 dias. -->
+      <ng-container *ngIf="visitas$ | async as v">
+        <div class="ad-stat-group">
+          <h2 class="ad-secao-title">Visitas ao site</h2>
+          <div class="ad-cards">
+            <div class="ad-card primary">
+              <div class="ad-card-icon"><ion-icon name="trending-up-outline"></ion-icon></div>
+              <div class="ad-card-body">
+                <div class="ad-card-num">{{ v.total }}</div>
+                <div class="ad-card-label">Visitas totais</div>
+              </div>
+            </div>
+            <div class="ad-card success">
+              <div class="ad-card-icon"><ion-icon name="today-outline"></ion-icon></div>
+              <div class="ad-card-body">
+                <div class="ad-card-num">{{ v.dias.length ? v.dias[v.dias.length - 1].count : 0 }}</div>
+                <div class="ad-card-label">Último dia registrado</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ad-visitas-chart" *ngIf="v.dias.length; else semVisitas">
+            <div
+              class="ad-bar-col"
+              *ngFor="let d of v.dias"
+              [title]="d.data + ': ' + d.count + ' visita(s)'"
+            >
+              <span class="ad-bar-val">{{ d.count }}</span>
+              <div class="ad-bar" [style.height.%]="barAltura(d.count, v.dias)"></div>
+              <span class="ad-bar-lbl">{{ d.data | slice : 5 }}</span>
+            </div>
+          </div>
+          <ng-template #semVisitas>
+            <p class="ad-visitas-vazio">
+              Ainda sem visitas registradas. Os dados aparecem conforme o site recebe acessos.
+            </p>
+          </ng-template>
+        </div>
+      </ng-container>
+
       <!-- Card de AÇÕES PENDENTES — alertas pro admin agir
            Aparece no topo do dashboard quando há qualquer item pendente.
            Cada chip leva direto pra aba/filtro relevante. -->

@@ -5,6 +5,7 @@ import { LoadingController, ToastController } from '@ionic/angular';
 import { AuthService } from '../../auth/auth.service';
 import { UsersService } from '../../users/users.service';
 import { LogsService } from '../../users/logs.service';
+import { environment } from '../../../environments/environment';
 
 /** Valida que os campos `password` e `confirm` são iguais no FormGroup pai. */
 function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
@@ -34,6 +35,8 @@ export class SignupPage {
 
   showPassword = false;
   loading = false;
+  /** Exibe o botão de cadastro com Apple (controlado por environment). */
+  readonly appleLoginEnabled = environment.appleLoginEnabled;
 
   /** Tipo de conta sendo criada — só afeta o redirect padrão depois do signup. */
   tipoCadastro: TipoCadastro = this.lerTipoInicial();

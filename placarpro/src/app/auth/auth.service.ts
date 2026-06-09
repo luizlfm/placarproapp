@@ -277,7 +277,11 @@ export class AuthService {
   }
 
   resetPassword(email: string): Promise<void> {
-    return this.run(() => sendPasswordResetEmail(this.auth, email));
+    return this.run(() => {
+      // Garante o e-mail de reset + tela de ação em português (Brasil).
+      this.auth.languageCode = 'pt-BR';
+      return sendPasswordResetEmail(this.auth, email);
+    });
   }
 
   signOut(): Promise<void> {

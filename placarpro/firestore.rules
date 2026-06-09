@@ -34,7 +34,11 @@ service cloud.firestore {
       return isHardcodedMaster() || (
         isSignedIn()
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isMaster == true
+        // `.get('isMaster', false)` NUNCA lança — se o campo não existir no
+        // doc, assume false. Usar `.data.isMaster` direto dispara
+        // "Property isMaster is undefined" em docs sem o campo, fazendo a
+        // regra inteira falhar de forma imprevisível.
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isMaster', false) == true
       );
     }
     function isOwner(campeonatoId) {
@@ -191,14 +195,55 @@ service cloud.firestore {
            : plano == 'pequeno' ? 300
            : 50; // gratis
     }
-    /** Lê um contador denormalizado de um doc, com default 0 se ausente. */
-    function contador(docPath, campo) {
-      return exists(docPath) && (campo in get(docPath).data)
-             ? get(docPath).data[campo] : 0;
+    /**
+     * Contadores denormalizados, lidos com `.get(campo, 0)` (default 0 se
+     * ausente). NÃO usamos indexação dinâmica `data[campoVariavel]` — em
+     * Firestore Rules ela não resolve de forma confiável e fazia a função
+     * retornar 0 sempre, liberando creates acima do limite. Por isso há um
+     * helper por campo, com nome LITERAL.
+     */
+    function contaCategorias(campeonatoId) {
+      let ref = /databases/$(database)/documents/campeonatos/$(campeonatoId);
+      return exists(ref) ? get(ref).data.get('totalCategorias', 0) : 0;
+    }
+    function contaJogadores(campeonatoId, categoriaId) {
+      let ref = /databases/$(database)/documents/campeonatos/$(campeonatoId)/categorias/$(categoriaId);
+      return exists(ref) ? get(ref).data.get('totalJogadores', 0) : 0;
+    }
+    function contaCampeonatosDoUser(uid) {
+      let ref = /databases/$(database)/documents/users/$(uid);
+      return exists(ref) ? get(ref).data.get('totalCampeonatos', 0) : 0;
     }
     /** true se ainda cabe +1 sob o limite (ilimitado = sempre true). */
     function dentroDoLimite(atual, max) {
       return max == -1 || atual < max;
+    }
+
+    /**
+     * true se o caminho capturado por um glob `{deep=**}` contém o segmento
+     * `privado` — usado pra EXCLUIR docs de PII do catch-all permissivo do
+     * campeonato (senão o glob público vazaria CPF/RG dos jogadores).
+     * `string(p)` serializa o path; `.matches()` usa regex RE2.
+     */
+    function pathContemPrivado(p) {
+      return string(p).matches('(^|.*/)privado(/.*|$)');
+    }
+
+    // ALLOWLIST do catch-all de WRITE sob categorias/{categoriaId}.
+    //
+    // O glob {deep=**} aninhado tambem casa o proprio doc-categoria e os docs
+    // de jogador (que tem regras proprias com limite de plano + PII). Excluir
+    // por blocklist e fragil (o formato de string(deep) varia e abre brechas:
+    // confirmado no emulador, o glob criava categoria/jogador sem limite e
+    // vazava PII). Por isso usamos ALLOWLIST: o glob so autoriza WRITE nos
+    // tipos realmente criados por aqui (jogos, eventos, fases, grupos,
+    // escalacao, classificacao, agendamento, lances, sumula). Doc-categoria,
+    // jogadores e PII caem so na sua regra propria.
+    //
+    // IMPORTANTE: ao adicionar nova subcolecao criavel sob a categoria,
+    // inclua o nome aqui, senao o create dela sera bloqueado.
+    function pathGlobPermitido(p) {
+      return string(p).matches('(^|.*/)(jogos|eventos|fases|grupos|escalacao|escalacoes|classificacao|agendamento|lances|sumula|preSumula)(/.*)?$');
     }
     /**
      * Campeonato é considerado público se:
@@ -225,6 +270,15 @@ service cloud.firestore {
              && conv.data.campeonatoId == campeonatoId
              && conv.data.categoriaId == categoriaId
              && conv.data.equipeId == equipeId;
+    }
+
+    // ============ estatísticas (visitas ao site) ============
+    // Escritas SÓ pela Cloud Function `registrarVisita` (Admin SDK, que
+    // bypassa as Rules). Cliente nunca escreve aqui (impede inflar a métrica).
+    // Leitura só pra admin master — alimenta o dashboard de visitas.
+    match /estatisticas/{doc=**} {
+      allow read: if isMaster();
+      allow write: if false;
     }
 
     // ============ users ============
@@ -314,7 +368,7 @@ service cloud.firestore {
       allow create: if isMaster()
                     || (isCreatingAsSelf() && contaAtiva()
                         && dentroDoLimite(
-                             contador(/databases/$(database)/documents/users/$(request.auth.uid), 'totalCampeonatos'),
+                             contaCampeonatosDoUser(request.auth.uid),
                              limiteCampeonatos(planoDoUser(request.auth.uid))));
       allow update, delete: if isMaster()
                             || (isSignedIn() && contaAtiva()
@@ -334,7 +388,7 @@ service cloud.firestore {
         allow create: if podeEditarCampeonato(campeonatoId)
                       && (isMaster()
                           || dentroDoLimite(
-                               contador(/databases/$(database)/documents/campeonatos/$(campeonatoId), 'totalCategorias'),
+                               contaCategorias(campeonatoId),
                                limiteCategorias(planoDoUser(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data.ownerId))));
 
         // ─── Jogadores: gerenciarEquipes OU usuário autenticado com token
@@ -354,7 +408,7 @@ service cloud.firestore {
                                      request.resource.data.inscricaoToken)))
                         && (isMaster()
                             || dentroDoLimite(
-                                 contador(/databases/$(database)/documents/campeonatos/$(campeonatoId)/categorias/$(categoriaId), 'totalJogadores'),
+                                 contaJogadores(campeonatoId, categoriaId),
                                  limiteJogadores(planoDoUser(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data.ownerId))));
           // Update via convite: usuário autenticado pode atualizar dados
           // do jogador SE estiver editando uma equipe cuja inscrição
@@ -497,10 +551,26 @@ service cloud.firestore {
         // grupos, classificação, etc.) — leitura pública/owner; write pra
         // quem pode editar resultados (jogos/eventos/agendamento são a
         // grande maioria dos writes que caem aqui).
+        //
+        // ATENÇÃO: este glob recursivo cobre TUDO sob o campeonato, inclusive
+        // subcoleções que têm regras PRÓPRIAS mais restritivas (ex.: o subdoc
+        // PII `categorias/{c}/jogadores/{j}/privado/dados`). Como o Firestore
+        // concede acesso se QUALQUER match permitir, o glob anularia a proteção
+        // da PII. Por isso EXCLUÍMOS explicitamente qualquer caminho que
+        // contenha o segmento `privado` — esses docs são regidos só pela sua
+        // própria regra (dono/moderador/token). `string(deep)` serializa o
+        // path restante; checamos a substring `/privado/` (ou prefixo).
         match /{deep=**} {
-          allow read: if campeonatoEhPublico(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data)
-                      || isOwnerOrMaster(campeonatoId);
-          allow write: if podeEditarResultados(campeonatoId);
+          // READ: exclui só a PII (`privado`). Jogos/eventos/categorias seguem
+          // públicos quando o campeonato é público.
+          allow read: if !pathContemPrivado(deep)
+                      && (campeonatoEhPublico(get(/databases/$(database)/documents/campeonatos/$(campeonatoId)).data)
+                          || isOwnerOrMaster(campeonatoId));
+          // WRITE: allowlist — só os tipos criáveis via glob (jogos/eventos/
+          // etc.). Doc-categoria e jogadores ficam de fora (têm regra própria
+          // com limite de plano + PII), evitando burlar Fases 2 e 3.
+          allow write: if pathGlobPermitido(deep)
+                       && podeEditarResultados(campeonatoId);
         }
       }
 

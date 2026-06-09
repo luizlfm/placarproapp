@@ -151,7 +151,7 @@ export class ExportRankingsService {
     pdf.setFontSize(8);
     pdf.setTextColor(150);
     pdf.setFont('helvetica', 'normal');
-    pdf.text('Gerado por PlacarPro · placarpro.app', pageW / 2, pageH - 8, { align: 'center' });
+    pdf.text('Gerado por PlacarPro · placarproapp.com', pageW / 2, pageH - 8, { align: 'center' });
 
     const fname = this.fileName(ctx, 'pdf');
     // iOS Safari abre PDF inline — salvarPdf usa Web Share API no iOS.
@@ -306,7 +306,7 @@ export class ExportRankingsService {
         letter-spacing:0.5px;
       ">
         <span>Gerado por <strong>PlacarPro</strong></span>
-        <span>placarpro.app</span>
+        <span>placarproapp.com</span>
       </footer>
     `;
     return div;

@@ -222,6 +222,12 @@
     --padding-start: 8px;
     --padding-end: 8px;
   }
+
+  // Quando o login com Apple está desativado (appleLoginEnabled=false),
+  // só sobra o Google — vira coluna única ocupando a largura toda.
+  &--single {
+    grid-template-columns: 1fr;
+  }
 }
 
 .auth-submit {

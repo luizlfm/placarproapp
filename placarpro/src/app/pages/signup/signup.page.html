@@ -15,7 +15,7 @@
       <div class="auth-brand">
         <a routerLink="/" class="auth-brand-link" title="Voltar para a página inicial">
           <img
-            src="assets/images/logo3.png"
+            src="assets/images/logo1.png"
             alt="PlacarPro — clique para voltar à página inicial"
             width="200"
             height="160"
@@ -63,7 +63,7 @@
           (click)="selecionarTipo('racha')"
         >
           <ion-icon name="football-outline"></ion-icon>
-          <div class="tipo-titulo">SOU RACHA</div>
+          <div class="tipo-titulo">PELADA</div>
           <div class="tipo-sub">Organizo peladas/rachas</div>
         </button>
         <button
@@ -219,16 +219,18 @@
           Cadastrar com Google
         </ion-button>
 
-        <ion-button
-          expand="block"
-          type="button"
-          class="auth-apple"
-          (click)="loginWithApple()"
-          [disabled]="loading"
-        >
-          <ion-icon slot="start" name="logo-apple"></ion-icon>
-          Cadastrar com Apple
-        </ion-button>
+        @if (appleLoginEnabled) {
+          <ion-button
+            expand="block"
+            type="button"
+            class="auth-apple"
+            (click)="loginWithApple()"
+            [disabled]="loading"
+          >
+            <ion-icon slot="start" name="logo-apple"></ion-icon>
+            Cadastrar com Apple
+          </ion-button>
+        }
 
         <p class="auth-footer">
           Já tem conta?

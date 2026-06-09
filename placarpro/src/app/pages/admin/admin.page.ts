@@ -10,6 +10,8 @@ import {
   collection,
   collectionData,
   collectionGroup,
+  doc,
+  docData,
   query,
   orderBy,
   limit,
@@ -229,6 +231,37 @@ export class AdminPage implements OnInit {
   private readonly rachaSrv = inject(RachaService);
   private readonly rachaPlanosSrv = inject(RachaPlanosService);
   private readonly auth = inject(AuthService);
+
+  /** Visitas ao site (dashboard): total geral + contagem dos últimos 14 dias
+   *  (ordenados crescente pro gráfico). Lê de `estatisticas/visitas`. */
+  readonly visitas$: Observable<{ total: number; dias: { data: string; count: number }[] }> =
+    runInInjectionContext(this.injector, () => {
+      const totalRef = doc(this.fs, 'estatisticas/visitas');
+      const diasQ = query(
+        collection(this.fs, 'estatisticas/visitas/dias'),
+        orderBy('data', 'desc'),
+        limit(14),
+      );
+      return combineLatest([
+        (docData(totalRef) as Observable<{ total?: number } | undefined>).pipe(startWith(undefined)),
+        (collectionData(diasQ) as Observable<{ data: string; count: number }[]>).pipe(startWith([])),
+      ]).pipe(
+        map(([tot, dias]) => ({
+          total: tot?.total ?? 0,
+          dias: [...(dias ?? [])].reverse(), // desc → asc pro gráfico
+        })),
+        catchError((err) => {
+          console.error('[admin] visitas$ erro', err);
+          return of({ total: 0, dias: [] as { data: string; count: number }[] });
+        }),
+      );
+    });
+
+  /** Altura % de uma barra do gráfico de visitas (relativa ao pico do período). */
+  barAltura(count: number, dias: { count: number }[]): number {
+    const max = Math.max(1, ...dias.map((d) => d.count || 0));
+    return Math.max(4, Math.round(((count || 0) / max) * 100));
+  }
 
   /** Usuário logado — exibido no header do painel (avatar + nome + Sair). */
   readonly user$: Observable<User | null> = this.auth.user$;

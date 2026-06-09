@@ -85,7 +85,7 @@ export class PlanosPage {
         { icon: 'people-outline', titulo: 'Maior limite de jogadores', desc: 'Adicione até 300 jogadores por campeonato.' },
         { icon: 'megaphone-outline', titulo: 'Adicionar Patrocinadores', desc: 'Adicione patrocinadores por campeonato.' },
         { icon: 'radio-outline', titulo: 'Transmissão ao vivo', desc: 'Transmita seus jogos ao vivo pelo site (créditos de transmissão à parte).', transmissao: true },
-        { icon: 'globe-outline', titulo: 'Definir link do site', desc: 'placarpro.app/seu-campeonato' },
+        { icon: 'globe-outline', titulo: 'Definir link do site', desc: 'placarproapp.com/seu-campeonato' },
         { icon: 'image-outline', titulo: 'Melhor resolução de imagens', desc: 'Imagens em qualidade superior.' },
         { icon: 'videocam-outline', titulo: 'Enviar vídeos', desc: 'Vídeos de até 2 minutos.' },
         { icon: 'attach-outline', titulo: 'Adicionar anexo', desc: 'Disponibilize documentos no campeonato.' },

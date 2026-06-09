@@ -35,6 +35,7 @@ import { JogoModalComponent } from '../../../shared/components/jogo-modal/jogo-m
 import { SelecionarEquipesModalComponent } from '../../../shared/components/selecionar-equipes-modal/selecionar-equipes-modal.component';
 import { SelecionarLadoModalComponent } from '../../../shared/components/selecionar-lado-modal/selecionar-lado-modal.component';
 import { EditarInformacoesModalComponent } from '../jogo-detalhe/editar-informacoes-modal/editar-informacoes-modal.component';
+import { ArteDoJogoModalComponent } from '../../../shared/components/arte-do-jogo-modal/arte-do-jogo-modal.component';
 import {
   JogoAcao,
   JogoAcoesPopoverComponent,
@@ -610,6 +611,29 @@ export class ClassificacaoPage implements OnInit, OnDestroy {
             categoriaId: this.categoriaId,
             jogo,
           },
+          backdropDismiss: true,
+        });
+        await modal.present();
+        return;
+      }
+      case 'arte': {
+        // "Arte do Jogo" — abre o gerador de arte (mesmos props do atalho
+        // em jogos.page.ts). `equipes` já chega como parâmetro; campeonato
+        // e categoria buscamos pelos serviços.
+        const [campeonato, categoria] = await Promise.all([
+          firstValueFrom(this.campeonatosSrv.get$(this.campeonatoId)),
+          firstValueFrom(this.categoriasSrv.get$(this.campeonatoId, this.categoriaId)),
+        ]);
+        const modal = await this.modalCtrl.create({
+          component: ArteDoJogoModalComponent,
+          componentProps: {
+            jogo,
+            mandante: equipes.find(e => e.id === jogo.mandanteId),
+            visitante: equipes.find(e => e.id === jogo.visitanteId),
+            campeonato,
+            categoria,
+          },
+          cssClass: 'modal-arte-jogo',
           backdropDismiss: true,
         });
         await modal.present();

@@ -1,20 +1,33 @@
-// Prod — mesmo projeto Firebase. As credenciais do Web SDK são públicas no bundle;
-// segurança vem das Firebase Security Rules + App Check, não de esconder a chave.
+// Prod — projeto Firebase de PRODUÇÃO: placarproapp-ed05a (banco zerado).
+// O projeto antigo placapro-d276d virou ambiente de TESTE (ver environment.ts).
+// As credenciais do Web SDK são públicas no bundle; segurança vem das
+// Firebase Security Rules, não de esconder a chave.
 
 export const environment = {
   production: true,
   firebase: {
-    apiKey: 'AIzaSyAgfVhr8jCwyMuTqQiVHElrZH4qwbslE5c',
-    // IMPORTANTE: usar o mesmo origin do app (placapro-d276d.web.app)
-    // pra evitar bloqueio do Safari ITP em OAuth redirect. O __/auth/handler
-    // é exposto automaticamente nos dois domínios pelo Firebase Hosting.
-    authDomain: 'placapro-d276d.web.app',
-    projectId: 'placapro-d276d',
-    storageBucket: 'placapro-d276d.firebasestorage.app',
-    messagingSenderId: '1009050256280',
-    appId: '1:1009050256280:web:9b003cb47aa2e6ded2e1ed',
-    measurementId: 'G-MMPK5LMZWD',
+    apiKey: 'AIzaSyAl699rlARG0XuRPeedmC1moOTgRkk0xbA',
+    // authDomain TEMPORÁRIO no domínio padrão do projeto (sempre serve o
+    // __/auth/handler). Quando placarproapp.com for movido pra ESTE projeto
+    // (Hosting → domínio customizado) e o OAuth client reconfigurado, trocar
+    // para authDomain: 'placarproapp.com' — aí a tela do Google exibe o domínio
+    // bonito e o fluxo fica same-site (melhor pro Safari ITP).
+    authDomain: 'placarproapp-ed05a.firebaseapp.com',
+    projectId: 'placarproapp-ed05a',
+    storageBucket: 'placarproapp-ed05a.firebasestorage.app',
+    messagingSenderId: '15254232138',
+    appId: '1:15254232138:web:1736cfc6140ccbedb59ab3',
+    measurementId: 'G-1NTXEZQQ4M',
   },
+
+  /**
+   * Liga/desliga o botão "Entrar/Cadastrar com Apple" nas telas de login/signup.
+   * Desligado porque o Sign in with Apple exige um Services ID configurado em
+   * uma conta do Apple Developer Program (paga). Quando o domínio
+   * `placarproapp.com` estiver verificado no Services ID + Return URL
+   * `https://placarproapp.com/__/auth/handler`, basta voltar pra `true`.
+   */
+  appleLoginEnabled: false,
 
   /**
    * Códigos válidos para cadastro de organizadores em produção.
@@ -35,7 +48,9 @@ export const environment = {
    * `/app/admin` independente do campo `users/{uid}.isMaster` no Firestore.
    */
   adminMasterUids: [
-    'ntGeuckC1udr4p3yPEnRvkLciIE3', // ti.luizmiranda@gmail.com
+    // UID no projeto de PRODUÇÃO placarproapp-ed05a (Auth zerado tem UID
+    // diferente do projeto antigo). ti.luizmiranda@gmail.com.
+    'qSZ4Jtf681UjK8OQEnaEcCOwKfc2', // ti.luizmiranda@gmail.com
   ] as string[],
 
   /**

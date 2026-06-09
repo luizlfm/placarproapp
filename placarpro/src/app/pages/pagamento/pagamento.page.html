@@ -29,8 +29,12 @@
 
         <div class="pg-resumo-grid">
           <div class="pg-cell">
-            <span class="pg-cell-lbl">Plano</span>
-            <span class="pg-cell-val">{{ c.planoId | titlecase }}</span>
+            <span class="pg-cell-lbl">{{ c.tipo === 'racha-assinatura' ? 'Plano do racha' : 'Plano' }}</span>
+            <span class="pg-cell-val">{{ nomePlano(c) }}</span>
+          </div>
+          <div class="pg-cell" *ngIf="c.tipo === 'racha-assinatura' && c.rachaNome">
+            <span class="pg-cell-lbl">Racha</span>
+            <span class="pg-cell-val">{{ c.rachaNome }}</span>
           </div>
           <div class="pg-cell">
             <span class="pg-cell-lbl">Período</span>
@@ -48,7 +52,7 @@
         <ion-icon name="information-circle-outline"></ion-icon>
         <span>
           Após pagar, o plano será ativado em até 24h. Em caso de dúvida,
-          envie o comprovante para <strong>suporte&#64;placarpro.app</strong>.
+          envie o comprovante para <strong>placarproapp&#64;gmail.com</strong>.
         </span>
       </div>
 

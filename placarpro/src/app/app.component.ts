@@ -7,6 +7,7 @@ import { AuthService } from './auth/auth.service';
 import { ThemeService } from './shared/theme.service';
 import { CampeonatoThemeService } from './shared/campeonato-theme.service';
 import { UsersService } from './users/users.service';
+import { VisitasService } from './shared/visitas.service';
 import { consumirRedirectPendente, isPwaStandalone } from './shared/utils/pwa.utils';
 
 /** Mirror de `TipoConta` (user-profile.model). */
@@ -28,9 +29,13 @@ export class AppComponent {
   private readonly toastCtrl = inject(ToastController);
   private readonly campTheme = inject(CampeonatoThemeService);
   private readonly usersSrv = inject(UsersService);
+  private readonly visitas = inject(VisitasService);
 
   constructor() {
     this.silenciarBugIonicAriaChanged();
+    // Registra 1 visita por sessão (inclusive visitante anônimo) pro
+    // dashboard de visitas no painel admin. Fire-and-forget.
+    this.visitas.registrarVisitaSessao();
     this.monitorarAtualizacoes();
     this.aplicarCorDoOrganizador();
     this.aplicarRedirectPosInstalacaoPwa();
@@ -61,7 +66,11 @@ export class AppComponent {
           // SEMPRE que a URL atual diferia do destino padrão — fazendo links
           // compartilhados caírem em /espectador. Bug reportado quando user
           // logado abria /luizz/categoria/XXX e ia parar em /espectador.
-          const urlAtual = this.router.url.split('?')[0];
+          // URL REAL do browser — `this.router.url` ainda pode estar
+          // em `/` no momento do handleRedirectResult (initial navigation
+          // não terminou). Sem isso, deep links como /app/campeonato/X
+          // são considerados "rota pública" e redirecionados pra /app.
+          const urlAtual = this.urlReal();
           const rotasPublicas = ['/', '/login', '/cadastro', '/recuperar-senha'];
           if (!rotasPublicas.includes(urlAtual)) return;
 
@@ -153,6 +162,25 @@ export class AppComponent {
     '/recuperar-senha',
   ];
 
+  /**
+   * Flag que vira `true` depois que o `validarRotaNoBoot` decidiu (ou não)
+   * o redirect inicial. Enquanto `false`, `escutarMudancasDeAuth` NÃO atua —
+   * porque a hidratação do Firebase Auth no F5 dispara um `null → user`
+   * falso-positivo no `pairwise()`, que era interpretado erroneamente como
+   * "login detectado" e redirecionava pra área padrão, perdendo a rota
+   * atual. Quem decide a navegação no boot é o `validarRotaNoBoot`.
+   */
+  private bootValidacaoConcluida = false;
+
+  /**
+   * URL REAL do browser (não do estado do Router, que durante o boot
+   * pode ainda estar em `/` antes da initial navigation terminar).
+   */
+  private urlReal(): string {
+    if (typeof window === 'undefined') return '/';
+    return (window.location.pathname || '/').split('?')[0];
+  }
+
   /** Lê tipo de login persistido no localStorage. */
   private getTipoLogin(): TipoLogin {
     try {
@@ -213,17 +241,28 @@ export class AppComponent {
    * Validação executada no BOOT (F5/abertura inicial). Aguarda o
    * Firebase Auth hidratar (estado persistido em IndexedDB) e depois
    * decide se redireciona.
+   *
+   * BUG ANTIGO ("F5 leva sempre pra /app/meus-campeonatos"):
+   * usávamos `this.router.url` pra ler a rota atual. Mas no
+   * boot a "initial navigation" do Router ainda não completou — então
+   * `router.url` retorna `/` mesmo a URL real do browser sendo
+   * `/app/campeonato/X/categoria/Y/jogos`. Como `/` não pertence à
+   * área `/app` do organizador, o método redirecionava pra `/app`,
+   * que via `masterRedirectGuard` caía em `/app/meus-campeonatos`.
+   *
+   * Correção: ler `window.location.pathname` — esse é o pathname REAL
+   * que o usuário tem na barra, independente do Router ter processado
+   * ou não. O Router segue depois sem perder essa rota.
    */
   private async validarRotaNoBoot(): Promise<void> {
     try {
+      // Captura a URL REAL do browser ANTES de qualquer await — assim
+      // não pega uma URL já alterada por algum guard/redirect em curso.
+      const urlAtual = this.urlReal();
+
       // Espera o Firebase Auth terminar a hidratação (caso F5).
       await this.auth.waitForAuthInit();
 
-      // Pequeno delay pra Angular Router terminar a navegação inicial
-      // (sem isso, `this.router.url` pode ainda ser '/').
-      await new Promise(resolve => setTimeout(resolve, 50));
-
-      const urlAtual = this.router.url.split('?')[0];
       const destino = this.decidirRedirecionamento(urlAtual);
       if (!destino) return;
 
@@ -233,6 +272,10 @@ export class AppComponent {
       await this.router.navigateByUrl(destino, { replaceUrl: true });
     } catch (err) {
       console.warn('[App] validarRotaNoBoot falhou', err);
+    } finally {
+      // Sinaliza que o boot já decidiu o redirect — agora o
+      // `escutarMudancasDeAuth` pode atuar em logins/logouts reais.
+      this.bootValidacaoConcluida = true;
     }
   }
 
@@ -253,7 +296,25 @@ export class AppComponent {
         pairwise(),
       )
       .subscribe(async ([antes, agora]) => {
-        const urlAtual = this.router.url.split('?')[0];
+        // BUG ANTIGO: no F5 com usuário já logado, o Firebase emite
+        // `null` (estado inicial do BehaviorSubject) ANTES de hidratar
+        // o estado persistido em IndexedDB. Depois emite o user real.
+        // O `pairwise()` interpretava isso como `[false, true]` = "login"
+        // e redirecionava pra `/app` — perdendo a rota atual.
+        //
+        // Solução: enquanto o `validarRotaNoBoot` não terminou (esse já
+        // espera `waitForAuthInit` e decide o destino correto), NÃO atuamos
+        // aqui. Logins reais (via modal) só acontecem DEPOIS do boot.
+        if (!this.bootValidacaoConcluida) {
+          console.log('[App] mudança de auth durante boot — ignorada (validarRotaNoBoot cuida)', {
+            antes, agora,
+          });
+          return;
+        }
+
+        // URL REAL do browser (não `this.router.url` que pode estar
+        // defasado durante navegação).
+        const urlAtual = this.urlReal();
 
         // ── LOGIN (false → true) ────────────────────────────────────
         if (!antes && agora) {

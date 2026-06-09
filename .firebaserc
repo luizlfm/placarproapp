@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "placapro-d276d"
+    "default": "placapro-d276d",
+    "test": "placapro-d276d",
+    "prod": "placarproapp-ed05a"
   }
 }

@@ -100,6 +100,10 @@ export { gerarTokenLiveKit } from './livekit';
 // transmissão de um jogo (1 crédito = 1 jogo). Ver `./transmissoesCreditos.ts`.
 export { onTransmissaoCriada } from './transmissoesCreditos';
 
+// Re-export da função que registra visitas ao site (alimenta o dashboard
+// de visitas no painel admin — ver `./visitas.ts`).
+export { registrarVisita } from './visitas';
+
 // Re-export dos triggers de contadores denormalizados (enforce de limites
 // de plano nas Rules — ver `./contadores.ts`).
 export {

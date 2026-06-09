@@ -83,7 +83,7 @@ firebase deploy --only firestore:rules,firestore:indexes
 
 - DNS: A record → `199.36.158.100` + TXT `hosting-site=placapro-d276d`
 - Verificação ACME pelo Firebase Console em **Hosting → Domínios personalizados**
-- `authDomain` (Firebase Auth) **mantido** em `placapro-d276d.web.app` para não quebrar Google/Apple login no Safari (ITP)
+- `authDomain` (Firebase Auth) = **`placarproapp.com`** — a tela do Google/Apple exibe o domínio do app e o OAuth fica *same-site* (melhor pro Safari ITP). O `__/auth/handler` é servido nesse domínio pelo Firebase Hosting. Requer cadastrar `https://placarproapp.com/__/auth/handler` nos *Authorized redirect URIs* do OAuth client (Google Cloud) e no *Services ID* (Apple Developer), além de ter `placarproapp.com` nos *Authorized domains* do Firebase Auth.
 
 ## Licença
 

@@ -7,6 +7,7 @@ import { CampeonatosService } from '../../campeonatos/campeonatos.service';
 import { UsersService } from '../../users/users.service';
 import { LogsService } from '../../users/logs.service';
 import { AlertService } from '../../shared/alert.service';
+import { environment } from '../../../environments/environment';
 
 /** Mantém sincronizado com `TipoConta` em users/models/user-profile.model.
  *  Se a model adicionar um novo tipo, este alias precisa acompanhar — daí
@@ -36,6 +37,8 @@ export class LoginPage implements OnInit {
 
   showPassword = false;
   loading = false;
+  /** Exibe o botão de login com Apple (controlado por environment). */
+  readonly appleLoginEnabled = environment.appleLoginEnabled;
   /** Destino após login. Se houver returnUrl explícito na query, prevalece;
    *  caso contrário usa o destino padrão do tipo selecionado. */
   returnUrl = '';
